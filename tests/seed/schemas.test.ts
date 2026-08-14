@@ -9,6 +9,7 @@ import {
   PetSafetyRowSchema,
   QuoteRowSchema,
   RuleRowSchema,
+  StoryRowSchema,
   SEED_FILE_KEYS,
   SEED_FILE_NAMES,
   SEED_SCHEMAS,
@@ -52,6 +53,8 @@ const QUOTES_HEADER =
   'quote_id,text_ko,author,source_title,source_url,license,era,tags,reviewed_at';
 const PET_SAFETY_HEADER =
   'flower_id,species,toxic,severity,toxic_parts,safe_alternative_flower_ids,source_url,reviewed_at';
+const STORIES_HEADER =
+  'story_id,flower_id,title,story_ko,culture_region,era,source_title,source_url,confidence_level,reviewed_at,editorial_note';
 
 type SafeParseLike =
   | { success: true }
@@ -70,7 +73,7 @@ function failedColumns(result: SafeParseLike): string[] {
  * ------------------------------------------------------------------ */
 
 describe('content/*.csv 실제 데이터', () => {
-  it('6개 파일이 모두 행 스키마를 통과한다', () => {
+  it('7개 파일이 모두 행 스키마를 통과한다', () => {
     const { issues } = loadDataset();
     expect(issues.map(formatIssue)).toEqual([]);
   });
@@ -79,7 +82,8 @@ describe('content/*.csv 실제 데이터', () => {
     const { dataset } = loadDataset();
     expect(dataset.flowers).toHaveLength(5);
     expect(dataset.pet_safety).toHaveLength(10);
-    expect(dataset.meanings.length).toBeGreaterThanOrEqual(6);
+    expect(dataset.meanings.length).toBeGreaterThanOrEqual(11);
+    expect(dataset.stories.length).toBeGreaterThanOrEqual(5);
     expect(dataset.rules.length).toBeGreaterThanOrEqual(6);
     expect(dataset.templates).toHaveLength(3);
     expect(dataset.quotes).toHaveLength(3);
@@ -123,11 +127,39 @@ describe('content/*.csv 실제 데이터', () => {
     }
   });
 
-  it('tulip-white 는 해석이 갈리는 꽃말을 2행으로 갖는다', () => {
+  it('tulip-white 는 문화권마다 갈리는 꽃말을 여러 행으로 갖는다', () => {
     const { dataset } = loadDataset();
     const tulip = dataset.meanings.filter((row) => row.value.flower_id === 'tulip-white');
+    expect(tulip.length).toBeGreaterThanOrEqual(6);
+
+    // 같은 흰 튤립인데 문화권마다 뜻이 다르다는 것이 이 데이터의 요점이다.
+    const regions = new Set(tulip.map((row) => row.value.culture_region));
+    expect(regions).toContain('turkey');
+    expect(regions).toContain('netherlands');
+    expect(regions).toContain('korea');
+    expect(regions.size).toBeGreaterThanOrEqual(4);
+
+    // 해석이 갈리는 행은 varies 로 표시돼 있다.
+    expect(tulip.filter((row) => row.value.confidence_level === 'varies').length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('모든 일화에 출처 URL 과 확신 수준이 있다', () => {
+    const { dataset } = loadDataset();
+    expect(dataset.stories.length).toBeGreaterThan(0);
+    for (const row of dataset.stories) {
+      expect(row.value.source_url).toMatch(/^https?:\/\//);
+      expect(['repeated', 'varies', 'single_source']).toContain(row.value.confidence_level);
+      expect(row.value.story_ko.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('stories 는 tulip-white 에 두 문화권의 일화를 갖는다', () => {
+    const { dataset } = loadDataset();
+    const tulip = dataset.stories.filter((row) => row.value.flower_id === 'tulip-white');
     expect(tulip).toHaveLength(2);
-    expect(tulip.every((row) => row.value.confidence_level === 'varies')).toBe(true);
+    expect(new Set(tulip.map((row) => row.value.culture_region))).toEqual(
+      new Set(['turkey', 'netherlands']),
+    );
   });
 });
 
@@ -245,6 +277,55 @@ describe('필수 필드 결손 검출', () => {
     expect(QuoteRowSchema.safeParse(record).success).toBe(true);
   });
 
+  it('stories: source_url 이 비면 실패한다', () => {
+    const record = oneRow(
+      STORIES_HEADER,
+      'story-x,tulip-white,오스만 궁정의 튤립,궁정에서 귀하게 여겼다고 전해져요.,turkey,ottoman,Wikipedia — Tulip,,repeated,2026-08-14,note',
+    );
+    const result = StoryRowSchema.safeParse(record);
+    expect(result.success).toBe(false);
+    expect(failedColumns(result)).toContain('source_url');
+  });
+
+  it('stories: source_url 이 URL 형식이 아니면 실패한다', () => {
+    const record = oneRow(
+      STORIES_HEADER,
+      'story-x,tulip-white,오스만 궁정의 튤립,궁정에서 귀하게 여겼다고 전해져요.,turkey,ottoman,어디선가 들음,들은 이야기,repeated,2026-08-14,note',
+    );
+    const result = StoryRowSchema.safeParse(record);
+    expect(result.success).toBe(false);
+    expect(failedColumns(result)).toContain('source_url');
+  });
+
+  it('stories: story_ko 가 비면 실패한다', () => {
+    const record = oneRow(
+      STORIES_HEADER,
+      'story-x,tulip-white,오스만 궁정의 튤립,,turkey,ottoman,Wikipedia — Tulip,https://en.wikipedia.org/wiki/Tulip,repeated,2026-08-14,note',
+    );
+    const result = StoryRowSchema.safeParse(record);
+    expect(result.success).toBe(false);
+    expect(failedColumns(result)).toContain('story_ko');
+  });
+
+  it('stories: confidence_level 이 어휘 밖이면 실패한다', () => {
+    const record = oneRow(
+      STORIES_HEADER,
+      'story-x,tulip-white,오스만 궁정의 튤립,궁정에서 귀하게 여겼다고 전해져요.,turkey,ottoman,Wikipedia — Tulip,https://en.wikipedia.org/wiki/Tulip,아마도,2026-08-14,note',
+    );
+    const result = StoryRowSchema.safeParse(record);
+    expect(result.success).toBe(false);
+    expect(failedColumns(result)).toContain('confidence_level');
+  });
+
+  it('stories: culture_region·era·source_title 은 비어도 통과한다', () => {
+    const record = oneRow(
+      STORIES_HEADER,
+      'story-x,tulip-white,오스만 궁정의 튤립,궁정에서 귀하게 여겼다고 전해져요.,,,,https://en.wikipedia.org/wiki/Tulip,varies,2026-08-14,',
+    );
+    const result = StoryRowSchema.safeParse(record);
+    expect(result.success).toBe(true);
+  });
+
   it('pet_safety: toxic=true 인데 대체 꽃이 없으면 실패한다', () => {
     const record = oneRow(
       PET_SAFETY_HEADER,
@@ -303,6 +384,19 @@ describe('교차 검증', () => {
     };
     const { checks, issues } = crossValidate(broken);
     expect(issues.some((issue) => issue.message.includes('ghost-flower'))).toBe(true);
+    expect(checks.find((c) => c.name.includes('참조'))?.ok).toBe(false);
+  });
+
+  it('stories 의 끊어진 flower_id 참조도 잡아낸다', () => {
+    const { dataset } = loadDataset();
+    const broken: SeedDataset = {
+      ...dataset,
+      stories: dataset.stories.map((row, index) =>
+        index === 0 ? { ...row, value: { ...row.value, flower_id: 'ghost-flower' } } : row,
+      ),
+    };
+    const { checks, issues } = crossValidate(broken);
+    expect(issues.some((issue) => issue.file === 'stories.csv')).toBe(true);
     expect(checks.find((c) => c.name.includes('참조'))?.ok).toBe(false);
   });
 

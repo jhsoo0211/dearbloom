@@ -30,7 +30,7 @@ export function recommend(
 
   const picked = diversify(scored, MAX_RESULTS);
 
-  return buildResults(picked, scored, normalized, data.rules, cautionsByFlower);
+  return buildResults(picked, scored, normalized, data.rules, cautionsByFlower, data.meanings ?? []);
 }
 
 export * from './diversity';

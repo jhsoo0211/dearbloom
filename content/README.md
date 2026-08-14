@@ -8,7 +8,8 @@ DB는 이 CSV에서 시드(upsert)될 뿐, 반대로 DB를 직접 고치지 않�
 | 파일 | 내용 | 현재 행 수 |
 |---|---|---|
 | `flowers.csv` | 꽃 기본 정보 | 5 |
-| `meanings.csv` | 꽃말(출처 필수) | 7 |
+| `meanings.csv` | 꽃말(출처 필수) | 11 |
+| `stories.csv` | 꽃에 얽힌 일화(출처 필수) | 5 |
 | `rules.csv` | 상황 → 꽃 추천/회피 규칙 | 6 |
 | `templates.csv` | 메시지 템플릿 | 3 |
 | `quotes.csv` | 인용문 | 3 |
@@ -24,7 +25,7 @@ DB는 이 CSV에서 시드(upsert)될 뿐, 반대로 DB를 직접 고치지 않�
 - **빈 값은 그냥 비워 둔다.** `-`, `N/A`, `null` 같은 자리표시자를 쓰지 않는다.
 - 쉼표(`,`)가 들어가는 값은 큰따옴표로 감싼다. 값 안의 큰따옴표는 `""`로 이스케이프한다.
 - **모든 샘플 행은 `seed-sample` 이라고 표시한다.** `flowers.editorial_note`,
-  `meanings.editorial_note`, `rules.note` 에 `seed-sample:` 접두사를 붙인다.
+  `meanings.editorial_note`, `stories.editorial_note`, `rules.note` 에 `seed-sample:` 접두사를 붙인다.
   `templates.csv` / `quotes.csv` / `pet_safety.csv` 에는 메모 컬럼이 없으므로,
   **현재 저장된 전 행이 샘플**이라는 사실을 이 문서로 대신 기록한다.
 
@@ -45,9 +46,21 @@ npm run seed:apply    # 실제 upsert (Supabase 환경변수 필요)
 
 검증 규칙의 단일 원본은 `db/seed/schemas.ts` 다. 컬럼을 추가·변경하면 스키마를 먼저 고친다.
 
+### `stories.csv` — 꽃에 얽힌 일화
+
+한 꽃에 여러 이야기를 붙일 수 있다(문화권·시대별로 한 행씩). 꽃말과 같은 원칙을 따른다:
+`source_url` 이 없으면 **시드 실패**이고, 어디까지 확인된 이야기인지는 `confidence_level`
+(`repeated` / `varies` / `single_source`)로 말한다. 본문(`story_ko`)은 3~4문장 한국어로 쓰되
+단정하지 말고 "~라는 설이 유력해요 / 전해져요" 처럼 확인된 만큼만 말한다. 출처가 다루는 대상이
+그 꽃과 미묘하게 다르면(예: 마돈나 백합 이야기를 아시아틱 백합에 붙일 때) 본문에서 그 사실을
+밝히고 `editorial_note` 에도 남긴다. `culture_region` 은 `turkey`, `netherlands`, `korea`,
+`uk`, `western`, `greece-rome` 처럼 소문자 slug 로 적고, `flower_id` 는 반드시
+`flowers.csv` 의 `id` 중 하나여야 한다(교차 검증이 막는다).
+
 ### 특히 자주 걸리는 규칙
 
 - `meanings.source_url` 이 비면 **시드 실패**. 출처 없는 꽃말은 싣지 않는다.
+- `stories.source_url` 도 마찬가지로 필수다. 출처 없는 일화는 싣지 않는다.
 - `rules` 의 `fit_score`(0~100) 와 `avoid_reason` 은 **정확히 하나만** 채운다.
   추천 규칙이면 점수를, 회피 규칙이면 이유를 쓴다.
 - `quotes.license = pd` 이면 `source_url` 필수(퍼블릭 도메인 근거).
@@ -68,6 +81,12 @@ npm run seed:apply    # 실제 upsert (Supabase 환경변수 필요)
 | `severity` | `none` `mild_gi` `serious` `life_threatening` |
 | `confidence_level` | `repeated` `varies` `single_source` |
 | `quotes.license` | `pd` `original` |
+
+`flowers.aesthetic_tags` 는 페르소나(받는 사람의 분위기) 태그와 같은 어휘를 쓴다:
+`calm`(차분한) `vivid`(화려한) `cute`(귀여운) `elegant`(우아한) `minimal`(미니멀).
+스키마 enum 이 아니라 편집 규칙이지만, 추천 엔진이 이 태그와 사용자가 고른 분위기를 맞대 보므로
+어휘를 벗어나면 그 꽃은 페르소나 점수를 영영 못 받는다. 한국어 라벨 ↔ slug 대응은
+`src/lib/engine/normalize.ts` 의 `TRAIT_LABELS` 가 단일 원본이다.
 
 `flower_id` 는 `flowers.csv` 의 `id` 를 그대로 참조한다. 현재: `rose-red`, `tulip-white`,
 `freesia`, `lily-asiatic`, `gerbera`.

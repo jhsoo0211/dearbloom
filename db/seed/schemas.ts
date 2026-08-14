@@ -395,12 +395,32 @@ export const PetSafetyRowSchema = z
     }
   });
 
+/**
+ * stories.csv — 꽃에 얽힌 일화.
+ * 꽃말과 같은 원칙: 출처 없는 이야기는 싣지 않는다(source_url 필수).
+ * 어디까지 확인된 이야기인지는 confidence_level 로 말한다.
+ */
+export const StoryRowSchema = z.object({
+  story_id: requiredText('story_id'),
+  flower_id: requiredSlug('flower_id'),
+  title: requiredText('title'),
+  story_ko: requiredText('story_ko'),
+  culture_region: optionalText(),
+  era: optionalText(),
+  source_title: optionalText(),
+  source_url: requiredUrl('source_url'),
+  confidence_level: requiredEnum('confidence_level', CONFIDENCE_LEVELS),
+  reviewed_at: requiredDate('reviewed_at'),
+  editorial_note: optionalText(),
+});
+
 export type FlowerRow = z.output<typeof FlowerRowSchema>;
 export type MeaningRow = z.output<typeof MeaningRowSchema>;
 export type RuleRow = z.output<typeof RuleRowSchema>;
 export type TemplateRow = z.output<typeof TemplateRowSchema>;
 export type QuoteRow = z.output<typeof QuoteRowSchema>;
 export type PetSafetyRow = z.output<typeof PetSafetyRowSchema>;
+export type StoryRow = z.output<typeof StoryRowSchema>;
 
 /* ------------------------------------------------------------------ *
  * 파일 레지스트리
@@ -409,6 +429,7 @@ export type PetSafetyRow = z.output<typeof PetSafetyRowSchema>;
 export const SEED_FILE_KEYS = [
   'flowers',
   'meanings',
+  'stories',
   'rules',
   'templates',
   'quotes',
@@ -420,6 +441,7 @@ export type SeedFileKey = (typeof SEED_FILE_KEYS)[number];
 export const SEED_FILE_NAMES: Record<SeedFileKey, string> = {
   flowers: 'flowers.csv',
   meanings: 'meanings.csv',
+  stories: 'stories.csv',
   rules: 'rules.csv',
   templates: 'templates.csv',
   quotes: 'quotes.csv',
@@ -429,6 +451,7 @@ export const SEED_FILE_NAMES: Record<SeedFileKey, string> = {
 export const SEED_SCHEMAS = {
   flowers: FlowerRowSchema,
   meanings: MeaningRowSchema,
+  stories: StoryRowSchema,
   rules: RuleRowSchema,
   templates: TemplateRowSchema,
   quotes: QuoteRowSchema,
@@ -486,6 +509,7 @@ export function validateRows<T>(
 export interface SeedRowMap {
   flowers: FlowerRow;
   meanings: MeaningRow;
+  stories: StoryRow;
   rules: RuleRow;
   templates: TemplateRow;
   quotes: QuoteRow;
@@ -511,6 +535,7 @@ export function validateFile<K extends SeedFileKey>(
 export interface SeedDataset {
   flowers: ParsedRow<FlowerRow>[];
   meanings: ParsedRow<MeaningRow>[];
+  stories: ParsedRow<StoryRow>[];
   rules: ParsedRow<RuleRow>[];
   templates: ParsedRow<TemplateRow>[];
   quotes: ParsedRow<QuoteRow>[];
@@ -525,7 +550,7 @@ export interface CrossValidateResult {
 /**
  * 파일을 가로지르는 규칙 검증.
  *
- *  1. flower_id 참조 무결성 — meanings / rules / pet_safety 가 가리키는 꽃이 flowers 에 있는가.
+ *  1. flower_id 참조 무결성 — meanings / stories / rules / pet_safety 가 가리키는 꽃이 flowers 에 있는가.
  *     pet_safety 가 제안하는 대체 꽃(safe_alternative_flower_ids)도 같이 본다.
  *  2. 반려동물 안전성 커버리지 — 모든 꽃이 cat·dog 두 종 모두에 대해 판정을 갖는가.
  *     "모르면 표시 안 함"이 아니라 "모르면 시드 실패"로 막는다.
@@ -542,6 +567,7 @@ export function crossValidate(data: SeedDataset): CrossValidateResult {
   const refBefore = issues.length;
   const refSources: Array<{ key: SeedFileKey; rows: ParsedRow<{ flower_id: string }>[] }> = [
     { key: 'meanings', rows: data.meanings },
+    { key: 'stories', rows: data.stories },
     { key: 'rules', rows: data.rules },
     { key: 'pet_safety', rows: data.pet_safety },
   ];

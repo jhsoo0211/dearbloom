@@ -22,6 +22,20 @@ const SEASON_OFF = 0.3;
 /** 날짜 미입력 시 계절 점수(정보 없음). */
 const SEASON_UNKNOWN = 0.5;
 
+/**
+ * A(미적 취향) 안에서 색 선호와 페르소나 태그의 배분.
+ * 색이 더 직접적인 신호라 0.6, 분위기 태그는 0.4. 둘 중 하나만 들어오면 그쪽이 100%.
+ */
+const A_COLOR_SHARE = 0.6;
+const A_TRAIT_SHARE = 0.4;
+
+/** 두 문자열 목록의 교집합 비율(기준: 사용자가 준 목록의 길이). */
+function overlapRatio(userValues: string[], flowerValues: string[]): number {
+  const owned = new Set(flowerValues.map((v) => v.trim().toLowerCase()));
+  const hit = userValues.filter((v) => owned.has(v.trim().toLowerCase())).length;
+  return clamp01(hit / userValues.length);
+}
+
 function clamp01(n: number): number {
   if (Number.isNaN(n)) return 0;
   return Math.min(1, Math.max(0, n));
@@ -45,7 +59,9 @@ function bestFit(rows: RecommendationRuleRow[]): number {
  *   I: 규칙표에서 intent가 일치하는 행의 fitScore(0~100 → 0~1) 최댓값
  *   R: 규칙표에서 relationship이 일치하는 행의 fitScore 최댓값
  *   S: dateISO의 월이 bloomMonths에 있으면 1, 없으면 0.3, 날짜가 없으면 0.5
- *   A: colorPrefs와 flower.colors의 교집합 비율(선호 색 미입력이면 신호 없음 → 0)
+ *   A: 미적 취향. 색 선호(colorPrefs ∩ flower.colors)와 페르소나 태그
+ *      (recipientTraits ∩ flower.aestheticTags)의 가중 평균(0.6 / 0.4).
+ *      한쪽만 입력되면 그쪽이 100%, 둘 다 없으면 신호 없음 → 0.
  *   P: 개인화 스텁. personalCues/메모리 기반 점수는 후속 작업이라 지금은 항상 0.
  * D(다양성) 가중치는 여기서 쓰지 않고 diversity 단계에서 반영한다.
  */
@@ -80,12 +96,27 @@ export function scoreCandidate(
   }
 
   const prefs = input.colorPrefs ?? [];
-  let A = 0;
+  const traits = input.recipientTraits ?? [];
+
+  let colorScore: number | undefined;
   if (prefs.length > 0) {
-    const colors = new Set(f.colors.map((c) => c.toLowerCase()));
-    const hit = prefs.filter((c) => colors.has(c.toLowerCase())).length;
-    A = clamp01(hit / prefs.length);
-    if (A > 0) matched.push('SC_AESTHETIC');
+    colorScore = overlapRatio(prefs, f.colors);
+    if (colorScore > 0) matched.push('SC_AESTHETIC');
+  }
+
+  let traitScore: number | undefined;
+  if (traits.length > 0) {
+    traitScore = overlapRatio(traits, f.aestheticTags);
+    if (traitScore > 0) matched.push('SC_PERSONA');
+  }
+
+  let A = 0;
+  if (colorScore !== undefined && traitScore !== undefined) {
+    A = round4(colorScore * A_COLOR_SHARE + traitScore * A_TRAIT_SHARE);
+  } else if (colorScore !== undefined) {
+    A = colorScore;
+  } else if (traitScore !== undefined) {
+    A = traitScore;
   }
 
   // P: 개인화 스텁 (personalCues → 기억/취향 반영은 후속 작업)

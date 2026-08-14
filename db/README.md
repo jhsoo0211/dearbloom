@@ -9,6 +9,7 @@ Supabase Postgres schema for dearbloom. Target: **Postgres 15+** (`gen_random_uu
 | `migrations/0001_catalog.sql` | Public catalog (`flowers`, `flower_meanings`, `pet_safety`), editorial data (`recommendation_rules`, `message_templates`, `quotes`), runtime `config` + `config_history` trigger, `engine_weights` seed row |
 | `migrations/0002_results_share.sql` | `recommendation_results` (public/private two-layer payload) and `share_cards` |
 | `migrations/0003_rls.sql` | RLS on all 10 tables, policies, and the `share_results` view |
+| `migrations/0004_stories.sql` | `flower_stories` (per-flower anecdotes, source required) with its index and public-read policy |
 | `seed/` | CSV → SQL seed data (loaded after the migrations) |
 
 ## How to apply
@@ -16,14 +17,14 @@ Supabase Postgres schema for dearbloom. Target: **Postgres 15+** (`gen_random_uu
 No Supabase CLI wiring yet — apply by hand:
 
 1. Supabase Dashboard → **SQL Editor** → New query.
-2. Paste and run **`0001_catalog.sql`**, then **`0002_results_share.sql`**, then **`0003_rls.sql`**. The order matters: 0002 has no FK into 0001, but 0003 references tables from both.
+2. Paste and run **`0001_catalog.sql`**, then **`0002_results_share.sql`**, then **`0003_rls.sql`**, then **`0004_stories.sql`**. The order matters: 0002 has no FK into 0001, but 0003 references tables from both, and 0004 has an FK into `flowers` (0001) and carries its own RLS policy.
 3. Load `seed/` afterwards. Seeding runs as `service_role`/owner, which bypasses RLS, so it is unaffected by 0003.
 
-`0001` and `0002` use plain `create table` and will error on a second run — that is intentional, so an accidental re-run cannot clobber live data. `0003` drops each policy before creating it and uses `create or replace view`, so it is safe to re-run on its own whenever policies change.
+`0001`, `0002`, and `0004` use plain `create table` and will error on a second run — that is intentional, so an accidental re-run cannot clobber live data. `0003` drops each policy before creating it and uses `create or replace view`, so it is safe to re-run on its own whenever policies change; `0004`'s policy block follows the same drop-before-create style.
 
 ## File naming — migration to the Supabase CLI
 
-Files are numbered sequentially (`0001_`, `0002_`, `0003_`) while we apply them manually. When the project moves to the Supabase CLI, rename each file into `supabase/migrations/<timestamp>_*.sql` (e.g. `20260814090000_catalog.sql`), keeping the same relative order — the CLI orders migrations by that leading UTC timestamp, not by sequence number. Rename rather than re-author, so the applied SQL stays byte-identical to what production already ran, and record the already-applied files in `supabase_migrations.schema_migrations` (`supabase migration repair --status applied <version>`) so the CLI does not try to run them again.
+Files are numbered sequentially (`0001_`, `0002_`, `0003_`, `0004_`) while we apply them manually. When the project moves to the Supabase CLI, rename each file into `supabase/migrations/<timestamp>_*.sql` (e.g. `20260814090000_catalog.sql`), keeping the same relative order — the CLI orders migrations by that leading UTC timestamp, not by sequence number. Rename rather than re-author, so the applied SQL stays byte-identical to what production already ran, and record the already-applied files in `supabase_migrations.schema_migrations` (`supabase migration repair --status applied <version>`) so the CLI does not try to run them again.
 
 ## TODO — enable pg_cron
 

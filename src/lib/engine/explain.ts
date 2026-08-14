@@ -1,6 +1,9 @@
 import { monthFromISO } from './normalize';
 import type { ScoredFlower } from './score';
 import type {
+  ColorSuggestion,
+  FlowerData,
+  FlowerMeaningRow,
   FlowerRef,
   RecoInput,
   RecoResult,
@@ -19,6 +22,7 @@ export const REASON_TEXTS: Record<RuleId, string> = {
   SC_RELATIONSHIP: '두 분의 관계에 어울리는 선택이에요.',
   SC_SEASON: '지금이 제철이라 상태 좋은 꽃을 구하기 쉬워요.',
   SC_AESTHETIC: '좋아하신다고 하신 색·분위기와 잘 어울려요.',
+  SC_PERSONA: '상대의 분위기와 꽃의 인상이 잘 맞아요.',
 };
 
 const FALLBACK_REASON = '추천 규칙에 부합하는 선택이에요.';
@@ -51,10 +55,89 @@ export function availabilityFor(bloomMonths: number[], dateISO?: string): Season
   return 'out_of_season';
 }
 
+/** 색 slug → 한국어 표기. 사전에 없으면 slug를 그대로 쓴다. */
+const COLOR_LABELS: Record<string, string> = {
+  red: '빨강',
+  pink: '분홍',
+  white: '흰색',
+  ivory: '아이보리',
+  yellow: '노랑',
+  orange: '주황',
+  peach: '피치',
+  purple: '보라',
+  blue: '파랑',
+  green: '초록',
+};
+
+function colorLabel(color: string): string {
+  return COLOR_LABELS[color.toLowerCase()] ?? color;
+}
+
+/**
+ * 제안할 색 한 가지를 고른다.
+ * 선호 색 중 그 꽃이 실제로 가진 색이 있으면 그것을, 없으면 그 꽃의 대표색(colors[0])을 쓴다.
+ */
+function pickColor(
+  colors: string[],
+  prefs: string[],
+): { color: string; fromPrefs: boolean } | undefined {
+  const owned = new Map(colors.map((c) => [c.trim().toLowerCase(), c]));
+  for (const pref of prefs) {
+    const hit = owned.get(pref.trim().toLowerCase());
+    if (hit !== undefined) return { color: hit, fromPrefs: true };
+  }
+  const fallback = colors[0];
+  if (fallback === undefined) return undefined;
+  return { color: fallback, fromPrefs: false };
+}
+
+/**
+ * 그 색에 붙는 꽃말을 찾는다.
+ * 색이 정확히 일치하는 행이 우선이고, 없으면 색을 가리지 않는(color 빈 값) 행을 쓴다.
+ */
+function findMeaning(
+  meanings: FlowerMeaningRow[],
+  flowerId: string,
+  color: string,
+): FlowerMeaningRow | undefined {
+  const rows = meanings.filter((m) => m.flowerId === flowerId);
+  const wanted = color.trim().toLowerCase();
+  const exact = rows.find((m) => (m.color ?? '').trim().toLowerCase() === wanted);
+  if (exact) return exact;
+  return rows.find((m) => (m.color ?? '').trim() === '');
+}
+
+/** 색 제안 한 건. 색 정보가 없는 꽃이면 null. */
+export function buildColorSuggestion(
+  flower: FlowerData,
+  input: RecoInput,
+  meanings: FlowerMeaningRow[],
+): ColorSuggestion | null {
+  const picked = pickColor(flower.colors, input.colorPrefs ?? []);
+  if (picked === undefined) return null;
+
+  const label = colorLabel(picked.color);
+  const suggestion: ColorSuggestion = {
+    color: picked.color,
+    reason: picked.fromPrefs
+      ? `좋아하신다고 하신 ${label} 계열을 이 꽃도 가지고 있어 그 색으로 골랐어요.`
+      : `${label}이(가) ${flower.nameKo}을(를) 가장 잘 보여 주는 대표색이라 이 색으로 제안해요.`,
+  };
+
+  const meaning = findMeaning(meanings, flower.id, picked.color);
+  if (meaning) {
+    suggestion.meaningKo = meaning.meaningKo;
+    suggestion.sourceId = meaning.sourceId;
+  }
+
+  return suggestion;
+}
+
 /**
  * 선정된 안을 최종 응답 형태로 바꾼다.
  * fitScore는 0~1 내부 점수를 0~100 정수로 환산한 값이다.
  * substitutes는 같은 intent 규칙에 걸린 차순위 후보 중 아직 추천되지 않은 최대 2개.
+ * meanings를 주지 않으면 색과 근거만 제안하고 꽃말은 비운다(출처 없는 꽃말은 싣지 않는다).
  */
 export function buildResults(
   picked: ScoredFlower[],
@@ -62,6 +145,7 @@ export function buildResults(
   input: RecoInput,
   rules: RecommendationRuleRow[],
   cautionsByFlower: Map<string, string[]>,
+  meanings: FlowerMeaningRow[] = [],
 ): RecoResult[] {
   const pickedIds = new Set(picked.map((p) => p.flower.id));
 
@@ -80,5 +164,6 @@ export function buildResults(
     cautions: [...(cautionsByFlower.get(p.flower.id) ?? [])],
     substitutes: substitutePool.slice(0, 2).map(toRef),
     availability: availabilityFor(p.flower.bloomMonths, input.dateISO),
+    colorSuggestion: buildColorSuggestion(p.flower, input, meanings),
   }));
 }

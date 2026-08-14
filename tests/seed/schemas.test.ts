@@ -13,10 +13,13 @@ import {
   SEED_FILE_KEYS,
   SEED_FILE_NAMES,
   SEED_SCHEMAS,
+  STORY_MOODS,
   crossValidate,
   validateFile,
   validateRows,
+  type Intent,
   type SeedDataset,
+  type StoryMood,
 } from '../../db/seed/schemas';
 import { formatIssue, type SeedIssue } from '../../db/seed/report';
 
@@ -54,7 +57,7 @@ const QUOTES_HEADER =
 const PET_SAFETY_HEADER =
   'flower_id,species,toxic,severity,toxic_parts,safe_alternative_flower_ids,source_url,reviewed_at';
 const STORIES_HEADER =
-  'story_id,flower_id,title,story_ko,culture_region,era,source_title,source_url,confidence_level,reviewed_at,editorial_note';
+  'story_id,flower_id,title,story_ko,culture_region,era,source_title,source_url,confidence_level,reviewed_at,editorial_note,moods,intents,hook';
 
 type SafeParseLike =
   | { success: true }
@@ -160,6 +163,34 @@ describe('content/*.csv 실제 데이터', () => {
     expect(new Set(tulip.map((row) => row.value.culture_region))).toEqual(
       new Set(['turkey', 'netherlands']),
     );
+  });
+
+  it('모든 일화가 어휘 안의 moods 를 1개 이상 갖는다', () => {
+    const { dataset } = loadDataset();
+    for (const row of dataset.stories) {
+      expect(row.value.moods.length).toBeGreaterThanOrEqual(1);
+      for (const mood of row.value.moods) {
+        expect(STORY_MOODS).toContain(mood);
+      }
+    }
+  });
+
+  it('선별 태그 3종이 도메인 값으로 변환된다 (moods·intents·hook)', () => {
+    const { dataset } = loadDataset();
+
+    const mania = dataset.stories.find((row) => row.value.story_id === 'story-tulip-mania');
+    expect(mania?.value.moods).toEqual(['dramatic', 'funny']);
+    expect(mania?.value.intents).toEqual(['just_because']);
+    expect(mania?.value.hook).toBe('알뿌리 하나가 집 한 채 값이던 시절이 있었어요.');
+
+    // intents 를 비운 행은 빈 배열 = 모든 상황.
+    const ottoman = dataset.stories.find((row) => row.value.story_id === 'story-tulip-ottoman');
+    expect(ottoman?.value.moods).toEqual(['mythic']);
+    expect(ottoman?.value.intents).toEqual([]);
+
+    // 상황을 콕 집어 둔 행도 최소 하나는 있다.
+    const rose = dataset.stories.find((row) => row.value.story_id === 'story-rose-aphrodite');
+    expect(rose?.value.intents).toEqual(['confession', 'anniversary']);
   });
 });
 
@@ -280,7 +311,7 @@ describe('필수 필드 결손 검출', () => {
   it('stories: source_url 이 비면 실패한다', () => {
     const record = oneRow(
       STORIES_HEADER,
-      'story-x,tulip-white,오스만 궁정의 튤립,궁정에서 귀하게 여겼다고 전해져요.,turkey,ottoman,Wikipedia — Tulip,,repeated,2026-08-14,note',
+      'story-x,tulip-white,오스만 궁정의 튤립,궁정에서 귀하게 여겼다고 전해져요.,turkey,ottoman,Wikipedia — Tulip,,repeated,2026-08-14,note,mythic,,궁정이 사랑한 꽃이었어요.',
     );
     const result = StoryRowSchema.safeParse(record);
     expect(result.success).toBe(false);
@@ -290,7 +321,7 @@ describe('필수 필드 결손 검출', () => {
   it('stories: source_url 이 URL 형식이 아니면 실패한다', () => {
     const record = oneRow(
       STORIES_HEADER,
-      'story-x,tulip-white,오스만 궁정의 튤립,궁정에서 귀하게 여겼다고 전해져요.,turkey,ottoman,어디선가 들음,들은 이야기,repeated,2026-08-14,note',
+      'story-x,tulip-white,오스만 궁정의 튤립,궁정에서 귀하게 여겼다고 전해져요.,turkey,ottoman,어디선가 들음,들은 이야기,repeated,2026-08-14,note,mythic,,궁정이 사랑한 꽃이었어요.',
     );
     const result = StoryRowSchema.safeParse(record);
     expect(result.success).toBe(false);
@@ -300,7 +331,7 @@ describe('필수 필드 결손 검출', () => {
   it('stories: story_ko 가 비면 실패한다', () => {
     const record = oneRow(
       STORIES_HEADER,
-      'story-x,tulip-white,오스만 궁정의 튤립,,turkey,ottoman,Wikipedia — Tulip,https://en.wikipedia.org/wiki/Tulip,repeated,2026-08-14,note',
+      'story-x,tulip-white,오스만 궁정의 튤립,,turkey,ottoman,Wikipedia — Tulip,https://en.wikipedia.org/wiki/Tulip,repeated,2026-08-14,note,mythic,,궁정이 사랑한 꽃이었어요.',
     );
     const result = StoryRowSchema.safeParse(record);
     expect(result.success).toBe(false);
@@ -310,7 +341,7 @@ describe('필수 필드 결손 검출', () => {
   it('stories: confidence_level 이 어휘 밖이면 실패한다', () => {
     const record = oneRow(
       STORIES_HEADER,
-      'story-x,tulip-white,오스만 궁정의 튤립,궁정에서 귀하게 여겼다고 전해져요.,turkey,ottoman,Wikipedia — Tulip,https://en.wikipedia.org/wiki/Tulip,아마도,2026-08-14,note',
+      'story-x,tulip-white,오스만 궁정의 튤립,궁정에서 귀하게 여겼다고 전해져요.,turkey,ottoman,Wikipedia — Tulip,https://en.wikipedia.org/wiki/Tulip,아마도,2026-08-14,note,mythic,,궁정이 사랑한 꽃이었어요.',
     );
     const result = StoryRowSchema.safeParse(record);
     expect(result.success).toBe(false);
@@ -320,10 +351,53 @@ describe('필수 필드 결손 검출', () => {
   it('stories: culture_region·era·source_title 은 비어도 통과한다', () => {
     const record = oneRow(
       STORIES_HEADER,
-      'story-x,tulip-white,오스만 궁정의 튤립,궁정에서 귀하게 여겼다고 전해져요.,,,,https://en.wikipedia.org/wiki/Tulip,varies,2026-08-14,',
+      'story-x,tulip-white,오스만 궁정의 튤립,궁정에서 귀하게 여겼다고 전해져요.,,,,https://en.wikipedia.org/wiki/Tulip,varies,2026-08-14,,mythic,,',
     );
     const result = StoryRowSchema.safeParse(record);
     expect(result.success).toBe(true);
+  });
+
+  it('stories: moods 가 비면 실패한다', () => {
+    const record = oneRow(
+      STORIES_HEADER,
+      'story-x,tulip-white,오스만 궁정의 튤립,궁정에서 귀하게 여겼다고 전해져요.,turkey,ottoman,Wikipedia — Tulip,https://en.wikipedia.org/wiki/Tulip,varies,2026-08-14,note,,,',
+    );
+    const result = StoryRowSchema.safeParse(record);
+    expect(result.success).toBe(false);
+    expect(failedColumns(result)).toContain('moods');
+  });
+
+  it('stories: moods 에 어휘 밖의 값이 섞이면 그 원소를 짚어 실패한다', () => {
+    const record = oneRow(
+      STORIES_HEADER,
+      'story-x,tulip-white,오스만 궁정의 튤립,궁정에서 귀하게 여겼다고 전해져요.,turkey,ottoman,Wikipedia — Tulip,https://en.wikipedia.org/wiki/Tulip,varies,2026-08-14,note,mythic|무서운,,',
+    );
+    const result = StoryRowSchema.safeParse(record);
+    expect(result.success).toBe(false);
+    expect(failedColumns(result)).toContain('moods.1');
+  });
+
+  it('stories: intents 는 비어도 통과한다 (= 모든 상황)', () => {
+    const record = oneRow(
+      STORIES_HEADER,
+      'story-x,tulip-white,오스만 궁정의 튤립,궁정에서 귀하게 여겼다고 전해져요.,turkey,ottoman,Wikipedia — Tulip,https://en.wikipedia.org/wiki/Tulip,varies,2026-08-14,note,mythic|dramatic,,',
+    );
+    const result = StoryRowSchema.safeParse(record);
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    expect(result.data.moods).toEqual(['mythic', 'dramatic']);
+    expect(result.data.intents).toEqual([]);
+    expect(result.data.hook).toBeUndefined();
+  });
+
+  it('stories: intents 가 어휘 밖이면 실패한다', () => {
+    const record = oneRow(
+      STORIES_HEADER,
+      'story-x,tulip-white,오스만 궁정의 튤립,궁정에서 귀하게 여겼다고 전해져요.,turkey,ottoman,Wikipedia — Tulip,https://en.wikipedia.org/wiki/Tulip,varies,2026-08-14,note,mythic,사과,',
+    );
+    const result = StoryRowSchema.safeParse(record);
+    expect(result.success).toBe(false);
+    expect(failedColumns(result)).toContain('intents.0');
   });
 
   it('pet_safety: toxic=true 인데 대체 꽃이 없으면 실패한다', () => {
@@ -398,6 +472,29 @@ describe('교차 검증', () => {
     const { checks, issues } = crossValidate(broken);
     expect(issues.some((issue) => issue.file === 'stories.csv')).toBe(true);
     expect(checks.find((c) => c.name.includes('참조'))?.ok).toBe(false);
+  });
+
+  it('stories 의 어휘 밖 mood·intent 를 잡아낸다', () => {
+    const { dataset } = loadDataset();
+    const broken: SeedDataset = {
+      ...dataset,
+      stories: dataset.stories.map((row, index) =>
+        index === 0
+          ? {
+              ...row,
+              value: {
+                ...row.value,
+                moods: ['무서운' as unknown as StoryMood],
+                intents: ['사과' as unknown as Intent],
+              },
+            }
+          : row,
+      ) as typeof dataset.stories,
+    };
+    const { checks, issues } = crossValidate(broken);
+    expect(issues.some((issue) => issue.message.includes('무서운'))).toBe(true);
+    expect(issues.some((issue) => issue.column === 'intents')).toBe(true);
+    expect(checks.find((c) => c.name.includes('공유 어휘'))?.ok).toBe(false);
   });
 
   it('오류 메시지가 [파일명:행번호] 컬럼 — 메시지 형식이다', () => {

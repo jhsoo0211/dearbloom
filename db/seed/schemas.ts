@@ -52,6 +52,20 @@ export const CONFIDENCE_LEVELS = ['repeated', 'varies', 'single_source'] as cons
 
 export const QUOTE_LICENSES = ['pd', 'original'] as const;
 
+/**
+ * 이야기의 분위기 태그(stories.moods).
+ * 상황(intent)에 딱 맞는 이야기가 없을 때, 선별기가 "이 상황이면 이런 결의 이야기"로
+ * 대신 고르는 축이다. 대응표의 단일 원본은 `src/lib/engine/stories.ts` 의 MOOD_AFFINITY.
+ */
+export const STORY_MOODS = [
+  'romantic',
+  'tragic',
+  'funny',
+  'mythic',
+  'dramatic',
+  'healing',
+] as const;
+
 export type RelationshipType = (typeof RELATIONSHIP_TYPES)[number];
 export type Intent = (typeof INTENTS)[number];
 export type Tone = (typeof TONES)[number];
@@ -60,6 +74,7 @@ export type Species = (typeof SPECIES)[number];
 export type Severity = (typeof SEVERITIES)[number];
 export type ConfidenceLevel = (typeof CONFIDENCE_LEVELS)[number];
 export type QuoteLicense = (typeof QUOTE_LICENSES)[number];
+export type StoryMood = (typeof STORY_MOODS)[number];
 
 /* ------------------------------------------------------------------ *
  * 변환 코덱
@@ -234,6 +249,29 @@ function optionalEnum<T extends readonly [string, ...string[]]>(label: string, v
   );
 }
 
+/** 최소 1개가 필요한 파이프 배열 + 원소별 어휘 검사. */
+function requiredEnumList<T extends readonly [string, ...string[]]>(label: string, values: T) {
+  return z
+    .string({ error: `${label}: 필수 값입니다` })
+    .transform(splitPipe)
+    .pipe(
+      z
+        .array(z.enum(values, { error: `${label}: ${values.join(' | ')} 중 하나여야 합니다` }))
+        .min(1, { error: `${label}: 최소 1개 이상 필요합니다` }),
+    );
+}
+
+/** 선택 파이프 배열 + 원소별 어휘 검사. 비어 있으면 빈 배열(= 조건 없음). */
+function optionalEnumList<T extends readonly [string, ...string[]]>(label: string, values: T) {
+  return z
+    .string()
+    .optional()
+    .transform(splitPipe)
+    .pipe(
+      z.array(z.enum(values, { error: `${label}: ${values.join(' | ')} 중 하나여야 합니다` })),
+    );
+}
+
 /* ------------------------------------------------------------------ *
  * 행 스키마
  * ------------------------------------------------------------------ */
@@ -399,6 +437,12 @@ export const PetSafetyRowSchema = z
  * stories.csv — 꽃에 얽힌 일화.
  * 꽃말과 같은 원칙: 출처 없는 이야기는 싣지 않는다(source_url 필수).
  * 어디까지 확인된 이야기인지는 confidence_level 로 말한다.
+ *
+ * 선별 태그 3종(선별기: `src/lib/engine/stories.ts` 의 pickStories)
+ *   moods   — 이야기의 결. 최소 1개 필수. 첫 값이 대표 분위기이며 목록의 다양성 기준이 된다.
+ *   intents — 이 이야기가 특히 어울리는 상황. **비워 두면 "모든 상황"** 이라는 뜻이다.
+ *             (없음을 뜻하려고 자리표시자를 넣지 않는다.)
+ *   hook    — 목록에서 먼저 보여 줄 한 줄 후킹 문장(선택).
  */
 export const StoryRowSchema = z.object({
   story_id: requiredText('story_id'),
@@ -412,6 +456,9 @@ export const StoryRowSchema = z.object({
   confidence_level: requiredEnum('confidence_level', CONFIDENCE_LEVELS),
   reviewed_at: requiredDate('reviewed_at'),
   editorial_note: optionalText(),
+  moods: requiredEnumList('moods', STORY_MOODS),
+  intents: optionalEnumList('intents', INTENTS),
+  hook: optionalText(),
 });
 
 export type FlowerRow = z.output<typeof FlowerRowSchema>;
@@ -554,7 +601,10 @@ export interface CrossValidateResult {
  *     pet_safety 가 제안하는 대체 꽃(safe_alternative_flower_ids)도 같이 본다.
  *  2. 반려동물 안전성 커버리지 — 모든 꽃이 cat·dog 두 종 모두에 대해 판정을 갖는가.
  *     "모르면 표시 안 함"이 아니라 "모르면 시드 실패"로 막는다.
- *  3. 공유 어휘 일치 — rules / templates 의 relationship_type·intent·tone 이 어휘 안에 있는가.
+ *  3. 공유 어휘 일치 — rules / templates 의 relationship_type·intent·tone,
+ *     그리고 stories 의 moods·intents 가 어휘 안에 있는가.
+ *     행 스키마가 이미 enum 으로 막지만, 어휘가 늘어날 때 파일마다 따로 새지 않도록
+ *     "모든 파일이 같은 어휘를 쓴다"는 사실을 여기서 한 번 더 못 박는다.
  */
 export function crossValidate(data: SeedDataset): CrossValidateResult {
   const checks: CrossCheckResult[] = [];
@@ -643,6 +693,7 @@ export function crossValidate(data: SeedDataset): CrossValidateResult {
   const relationships = new Set<string>(RELATIONSHIP_TYPES);
   const intents = new Set<string>(INTENTS);
   const tones = new Set<string>(TONES);
+  const moods = new Set<string>(STORY_MOODS);
 
   const check = (
     key: SeedFileKey,
@@ -661,6 +712,17 @@ export function crossValidate(data: SeedDataset): CrossValidateResult {
     }
   };
 
+  /** 파이프 배열 컬럼(moods·intents)은 원소를 하나씩 본다. */
+  const checkEach = (
+    key: SeedFileKey,
+    line: number,
+    column: string,
+    values: readonly string[],
+    allowed: Set<string>,
+  ) => {
+    for (const value of values) check(key, line, column, value, allowed);
+  };
+
   for (const row of data.rules) {
     check('rules', row.line, 'relationship_type', row.value.relationship_type, relationships);
     check('rules', row.line, 'intent', row.value.intent, intents);
@@ -670,13 +732,17 @@ export function crossValidate(data: SeedDataset): CrossValidateResult {
     check('templates', row.line, 'intent', row.value.intent, intents);
     check('templates', row.line, 'tone', row.value.tone, tones);
   }
+  for (const row of data.stories) {
+    checkEach('stories', row.line, 'moods', row.value.moods, moods);
+    checkEach('stories', row.line, 'intents', row.value.intents, intents);
+  }
   const vocabFailures = issues.length - vocabBefore;
   checks.push({
-    name: '공유 어휘 일치 (relationship·intent·tone)',
+    name: '공유 어휘 일치 (relationship·intent·tone·mood)',
     ok: vocabFailures === 0,
     detail:
       vocabFailures === 0
-        ? `rules ${data.rules.length}행 · templates ${data.templates.length}행 모두 어휘 안에 있음`
+        ? `rules ${data.rules.length}행 · templates ${data.templates.length}행 · stories ${data.stories.length}행 모두 어휘 안에 있음`
         : `어휘 밖의 값 ${vocabFailures}건`,
   });
 

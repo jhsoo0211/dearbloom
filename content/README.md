@@ -57,10 +57,34 @@ npm run seed:apply    # 실제 upsert (Supabase 환경변수 필요)
 `uk`, `western`, `greece-rome` 처럼 소문자 slug 로 적고, `flower_id` 는 반드시
 `flowers.csv` 의 `id` 중 하나여야 한다(교차 검증이 막는다).
 
+#### 선별 태그 — `moods` / `intents` / `hook`
+
+한 꽃에 이야기가 여러 편 쌓이면 "무엇을 먼저 보여 줄까"가 문제가 된다.
+그 순서를 정하는 것이 이 세 컬럼이고, 실제로 고르는 쪽은
+`src/lib/engine/stories.ts` 의 `pickStories()` 다.
+
+| 컬럼 | 필수 | 뜻 |
+|---|---|---|
+| `moods` | **필수(최소 1개)** | 이야기의 결. 파이프 구분. **첫 값이 대표 분위기**이며 목록의 다양성 기준이 된다. |
+| `intents` | 선택 | 이 이야기가 특히 어울리는 상황. **비워 두면 "모든 상황"** 이라는 뜻이다. |
+| `hook` | 선택 | 목록에서 본문보다 먼저 보여 줄 한 줄. 예: `알뿌리 하나가 집 한 채 값이던 시절이 있었어요.` |
+
+- `intents` 를 비우는 것과 채우는 것은 뜻이 다르다. 비우면 어떤 상황에서든 후보로 남고,
+  채우면 그 상황에서 **1순위로 올라가는 대신** 다른 상황에서는 대표 자리를 양보한다.
+  "아직 안 정했다"는 뜻으로 아무 값이나 넣지 말고 그냥 비워 둔다.
+- `moods` 를 여러 개 적을 때는 **가장 대표적인 결을 맨 앞에** 둔다. 목록이 같은 결로
+  줄줄이 이어지지 않게 하는 판단이 첫 값만 본다.
+- 상황 태그가 없을 때 대신 쓰는 상황↔결 대응은 `MOOD_AFFINITY`(같은 파일)가 단일 원본이다.
+  현재: `apology`→healing·tragic / `confession`→romantic / `gratitude`→healing·mythic /
+  `celebration`→funny·dramatic / `comfort`→healing / `anniversary`→romantic·mythic /
+  `just_because`→funny·mythic.
+
 ### 특히 자주 걸리는 규칙
 
 - `meanings.source_url` 이 비면 **시드 실패**. 출처 없는 꽃말은 싣지 않는다.
 - `stories.source_url` 도 마찬가지로 필수다. 출처 없는 일화는 싣지 않는다.
+- `stories.moods` 는 최소 1개 필수다. 빈 값이면 시드 실패.
+  (`stories.intents` 는 반대로 비워 두는 것이 "모든 상황"이라는 정상 값이다.)
 - `rules` 의 `fit_score`(0~100) 와 `avoid_reason` 은 **정확히 하나만** 채운다.
   추천 규칙이면 점수를, 회피 규칙이면 이유를 쓴다.
 - `quotes.license = pd` 이면 `source_url` 필수(퍼블릭 도메인 근거).
@@ -81,6 +105,9 @@ npm run seed:apply    # 실제 upsert (Supabase 환경변수 필요)
 | `severity` | `none` `mild_gi` `serious` `life_threatening` |
 | `confidence_level` | `repeated` `varies` `single_source` |
 | `quotes.license` | `pd` `original` |
+| `stories.moods` | `romantic` `tragic` `funny` `mythic` `dramatic` `healing` |
+
+`stories.intents` 는 위 `intent` 어휘를 그대로 쓰되 파이프로 여러 개를 적을 수 있다.
 
 `flowers.aesthetic_tags` 는 페르소나(받는 사람의 분위기) 태그와 같은 어휘를 쓴다:
 `calm`(차분한) `vivid`(화려한) `cute`(귀여운) `elegant`(우아한) `minimal`(미니멀).

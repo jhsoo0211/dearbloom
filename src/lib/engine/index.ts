@@ -39,5 +39,6 @@ export * from './explain';
 export * from './group';
 export * from './normalize';
 export * from './score';
+export * from './stories';
 export * from './types';
 export * from './weights';

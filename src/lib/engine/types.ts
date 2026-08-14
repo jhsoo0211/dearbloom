@@ -21,6 +21,12 @@ export type Tone = 'plain' | 'sincere' | 'romantic' | 'playful';
  * flowers.csv 의 aesthetic_tags 도 같은 어휘를 쓴다.
  */
 export type RecipientTrait = 'calm' | 'vivid' | 'cute' | 'elegant' | 'minimal';
+/**
+ * 이야기의 결(stories.csv 의 moods).
+ * 상황에 딱 맞는 이야기가 없을 때 선별기가 대신 잡는 축이다.
+ * intent → 어울리는 mood 대응표는 stories.ts 의 MOOD_AFFINITY 가 단일 원본이다.
+ */
+export type StoryMood = 'romantic' | 'tragic' | 'funny' | 'mythic' | 'dramatic' | 'healing';
 export type Species = 'cat' | 'dog';
 export type Severity = 'none' | 'mild_gi' | 'serious' | 'life_threatening';
 export type SeasonStatus = 'in_season' | 'limited' | 'out_of_season' | 'unknown';
@@ -89,6 +95,27 @@ export interface FlowerMeaningRow {
   confidenceLevel: 'repeated' | 'varies' | 'single_source';
 }
 
+/**
+ * 꽃에 얽힌 이야기 한 편. stories.csv 한 행에 대응한다.
+ *   moods    — 이야기의 결. 최소 1개이며 moods[0] 이 대표 분위기(목록 다양성 기준)다.
+ *   intents  — 특히 어울리는 상황. **비어 있거나 없으면 "모든 상황"** 이라는 뜻이다.
+ *   hook     — 본문 앞에 먼저 보여 줄 한 줄.
+ */
+export interface StoryRow {
+  storyId: string;
+  flowerId: string;
+  title: string;
+  storyKo: string;
+  cultureRegion?: string;
+  era?: string;
+  sourceTitle?: string;
+  sourceUrl: string;
+  confidenceLevel: 'repeated' | 'varies' | 'single_source';
+  moods: StoryMood[];
+  intents?: Intent[];
+  hook?: string;
+}
+
 export interface RecommendationRuleRow {
   ruleId: RuleId;
   relationship?: Relationship;
@@ -108,6 +135,12 @@ export interface RuleSet {
   rules: RecommendationRuleRow[];
   /** 색상 추천에 쓰는 꽃말 표. 없으면 색은 제안하되 꽃말은 비워 둔다. */
   meanings?: FlowerMeaningRow[];
+  /**
+   * 꽃별 이야기 모음. recommend() 는 이 값을 쓰지 않는다
+   * (선별은 독립 함수 pickStories 가 하고, API 레이어가 추천 결과와 조합한다).
+   * 데이터 묶음을 한 덩어리로 넘기려는 호출자를 위해 선택 필드로만 열어 둔다.
+   */
+  stories?: StoryRow[];
 }
 
 export interface Weights {

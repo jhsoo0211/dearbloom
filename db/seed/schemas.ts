@@ -66,6 +66,16 @@ export const STORY_MOODS = [
   'healing',
 ] as const;
 
+/**
+ * 이야기의 갈래(stories.story_type) — design-spec §1.5f.
+ *   folklore — 설화·전승·신화
+ *   history  — 기록으로 확인되는 역사·사실
+ *   literary — 특정 문학 작품에서 온 이야기
+ *   original — dearbloom 창작. **화면에 "dearbloom이 지어 본 이야기예요" 라벨이 필수**이며,
+ *              네 갈래 중 유일하게 출처(source_url)가 면제된다.
+ */
+export const STORY_TYPES = ['folklore', 'history', 'literary', 'original'] as const;
+
 export type RelationshipType = (typeof RELATIONSHIP_TYPES)[number];
 export type Intent = (typeof INTENTS)[number];
 export type Tone = (typeof TONES)[number];
@@ -75,6 +85,7 @@ export type Severity = (typeof SEVERITIES)[number];
 export type ConfidenceLevel = (typeof CONFIDENCE_LEVELS)[number];
 export type QuoteLicense = (typeof QUOTE_LICENSES)[number];
 export type StoryMood = (typeof STORY_MOODS)[number];
+export type StoryType = (typeof STORY_TYPES)[number];
 
 /* ------------------------------------------------------------------ *
  * 변환 코덱
@@ -435,8 +446,14 @@ export const PetSafetyRowSchema = z
 
 /**
  * stories.csv — 꽃에 얽힌 일화.
- * 꽃말과 같은 원칙: 출처 없는 이야기는 싣지 않는다(source_url 필수).
+ * 꽃말과 같은 원칙: 출처 없는 이야기는 싣지 않는다.
  * 어디까지 확인된 이야기인지는 confidence_level 로 말한다.
+ *
+ * `story_type` 은 이야기의 갈래(folklore | history | literary | original)이고,
+ * **출처 규칙이 여기에 매달려 있다**: `original`(dearbloom 창작)만 source_url 이 면제되고
+ * 나머지 셋은 필수다. 창작을 사실처럼 보이게 하지 않는 것이 유일한 금지선이라,
+ * 출처가 없다는 사실 자체가 "이건 우리가 지어낸 이야기"라는 표시가 되게 묶어 둔다.
+ * (DB 쪽 같은 규칙: 0006_story_type.sql 의 flower_stories_source_required CHECK)
  *
  * 선별 태그 3종(선별기: `src/lib/engine/stories.ts` 의 pickStories)
  *   moods   — 이야기의 결. 최소 1개 필수. 첫 값이 대표 분위기이며 목록의 다양성 기준이 된다.
@@ -444,22 +461,34 @@ export const PetSafetyRowSchema = z
  *             (없음을 뜻하려고 자리표시자를 넣지 않는다.)
  *   hook    — 목록에서 먼저 보여 줄 한 줄 후킹 문장(선택).
  */
-export const StoryRowSchema = z.object({
-  story_id: requiredText('story_id'),
-  flower_id: requiredSlug('flower_id'),
-  title: requiredText('title'),
-  story_ko: requiredText('story_ko'),
-  culture_region: optionalText(),
-  era: optionalText(),
-  source_title: optionalText(),
-  source_url: requiredUrl('source_url'),
-  confidence_level: requiredEnum('confidence_level', CONFIDENCE_LEVELS),
-  reviewed_at: requiredDate('reviewed_at'),
-  editorial_note: optionalText(),
-  moods: requiredEnumList('moods', STORY_MOODS),
-  intents: optionalEnumList('intents', INTENTS),
-  hook: optionalText(),
-});
+export const StoryRowSchema = z
+  .object({
+    story_id: requiredText('story_id'),
+    flower_id: requiredSlug('flower_id'),
+    title: requiredText('title'),
+    story_ko: requiredText('story_ko'),
+    culture_region: optionalText(),
+    era: optionalText(),
+    source_title: optionalText(),
+    source_url: optionalUrl('source_url'),
+    confidence_level: requiredEnum('confidence_level', CONFIDENCE_LEVELS),
+    story_type: requiredEnum('story_type', STORY_TYPES),
+    reviewed_at: requiredDate('reviewed_at'),
+    editorial_note: optionalText(),
+    moods: requiredEnumList('moods', STORY_MOODS),
+    intents: optionalEnumList('intents', INTENTS),
+    hook: optionalText(),
+  })
+  .superRefine((row, ctx) => {
+    if (row.story_type !== 'original' && row.source_url === undefined) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['source_url'],
+        message:
+          'story_type=original 인 창작 이야기가 아니면 출처 source_url 이 필요합니다',
+      });
+    }
+  });
 
 export type FlowerRow = z.output<typeof FlowerRowSchema>;
 export type MeaningRow = z.output<typeof MeaningRowSchema>;
@@ -602,7 +631,7 @@ export interface CrossValidateResult {
  *  2. 반려동물 안전성 커버리지 — 모든 꽃이 cat·dog 두 종 모두에 대해 판정을 갖는가.
  *     "모르면 표시 안 함"이 아니라 "모르면 시드 실패"로 막는다.
  *  3. 공유 어휘 일치 — rules / templates 의 relationship_type·intent·tone,
- *     그리고 stories 의 moods·intents 가 어휘 안에 있는가.
+ *     그리고 stories 의 moods·intents·story_type 이 어휘 안에 있는가.
  *     행 스키마가 이미 enum 으로 막지만, 어휘가 늘어날 때 파일마다 따로 새지 않도록
  *     "모든 파일이 같은 어휘를 쓴다"는 사실을 여기서 한 번 더 못 박는다.
  */
@@ -694,6 +723,7 @@ export function crossValidate(data: SeedDataset): CrossValidateResult {
   const intents = new Set<string>(INTENTS);
   const tones = new Set<string>(TONES);
   const moods = new Set<string>(STORY_MOODS);
+  const storyTypes = new Set<string>(STORY_TYPES);
 
   const check = (
     key: SeedFileKey,
@@ -735,10 +765,11 @@ export function crossValidate(data: SeedDataset): CrossValidateResult {
   for (const row of data.stories) {
     checkEach('stories', row.line, 'moods', row.value.moods, moods);
     checkEach('stories', row.line, 'intents', row.value.intents, intents);
+    check('stories', row.line, 'story_type', row.value.story_type, storyTypes);
   }
   const vocabFailures = issues.length - vocabBefore;
   checks.push({
-    name: '공유 어휘 일치 (relationship·intent·tone·mood)',
+    name: '공유 어휘 일치 (relationship·intent·tone·mood·story_type)',
     ok: vocabFailures === 0,
     detail:
       vocabFailures === 0

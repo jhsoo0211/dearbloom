@@ -27,6 +27,13 @@ export type RecipientTrait = 'calm' | 'vivid' | 'cute' | 'elegant' | 'minimal';
  * intent → 어울리는 mood 대응표는 stories.ts 의 MOOD_AFFINITY 가 단일 원본이다.
  */
 export type StoryMood = 'romantic' | 'tragic' | 'funny' | 'mythic' | 'dramatic' | 'healing';
+/**
+ * 이야기의 갈래(stories.csv 의 story_type) — design-spec §1.5f.
+ *   folklore(설화·전승) | history(역사) | literary(문학 유래) | original(dearbloom 창작)
+ * `original` 은 화면에 "dearbloom이 지어 본 이야기예요" 라벨이 필수이며,
+ * 네 갈래 중 유일하게 출처(sourceUrl)가 면제된다.
+ */
+export type StoryType = 'folklore' | 'history' | 'literary' | 'original';
 export type Species = 'cat' | 'dog';
 export type Severity = 'none' | 'mild_gi' | 'serious' | 'life_threatening';
 export type SeasonStatus = 'in_season' | 'limited' | 'out_of_season' | 'unknown';
@@ -97,9 +104,12 @@ export interface FlowerMeaningRow {
 
 /**
  * 꽃에 얽힌 이야기 한 편. stories.csv 한 행에 대응한다.
- *   moods    — 이야기의 결. 최소 1개이며 moods[0] 이 대표 분위기(목록 다양성 기준)다.
- *   intents  — 특히 어울리는 상황. **비어 있거나 없으면 "모든 상황"** 이라는 뜻이다.
- *   hook     — 본문 앞에 먼저 보여 줄 한 줄.
+ *   moods     — 이야기의 결. 최소 1개이며 moods[0] 이 대표 분위기(목록 다양성 기준)다.
+ *   intents   — 특히 어울리는 상황. **비어 있거나 없으면 "모든 상황"** 이라는 뜻이다.
+ *   hook      — 본문 앞에 먼저 보여 줄 한 줄.
+ *   storyType — 이야기의 갈래. 없으면 'folklore' 로 본다(CSV·DB 의 기본값과 같다).
+ *   sourceUrl — storyType 이 'original' 인 창작 이야기에서만 비어 있을 수 있다.
+ *               화면은 'original' 을 반드시 창작 라벨과 함께 보여 준다.
  */
 export interface StoryRow {
   storyId: string;
@@ -109,8 +119,9 @@ export interface StoryRow {
   cultureRegion?: string;
   era?: string;
   sourceTitle?: string;
-  sourceUrl: string;
+  sourceUrl?: string;
   confidenceLevel: 'repeated' | 'varies' | 'single_source';
+  storyType?: StoryType;
   moods: StoryMood[];
   intents?: Intent[];
   hook?: string;

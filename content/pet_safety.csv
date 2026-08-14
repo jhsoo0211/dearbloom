@@ -9,3 +9,11 @@ lily-asiatic,cat,true,life_threatening,flower|leaf|pollen|vase_water,freesia|ger
 lily-asiatic,dog,true,mild_gi,flower|leaf,freesia|gerbera,https://www.aspca.org/pet-care/animal-poison-control/toxic-and-non-toxic-plants/lily,2026-08-14
 gerbera,cat,false,none,,,https://www.aspca.org/pet-care/animal-poison-control/toxic-and-non-toxic-plants/gerber-daisy,2026-08-14
 gerbera,dog,false,none,,,https://www.aspca.org/pet-care/animal-poison-control/toxic-and-non-toxic-plants/gerber-daisy,2026-08-14
+anemone,cat,true,mild_gi,flower|leaf|stem|root|seed|sap,freesia|gerbera,https://plants.ces.ncsu.edu/plants/anemone-coronaria/,2026-08-14
+anemone,dog,true,mild_gi,flower|leaf|stem|root|seed|sap,freesia|gerbera,https://plants.ces.ncsu.edu/plants/anemone-coronaria/,2026-08-14
+hellebore,cat,true,serious,flower|leaf|stem|root|sap,freesia|gerbera,https://www.aspca.org/pet-care/animal-poison-control/toxic-and-non-toxic-plants/hellebore,2026-08-14
+hellebore,dog,true,serious,flower|leaf|stem|root|sap,freesia|gerbera,https://www.aspca.org/pet-care/animal-poison-control/toxic-and-non-toxic-plants/hellebore,2026-08-14
+hyacinth,cat,true,serious,bulb|flower|leaf|stem,freesia|gerbera,https://www.aspca.org/pet-care/animal-poison-control/toxic-and-non-toxic-plants/hyacinth,2026-08-14
+hyacinth,dog,true,serious,bulb|flower|leaf|stem,freesia|gerbera,https://www.aspca.org/pet-care/animal-poison-control/toxic-and-non-toxic-plants/hyacinth,2026-08-14
+peony,cat,true,mild_gi,root|bark|flower|leaf|stem,freesia|gerbera,https://www.aspca.org/pet-care/animal-poison-control/toxic-and-non-toxic-plants/peony,2026-08-14
+peony,dog,true,mild_gi,root|bark|flower|leaf|stem,freesia|gerbera,https://www.aspca.org/pet-care/animal-poison-control/toxic-and-non-toxic-plants/peony,2026-08-14

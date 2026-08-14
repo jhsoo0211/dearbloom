@@ -7,13 +7,18 @@ DB는 이 CSV에서 시드(upsert)될 뿐, 반대로 DB를 직접 고치지 않�
 
 | 파일 | 내용 | 현재 행 수 |
 |---|---|---|
-| `flowers.csv` | 꽃 기본 정보 | 5 |
-| `meanings.csv` | 꽃말(출처 필수) | 11 |
-| `stories.csv` | 꽃에 얽힌 일화(출처 필수) | 5 |
+| `flowers.csv` | 꽃 기본 정보 | 9 |
+| `meanings.csv` | 꽃말(출처 필수) | 20 |
+| `stories.csv` | 꽃에 얽힌 일화(창작 외 출처 필수) | 61 |
 | `rules.csv` | 상황 → 꽃 추천/회피 규칙 | 6 |
 | `templates.csv` | 메시지 템플릿 | 3 |
 | `quotes.csv` | 인용문 | 3 |
-| `pet_safety.csv` | 반려동물 안전성(꽃 × cat/dog 전수) | 10 |
+| `pet_safety.csv` | 반려동물 안전성(꽃 × cat/dog 전수) | 18 |
+
+`rules.csv` 는 5종(`rose-red` `tulip-white` `freesia` `lily-asiatic` `gerbera`)만 다룬다.
+2026-08-14에 들어온 4종(`anemone` `hellebore` `hyacinth` `peony`)은 **이야기·도감용으로 먼저
+존재**하며, 추천 규칙은 편집 판단이 끝난 뒤에 붙인다. 규칙이 없는 꽃은 추천 결과에 오르지
+않을 뿐 교차 검증에는 걸리지 않는다(반려동물 판정만 전수로 필요하다).
 
 ## 편집 규칙
 
@@ -49,13 +54,34 @@ npm run seed:apply    # 실제 upsert (Supabase 환경변수 필요)
 ### `stories.csv` — 꽃에 얽힌 일화
 
 한 꽃에 여러 이야기를 붙일 수 있다(문화권·시대별로 한 행씩). 꽃말과 같은 원칙을 따른다:
-`source_url` 이 없으면 **시드 실패**이고, 어디까지 확인된 이야기인지는 `confidence_level`
+`source_url` 이 없으면 **시드 실패**이고(단 `story_type = original` 만 면제 — 아래 참조),
+어디까지 확인된 이야기인지는 `confidence_level`
 (`repeated` / `varies` / `single_source`)로 말한다. 본문(`story_ko`)은 3~4문장 한국어로 쓰되
 단정하지 말고 "~라는 설이 유력해요 / 전해져요" 처럼 확인된 만큼만 말한다. 출처가 다루는 대상이
 그 꽃과 미묘하게 다르면(예: 마돈나 백합 이야기를 아시아틱 백합에 붙일 때) 본문에서 그 사실을
 밝히고 `editorial_note` 에도 남긴다. `culture_region` 은 `turkey`, `netherlands`, `korea`,
 `uk`, `western`, `greece-rome` 처럼 소문자 slug 로 적고, `flower_id` 는 반드시
 `flowers.csv` 의 `id` 중 하나여야 한다(교차 검증이 막는다).
+
+#### `story_type` — 이야기의 갈래, 그리고 출처 면제
+
+design-spec §1.5f. 네 값만 쓴다.
+
+| 값 | 뜻 | 출처 |
+|---|---|---|
+| `folklore` | 설화·전승·신화 | 필수 |
+| `history` | 기록으로 확인되는 역사·사실 | 필수 |
+| `literary` | 특정 문학 작품에서 온 이야기 | 필수 |
+| `original` | **dearbloom 창작** | **면제** |
+
+- **`original` 은 화면에 "dearbloom이 지어 본 이야기예요" 라벨이 필수다.** 창작을 사실처럼
+  보이게 하지 않는 것이 유일한 금지선이라, 출처 면제와 라벨은 한 세트로 움직인다.
+- 그래서 `original` 이 아닌 행에 `source_url` 이 비면 시드가 실패한다(`db/seed/schemas.ts`).
+  DB에도 같은 규칙이 있다: `0006_story_type.sql` 의 `flower_stories_source_required` CHECK.
+- 실존 인물·실존 브랜드를 소재로 한 `original` 은 쓰지 않는다(명예·권리). 신화 인물,
+  역사 인물의 기록된 일화는 `folklore` / `history` 로 실으면 된다.
+- 사실이되 신화도 문학도 아닌 이야기(현대의 재배·유통·과학 이야기 등)는 `history` 로 넣는다.
+  네 갈래에서 "출처가 있는 논픽션" 자리는 `history` 하나뿐이다.
 
 #### 선별 태그 — `moods` / `intents` / `hook`
 
@@ -83,6 +109,8 @@ npm run seed:apply    # 실제 upsert (Supabase 환경변수 필요)
 
 - `meanings.source_url` 이 비면 **시드 실패**. 출처 없는 꽃말은 싣지 않는다.
 - `stories.source_url` 도 마찬가지로 필수다. 출처 없는 일화는 싣지 않는다.
+  **유일한 예외가 `story_type = original`**(dearbloom 창작)이고, 그 대신 화면 창작 라벨이 붙는다.
+- `stories.story_type` 은 필수다. 비어 있거나 네 값 밖이면 시드 실패.
 - `stories.moods` 는 최소 1개 필수다. 빈 값이면 시드 실패.
   (`stories.intents` 는 반대로 비워 두는 것이 "모든 상황"이라는 정상 값이다.)
 - `rules` 의 `fit_score`(0~100) 와 `avoid_reason` 은 **정확히 하나만** 채운다.
@@ -106,6 +134,7 @@ npm run seed:apply    # 실제 upsert (Supabase 환경변수 필요)
 | `confidence_level` | `repeated` `varies` `single_source` |
 | `quotes.license` | `pd` `original` |
 | `stories.moods` | `romantic` `tragic` `funny` `mythic` `dramatic` `healing` |
+| `stories.story_type` | `folklore` `history` `literary` `original` |
 
 `stories.intents` 는 위 `intent` 어휘를 그대로 쓰되 파이프로 여러 개를 적을 수 있다.
 
@@ -115,5 +144,5 @@ npm run seed:apply    # 실제 upsert (Supabase 환경변수 필요)
 어휘를 벗어나면 그 꽃은 페르소나 점수를 영영 못 받는다. 한국어 라벨 ↔ slug 대응은
 `src/lib/engine/normalize.ts` 의 `TRAIT_LABELS` 가 단일 원본이다.
 
-`flower_id` 는 `flowers.csv` 의 `id` 를 그대로 참조한다. 현재: `rose-red`, `tulip-white`,
-`freesia`, `lily-asiatic`, `gerbera`.
+`flower_id` 는 `flowers.csv` 의 `id` 를 그대로 참조한다. 현재 9종: `rose-red`, `tulip-white`,
+`freesia`, `lily-asiatic`, `gerbera`, `anemone`, `hellebore`, `hyacinth`, `peony`.

@@ -8,7 +8,7 @@ DB는 이 CSV에서 시드(upsert)될 뿐, 반대로 DB를 직접 고치지 않�
 | 파일 | 내용 | 현재 행 수 |
 |---|---|---|
 | `flowers.csv` | 꽃 기본 정보 | 9 |
-| `meanings.csv` | 꽃말(출처 필수) | 20 |
+| `meanings.csv` | 꽃말(출처 필수) | 59 |
 | `stories.csv` | 꽃에 얽힌 일화(창작 외 출처 필수) | 61 |
 | `rules.csv` | 상황 → 꽃 추천/회피 규칙 | 6 |
 | `templates.csv` | 메시지 템플릿 | 3 |
@@ -33,6 +33,8 @@ DB는 이 CSV에서 시드(upsert)될 뿐, 반대로 DB를 직접 고치지 않�
   `meanings.editorial_note`, `stories.editorial_note`, `rules.note` 에 `seed-sample:` 접두사를 붙인다.
   `templates.csv` / `quotes.csv` / `pet_safety.csv` 에는 메모 컬럼이 없으므로,
   **현재 저장된 전 행이 샘플**이라는 사실을 이 문서로 대신 기록한다.
+- **실자료 조사로 들어온 행은 `seed-v2:` 접두사를 쓴다.** 현재 `meanings.csv` 의 뒤쪽 39행이
+  여기 해당한다(2026-08-15 조사). 접두사로 "검토 전 샘플"과 "출처를 직접 열어 본 행"을 구분한다.
 
 ## 절대 하지 말 것
 
@@ -50,6 +52,23 @@ npm run seed:apply    # 실제 upsert (Supabase 환경변수 필요)
 `npm run seed` 는 오류가 하나라도 있으면 exit 1 로 끝난다. CI와 동일한 기준이다.
 
 검증 규칙의 단일 원본은 `db/seed/schemas.ts` 다. 컬럼을 추가·변경하면 스키마를 먼저 고친다.
+
+### `meanings.csv` — 꽃말
+
+한 꽃에 여러 꽃말을 붙인다. **색(`color`) × 문화권(`culture_region`) × 시대(`era`)** 로 한 행씩
+쌓는 것이 기본이고, 같은 꽃의 상반된 해석은 지우지 말고 나란히 싣는다(design-spec §1.5f).
+어디까지 확인된 해석인지는 `confidence_level` 로 말한다. `caution_note` 는 "이 색·이 뜻은
+오해될 수 있어요" 를 알리는 자리다.
+
+- `color` 는 `flowers.csv` 의 `colors` 와 같은 영문 slug 를 쓰되, **비워 두면 "색과 무관한 꽃말"**
+  이라는 뜻이다(문화권 해석·유래 등). 자리표시자를 넣지 않는다.
+- `flowers.colors` 에 없는 색의 꽃말도 실을 수 있다(자료가 먼저 앞서갈 수 있다).
+  다만 색 선택 UI 는 `flowers.colors` 를 기준으로 그리므로, 그런 행은 `editorial_note` 에
+  그 사실을 남긴다. 현재 `tulip-white` 의 `red`·`yellow`·`variegated`, `rose-red` 의 `yellow` 가 여기 해당한다.
+- **출처가 확실치 않은 공공 자료는 단어만 참조하고 문장은 직접 쓴다.** 국립원예특작과학원
+  꽃말사전 유래 행은 `source_id` 를 `nihhs-*` 로 통일해 두었다(공공누리 유형 미확정 —
+  근거와 판단은 `docs/meanings-research.md` §2).
+- 조사 경위·열람 URL·제외 판단은 **`docs/meanings-research.md`** 가 단일 원본이다.
 
 ### `stories.csv` — 꽃에 얽힌 일화
 

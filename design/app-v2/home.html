@@ -195,6 +195,22 @@ ul{padding:0;list-style:none}
 .chip-rose:hover{background:rgba(138,52,72,.26);border-color:rgba(138,52,72,.70)}
 .chip b{display:block;font-weight:600;color:inherit}
 
+/* ── 모드 4카드 ─────────────────────────────────────────── */
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mode{display:flex;flex-direction:column;gap:10px;min-height:130px;padding:16px 15px 15px;
+  border-radius:18px;cursor:pointer;
+  transition:transform 180ms var(--ease),background-color var(--dur) var(--ease)}
+.mode:hover{background:linear-gradient(180deg,rgba(246,241,232,.13),rgba(246,241,232,.05))}
+.mode:active{transform:scale(.98)}
+.mode .mic{display:grid;place-items:center;width:36px;height:36px;border-radius:12px;
+  background:rgba(246,241,232,.06);border:1px solid var(--hair);color:var(--gold);
+  transition:color var(--dur) var(--ease),border-color var(--dur) var(--ease)}
+.mode .mic svg{width:20px;height:20px}
+.mode b{font-size:15px;font-weight:600;letter-spacing:-.01em;color:var(--tx-1)}
+.mode .mtxt{font-size:13px;line-height:1.6;color:var(--tx-3)}
+.mode-lav .mic{background:rgba(131,119,156,.22);border-color:rgba(131,119,156,.52);color:var(--lav-lt)}
+.mode-lav b{color:var(--lav-lt)}
+
 /* ── 신뢰 3요소 ─────────────────────────────────────────── */
 .trust{display:grid;gap:10px}
 .trust li{display:flex;gap:13px;padding:16px 16px;border-radius:18px}
@@ -328,6 +344,43 @@ ul{padding:0;list-style:none}
         <b>마음을 전하고 싶어요</b>
       </a>
     </nav>
+
+    <section class="sect" aria-labelledby="mode-h">
+      <div class="sect-head">
+        <h2 class="overline" id="mode-h">Choose a mode</h2>
+        <span class="sect-line" aria-hidden="true"></span>
+      </div>
+      <nav class="modes" aria-label="전달 방식 고르기">
+        <a class="mode glass" href="question.html">
+          <span class="mic" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.2" r="3.6"/><path d="M5.4 20c0-3.6 2.9-6.3 6.6-6.3s6.6 2.7 6.6 6.3"/></svg>
+          </span>
+          <b>한 명에게</b>
+          <span class="mtxt">마음을 전할 한 사람이 있어요</span>
+        </a>
+        <a class="mode glass" href="group.html?mode=each">
+          <span class="mic" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.6" r="3.1"/><path d="M3.6 19.4c0-3 2.4-5.2 5.4-5.2s5.4 2.2 5.4 5.2"/><path d="M16.2 6.6a3.1 3.1 0 0 1 0 6"/><path d="M17.2 14.5c2.1.6 3.2 2.4 3.2 4.6"/></svg>
+          </span>
+          <b>여러 명 각각</b>
+          <span class="mtxt">여러 명에게 각자 다른 꽃을 주고 싶어요</span>
+        </a>
+        <a class="mode glass" href="group.html?mode=bouquet">
+          <span class="mic" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="4.9" r="2.5"/><circle cx="7.6" cy="7.4" r="2.5"/><circle cx="16.4" cy="7.4" r="2.5"/><path d="M12 7.4v6.2M9.1 9.5l2.4 4.1M14.9 9.5l-2.4 4.1"/><path d="M7.4 13.6h9.2L14.3 20.8H9.7z"/></svg>
+          </span>
+          <b>단체 부케</b>
+          <span class="mtxt">팀·모임에 함께 줄 꽃 한 다발</span>
+        </a>
+        <a class="mode glass mode-lav" href="question.html">
+          <span class="mic" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.4a7.3 7.3 0 0 1-7.3 7.3c-1.2 0-2.3-.3-3.3-.8L4.7 19.2 6 14.9A7.3 7.3 0 1 1 20 11.4z"/><path d="M12.4 14.5s-2.9-1.9-2.9-3.8a1.7 1.7 0 0 1 2.9-1.1 1.7 1.7 0 0 1 2.9 1.1c0 1.9-2.9 3.8-2.9 3.8z"/></svg>
+          </span>
+          <b>사과·화해</b>
+          <span class="mtxt">미안한 마음부터 전해야 해요</span>
+        </a>
+      </nav>
+    </section>
 
     <section class="sect">
       <div class="sect-head">

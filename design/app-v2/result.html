@@ -240,6 +240,58 @@ main{position:relative;z-index:1}
 .pet-note{font-size:13.5px;color:var(--tx-3)}
 .price{font-family:var(--font-serif);font-weight:400;font-size:19px;color:var(--tx-1)}
 
+/* ── 색상 재선택 ────────────────────────────────────────── */
+.pick-lede{font-size:14px;line-height:1.7;color:var(--tx-3);margin-bottom:14px}
+.swatches{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.sw{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;
+  min-height:80px;padding:11px 6px;border-radius:16px;cursor:pointer;
+  border:1px solid var(--hair);background:rgba(246,241,232,.035);
+  font-size:13.5px;font-weight:600;letter-spacing:.01em;color:var(--tx-2);
+  transition:background-color var(--dur) var(--ease),border-color var(--dur) var(--ease),
+    color var(--dur) var(--ease),box-shadow var(--dur) var(--ease),transform 180ms var(--ease)}
+.sw:hover{background:rgba(246,241,232,.09);border-color:rgba(246,241,232,.26);color:var(--tx-1)}
+.sw:active{transform:scale(.97)}
+.sw-dot{width:26px;height:26px;border-radius:50%;
+  box-shadow:inset 0 -3px 7px rgba(31,33,30,.24),0 1px 3px rgba(0,0,0,.4)}
+.sw-white{background:#FFFFFF;border:1px solid rgba(31,33,30,.38)}
+.sw-cream{background:var(--ivory)}
+.sw-pink{background:#E2CCD1}
+.sw-purple{background:var(--lavender)}
+.sw[aria-checked="true"]{color:var(--tx-1);border-color:rgba(200,150,62,.62);
+  background:rgba(200,150,62,.10);box-shadow:0 0 0 1px rgba(200,150,62,.26)}
+.pick-out{margin-top:18px}
+.pick-mean{position:relative;padding-left:16px;font-family:var(--font-serif);font-weight:300;
+  font-size:21px;line-height:1.55;color:var(--tx-1)}
+.pick-mean::before{content:"";position:absolute;left:0;top:5px;bottom:5px;width:2px;border-radius:2px;
+  background:linear-gradient(180deg,var(--rose),var(--gold))}
+.pick-note{display:flex;gap:9px;margin-top:14px;padding:12px 14px;border-radius:14px;
+  background:rgba(131,119,156,.16);border:1px solid rgba(131,119,156,.42);
+  font-size:13.5px;line-height:1.6;color:var(--tx-2)}
+.pick-note .nic{flex:none;color:var(--lav-lt)}
+.pick-note .nic svg{width:17px;height:17px}
+
+/* ── 꽃 이야기 · 나라별 꽃말 ────────────────────────────── */
+.story{padding:20px 18px}
+.story-body{font-size:15px;line-height:1.85;color:var(--tx-2)}
+.src-badge{display:inline-flex;align-items:center;gap:6px;margin-top:14px;min-height:28px;
+  padding:4px 11px;border-radius:999px;border:1px solid rgba(200,150,62,.46);
+  background:rgba(200,150,62,.07);color:var(--gold);font-size:12.5px;font-weight:600;line-height:1.45}
+.src-badge svg{flex:none;width:14px;height:14px}
+.lore-h{margin-top:24px;font-size:12px;font-weight:600;letter-spacing:.12em;color:var(--gold)}
+.lore{margin-top:10px;border-top:1px solid var(--hair-soft)}
+.lore .row{display:flex;gap:12px;align-items:flex-start;padding:12px 0;
+  border-bottom:1px solid var(--hair-soft)}
+.lore dt{flex:none;width:88px;font-size:13px;font-weight:600;color:var(--tx-3)}
+.lore dd{flex:1;min-width:0;font-size:14.5px;line-height:1.6;color:var(--tx-2)}
+.lore-note{margin-top:13px;font-size:13px;line-height:1.7;color:var(--tx-3)}
+.teaser{display:flex;align-items:center;gap:10px;min-height:54px;padding:0 16px;border-radius:16px;
+  border:1px solid var(--hair);background:rgba(246,241,232,.035);
+  font-size:14.5px;font-weight:600;color:var(--tx-1);cursor:pointer;
+  transition:background-color var(--dur) var(--ease),border-color var(--dur) var(--ease)}
+.teaser:hover{background:rgba(246,241,232,.10);border-color:rgba(246,241,232,.26)}
+.teaser .tar{flex:none;margin-left:auto;color:var(--gold)}
+.teaser .tar svg{width:17px;height:17px}
+
 /* ── 멘트 ───────────────────────────────────────────────── */
 .tones{display:flex;gap:6px;margin-top:2px;border-bottom:1px solid var(--hair)}
 .tones button{position:relative;padding:12px 14px 11px;min-height:46px;min-width:56px;cursor:pointer;
@@ -577,6 +629,82 @@ main{position:relative;z-index:1}
       </dl>
     </section>
 
+    <!-- ── 색상 재선택 ─────────────────────────────────── -->
+    <section class="sect" aria-labelledby="pick-h">
+      <div class="sect-head">
+        <h2 class="overline-ko" id="pick-h">이 색으로 주세요</h2>
+        <span class="sect-line" aria-hidden="true"></span>
+      </div>
+      <p class="pick-lede">다른 색이 더 그 사람답다면, 직접 골라보세요.</p>
+
+      <div class="swatches" id="colorChips" role="radiogroup" aria-labelledby="pick-h">
+        <button class="sw" type="button" role="radio" aria-checked="true" tabindex="0" data-color="흰">
+          <span class="sw-dot sw-white" aria-hidden="true"></span>
+          <span>흰</span>
+        </button>
+        <button class="sw" type="button" role="radio" aria-checked="false" tabindex="-1" data-color="크림">
+          <span class="sw-dot sw-cream" aria-hidden="true"></span>
+          <span>크림</span>
+        </button>
+        <button class="sw" type="button" role="radio" aria-checked="false" tabindex="-1" data-color="분홍">
+          <span class="sw-dot sw-pink" aria-hidden="true"></span>
+          <span>분홍</span>
+        </button>
+        <button class="sw" type="button" role="radio" aria-checked="false" tabindex="-1" data-color="보라">
+          <span class="sw-dot sw-purple" aria-hidden="true"></span>
+          <span>보라</span>
+        </button>
+      </div>
+
+      <div class="pick-out" aria-live="polite">
+        <p class="pick-mean" id="pickMean">&ldquo;용서, 새로운 시작&rdquo;</p>
+        <p class="trust-badge">
+          <svg class="pick-ic" data-ic="0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.6l4.2 4.2L19 7.2"/></svg>
+          <svg class="pick-ic" data-ic="1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" hidden><circle cx="12" cy="12" r="8.4"/><path d="M12 8v4.6M12 15.6v.1"/></svg>
+          <svg class="pick-ic" data-ic="2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" hidden><circle cx="12" cy="12" r="8.4"/><path d="M9.6 9.8a2.5 2.5 0 1 1 3.3 2.4c-.6.2-.9.7-.9 1.3v.4"/><path d="M12 16.9v.1"/></svg>
+          <span id="pickTrust">여러 자료에서 반복됨</span>
+        </p>
+        <p class="pick-note" id="pickNote" hidden>
+          <span class="nic" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.4"/><path d="M12 8v4.6M12 15.6v.1"/></svg>
+          </span>
+          <span>추천은 흰색이었어요 — 고른 색으로도 충분히 전해져요.</span>
+        </p>
+      </div>
+    </section>
+
+    <!-- ── 꽃 이야기 · 나라별 꽃말 ─────────────────────── -->
+    <section class="sect" aria-labelledby="story-h">
+      <div class="sect-head">
+        <h2 class="overline-ko" id="story-h">꽃 이야기</h2>
+        <span class="sect-line" aria-hidden="true"></span>
+      </div>
+
+      <div id="storyFull" hidden>
+        <article class="story glass">
+          <p class="story-body">튤립은 16~17세기 오스만 제국에서 &lsquo;신이 아끼는 꽃&rsquo;으로 불리며 궁정 문화의 중심에 있었어요. 이름도 터번을 뜻하는 &lsquo;튈벤트(t&uuml;lbend)&rsquo;에서 왔다는 설이 유력해요. 네덜란드로 건너간 뒤에는 알뿌리 하나가 집 한 채 값이 되었던 &lsquo;튤립 마니아&rsquo;(1637)를 일으킨, 사람 마음을 가장 크게 흔든 꽃이기도 해요.</p>
+          <p><span class="src-badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.4 5.2A1.8 1.8 0 0 1 7.2 3.4H18v13.4H7.2a1.8 1.8 0 0 0-1.8 1.8z"/><path d="M5.4 18.6a1.8 1.8 0 0 1 1.8-1.8H18v3.8H7.2a1.8 1.8 0 0 1-1.8-1.8z"/></svg>
+            출처: 브리태니커 · 위키피디아 Tulip mania · 검수 2026.08
+          </span></p>
+
+          <h3 class="lore-h">나라별 꽃말</h3>
+          <dl class="lore">
+            <div class="row"><dt>터키·오스만</dt><dd>신성함, 낙원의 꽃</dd></div>
+            <div class="row"><dt>네덜란드</dt><dd>부와 열광의 상징 (튤립 마니아)</dd></div>
+            <div class="row"><dt>영국 빅토리아</dt><dd>용서(흰색), 완전한 사랑(붉은색)</dd></div>
+            <div class="row"><dt>한국 현대</dt><dd>새로운 시작, 봄의 설렘</dd></div>
+          </dl>
+          <p class="lore-note">꽃말은 문화와 시대에 따라 달라요. 자료 간 차이가 있는 해석은 라벨로 표시해요.</p>
+        </article>
+      </div>
+
+      <a class="teaser" id="storyTeaser" href="#">
+        이 꽃의 이야기와 나라별 꽃말 보기
+        <span class="tar" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M12.5 6l6 6-6 6"/></svg></span>
+      </a>
+    </section>
+
     <!-- ── 멘트 ────────────────────────────────────────── -->
     <section class="sect" aria-labelledby="msg-h">
       <div class="sect-head">
@@ -687,6 +815,8 @@ main{position:relative;z-index:1}
   var viewer = document.getElementById('viewer');
   var tag = document.getElementById('viewerTag');
   var segWrap = document.getElementById('optTabs');
+  var storyFull = document.getElementById('storyFull');
+  var storyTeaser = document.getElementById('storyTeaser');
 
   function wire(tabsEl, panels, onSelect){
     var tabs = Array.prototype.slice.call(tabsEl.querySelectorAll('[role="tab"]'));
@@ -721,11 +851,55 @@ main{position:relative;z-index:1}
       Array.prototype.forEach.call(document.querySelectorAll('.fb'), function(f,k){
         if(k===i) f.removeAttribute('hidden'); else f.setAttribute('hidden','');
       });
+      /* 일화·나라별 꽃말은 '의미(흰 튤립)' 안에서만 전체 공개 */
+      storyFull.hidden = (i !== 1);
+      storyTeaser.hidden = (i === 1);
       window.dispatchEvent(new CustomEvent('db:option', { detail: i }));
     });
 
   wire(document.getElementById('toneTabs'),
     [document.getElementById('tone-0'),document.getElementById('tone-1'),document.getElementById('tone-2')]);
+
+  /* ── 색상 재선택 : 꽃말·신뢰 라벨 즉시 갱신 + 3D 꽃잎 색 ── */
+  var PICK = {
+    '흰':   { mean:'용서, 새로운 시작', trust:'여러 자료에서 반복됨',        ic:0, hex:'#FFFFFF' },
+    '크림': { mean:'부드러운 진심',     trust:'자료 간 차이 있음',           ic:1, hex:'#F6F1E8' },
+    '분홍': { mean:'애정과 배려',       trust:'자료 간 차이 있음',           ic:1, hex:'#E2CCD1' },
+    '보라': { mean:'영원한 사랑',       trust:'단일 자료 — 참고만 해주세요', ic:2, hex:'#83779C' }
+  };
+  var chips = Array.prototype.slice.call(document.querySelectorAll('#colorChips .sw'));
+  var pickMean = document.getElementById('pickMean');
+  var pickTrust = document.getElementById('pickTrust');
+  var pickNote = document.getElementById('pickNote');
+  var pickIcons = Array.prototype.slice.call(document.querySelectorAll('.pick-ic'));
+
+  function pickColor(idx, focus){
+    var key = chips[idx].getAttribute('data-color'), d = PICK[key];
+    if(!d) return;
+    chips.forEach(function(c,k){
+      c.setAttribute('aria-checked', k===idx ? 'true' : 'false');
+      c.tabIndex = (k===idx) ? 0 : -1;
+    });
+    pickMean.textContent = '“' + d.mean + '”';
+    pickTrust.textContent = d.trust;
+    /* SVGElement에는 .hidden IDL 속성이 없다 — 반드시 속성으로 토글 */
+    pickIcons.forEach(function(s,k){
+      if(k===d.ic) s.removeAttribute('hidden'); else s.setAttribute('hidden','');
+    });
+    pickNote.hidden = (key === '흰');
+    window.dispatchEvent(new CustomEvent('db:color', { detail: d.hex }));
+    if(focus) chips[idx].focus();
+  }
+  chips.forEach(function(c,i){
+    c.addEventListener('click', function(){ pickColor(i, false); });
+    c.addEventListener('keydown', function(e){
+      var d = (e.key==='ArrowRight'||e.key==='ArrowDown') ? 1
+            : (e.key==='ArrowLeft' ||e.key==='ArrowUp')   ? -1 : 0;
+      if(!d) return;
+      e.preventDefault();
+      pickColor((i + d + chips.length) % chips.length, true);
+    });
+  });
 
   Array.prototype.forEach.call(document.querySelectorAll('.copy'), function(btn){
     btn.addEventListener('click', function(){
@@ -850,7 +1024,7 @@ function buildRose(){
   const green = matGreen();
   g.add(new THREE.Mesh(bake(B), green));
   g.add(new THREE.Mesh(tube([[0,-.10,0],[.05,-.74,.04],[-.04,-1.45,-.03],[.03,-2.3,.02]], .045), green));
-  return { group:g, scale:.62, y:-.02, rim:0x8A3448 };
+  return { group:g, scale:.62, y:-.02, rim:0x8A3448, petals:[rosePetal] };
 }
 
 /* ── 2. 흰 튤립 : 컵형 꽃잎 6장 ─────────────────────────── */
@@ -875,13 +1049,14 @@ function buildTulip(){
     at(.45, 1.16, .05, -1.45, 1, 0));
   petalInto(B, {su:8, sv:16, w:.23, len:1.60, base:.9, tip:.52, curl:.52, cup:.52},
     at(3.55, 1.26, .05, -1.90, 1, 0));
-  g.add(new THREE.Mesh(bake(A), matPetal(0xE9E1D3, 0xC8963E)));
+  const tulipPetal = matPetal(0xE9E1D3, 0xC8963E);
+  g.add(new THREE.Mesh(bake(A), tulipPetal));
   g.add(new THREE.Mesh(bake(S), new THREE.MeshPhysicalMaterial({
     color:new THREE.Color(0x8A672B), roughness:.68, side:THREE.DoubleSide, transparent:true })));
   const green = matGreen();
   g.add(new THREE.Mesh(bake(B), green));
   g.add(new THREE.Mesh(tube([[0,-.05,0],[.02,-.85,.03],[-.03,-1.7,-.02],[.02,-2.5,.01]], .05), green));
-  return { group:g, scale:.92, y:-.62, rim:0xC8963E };
+  return { group:g, scale:.92, y:-.62, rim:0xC8963E, petals:[tulipPetal] };
 }
 
 /* ── 3. 푸른 히아신스 : 종형 소화 인스턴싱 ─────────────── */
@@ -897,7 +1072,8 @@ function buildHyacinth(){
   }
   const fg = bake(F);
   const LV = 9, PER = 5, count = LV*PER;
-  const im = new THREE.InstancedMesh(fg, matPetal(0x7E71A0, 0x83779C), count);
+  const hyaPetal = matPetal(0x7E71A0, 0x83779C);
+  const im = new THREE.InstancedMesh(fg, hyaPetal, count);
   const d = new THREE.Object3D(); d.rotation.order = 'YXZ';
   let n = 0;
   for(let L=0;L<LV;L++){
@@ -923,7 +1099,7 @@ function buildHyacinth(){
   const green = matGreen();
   g.add(new THREE.Mesh(bake(B), green));
   g.add(new THREE.Mesh(tube([[0,1.10,0],[.01,.2,.01],[-.02,-.9,-.01],[.02,-2.4,.01]], .05), green));
-  return { group:g, scale:.78, y:-.02, rim:0x83779C };
+  return { group:g, scale:.78, y:-.02, rim:0x83779C, petals:[hyaPetal] };
 }
 
 /* ── 씬 ─────────────────────────────────────────────────── */
@@ -951,6 +1127,13 @@ function init(){
     f.group.position.y = f.y;
     world.add(f.group);
     return list;
+  });
+
+  /* 색상 재선택 : 칩을 고른 뒤에만 꽃잎 색이 그 색으로 부드럽게 옮겨간다
+     (아무것도 고르지 않은 초기 상태는 꽃 고유색 그대로) */
+  let petalTarget = null;
+  window.addEventListener('db:color', function(e){
+    petalTarget = new THREE.Color(e.detail);
   });
 
   const fade = [1, 0, 0];
@@ -1020,6 +1203,18 @@ function init(){
         mats[i][m].depthWrite = fade[i] > .96;
       }
     }
+    if(petalTarget){
+      const kc = reduce ? 1 : Math.min(1, dt*4.5);
+      for(let i=0;i<3;i++){
+        const ps = flowers[i].petals;
+        for(let m=0;m<ps.length;m++){
+          ps[m].color.lerp(petalTarget, kc);
+          ps[m].emissive.lerp(petalTarget, kc);
+          ps[m].sheenColor.lerp(petalTarget, kc);   /* 광택도 함께 — 색이 흐려지지 않게 */
+        }
+      }
+    }
+
     tmp.set(flowers[target].rim);
     rim.color.lerp(tmp, reduce ? 1 : Math.min(1, dt*5));
     renderer.render(scene, camera);

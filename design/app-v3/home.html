@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="ko" data-flower="tulip">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#0B0C0A" id="meta-theme">
+<meta name="description" content="dearbloom — 하고 싶은 말부터 고르면, 꽃이 대신 말해드려요.">
+<title>dearbloom — 홈 (앱 v3 · 나이트 보태니컬 아카이브)</title>
+
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="preconnect" href="https://hangeul.pstatic.net" crossorigin>
+<link rel="preconnect" href="https://images.unsplash.com" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap">
+
+<link rel="preload" as="image" fetchpriority="high"
+      href="https://images.unsplash.com/photo-1776633578019-0d3af1940e5b?auto=format&fit=crop&w=1080&h=1350&q=80">
+
+<style>
+/* ═══════════════════════════════════════════════════════════════════════
+   dearbloom — 앱 v3 · 홈
+   랜딩 v3(나이트 보태니컬 아카이브)의 비주얼 언어를 모바일로 이식.
+     · 실사 풀블리드 + 스크림 + 그레인 + 비네트
+     · Instrument Serif Italic 로고타입 / 마루 부리 꽃 이름·꽃말
+     · 오버라인(No. 01 + 한글 라벨 + 헤어라인) / 헤어라인 구획
+     · 글래스는 앱 크롬(상단바·탭바)에만 최소 적용
+   기능: §1.4c v3.1 꽃-테마 5종(꽃 칩) · §1.5c 모드 4종 · §1.5 홈 카피
+   팔레트: §1.4 6색 + 승인 파생만. 팔레트 밖 유채색 없음.
+   ═════════════════════════════════════════════════════════════════════ */
+
+/* ── 마루 부리 (§1.3) ────────────────────────────────────────────────── */
+@font-face{font-family:'MaruBuri';font-weight:200;font-style:normal;font-display:swap;
+  src:url('https://hangeul.pstatic.net/hangeul_static/webfont/MaruBuri/MaruBuri-ExtraLight.woff2') format('woff2')}
+@font-face{font-family:'MaruBuri';font-weight:300;font-style:normal;font-display:swap;
+  src:url('https://hangeul.pstatic.net/hangeul_static/webfont/MaruBuri/MaruBuri-Light.woff2') format('woff2')}
+@font-face{font-family:'MaruBuri';font-weight:400;font-style:normal;font-display:swap;
+  src:url('https://hangeul.pstatic.net/hangeul_static/webfont/MaruBuri/MaruBuri-Regular.woff2') format('woff2')}
+
+/* ── 리셋 ───────────────────────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;padding:0}
+html{overflow-x:clip;-webkit-text-size-adjust:100%}
+body{overflow-x:clip}
+img,svg,canvas{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+h1,h2,h3,h4,p,ul,ol,dl,dd,dt,figure,blockquote{margin:0}
+ul,ol{padding:0;list-style:none}
+[hidden]{display:none!important}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+  clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0}
+:focus-visible{outline:2px solid var(--focus);outline-offset:3px;border-radius:2px}
+
+/* ── 팔레트 (§1.4 6색 + 승인 파생) ──────────────────────────────────── */
+:root{
+  --ivory:#F6F1E8; --ink:#1F211E; --stem:#263B2E; --rose:#8A3448; --lavender:#83779C; --gold:#C8963E;
+  --ink-950:#0B0C0A; --ink-900:#141613; --stem-900:#1B2C21; --wine:#5C2230;
+  --plum:#4A4160; --gold-deep:#8A672B; --rose-tint:#C98A9B; --lav-tint:#A69CB3; --ivory-2:#FBF9F4;
+
+  --font-sans:'Pretendard',-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo',
+              'Malgun Gothic','Segoe UI',Roboto,sans-serif;
+  --font-serif:'MaruBuri','Noto Serif KR','Nanum Myeongjo','AppleMyungjo',Batang,serif;
+  --font-logo:'Instrument Serif','MaruBuri',Georgia,'Times New Roman',serif;
+
+  --ease:cubic-bezier(.22,1,.36,1);
+  --dur:220ms; --swap:.55s;
+  --bar-h:58px; --tab-h:66px; --gut:20px;
+
+  /* 사진 로딩 실패 시 노출되는 폴백 — 전 테마 공통 다크 보태니컬 */
+  --frame-fb:linear-gradient(158deg,#1B2C21 0%,#141613 48%,#0B0C0A 100%);
+}
+
+/* ══ 꽃-테마 1 · 흰 튤립 (기본) — 다크 그린 + Ivory + Gold ════════════ */
+:root, html[data-flower="tulip"]{
+  --bg:#0B0C0A; --bg-2:#141613; --bg-3:#1B2C21;
+  --fg:#F6F1E8;
+  --fg-70:rgba(246,241,232,.80);          /* 12.0:1 on #0B0C0A */
+  --fg-50:rgba(246,241,232,.62);          /*  7.2:1 */
+  --hair:rgba(246,241,232,.16); --hair-2:rgba(246,241,232,.30);
+  --accent:#C8963E;                       /* 골드 텍스트 8.0:1 */
+  --accent-line:rgba(200,150,62,.55); --seal:#C8963E;
+  --cta-bg:#F6F1E8; --cta-fg:#0B0C0A; --cta-glow:rgba(246,241,232,.30);
+  --ghost-line:rgba(246,241,232,.42);
+  --focus:#C8963E;
+  --surface:rgba(246,241,232,.045); --surface-2:rgba(246,241,232,.075);
+  --chrome-a:rgba(11,12,10,.94); --chrome-b:rgba(11,12,10,.66);
+  --on-media:#F6F1E8; --on-media-mute:rgba(246,241,232,.82);
+  --media-filter:saturate(1.02) contrast(1.03); --img-grade:none;
+  --scrim-card:
+    linear-gradient(180deg,rgba(27,44,33,.34) 0%,rgba(27,44,33,.06) 34%,rgba(11,12,10,.16) 48%,
+                           rgba(11,12,10,.72) 66%,rgba(11,12,10,.92) 82%,rgba(11,12,10,.97) 100%);
+  /* 상단 밴드 — 오버라인이 얹히는 자리를 실측 4.5:1 이상으로 눌러 준다 */
+  --scrim-top:
+    linear-gradient(180deg,rgba(11,12,10,.86) 0%,rgba(11,12,10,.76) 50%,
+                           rgba(11,12,10,.28) 76%,rgba(11,12,10,0) 100%);
+  --vignette:radial-gradient(126% 88% at 50% 40%,
+    rgba(11,12,10,0) 24%,rgba(11,12,10,.22) 58%,rgba(11,12,10,.60) 88%,rgba(11,12,10,.86) 100%);
+  --grain-blend:overlay; --grain-op:.05;
+  --chip-a:#1B2C21; --chip-b:#C8963E;
+  --theme-color:#0B0C0A;
+}
+
+/* ══ 꽃-테마 2 · 흰 백합 — Warm Ivory 라이트 + Ink + Stem ═════════════ */
+html[data-flower="lily"]{
+  --bg:#F6F1E8; --bg-2:#FBF9F4; --bg-3:#F1EADC;
+  --fg:#1F211E;
+  --fg-70:rgba(31,33,30,.78);             /*  7.5:1 on #F6F1E8 */
+  --fg-50:rgba(31,33,30,.66);             /*  5.0:1 */
+  --hair:rgba(31,33,30,.18); --hair-2:rgba(31,33,30,.32);
+  --accent:#263B2E;                       /* 스템 텍스트 11.6:1 (골드 텍스트 금지) */
+  --accent-line:rgba(200,150,62,.85); --seal:#8A672B;
+  --cta-bg:#263B2E; --cta-fg:#F6F1E8; --cta-glow:rgba(38,59,46,.30);
+  --ghost-line:rgba(31,33,30,.42);
+  --focus:#263B2E;
+  --surface:rgba(31,33,30,.035); --surface-2:rgba(31,33,30,.07);
+  --chrome-a:rgba(246,241,232,.94); --chrome-b:rgba(246,241,232,.70);
+  --on-media:#1F211E; --on-media-mute:rgba(31,33,30,.74);
+  --media-filter:grayscale(.10) brightness(1.06) contrast(.96); --img-grade:none;
+  --scrim-card:
+    linear-gradient(180deg,rgba(246,241,232,.22) 0%,rgba(246,241,232,.04) 26%,rgba(246,241,232,.14) 42%,
+                           rgba(246,241,232,.80) 62%,rgba(246,241,232,.96) 80%,rgba(246,241,232,.99) 100%);
+  /* 라이트 테마는 사진이 어두워 상단 밴드를 더 세게 — 잉크 타이포 가독 확보 */
+  --scrim-top:
+    linear-gradient(180deg,rgba(246,241,232,.94) 0%,rgba(246,241,232,.88) 50%,
+                           rgba(246,241,232,.34) 76%,rgba(246,241,232,0) 100%);
+  --vignette:radial-gradient(126% 88% at 50% 40%,
+    rgba(246,241,232,0) 26%,rgba(246,241,232,.20) 60%,rgba(246,241,232,.66) 90%,rgba(246,241,232,.88) 100%);
+  --grain-blend:multiply; --grain-op:.035;
+  --chip-a:#F1EADC; --chip-b:#263B2E;
+  --theme-color:#F6F1E8;
+}
+
+/* ══ 꽃-테마 3 · 프리지아 — 다크 잉크 + Gold ══════════════════════════ */
+html[data-flower="freesia"]{
+  --bg:#141613; --bg-2:#0B0C0A; --bg-3:#1B2C21;
+  --fg:#F6F1E8;
+  --fg-70:rgba(246,241,232,.80); --fg-50:rgba(246,241,232,.62);
+  --hair:rgba(246,241,232,.16); --hair-2:rgba(200,150,62,.34);
+  --accent:#C8963E;                       /* 6.9:1 on #141613 */
+  --accent-line:rgba(200,150,62,.66); --seal:#C8963E;
+  --cta-bg:#F6F1E8; --cta-fg:#0B0C0A; --cta-glow:rgba(200,150,62,.32);
+  --ghost-line:rgba(246,241,232,.42);
+  --focus:#C8963E;
+  --surface:rgba(246,241,232,.05); --surface-2:rgba(200,150,62,.10);
+  --chrome-a:rgba(20,22,19,.94); --chrome-b:rgba(20,22,19,.66);
+  --on-media:#F6F1E8; --on-media-mute:rgba(246,241,232,.82);
+  --media-filter:saturate(1.0) contrast(1.04); --img-grade:none;
+  --scrim-card:
+    linear-gradient(180deg,rgba(138,103,43,.24) 0%,rgba(20,22,19,.10) 34%,rgba(20,22,19,.22) 48%,
+                           rgba(11,12,10,.74) 66%,rgba(11,12,10,.93) 82%,rgba(11,12,10,.98) 100%);
+  --scrim-top:
+    linear-gradient(180deg,rgba(11,12,10,.86) 0%,rgba(11,12,10,.76) 50%,
+                           rgba(11,12,10,.28) 76%,rgba(11,12,10,0) 100%);
+  --vignette:radial-gradient(126% 88% at 50% 40%,
+    rgba(11,12,10,0) 24%,rgba(11,12,10,.24) 58%,rgba(11,12,10,.62) 88%,rgba(11,12,10,.88) 100%);
+  --grain-blend:overlay; --grain-op:.05;
+  --chip-a:#141613; --chip-b:#C8963E;
+  --theme-color:#141613;
+}
+
+/* ══ 꽃-테마 4 · 아네모네 — 다크 + 딥와인 + Rose 틴트 ═════════════════ */
+html[data-flower="anemone"]{
+  --bg:#141613; --bg-2:#0B0C0A; --bg-3:#5C2230;
+  --fg:#F6F1E8;
+  --fg-70:rgba(246,241,232,.80); --fg-50:rgba(246,241,232,.62);
+  --hair:rgba(246,241,232,.16); --hair-2:rgba(201,138,155,.34);
+  --accent:#C98A9B;                       /* 로즈 틴트 6.7:1 (다크 위 Wine Rose 본문 금지) */
+  --accent-line:rgba(138,52,72,.72); --seal:#C98A9B;
+  --cta-bg:#8A3448; --cta-fg:#F6F1E8; --cta-glow:rgba(138,52,72,.46);
+  --ghost-line:rgba(246,241,232,.42);
+  --focus:#C98A9B;
+  --surface:rgba(246,241,232,.05); --surface-2:rgba(201,138,155,.12);
+  --chrome-a:rgba(20,22,19,.94); --chrome-b:rgba(20,22,19,.66);
+  --on-media:#F6F1E8; --on-media-mute:rgba(246,241,232,.82);
+  --media-filter:saturate(.96) contrast(1.04); --img-grade:none;
+  --scrim-card:
+    linear-gradient(180deg,rgba(92,34,48,.30) 0%,rgba(92,34,48,.10) 34%,rgba(92,34,48,.28) 48%,
+                           rgba(11,12,10,.76) 66%,rgba(11,12,10,.93) 82%,rgba(11,12,10,.98) 100%);
+  --scrim-top:
+    linear-gradient(180deg,rgba(11,12,10,.86) 0%,rgba(11,12,10,.76) 50%,
+                           rgba(11,12,10,.28) 76%,rgba(11,12,10,0) 100%);
+  --vignette:radial-gradient(126% 88% at 50% 40%,
+    rgba(11,12,10,0) 24%,rgba(92,34,48,.18) 56%,rgba(11,12,10,.60) 88%,rgba(11,12,10,.88) 100%);
+  --grain-blend:overlay; --grain-op:.055;
+  --chip-a:#5C2230; --chip-b:#8A3448;
+  --theme-color:#141613;
+}
+
+/* ══ 꽃-테마 5 · 헬레보어 — 다크 + 딥라벤더 + Lavender ════════════════ */
+html[data-flower="hellebore"]{
+  --bg:#141613; --bg-2:#0B0C0A; --bg-3:#4A4160;
+  --fg:#F6F1E8;
+  --fg-70:rgba(246,241,232,.80); --fg-50:rgba(246,241,232,.62);
+  --hair:rgba(246,241,232,.16); --hair-2:rgba(166,156,179,.34);
+  --accent:#A69CB3;                       /* 라벤더 틴트 7.0:1 */
+  --accent-line:rgba(131,119,156,.66); --seal:#A69CB3;
+  --cta-bg:#F6F1E8; --cta-fg:#0B0C0A; --cta-glow:rgba(131,119,156,.40);
+  --ghost-line:rgba(246,241,232,.42);
+  --focus:#A69CB3;
+  --surface:rgba(246,241,232,.05); --surface-2:rgba(131,119,156,.14);
+  --chrome-a:rgba(20,22,19,.94); --chrome-b:rgba(20,22,19,.66);
+  --on-media:#F6F1E8; --on-media-mute:rgba(246,241,232,.82);
+  --media-filter:saturate(.94) contrast(1.04); --img-grade:none;
+  --scrim-card:
+    linear-gradient(180deg,rgba(74,65,96,.32) 0%,rgba(74,65,96,.10) 34%,rgba(74,65,96,.28) 48%,
+                           rgba(11,12,10,.76) 66%,rgba(11,12,10,.93) 82%,rgba(11,12,10,.98) 100%);
+  --scrim-top:
+    linear-gradient(180deg,rgba(11,12,10,.86) 0%,rgba(11,12,10,.76) 50%,
+                           rgba(11,12,10,.28) 76%,rgba(11,12,10,0) 100%);
+  --vignette:radial-gradient(126% 88% at 50% 40%,
+    rgba(11,12,10,0) 24%,rgba(74,65,96,.20) 56%,rgba(11,12,10,.60) 88%,rgba(11,12,10,.88) 100%);
+  --grain-blend:overlay; --grain-op:.05;
+  --chip-a:#4A4160; --chip-b:#83779C;
+  --theme-color:#141613;
+}
+
+/* ── 바디 ───────────────────────────────────────────────────────────── */
+body{
+  background:var(--bg-2); color:var(--fg);
+  font-family:var(--font-sans); font-size:15.5px; line-height:1.7; font-weight:400;
+  letter-spacing:-.005em;
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+  word-break:keep-all; overflow-wrap:break-word;
+  transition:background-color var(--swap) var(--ease), color var(--swap) var(--ease);
+}
+
+/* ── 폰 프레임 (데스크톱에서 중앙 배치) ─────────────────────────────── */
+.phone{
+  position:relative; width:100%; max-width:430px; margin-inline:auto; min-height:100svh;
+  background:var(--bg); overflow:hidden; isolation:isolate;
+  padding-bottom:calc(var(--tab-h) + 26px + env(safe-area-inset-bottom));
+  transition:background-color var(--swap) var(--ease);
+}
+@media (min-width:768px){
+  body{padding:26px 0; background:var(--bg-2)}
+  .phone{border-radius:40px; min-height:calc(100svh - 52px);
+    box-shadow:0 0 0 1px var(--hair),
+      0 2.8px 2.2px rgba(0,0,0,.05),0 6.7px 5.3px rgba(0,0,0,.07),
+      0 12.5px 10px rgba(0,0,0,.09),0 22.3px 17.9px rgba(0,0,0,.11),
+      0 41.8px 33.4px rgba(0,0,0,.15),0 100px 80px rgba(0,0,0,.36)}
+  .appbar{top:26px; width:430px; border-radius:40px 40px 0 0}
+  .tabbar{bottom:26px; width:430px; border-radius:0 0 40px 40px}
+}
+
+/* ── 필름 그레인 (랜딩 v3 동일 문법) ────────────────────────────────── */
+.grain{position:fixed;inset:0;width:100%;height:100%;z-index:90;pointer-events:none;
+  opacity:var(--grain-op);mix-blend-mode:var(--grain-blend);
+  transition:opacity var(--swap) var(--ease)}
+
+/* ── 앱 크롬 (글래스 최소 사용) ─────────────────────────────────────── */
+.bar{position:fixed;left:50%;transform:translateX(-50%);width:min(100%,430px);z-index:60}
+.appbar{top:0;display:flex;align-items:center;gap:9px;
+  height:calc(var(--bar-h) + env(safe-area-inset-top));
+  padding:env(safe-area-inset-top) 14px 0;
+  background:linear-gradient(180deg,var(--chrome-a),var(--chrome-b));
+  -webkit-backdrop-filter:blur(18px) saturate(130%);backdrop-filter:blur(18px) saturate(130%);
+  border-bottom:1px solid var(--hair);
+  transition:background var(--swap) var(--ease),border-color var(--swap) var(--ease)}
+.brand{display:inline-flex;align-items:baseline;gap:8px;min-height:44px;padding:0 2px;
+  transition:opacity var(--dur) var(--ease)}
+.brand:hover{opacity:.8}
+.wm{font-family:var(--font-logo);font-style:italic;font-weight:400;font-size:23px;line-height:1;
+  letter-spacing:-.01em;color:var(--fg);align-self:center;padding-top:3px}
+.wm-ko{font-size:10.5px;letter-spacing:.16em;color:var(--fg-50);align-self:center}
+.appbar .spacer{flex:1}
+.icon-btn{flex:none;display:grid;place-items:center;width:44px;height:44px;border-radius:14px;
+  color:var(--fg-70);transition:background-color var(--dur) var(--ease),color var(--dur) var(--ease)}
+.icon-btn:hover{background:var(--surface-2);color:var(--fg)}
+.icon-btn svg{width:22px;height:22px}
+
+.tabbar{bottom:0;display:flex;padding:0 8px env(safe-area-inset-bottom);
+  height:calc(var(--tab-h) + env(safe-area-inset-bottom));
+  background:linear-gradient(180deg,var(--chrome-b),var(--chrome-a));
+  -webkit-backdrop-filter:blur(20px) saturate(130%);backdrop-filter:blur(20px) saturate(130%);
+  border-top:1px solid var(--hair);
+  transition:background var(--swap) var(--ease),border-color var(--swap) var(--ease)}
+.tabbar a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  min-height:var(--tab-h);font-size:11px;font-weight:600;letter-spacing:.02em;color:var(--fg-50);
+  transition:color var(--dur) var(--ease)}
+.tabbar a svg{width:22px;height:22px}
+.tabbar a:hover{color:var(--fg-70)}
+.tabbar a[aria-current="page"]{color:var(--fg)}
+.tabbar .dot{width:4px;height:4px;border-radius:50%;background:var(--accent);margin-top:1px}
+
+/* ── 타이포 유틸 (랜딩 v3 오버라인 문법) ────────────────────────────── */
+.overline{display:flex;align-items:center;gap:10px;
+  font-size:10.5px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);
+  transition:color var(--swap) var(--ease)}
+.overline .ko{text-transform:none;letter-spacing:.03em;font-weight:400;font-size:12px;color:var(--fg-50)}
+.overline::after{content:"";flex:1;height:1px;background:var(--accent-line)}
+.overline.on-media{color:var(--on-media)}
+.overline.on-media .ko{color:var(--on-media-mute)}
+.overline.on-media::after{background:var(--on-media-mute);opacity:.5}
+
+.sect{position:relative;z-index:1;padding:0 var(--gut);margin-top:40px}
+.sect > .overline{margin-bottom:16px}
+
+/* ── 버튼 ───────────────────────────────────────────────────────────── */
+.btn{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;min-height:54px;
+  padding:0 22px;border-radius:9999px;font-size:16px;font-weight:600;letter-spacing:-.01em;line-height:1;
+  transition:transform 180ms var(--ease),box-shadow var(--dur) var(--ease),
+    background-color var(--swap) var(--ease),color var(--swap) var(--ease),border-color var(--swap) var(--ease)}
+.btn svg{width:19px;height:19px}
+.btn-primary{background:var(--cta-bg);color:var(--cta-fg)}
+.btn-primary:hover{box-shadow:0 12px 30px -10px var(--cta-glow)}
+.btn-primary:active{transform:scale(.975)}
+.btn-ghost{background:transparent;color:var(--fg);border:1px solid var(--ghost-line);font-weight:500}
+.btn-ghost:hover{border-color:var(--fg)}
+.btn-ghost:active{transform:scale(.975)}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   히어로 — 풀블리드 실사 카드 (오늘의 꽃)
+   ═════════════════════════════════════════════════════════════════════ */
+.hero{position:relative;isolation:isolate;overflow:hidden;
+  min-height:min(86svh,640px);
+  display:flex;flex-direction:column;justify-content:flex-end;
+  padding:calc(var(--bar-h) + env(safe-area-inset-top) + 22px) var(--gut) 24px}
+.hero-media{position:absolute;inset:0;z-index:-2;background:var(--frame-fb);overflow:hidden}
+.hlayer{position:absolute;inset:0;background-position:center;background-size:cover;background-repeat:no-repeat;
+  filter:var(--img-grade,none) var(--media-filter);
+  opacity:0;transition:opacity var(--swap) var(--ease),filter var(--swap) var(--ease);
+  transform:scale(1.03);will-change:opacity}
+.hlayer.is-on{opacity:1}
+.hero-scrim{position:absolute;inset:0;z-index:-1;pointer-events:none;
+  background:var(--scrim-card);transition:background var(--swap) var(--ease)}
+.hero-vig{position:absolute;inset:0;z-index:-1;pointer-events:none;
+  background:var(--vignette);transition:background var(--swap) var(--ease)}
+/* 상단 밴드 — 오버라인·상단바 아래 구간의 사진 하이라이트를 눌러 대비를 보장 */
+.hero-topscrim{position:absolute;inset:0 0 auto 0;z-index:-1;pointer-events:none;
+  height:calc(var(--bar-h) + env(safe-area-inset-top) + 118px);
+  background:var(--scrim-top);transition:background var(--swap) var(--ease)}
+
+.hero-top{position:absolute;left:var(--gut);right:var(--gut);
+  top:calc(var(--bar-h) + env(safe-area-inset-top) + 18px)}
+.hero-body{position:relative;transition:opacity .28s var(--ease),transform .28s var(--ease)}
+.hero-body.is-out{opacity:0;transform:translateY(10px)}
+
+.fl-name{font-family:var(--font-serif);font-weight:300;font-size:46px;line-height:1.12;
+  letter-spacing:-.025em;color:var(--on-media)}
+.fl-latin{margin-top:8px;font-size:11.5px;font-weight:400;letter-spacing:.10em;color:var(--on-media-mute)}
+.fl-mean{margin-top:16px;font-family:var(--font-serif);font-weight:300;font-size:22px;line-height:1.5;
+  letter-spacing:-.015em;color:var(--on-media)}
+.fl-mean .q{color:var(--accent)}
+.fl-note{margin-top:14px;font-size:14px;line-height:1.72;color:var(--on-media-mute);max-width:31ch}
+.src-badge{display:inline-flex;align-items:center;gap:8px;margin-top:16px;min-height:32px;
+  padding:4px 14px;border-radius:9999px;border:1px solid var(--accent-line);
+  font-size:12px;line-height:1.45;color:var(--on-media)}
+.src-badge .seal{flex:none;width:7px;height:7px;border-radius:50%;background:var(--seal)}
+.hero-credit{position:absolute;right:10px;bottom:6px;z-index:2;
+  font-size:10px;letter-spacing:.04em;color:var(--on-media-mute)}
+
+/* ── 꽃 칩 레일 (§1.4c v3.1 — 꽃이 테마를 구동한다) ─────────────────── */
+.rail-head{display:flex;align-items:baseline;gap:10px;padding:26px var(--gut) 0}
+.rail-head .cap{font-size:10.5px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--accent)}
+.rail-head .sub{font-size:12.5px;color:var(--fg-50)}
+.rail{display:flex;gap:8px;margin-top:12px;padding:2px var(--gut) 4px;
+  overflow-x:auto;overflow-y:hidden;scrollbar-width:none;-webkit-overflow-scrolling:touch;
+  scroll-snap-type:x proximity}
+.rail::-webkit-scrollbar{display:none}
+.fchip{flex:none;display:inline-flex;align-items:center;gap:9px;min-height:44px;
+  padding:0 15px 0 10px;border-radius:9999px;scroll-snap-align:start;
+  border:1px solid var(--hair);background:var(--surface);
+  font-size:13.5px;font-weight:500;line-height:1;white-space:nowrap;color:var(--fg-70);
+  transition:color var(--dur) var(--ease),border-color var(--dur) var(--ease),
+    background-color var(--dur) var(--ease),transform 180ms var(--ease)}
+.fchip .chip{flex:none;width:20px;height:20px;border-radius:50%;
+  background:linear-gradient(140deg,var(--ca) 0%,var(--ca) 58%,var(--cb) 58%,var(--cb) 100%);
+  box-shadow:inset 0 0 0 1px var(--hair-2)}
+.fchip[data-f="tulip"]{--ca:#1B2C21;--cb:#C8963E}
+.fchip[data-f="lily"]{--ca:#F1EADC;--cb:#263B2E}
+.fchip[data-f="freesia"]{--ca:#141613;--cb:#C8963E}
+.fchip[data-f="anemone"]{--ca:#5C2230;--cb:#8A3448}
+.fchip[data-f="hellebore"]{--ca:#4A4160;--cb:#83779C}
+.fchip:hover{color:var(--fg);border-color:var(--hair-2)}
+.fchip:active{transform:scale(.97)}
+.fchip[aria-pressed="true"]{color:var(--fg);border-color:var(--accent-line);background:var(--surface-2)}
+.fchip[aria-pressed="true"] .chip{box-shadow:inset 0 0 0 1px var(--hair-2),0 0 0 2px var(--accent-line)}
+
+/* ── 헤드라인 ───────────────────────────────────────────────────────── */
+.lead{padding:34px var(--gut) 0}
+.lead h1{font-family:var(--font-serif);font-weight:300;font-size:30px;line-height:1.44;
+  letter-spacing:-.02em;color:var(--fg)}
+.lead p{margin-top:14px;font-size:15px;line-height:1.78;color:var(--fg-70)}
+
+/* ── 주 CTA + 보조 진입 ─────────────────────────────────────────────── */
+.cta{padding:24px var(--gut) 0}
+.cta-meta{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.pill{display:inline-flex;align-items:center;height:26px;padding:0 11px;border-radius:9999px;
+  border:1px solid var(--accent-line);color:var(--accent);
+  font-size:12px;font-weight:600;letter-spacing:.04em}
+.cta-kicker{font-size:12.5px;color:var(--fg-50)}
+.cta-note{margin-top:12px;text-align:center;font-size:12.5px;color:var(--fg-50)}
+.entries{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:14px}
+.entry{display:flex;align-items:center;justify-content:center;gap:8px;min-height:50px;padding:0 12px;
+  border-radius:9999px;border:1px solid var(--ghost-line);
+  font-size:14px;font-weight:500;line-height:1.3;text-align:center;color:var(--fg);
+  transition:border-color var(--dur) var(--ease),background-color var(--dur) var(--ease),
+    transform 180ms var(--ease)}
+.entry:hover{border-color:var(--fg);background:var(--surface)}
+.entry:active{transform:scale(.98)}
+.entry-lav{border-color:rgba(131,119,156,.62);color:var(--fg)}
+.entry-lav .dotm{width:7px;height:7px;border-radius:50%;background:var(--lavender);flex:none}
+.entry .dotm{width:7px;height:7px;border-radius:50%;background:var(--accent);flex:none}
+
+/* ── 모드 4카드 (§1.5c) — 헤어라인 격자 ─────────────────────────────── */
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:1px;
+  border:1px solid var(--hair);border-radius:20px;overflow:hidden;background:var(--hair)}
+.mode{display:flex;flex-direction:column;gap:9px;min-height:138px;padding:16px 15px;
+  background:var(--bg);
+  transition:background-color var(--dur) var(--ease),transform 180ms var(--ease)}
+.mode:hover{background:var(--surface)}
+.mode:active{transform:scale(.99)}
+.mode .num{font-family:var(--font-serif);font-weight:300;font-size:19px;line-height:1;color:var(--accent)}
+.mode b{font-size:15px;font-weight:600;letter-spacing:-.01em;color:var(--fg)}
+.mode .mtxt{font-size:13px;line-height:1.6;color:var(--fg-50)}
+.mode-lav .num{color:var(--lav-tint)}
+html[data-flower="lily"] .mode-lav .num{color:#5E5670}
+
+/* ── 신뢰 3요소 — 랜딩 v3 trust-row 문법 ────────────────────────────── */
+.trust{display:grid}
+.trust li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:16px;
+  padding:18px 0;border-top:1px solid var(--hair)}
+.trust li:last-child{border-bottom:1px solid var(--hair)}
+.trust .num{font-family:var(--font-serif);font-weight:200;font-size:26px;line-height:1;color:var(--accent)}
+.trust h3{font-family:var(--font-serif);font-weight:400;font-size:19px;line-height:1.4;color:var(--fg);
+  margin-bottom:6px}
+.trust p{font-size:14.5px;line-height:1.72;color:var(--fg-70)}
+
+/* ── 추천 예시 ──────────────────────────────────────────────────────── */
+.example{padding-top:4px}
+.example .mk{display:block;font-family:var(--font-logo);font-size:56px;line-height:.6;
+  color:var(--accent);margin-bottom:12px}
+.example p{font-family:var(--font-serif);font-weight:300;font-size:21px;line-height:1.55;
+  letter-spacing:-.015em;color:var(--fg)}
+.example .who{color:var(--accent)}
+.example figcaption{margin-top:18px;font-size:10.5px;font-weight:600;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--fg-50)}
+
+/* ── 푸터 ───────────────────────────────────────────────────────────── */
+.foot{position:relative;z-index:1;margin-top:44px;padding:26px var(--gut) 10px;
+  border-top:1px solid var(--hair)}
+.foot .disc{font-size:13.5px;line-height:1.72;color:var(--fg-70)}
+.foot-links{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+.foot-links a{display:inline-flex;align-items:center;min-height:44px;padding:0 14px;border-radius:9999px;
+  border:1px solid var(--hair);font-size:12.5px;color:var(--fg-70);
+  transition:background-color var(--dur) var(--ease),color var(--dur) var(--ease)}
+.foot-links a:hover{background:var(--surface-2);color:var(--fg)}
+.credits{margin-top:22px;padding-top:18px;border-top:1px solid var(--hair)}
+.credits h2{font-size:10.5px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--accent);margin-bottom:8px}
+.credits p{font-size:12px;line-height:1.75;color:var(--fg-50)}
+
+/* ── reduced-motion ─────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{
+    animation-duration:0.01ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:0.01ms !important;
+    scroll-behavior:auto !important;
+  }
+}
+</style>
+</head>
+<body>
+
+<header class="bar appbar">
+  <a class="brand" href="home.html" aria-label="dearbloom 홈">
+    <span class="wm">dearbloom</span>
+    <span class="wm-ko">디어블룸</span>
+  </a>
+  <span class="spacer"></span>
+  <button class="icon-btn" type="button" aria-label="메뉴 열기">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M4 9h16M4 15h10"/></svg>
+  </button>
+</header>
+
+<div class="phone">
+  <main>
+
+    <!-- ═══ 히어로 · 오늘의 꽃 (실사 풀블리드 + 스크림) ═══ -->
+    <section class="hero" id="today" aria-labelledby="today-name">
+      <div class="hero-media" aria-hidden="true">
+        <div class="hlayer is-on" data-layer="tulip"
+          data-src="https://images.unsplash.com/photo-1776633578019-0d3af1940e5b?auto=format&fit=crop&w=1080&h=1350&q=80"></div>
+        <div class="hlayer" data-layer="lily"
+          data-src="https://images.unsplash.com/photo-1768243243786-721dab163e7f?auto=format&fit=crop&w=1080&h=1350&q=80"></div>
+        <div class="hlayer" data-layer="freesia"
+          data-src="https://images.unsplash.com/photo-1590791211964-cb77c1e61a3d?auto=format&fit=crop&w=1080&h=1350&q=80"></div>
+        <div class="hlayer" data-layer="anemone"
+          data-src="https://images.unsplash.com/photo-1778779213344-f6108acf3e01?auto=format&fit=crop&w=1080&h=1350&q=80"></div>
+        <div class="hlayer" data-layer="hellebore"
+          data-src="https://images.unsplash.com/photo-1518343161123-c7e9ab4dc4da?auto=format&fit=crop&w=1080&h=1350&q=80"></div>
+      </div>
+      <div class="hero-scrim" aria-hidden="true"></div>
+      <div class="hero-vig" aria-hidden="true"></div>
+      <div class="hero-topscrim" aria-hidden="true"></div>
+
+      <p class="overline on-media hero-top">No.&nbsp;01 <span class="ko">오늘의 꽃</span></p>
+
+      <div class="hero-body" id="today-live">
+        <h2 class="fl-name" id="today-name">흰 튤립</h2>
+        <p class="fl-latin" id="today-latin">Tulipa gesneriana</p>
+        <p class="fl-mean"><span class="q" aria-hidden="true">“</span><span id="today-mean">용서, 새로운 시작, 진심</span><span class="q" aria-hidden="true">”</span></p>
+        <p class="fl-note" id="today-note">빅토리아 시대 꽃말 자료와 현대 플로리스트 가이드에서 반복되는 의미예요.</p>
+        <p><span class="src-badge"><span class="seal" aria-hidden="true"></span><span id="today-src">출처 2곳 검수 · 2026.08</span></span></p>
+      </div>
+
+      <span class="hero-credit" id="today-credit">Photo: Bernd Dittrich / Unsplash</span>
+    </section>
+
+    <!-- ═══ 꽃 칩 5개 — 꽃이 테마를 구동한다 (§1.4c v3.1) ═══ -->
+    <div class="rail-head">
+      <span class="cap" id="rail-cap">Today&rsquo;s flower</span>
+      <span class="sub">꽃을 고르면 화면 색이 함께 바뀌어요</span>
+    </div>
+    <div class="rail" role="group" aria-labelledby="rail-cap">
+      <button class="fchip" type="button" data-f="tulip" aria-pressed="true">
+        <span class="chip" aria-hidden="true"></span>흰 튤립</button>
+      <button class="fchip" type="button" data-f="lily" aria-pressed="false">
+        <span class="chip" aria-hidden="true"></span>흰 백합</button>
+      <button class="fchip" type="button" data-f="freesia" aria-pressed="false">
+        <span class="chip" aria-hidden="true"></span>프리지아</button>
+      <button class="fchip" type="button" data-f="anemone" aria-pressed="false">
+        <span class="chip" aria-hidden="true"></span>아네모네</button>
+      <button class="fchip" type="button" data-f="hellebore" aria-pressed="false">
+        <span class="chip" aria-hidden="true"></span>헬레보어</button>
+    </div>
+
+    <!-- ═══ 헤드라인 ═══ -->
+    <section class="lead">
+      <h1>하고 싶은 말부터 고르면,<br>꽃이 대신 말해드려요.</h1>
+      <p>관계와 상황만 알려주세요. 어울리는 꽃과 꽃말, 추천 이유, 진짜로 쓸 수 있는 멘트까지 45초 안에 골라드려요.</p>
+    </section>
+
+    <!-- ═══ 주 CTA ═══ -->
+    <section class="cta" aria-label="추천 시작하기">
+      <div class="cta-meta">
+        <span class="pill">5문항</span>
+        <span class="cta-kicker">중간에 멈춰도 저장돼요</span>
+      </div>
+      <a class="btn btn-primary" href="question.html">
+        45초 만에 추천받기
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M12.5 6l6 6-6 6"/></svg>
+      </a>
+      <p class="cta-note">45초면 충분해요</p>
+      <nav class="entries" aria-label="바로 시작하기">
+        <a class="entry entry-lav" href="question.html"><span class="dotm" aria-hidden="true"></span>사과해야 해요</a>
+        <a class="entry" href="question.html"><span class="dotm" aria-hidden="true"></span>마음을 전하고 싶어요</a>
+      </nav>
+    </section>
+
+    <!-- ═══ 모드 4카드 (§1.5c) ═══ -->
+    <section class="sect" aria-labelledby="mode-h">
+      <p class="overline" id="mode-h">No.&nbsp;02 <span class="ko">어떻게 전할까요</span></p>
+      <nav class="modes" aria-label="전달 방식 고르기">
+        <a class="mode" href="question.html">
+          <span class="num" aria-hidden="true">01</span>
+          <b>한 명에게</b>
+          <span class="mtxt">마음을 전할 한 사람이 있어요</span>
+        </a>
+        <a class="mode" href="group.html?mode=each">
+          <span class="num" aria-hidden="true">02</span>
+          <b>여러 명 각각</b>
+          <span class="mtxt">여러 명에게 각자 다른 꽃을 주고 싶어요</span>
+        </a>
+        <a class="mode" href="group.html?mode=bouquet">
+          <span class="num" aria-hidden="true">03</span>
+          <b>단체 부케</b>
+          <span class="mtxt">팀·모임에 함께 줄 꽃 한 다발</span>
+        </a>
+        <a class="mode mode-lav" href="question.html">
+          <span class="num" aria-hidden="true">04</span>
+          <b>사과·화해</b>
+          <span class="mtxt">미안한 마음부터 전해야 해요</span>
+        </a>
+      </nav>
+    </section>
+
+    <!-- ═══ 신뢰 3요소 ═══ -->
+    <section class="sect" aria-labelledby="trust-h">
+      <p class="overline" id="trust-h">No.&nbsp;03 <span class="ko">신뢰 3요소</span></p>
+      <ol class="trust">
+        <li>
+          <span class="num" aria-hidden="true">01</span>
+          <div>
+            <h3>출처가 보이는 꽃말</h3>
+            <p>문화와 시대에 따라 다른 꽃말을 출처와 함께 보여드려요.</p>
+          </div>
+        </li>
+        <li>
+          <span class="num" aria-hidden="true">02</span>
+          <div>
+            <h3>반려동물 안전 확인</h3>
+            <p>고양이·강아지에게 위험한 꽃은 미리 걸러드려요.</p>
+          </div>
+        </li>
+        <li>
+          <span class="num" aria-hidden="true">03</span>
+          <div>
+            <h3>바로 쓰는 멘트 3가지 톤</h3>
+            <p>담백하게, 다정하게, 진지하게. 복사해서 바로 보내세요.</p>
+          </div>
+        </li>
+      </ol>
+    </section>
+
+    <!-- ═══ 추천 예시 ═══ -->
+    <section class="sect" aria-labelledby="ex-h">
+      <p class="overline" id="ex-h">No.&nbsp;04 <span class="ko">추천 예시</span></p>
+      <figure class="example">
+        <span class="mk" aria-hidden="true">“</span>
+        <p><span class="who">약속을 잊은 연인에게</span> — 흰 튤립과 ‘변명 없이 사과할게’라는 첫 문장을 추천했어요.</p>
+        <figcaption>dearbloom recommendation</figcaption>
+      </figure>
+    </section>
+
+    <footer class="foot">
+      <p class="disc">dearbloom — 꽃말은 문화와 시대에 따라 달라요. 출처와 함께 보여드려요.</p>
+      <nav class="foot-links" aria-label="더 보기">
+        <a href="#">꽃말 도감</a>
+        <a href="#">사과·화해 모드</a>
+        <a href="#">팀 부케(준비 중)</a>
+      </nav>
+      <div class="credits">
+        <h2>Image credits</h2>
+        <p>Photos: Unsplash — Bernd Dittrich, Evie S., Christina, Julia Vivcharyk, Annie Spratt</p>
+        <p>Unsplash License · 상업적 사용 가능 · 출처 표기는 dearbloom 자체 운용 원칙입니다.</p>
+      </div>
+    </footer>
+  </main>
+</div>
+
+<nav class="bar tabbar" aria-label="주요 메뉴">
+  <a href="home.html" aria-current="page">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5V19a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 19z"/><path d="M9.6 20.5v-5.6h4.8v5.6"/></svg>
+    홈<span class="dot" aria-hidden="true"></span>
+  </a>
+  <a href="#">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4.8A1.8 1.8 0 0 1 6.8 3H19v14.4H6.8A1.8 1.8 0 0 0 5 19.2z"/><path d="M5 19.2A1.8 1.8 0 0 1 6.8 17.4H19V21H6.8A1.8 1.8 0 0 1 5 19.2z"/></svg>
+    도감
+  </a>
+  <a href="#">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.6 3.5h10.8a1 1 0 0 1 1 1V21l-6.4-3.9L5.6 21V4.5a1 1 0 0 1 1-1z"/></svg>
+    기록
+  </a>
+</nav>
+
+<!-- 필름 그레인 (랜딩 v3와 동일) -->
+<svg class="grain" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+  <filter id="db-grain"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter>
+  <rect width="100%" height="100%" filter="url(#db-grain)"/>
+</svg>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════════
+   꽃이 테마를 구동한다 (§1.4c v3.1)
+   칩을 고르면 사진·강조색·꽃말·출처 라벨이 세트로 전환된다.
+   ═════════════════════════════════════════════════════════════════════ */
+(function(){
+  var docEl  = document.documentElement;
+  var REDUCE = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var FLOWERS = {
+    /* 기본 — §1.5 오늘의 꽃 카피를 글자 그대로 */
+    tulip:{ name:'흰 튤립', latin:'Tulipa gesneriana',
+      mean:'용서, 새로운 시작, 진심',
+      note:'빅토리아 시대 꽃말 자료와 현대 플로리스트 가이드에서 반복되는 의미예요.',
+      src:'출처 2곳 검수 · 2026.08',
+      credit:'Photo: Bernd Dittrich / Unsplash', theme:'#0B0C0A' },
+    lily:{ name:'흰 백합', latin:'Lilium candidum',
+      mean:'순수, 그리고 다시 피는 마음',
+      note:'고양이가 있는 집이라면 백합류는 피해주세요. 고양이에게 특히 위험한 꽃이에요.',
+      src:'여러 자료에서 반복됨 · 2026.08',
+      credit:'Photo: Evie S. / Unsplash', theme:'#F6F1E8' },
+    freesia:{ name:'프리지아', latin:'Freesia refracta',
+      mean:'새로운 시작, 우정',
+      note:'흰 프리지아를 먼저 권해요. 봄에 가장 흔하고, 고양이·강아지에게도 안전한 꽃이에요.',
+      src:'여러 현대 자료에서 반복됨 · 2026.08',
+      credit:'Photo: Christina / Unsplash', theme:'#141613' },
+    anemone:{ name:'아네모네', latin:'Anemone coronaria',
+      mean:'기다림, 그리고 진심',
+      note:'빅토리아 시대에는 ‘기다림’으로 읽혔고, 현대 자료에서는 색에 따라 다르게 풀이돼요.',
+      src:'색상·문화권에 따라 해석이 달라요 · 2026.08',
+      credit:'Photo: Julia Vivcharyk / Unsplash', theme:'#141613' },
+    hellebore:{ name:'헬레보어', latin:'Helleborus orientalis',
+      mean:'위로, 그리고 평온',
+      note:'겨울에 피는 꽃이에요. 아래 꽃말은 단일 자료에서만 확인했으니 참고만 해주세요.',
+      src:'단일 자료 — 참고만 해주세요 · 2026.08',
+      credit:'Photo: Annie Spratt / Unsplash', theme:'#141613' }
+  };
+
+  var chips  = [].slice.call(document.querySelectorAll('.fchip'));
+  var layers = [].slice.call(document.querySelectorAll('.hlayer'));
+  var live   = document.getElementById('today-live');
+  var elName = document.getElementById('today-name');
+  var elLat  = document.getElementById('today-latin');
+  var elMean = document.getElementById('today-mean');
+  var elNote = document.getElementById('today-note');
+  var elSrc  = document.getElementById('today-src');
+  var elCred = document.getElementById('today-credit');
+  var metaTh = document.getElementById('meta-theme');
+
+  var current = 'tulip', swapTimer = null;
+
+  /* 사진 로딩 — 성공한 경우에만 배경을 칠한다.
+     실패하면 폴백 그라디언트를 유지하고 다음 기회에 재시도(깨진 아이콘 노출 없음) */
+  function loadLayer(l, done){
+    if(l.dataset.loaded){ if(done) done(); return; }
+    l.dataset.loaded = '1';
+    var probe = new Image();
+    probe.onload = function(){ l.style.backgroundImage = 'url("' + l.dataset.src + '")'; if(done) done(); };
+    probe.onerror = function(){ delete l.dataset.loaded; if(done) done(); };
+    probe.src = l.dataset.src;
+  }
+  loadLayer(layers[0]);
+  /* 나머지 테마 사진은 순차 워밍 — 동시 다발 요청에 의한 커넥션 리셋 방지 */
+  function warmRest(){
+    var q = layers.slice(1), i = 0;
+    (function step(){
+      if(i >= q.length) return;
+      loadLayer(q[i++], function(){ setTimeout(step, 220); });
+    })();
+  }
+  if(window.requestIdleCallback) requestIdleCallback(warmRest, {timeout:3500});
+  else setTimeout(warmRest, 2000);
+
+  function paint(f){
+    elName.textContent = f.name;
+    elLat.textContent  = f.latin;
+    elMean.textContent = f.mean;
+    elNote.textContent = f.note;
+    elSrc.textContent  = f.src;
+    elCred.textContent = f.credit;
+  }
+
+  function setFlower(id){
+    var f = FLOWERS[id];
+    if(!f || id === current) return;
+    current = id;
+    docEl.setAttribute('data-flower', id);
+    if(metaTh) metaTh.setAttribute('content', f.theme);
+    layers.forEach(function(l){
+      var on = l.dataset.layer === id;
+      if(on) loadLayer(l);
+      l.classList.toggle('is-on', on);
+    });
+    chips.forEach(function(c){ c.setAttribute('aria-pressed', String(c.dataset.f === id)); });
+    live.setAttribute('aria-live','polite');
+
+    if(REDUCE){ paint(f); return; }
+    live.classList.add('is-out');
+    clearTimeout(swapTimer);
+    swapTimer = setTimeout(function(){
+      paint(FLOWERS[current]);
+      live.classList.remove('is-out');
+    }, 260);
+  }
+
+  chips.forEach(function(c){
+    c.addEventListener('click', function(){ setFlower(c.dataset.f); });
+  });
+})();
+</script>
+
+</body>
+</html>

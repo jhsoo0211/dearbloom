@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="ko" data-flower="tulip">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#0B0C0A">
+<meta name="description" content="dearbloom — 프로젝트를 함께 끝낸 팀원 4명에게">
+<title>dearbloom — 여러 명에게 (앱 v3 · 나이트 보태니컬 아카이브)</title>
+
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="preconnect" href="https://hangeul.pstatic.net" crossorigin>
+<link rel="preconnect" href="https://images.unsplash.com" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap">
+
+<style>
+/* ═══════════════════════════════════════════════════════════════════════
+   dearbloom — 앱 v3 · 여러 명에게 (각각 / 단체 부케)
+   랜딩 v3 언어로 재스킨. 기능은 앱 v2에서 검증된 §1.5c 그대로:
+   모드 토글 · 멤버 4명 명단 · 각각 배정 · 부케 구성 · 교집합 안전 배너.
+   부케 구성 카드에만 실사 소형 컷(승인 목록 12번)을 쓴다.
+   ═════════════════════════════════════════════════════════════════════ */
+
+@font-face{font-family:'MaruBuri';font-weight:200;font-style:normal;font-display:swap;
+  src:url('https://hangeul.pstatic.net/hangeul_static/webfont/MaruBuri/MaruBuri-ExtraLight.woff2') format('woff2')}
+@font-face{font-family:'MaruBuri';font-weight:300;font-style:normal;font-display:swap;
+  src:url('https://hangeul.pstatic.net/hangeul_static/webfont/MaruBuri/MaruBuri-Light.woff2') format('woff2')}
+@font-face{font-family:'MaruBuri';font-weight:400;font-style:normal;font-display:swap;
+  src:url('https://hangeul.pstatic.net/hangeul_static/webfont/MaruBuri/MaruBuri-Regular.woff2') format('woff2')}
+
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;padding:0}
+html{overflow-x:clip;-webkit-text-size-adjust:100%}
+body{overflow-x:clip}
+img,svg{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+h1,h2,h3,h4,p,ul,dl,dd,dt,figure,blockquote{margin:0}
+ul{padding:0;list-style:none}
+[hidden]{display:none!important}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+  clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0}
+:focus-visible{outline:2px solid var(--focus);outline-offset:3px;border-radius:2px}
+.sprite{position:absolute;width:0;height:0;overflow:hidden}
+
+/* ── 팔레트 · 기본 꽃-테마(흰 튤립) ─────────────────────────────────── */
+:root{
+  --ivory:#F6F1E8; --ink:#1F211E; --stem:#263B2E; --rose:#8A3448; --lavender:#83779C; --gold:#C8963E;
+  --ink-950:#0B0C0A; --ink-900:#141613; --stem-900:#1B2C21; --wine:#5C2230;
+  --plum:#4A4160; --gold-deep:#8A672B; --lav-tint:#A69CB3; --stem-lt:#989F94;
+
+  --font-sans:'Pretendard',-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo',
+              'Malgun Gothic','Segoe UI',Roboto,sans-serif;
+  --font-serif:'MaruBuri','Noto Serif KR','Nanum Myeongjo','AppleMyungjo',Batang,serif;
+  --font-logo:'Instrument Serif','MaruBuri',Georgia,'Times New Roman',serif;
+
+  --ease:cubic-bezier(.22,1,.36,1);
+  --dur:220ms;
+  --bar-h:58px; --gut:20px;
+
+  --bg:#0B0C0A; --bg-2:#141613; --bg-3:#1B2C21;
+  --fg:#F6F1E8;
+  --fg-70:rgba(246,241,232,.80);
+  --fg-50:rgba(246,241,232,.62);
+  --hair:rgba(246,241,232,.16); --hair-2:rgba(246,241,232,.30);
+  --accent:#C8963E; --accent-line:rgba(200,150,62,.55); --seal:#C8963E;
+  --cta-bg:#F6F1E8; --cta-fg:#0B0C0A; --cta-glow:rgba(246,241,232,.30);
+  --ghost-line:rgba(246,241,232,.42);
+  --focus:#C8963E;
+  --surface:rgba(246,241,232,.045); --surface-2:rgba(246,241,232,.075);
+  --chrome-a:rgba(11,12,10,.94); --chrome-b:rgba(11,12,10,.62);
+  --on-media:#F6F1E8; --on-media-mute:rgba(246,241,232,.82);
+  --grain-blend:overlay; --grain-op:.05;
+  --frame-fb:linear-gradient(158deg,#1B2C21 0%,#141613 48%,#0B0C0A 100%);
+}
+
+body{
+  background:var(--bg-2); color:var(--fg);
+  font-family:var(--font-sans); font-size:15.5px; line-height:1.7;
+  letter-spacing:-.005em;
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+  word-break:keep-all; overflow-wrap:break-word;
+}
+
+.phone{position:relative;width:100%;max-width:430px;margin-inline:auto;min-height:100svh;
+  background:var(--bg);overflow:hidden;isolation:isolate;
+  padding-top:calc(var(--bar-h) + env(safe-area-inset-top));
+  padding-bottom:calc(28px + env(safe-area-inset-bottom))}
+@media (min-width:768px){
+  body{padding:26px 0;background:var(--bg-2)}
+  .phone{border-radius:40px;min-height:calc(100svh - 52px);
+    box-shadow:0 0 0 1px var(--hair),
+      0 2.8px 2.2px rgba(0,0,0,.05),0 6.7px 5.3px rgba(0,0,0,.07),
+      0 12.5px 10px rgba(0,0,0,.09),0 22.3px 17.9px rgba(0,0,0,.11),
+      0 41.8px 33.4px rgba(0,0,0,.15),0 100px 80px rgba(0,0,0,.36)}
+  .appbar{top:26px;width:430px;border-radius:40px 40px 0 0}
+}
+
+.grain{position:fixed;inset:0;width:100%;height:100%;z-index:90;pointer-events:none;
+  opacity:var(--grain-op);mix-blend-mode:var(--grain-blend)}
+
+/* ── 상단 바 ────────────────────────────────────────────────────────── */
+.bar{position:fixed;left:50%;transform:translateX(-50%);width:min(100%,430px);z-index:60}
+.appbar{top:0;display:flex;align-items:center;gap:8px;
+  height:calc(var(--bar-h) + env(safe-area-inset-top));padding:env(safe-area-inset-top) 10px 0;
+  background:linear-gradient(180deg,var(--chrome-a),var(--chrome-b));
+  -webkit-backdrop-filter:blur(18px) saturate(130%);backdrop-filter:blur(18px) saturate(130%);
+  border-bottom:1px solid var(--hair)}
+.icon-btn{flex:none;display:grid;place-items:center;width:44px;height:44px;border-radius:14px;
+  color:var(--fg-70);transition:background-color var(--dur) var(--ease),color var(--dur) var(--ease)}
+.icon-btn:hover{background:var(--surface-2);color:var(--fg)}
+.icon-btn svg{width:22px;height:22px}
+.page-title{display:inline-flex;align-items:center;min-height:44px;padding:0 4px;
+  font-family:var(--font-logo);font-style:italic;font-size:21px;line-height:1;color:var(--fg);
+  transition:opacity var(--dur) var(--ease)}
+.page-title:hover{opacity:.8}
+.appbar .spacer{flex:1}
+
+main{position:relative;z-index:1}
+.overline{display:flex;align-items:center;gap:10px;
+  font-size:10.5px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--accent)}
+.overline .ko{text-transform:none;letter-spacing:.03em;font-weight:400;font-size:12px;color:var(--fg-50)}
+.overline::after{content:"";flex:1;height:1px;background:var(--accent-line)}
+.overline.on-media{color:var(--on-media)}
+.overline.on-media .ko{color:var(--on-media-mute)}
+.overline.on-media::after{background:var(--on-media-mute);opacity:.5}
+.sect{padding:0 var(--gut);margin-top:36px}
+.sect > .overline{margin-bottom:16px}
+
+/* ── 헤드 ───────────────────────────────────────────────────────────── */
+.ghead{padding:36px var(--gut) 0}
+.ghead .overline{margin-bottom:20px}
+.ghead h1{font-family:var(--font-serif);font-weight:300;font-size:32px;line-height:1.36;
+  letter-spacing:-.025em;color:var(--fg)}
+.ctx{display:flex;flex-wrap:wrap;gap:6px;margin-top:18px}
+.ctx li{display:inline-flex;align-items:center;height:30px;padding:0 12px;border-radius:9999px;
+  border:1px solid var(--hair);background:var(--surface);
+  font-size:12.5px;font-weight:500;color:var(--fg-70)}
+.ctx li:first-child{border-color:var(--accent-line);color:var(--accent)}
+
+/* ── 모드 토글 ──────────────────────────────────────────────────────── */
+.seg{position:relative;display:grid;grid-template-columns:repeat(2,1fr);margin:24px var(--gut) 0;
+  padding:4px;border-radius:9999px;background:var(--surface);border:1px solid var(--hair)}
+.seg-thumb{position:absolute;top:4px;left:4px;width:calc((100% - 8px)/2);height:calc(100% - 8px);
+  border-radius:9999px;background:var(--cta-bg);
+  transform:translateX(calc(var(--i,0) * 100%));
+  transition:transform 260ms var(--ease)}
+.seg button{position:relative;z-index:1;min-height:44px;border-radius:9999px;
+  font-size:14.5px;font-weight:600;letter-spacing:.01em;color:var(--fg-50);
+  transition:color var(--dur) var(--ease)}
+.seg button:hover{color:var(--fg-70)}
+.seg button[aria-selected="true"]{color:var(--cta-fg)}
+
+/* ── 명단 — 헤어라인 리스트 ─────────────────────────────────────────── */
+.roster > li{display:flex;gap:14px;align-items:center;padding:14px 0;
+  border-top:1px solid var(--hair)}
+.roster > li:last-child{border-bottom:1px solid var(--hair)}
+.ava{flex:none;display:grid;place-items:center;width:38px;height:38px;border-radius:50%;
+  border:1px solid var(--hair-2);
+  font-family:var(--font-serif);font-weight:400;font-size:17px;line-height:1;color:var(--fg)}
+.rbody{flex:1;min-width:0}
+.rname{font-size:15.5px;font-weight:600;letter-spacing:-.01em;color:var(--fg)}
+.memo{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
+.memo li{display:inline-flex;align-items:center;height:24px;padding:0 9px;border-radius:9999px;
+  border:1px solid var(--hair);font-size:12px;color:var(--fg-50)}
+.roster-foot{display:flex;align-items:center;gap:10px;margin-top:14px}
+.limit{flex:1;min-width:0;font-size:13px;color:var(--fg-50)}
+.add{flex:none;display:inline-flex;align-items:center;gap:7px;min-height:44px;padding:0 16px;
+  border-radius:9999px;border:1px solid var(--ghost-line);
+  font-size:14px;font-weight:600;color:var(--fg);
+  transition:background-color var(--dur) var(--ease),border-color var(--dur) var(--ease),
+    transform 180ms var(--ease)}
+.add:hover{background:var(--surface-2);border-color:var(--fg)}
+.add:active{transform:scale(.975)}
+.add svg{width:16px;height:16px}
+
+/* ── 꽃 아트 (스프라이트) ───────────────────────────────────────────── */
+.art{flex:none;display:grid;place-items:center;width:62px;height:62px;border-radius:50%;
+  border:1px solid var(--hair)}
+.art svg{width:50px;height:50px}
+
+/* ── 각각 모드 : 배정 리스트 ────────────────────────────────────────── */
+.panel{animation:rise 320ms var(--ease) both}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.assign > li{display:flex;gap:15px;align-items:flex-start;padding:18px 0;
+  border-top:1px solid var(--hair)}
+.assign > li:last-child{border-bottom:1px solid var(--hair)}
+.a-body{flex:1;min-width:0}
+.a-to{font-size:10.5px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--accent)}
+.a-name{margin-top:7px;font-family:var(--font-serif);font-weight:400;font-size:23px;line-height:1.28;
+  letter-spacing:-.02em;color:var(--fg)}
+.a-mean{margin-top:7px;font-family:var(--font-serif);font-weight:300;font-size:17px;line-height:1.5;
+  color:var(--fg-70)}
+.badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.pet{display:inline-flex;align-items:center;gap:6px;min-height:26px;padding:2px 10px;border-radius:9999px;
+  font-size:12.5px;font-weight:600;line-height:1.4}
+.pet svg{flex:none;width:14px;height:14px}
+.pet-safe{border:1px solid rgba(152,159,148,.60);color:var(--stem-lt)}
+.pet-calm{border:1px solid var(--hair-2);color:var(--fg-70)}
+.note{margin-top:16px;font-size:13.5px;line-height:1.72;color:var(--fg-50)}
+
+/* ── 단체 부케 모드 ─────────────────────────────────────────────────── */
+.bq-media{position:relative;isolation:isolate;overflow:hidden;border-radius:20px;
+  aspect-ratio:16/9;background:var(--frame-fb)}
+.bq-photo{position:absolute;inset:0;background-position:center;background-size:cover;
+  background-repeat:no-repeat;filter:saturate(1.02) contrast(1.03);opacity:0;
+  transition:opacity .5s var(--ease)}
+.bq-photo.is-on{opacity:1}
+.bq-scrim{position:absolute;inset:0;
+  background:linear-gradient(180deg,rgba(11,12,10,.22) 0%,rgba(11,12,10,.10) 34%,
+    rgba(11,12,10,.66) 70%,rgba(11,12,10,.94) 100%)}
+.bq-cap{position:absolute;left:16px;right:16px;bottom:14px;
+  font-family:var(--font-serif);font-weight:300;font-size:19px;line-height:1.45;
+  letter-spacing:-.02em;color:var(--on-media)}
+/* 크레딧은 사진 밝은 구간에도 얹히므로 자체 스크림 pill을 둔다 (실측 대비 확보) */
+.bq-credit{position:absolute;right:10px;top:10px;padding:3px 10px;border-radius:9999px;
+  background:rgba(11,12,10,.78);font-size:10px;letter-spacing:.04em;color:var(--on-media-mute);
+  -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.bq-list{margin-top:18px}
+.bq-list li{display:flex;gap:14px;align-items:flex-start;padding:14px 0;
+  border-top:1px solid var(--hair)}
+.bq-list li:last-child{border-bottom:1px solid var(--hair)}
+.bq-art{flex:none;display:grid;place-items:center;width:40px;height:40px;border-radius:50%;
+  border:1px solid var(--hair)}
+.bq-art svg{width:32px;height:32px}
+.bq-name{flex:none;width:92px;font-family:var(--font-serif);font-weight:400;font-size:17.5px;
+  line-height:1.35;color:var(--fg);padding-top:2px}
+.bq-mean{flex:1;min-width:0;font-size:14px;line-height:1.65;color:var(--fg-50);padding-top:4px}
+
+/* ── 안전 배너 (화면의 핵심) ────────────────────────────────────────── */
+.safety{display:flex;gap:14px;margin-top:22px;padding:19px 18px;border-radius:20px;
+  border:1px solid rgba(152,159,148,.52);background:rgba(38,59,46,.34)}
+.safety .sic{flex:none;display:grid;place-items:center;width:42px;height:42px;border-radius:14px;
+  border:1px solid rgba(152,159,148,.56);color:var(--stem-lt)}
+.safety .sic svg{width:23px;height:23px}
+.s-over{font-size:10.5px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--stem-lt)}
+.s-body{margin-top:9px;font-family:var(--font-serif);font-weight:400;font-size:19px;line-height:1.55;
+  letter-spacing:-.02em;color:var(--fg)}
+
+/* ── 카드 문구 ──────────────────────────────────────────────────────── */
+.msg{margin-top:14px;padding:19px 18px 17px;border-radius:18px;
+  border:1px solid var(--hair);background:var(--surface)}
+.msg p{font-family:var(--font-serif);font-weight:300;font-size:20px;line-height:1.7;
+  letter-spacing:-.02em;color:var(--fg)}
+.copy{display:inline-flex;align-items:center;justify-content:center;gap:7px;margin-top:16px;
+  min-height:44px;padding:0 18px;border-radius:9999px;border:1px solid var(--ghost-line);
+  font-size:14px;font-weight:600;color:var(--fg);
+  transition:background-color var(--dur) var(--ease),border-color var(--dur) var(--ease),
+    transform 180ms var(--ease)}
+.copy:hover{background:var(--surface-2);border-color:var(--fg)}
+.copy:active{transform:scale(.975)}
+.copy svg{width:16px;height:16px}
+
+/* ── CTA ────────────────────────────────────────────────────────────── */
+.btn{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;min-height:54px;
+  padding:0 22px;border-radius:9999px;font-size:16px;font-weight:600;letter-spacing:-.01em;line-height:1;
+  transition:transform 180ms var(--ease),box-shadow var(--dur) var(--ease)}
+.btn svg{width:19px;height:19px}
+.btn-primary{background:var(--cta-bg);color:var(--cta-fg)}
+.btn-primary:hover{box-shadow:0 12px 30px -10px var(--cta-glow)}
+.btn-primary:active{transform:scale(.975)}
+.cta-note{margin-top:12px;text-align:center;font-size:12.5px;color:var(--fg-50)}
+
+.foot{margin-top:44px;padding:26px var(--gut) 10px;border-top:1px solid var(--hair)}
+.foot p{font-size:13.5px;line-height:1.72;color:var(--fg-70)}
+.credits{margin-top:20px;padding-top:18px;border-top:1px solid var(--hair)}
+.credits h2{font-size:10.5px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--accent);margin-bottom:8px}
+.credits p{font-size:12px;line-height:1.75;color:var(--fg-50)}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{
+    animation-duration:0.01ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:0.01ms !important;
+    scroll-behavior:auto !important;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- ── 꽃 아이콘 스프라이트 (3D 없음 — 성능) ─────────────── -->
+<svg class="sprite" aria-hidden="true" focusable="false">
+  <symbol id="fl-freesia" viewBox="0 0 200 200">
+    <linearGradient id="grFreesia" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F6F1E8" stop-opacity=".96"/>
+      <stop offset="1" stop-color="#F6F1E8" stop-opacity=".44"/>
+    </linearGradient>
+    <path d="M62 190C62 152 68 112 92 86" stroke="#3A5A43" stroke-width="6" stroke-linecap="round" fill="none"/>
+    <path d="M70 146c-16 3-27 17-26 35 16-4 26-17 26-35z" fill="#3A5A43" opacity=".78"/>
+    <g fill="url(#grFreesia)">
+      <g transform="translate(92,92) rotate(-20)">
+        <path d="M0 0c-14-3-22-16-20-30 1-10 10-16 20-16s19 6 20 16c2 14-6 27-20 30z"/>
+        <path d="M-20-30c-7-9-5-21 4-26 6 7 7 18-4 26z" opacity=".82"/>
+        <path d="M20-30c7-9 5-21-4-26-6 7-7 18 4 26z" opacity=".82"/>
+      </g>
+      <g transform="translate(116,60) rotate(-12) scale(.76)">
+        <path d="M0 0c-14-3-22-16-20-30 1-10 10-16 20-16s19 6 20 16c2 14-6 27-20 30z"/>
+        <path d="M-20-30c-7-9-5-21 4-26 6 7 7 18-4 26z" opacity=".82"/>
+        <path d="M20-30c7-9 5-21-4-26-6 7-7 18 4 26z" opacity=".82"/>
+      </g>
+      <g transform="translate(134,34) rotate(-6) scale(.5)">
+        <path d="M0 0c-14-3-22-16-20-30 1-10 10-16 20-16s19 6 20 16c2 14-6 27-20 30z"/>
+      </g>
+    </g>
+    <g fill="#C8963E" opacity=".7">
+      <circle cx="92" cy="70" r="4.4"/><circle cx="114" cy="43" r="3.4"/>
+    </g>
+  </symbol>
+
+  <symbol id="fl-gerbera" viewBox="0 0 200 200">
+    <linearGradient id="grGerbera" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E2BC79"/><stop offset="1" stop-color="#8A672B"/>
+    </linearGradient>
+    <path d="M100 124v66" stroke="#3A5A43" stroke-width="6" stroke-linecap="round" fill="none"/>
+    <path d="M100 156c-12-8-28-5-36 8 13 8 28 5 36-3z" fill="#3A5A43" opacity=".8"/>
+    <g fill="url(#grGerbera)">
+      <ellipse cx="100" cy="32" rx="8" ry="26"/>
+      <ellipse cx="100" cy="32" rx="8" ry="26" transform="rotate(22.5 100 78)"/>
+      <ellipse cx="100" cy="32" rx="8" ry="26" transform="rotate(45 100 78)"/>
+      <ellipse cx="100" cy="32" rx="8" ry="26" transform="rotate(67.5 100 78)"/>
+      <ellipse cx="100" cy="32" rx="8" ry="26" transform="rotate(90 100 78)"/>
+      <ellipse cx="100" cy="32" rx="8" ry="26" transform="rotate(112.5 100 78)"/>
+      <ellipse cx="100" cy="32" rx="8" ry="26" transform="rotate(135 100 78)"/>
+      <ellipse cx="100" cy="32" rx="8" ry="26" transform="rotate(157.5 100 78)"/>
+      <ellipse cx="100" cy="32" rx="8" ry="26" transform="rotate(180 100 78)"/>
+      <ellipse cx="100" cy="32" rx="8" ry="26" transform="rotate(202.5 100 78)"/>
+      <ellipse cx="100" cy="32" rx="8" ry="26" transform="rotate(225 100 78)"/>
+      <ellipse cx="100" cy="32" rx="8" ry="26" transform="rotate(247.5 100 78)"/>
+      <ellipse cx="100" cy="32" rx="8" ry="26" transform="rotate(270 100 78)"/>
+      <ellipse cx="100" cy="32" rx="8" ry="26" transform="rotate(292.5 100 78)"/>
+      <ellipse cx="100" cy="32" rx="8" ry="26" transform="rotate(315 100 78)"/>
+      <ellipse cx="100" cy="32" rx="8" ry="26" transform="rotate(337.5 100 78)"/>
+    </g>
+    <circle cx="100" cy="78" r="20" fill="#8A672B"/>
+    <circle cx="100" cy="78" r="11" fill="#1F211E" opacity=".78"/>
+  </symbol>
+
+  <symbol id="fl-rose" viewBox="0 0 200 200">
+    <radialGradient id="grRose" cx=".46" cy=".36" r=".7">
+      <stop offset="0" stop-color="#D6AFB4"/><stop offset=".45" stop-color="#B87F8C"/>
+      <stop offset=".8" stop-color="#8A3448"/><stop offset="1" stop-color="#5C2230"/>
+    </radialGradient>
+    <path d="M100 122v68" stroke="#3A5A43" stroke-width="6" stroke-linecap="round" fill="none"/>
+    <path d="M100 156c12-8 28-5 36 8-13 8-28 5-36-3z" fill="#3A5A43" opacity=".72"/>
+    <g fill="url(#grRose)">
+      <g opacity=".72">
+        <ellipse cx="100" cy="44" rx="32" ry="25"/>
+        <ellipse cx="100" cy="44" rx="32" ry="25" transform="rotate(72 100 74)"/>
+        <ellipse cx="100" cy="44" rx="32" ry="25" transform="rotate(144 100 74)"/>
+        <ellipse cx="100" cy="44" rx="32" ry="25" transform="rotate(216 100 74)"/>
+        <ellipse cx="100" cy="44" rx="32" ry="25" transform="rotate(288 100 74)"/>
+      </g>
+      <g opacity=".86">
+        <ellipse cx="100" cy="56" rx="23" ry="18" transform="rotate(36 100 74)"/>
+        <ellipse cx="100" cy="56" rx="23" ry="18" transform="rotate(108 100 74)"/>
+        <ellipse cx="100" cy="56" rx="23" ry="18" transform="rotate(180 100 74)"/>
+        <ellipse cx="100" cy="56" rx="23" ry="18" transform="rotate(252 100 74)"/>
+        <ellipse cx="100" cy="56" rx="23" ry="18" transform="rotate(324 100 74)"/>
+      </g>
+      <g>
+        <ellipse cx="100" cy="64" rx="14" ry="11"/>
+        <ellipse cx="100" cy="64" rx="14" ry="11" transform="rotate(90 100 74)"/>
+        <ellipse cx="100" cy="64" rx="14" ry="11" transform="rotate(180 100 74)"/>
+        <ellipse cx="100" cy="64" rx="14" ry="11" transform="rotate(270 100 74)"/>
+      </g>
+    </g>
+    <circle cx="100" cy="74" r="7" fill="#5C2230"/>
+  </symbol>
+
+  <symbol id="fl-tulip" viewBox="0 0 200 200">
+    <linearGradient id="grTulip" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F6F1E8" stop-opacity=".94"/>
+      <stop offset="1" stop-color="#F6F1E8" stop-opacity=".38"/>
+    </linearGradient>
+    <path d="M100 34c14 13 21 34 21 55s-9 36-21 36-21-15-21-36 7-42 21-55z" fill="url(#grTulip)"/>
+    <path d="M100 125c-15 0-28-15-32-35-4-19-2-36 6-45 10 10 17 30 19 49" fill="url(#grTulip)" opacity=".62"/>
+    <path d="M100 125c15 0 28-15 32-35 4-19 2-36-6-45-10 10-17 30-19 49" fill="url(#grTulip)" opacity=".62"/>
+    <path d="M100 122v66" stroke="#3A5A43" stroke-width="6" stroke-linecap="round" fill="none"/>
+    <path d="M100 154c-12-8-27-5-35 8 13 9 28 6 35-3z" fill="#3A5A43" opacity=".86"/>
+    <path d="M100 172c12-8 27-5 35 8-13 9-28 6-35-3z" fill="#3A5A43" opacity=".7"/>
+  </symbol>
+</svg>
+
+<header class="bar appbar">
+  <a class="icon-btn" href="home.html" aria-label="이전 화면으로">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+  </a>
+  <a class="page-title" href="home.html">dearbloom</a>
+  <span class="spacer"></span>
+  <a class="icon-btn" href="home.html" aria-label="홈으로">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5V19a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 19z"/><path d="M9.6 20.5v-5.6h4.8v5.6"/></svg>
+  </a>
+</header>
+
+<div class="phone">
+  <main>
+    <div class="ghead">
+      <p class="overline">No.&nbsp;01 <span class="ko">여러 명에게</span></p>
+      <h1>프로젝트를 함께 끝낸<br>팀원 4명에게</h1>
+      <ul class="ctx" aria-label="입력한 조건">
+        <li>고마움</li><li>팀원 4명</li><li>겹치지 않게</li>
+      </ul>
+    </div>
+
+    <div class="seg" id="modeTabs" role="tablist" aria-label="전달 방식 선택">
+      <span class="seg-thumb" aria-hidden="true"></span>
+      <button type="button" role="tab" id="mode-t0" aria-controls="mode-0" aria-selected="true" tabindex="0">각각</button>
+      <button type="button" role="tab" id="mode-t1" aria-controls="mode-1" aria-selected="false" tabindex="-1">단체 부케</button>
+    </div>
+
+    <!-- ── 명단 ────────────────────────────────────────── -->
+    <section class="sect" aria-labelledby="roster-h">
+      <p class="overline" id="roster-h">Recipients <span class="ko">받는 사람</span></p>
+      <ul class="roster">
+        <li>
+          <span class="ava" aria-hidden="true">지</span>
+          <div class="rbody">
+            <p class="rname">지수</p>
+            <ul class="memo" aria-label="지수 메모">
+              <li>차분한</li><li>흰색</li><li>반려묘 있음</li>
+            </ul>
+          </div>
+        </li>
+        <li>
+          <span class="ava" aria-hidden="true">민</span>
+          <div class="rbody">
+            <p class="rname">민준</p>
+            <ul class="memo" aria-label="민준 메모">
+              <li>화려한</li><li>주황</li>
+            </ul>
+          </div>
+        </li>
+        <li>
+          <span class="ava" aria-hidden="true">하</span>
+          <div class="rbody">
+            <p class="rname">하린</p>
+            <ul class="memo" aria-label="하린 메모">
+              <li>우아한</li><li>분홍</li>
+            </ul>
+          </div>
+        </li>
+        <li>
+          <span class="ava" aria-hidden="true">도</span>
+          <div class="rbody">
+            <p class="rname">도윤</p>
+            <ul class="memo" aria-label="도윤 메모">
+              <li>미니멀</li><li>향에 민감</li>
+            </ul>
+          </div>
+        </li>
+      </ul>
+      <div class="roster-foot">
+        <p class="limit">최대 10명까지</p>
+        <button class="add" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="M12 5.4v13.2M5.4 12h13.2"/></svg>
+          추가
+        </button>
+      </div>
+    </section>
+
+    <!-- ── 각각 모드 ───────────────────────────────────── -->
+    <section class="sect panel" id="mode-0" role="tabpanel" aria-labelledby="mode-t0" tabindex="0">
+      <p class="overline">No.&nbsp;02 <span class="ko">한 사람씩 배정했어요</span></p>
+      <ul class="assign">
+        <li>
+          <span class="art">
+            <svg role="img" aria-label="흰 프리지아 일러스트"><use href="#fl-freesia"></use></svg>
+          </span>
+          <div class="a-body">
+            <p class="a-to">지수</p>
+            <p class="a-name">프리지아 (흰)</p>
+            <p class="a-mean">“새로운 시작, 우정”</p>
+            <div class="badges">
+              <span class="pet pet-safe">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.6l4.2 4.2L19 7.2"/></svg>
+                반려동물 안전
+              </span>
+            </div>
+          </div>
+        </li>
+        <li>
+          <span class="art">
+            <svg role="img" aria-label="주황 거베라 일러스트"><use href="#fl-gerbera"></use></svg>
+          </span>
+          <div class="a-body">
+            <p class="a-to">민준</p>
+            <p class="a-name">거베라 (주황)</p>
+            <p class="a-mean">“언제나 밝은 마음”</p>
+          </div>
+        </li>
+        <li>
+          <span class="art">
+            <svg role="img" aria-label="분홍 장미 일러스트"><use href="#fl-rose"></use></svg>
+          </span>
+          <div class="a-body">
+            <p class="a-to">하린</p>
+            <p class="a-name">분홍 장미</p>
+            <p class="a-mean">“다정한 사랑, 그리고 고마움”</p>
+          </div>
+        </li>
+        <li>
+          <span class="art">
+            <svg role="img" aria-label="흰 튤립 일러스트"><use href="#fl-tulip"></use></svg>
+          </span>
+          <div class="a-body">
+            <p class="a-to">도윤</p>
+            <p class="a-name">흰 튤립</p>
+            <p class="a-mean">“새로운 시작”</p>
+            <div class="badges">
+              <span class="pet pet-calm">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.6 9.4h9.8a3 3 0 1 0-3-3"/><path d="M3.6 14.6h12.6a3 3 0 1 1-3 3"/></svg>
+                무향에 가까움
+              </span>
+            </div>
+          </div>
+        </li>
+      </ul>
+      <p class="note">같은 꽃이 겹치지 않게 나눠 드려요.</p>
+    </section>
+
+    <!-- ── 단체 부케 모드 ──────────────────────────────── -->
+    <section class="sect panel" id="mode-1" role="tabpanel" aria-labelledby="mode-t1" tabindex="0" hidden>
+      <p class="overline">No.&nbsp;02 <span class="ko">한 다발에 담은 구성</span></p>
+
+      <figure class="bq-media">
+        <span class="bq-photo" id="bqPhoto" aria-hidden="true"
+          data-src="https://images.unsplash.com/photo-1676927116782-658e14df1dc5?auto=format&fit=crop&w=900&h=506&q=80"></span>
+        <span class="bq-scrim" aria-hidden="true"></span>
+        <figcaption class="bq-cap">세 가지 꽃을 한 다발로 묶었어요.</figcaption>
+        <span class="bq-credit">Photo: dariana / Unsplash</span>
+      </figure>
+
+      <ul class="bq-list">
+        <li>
+          <span class="bq-art" aria-hidden="true"><svg><use href="#fl-freesia"></use></svg></span>
+          <span class="bq-name">프리지아</span>
+          <span class="bq-mean">새로운 시작, 우정</span>
+        </li>
+        <li>
+          <span class="bq-art" aria-hidden="true"><svg><use href="#fl-gerbera"></use></svg></span>
+          <span class="bq-name">거베라</span>
+          <span class="bq-mean">언제나 밝은 마음</span>
+        </li>
+        <li>
+          <span class="bq-art" aria-hidden="true"><svg><use href="#fl-rose"></use></svg></span>
+          <span class="bq-name">분홍 장미</span>
+          <span class="bq-mean">다정한 사랑, 그리고 고마움</span>
+        </li>
+      </ul>
+
+      <aside class="safety" aria-label="교집합 안전 검사 결과">
+        <span class="sic" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.2l7 2.6v6c0 4.4-2.9 7.6-7 9-4.1-1.4-7-4.6-7-9v-6z"/><path d="M8.8 11.9l2.2 2.2 4.2-4.4"/></svg>
+        </span>
+        <div>
+          <p class="s-over">Safety check</p>
+          <p class="s-body">지수님의 반려묘를 생각해 백합류는 부케에서 뺐어요.</p>
+        </div>
+      </aside>
+
+      <p class="overline" style="margin-top:30px">Card <span class="ko">카드 문구</span></p>
+      <div class="msg">
+        <p id="bq-msg">함께여서 끝까지 올 수 있었어요. 고마움을 한 다발에 담았어요.</p>
+      </div>
+      <button class="copy" type="button" data-copy="bq-msg">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11.2" height="11.2" rx="2.6"/><path d="M15 9V6.6A2.6 2.6 0 0 0 12.4 4H6.4A2.6 2.6 0 0 0 3.8 6.6v6A2.6 2.6 0 0 0 6.4 15.2H9"/></svg>
+        <span>복사</span>
+      </button>
+    </section>
+
+    <!-- ── CTA ─────────────────────────────────────────── -->
+    <section class="sect" aria-label="카드에 담기">
+      <a class="btn btn-primary" href="#">
+        카드에 담기
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M12.5 6l6 6-6 6"/></svg>
+      </a>
+      <p class="cta-note">받는 사람마다 카드가 따로 만들어져요</p>
+    </section>
+
+    <footer class="foot">
+      <p>dearbloom — 꽃말은 문화와 시대에 따라 달라요. 출처와 함께 보여드려요.</p>
+      <div class="credits">
+        <h2>Image credits</h2>
+        <p>Photos: Unsplash — dariana</p>
+        <p>Unsplash License · 상업적 사용 가능 · 출처 표기는 dearbloom 자체 운용 원칙입니다.</p>
+      </div>
+    </footer>
+  </main>
+</div>
+
+<svg class="grain" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+  <filter id="db-grain"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter>
+  <rect width="100%" height="100%" filter="url(#db-grain)"/>
+</svg>
+
+<script>
+/* ── 모드 토글 (각각 / 단체 부케) · 부케 실사 지연 로딩 · 복사 ───────── */
+(function(){
+  var segWrap = document.getElementById('modeTabs');
+  var panels = [document.getElementById('mode-0'), document.getElementById('mode-1')];
+  var tabs = Array.prototype.slice.call(segWrap.querySelectorAll('[role="tab"]'));
+  var note = document.querySelector('.cta-note');
+  var NOTES = ['받는 사람마다 카드가 따로 만들어져요','한 다발에 카드 한 장이 담겨요'];
+
+  /* 실사 컷은 성공한 경우에만 칠한다 — 실패 시 폴백 그라디언트 유지(깨진 아이콘 없음) */
+  var photo = document.getElementById('bqPhoto');
+  function loadPhoto(){
+    if(!photo || photo.dataset.loaded) return;
+    photo.dataset.loaded = '1';
+    var probe = new Image();
+    probe.onload = function(){
+      photo.style.backgroundImage = 'url("' + photo.dataset.src + '")';
+      photo.classList.add('is-on');
+    };
+    probe.onerror = function(){ delete photo.dataset.loaded; };
+    probe.src = photo.dataset.src;
+  }
+
+  function select(i){
+    tabs.forEach(function(t,k){
+      t.setAttribute('aria-selected', k===i ? 'true' : 'false');
+      t.tabIndex = (k===i) ? 0 : -1;
+    });
+    panels.forEach(function(p,k){ p.hidden = (k!==i); });
+    segWrap.style.setProperty('--i', i);
+    note.textContent = NOTES[i];
+    if(i === 1) loadPhoto();
+  }
+  tabs.forEach(function(t,i){
+    t.addEventListener('click', function(){ select(i); });
+    t.addEventListener('keydown', function(e){
+      var d = e.key==='ArrowRight' ? 1 : e.key==='ArrowLeft' ? -1 : 0;
+      if(!d) return;
+      e.preventDefault();
+      var n = (i + d + tabs.length) % tabs.length;
+      select(n); tabs[n].focus();
+    });
+  });
+
+  /* 홈의 모드 카드에서 넘어온 경우 해당 탭을 열어둔다 */
+  var q = /[?&]mode=([^&]+)/.exec(window.location.search);
+  if(q && decodeURIComponent(q[1]) === 'bouquet') select(1);
+  else if(window.requestIdleCallback) requestIdleCallback(loadPhoto, {timeout:4000});
+  else setTimeout(loadPhoto, 2500);
+
+  Array.prototype.forEach.call(document.querySelectorAll('.copy'), function(btn){
+    btn.addEventListener('click', function(){
+      var label = btn.querySelector('span');
+      var text = (document.getElementById(btn.getAttribute('data-copy')) || {}).textContent || '';
+      try { navigator.clipboard.writeText(text); } catch(e) {}
+      label.textContent = '복사했어요';
+      setTimeout(function(){ label.textContent = '복사'; }, 1600);
+    });
+  });
+})();
+</script>
+
+</body>
+</html>

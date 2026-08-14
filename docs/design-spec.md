@@ -1,0 +1,250 @@
+# dearbloom 디자인 시안 스펙 (3방향 × 3화면)
+
+worker 3명이 각각 1방향(3개 HTML)을 독립 제작한다. §1 공통 스펙은 세 방향 모두 동일하게 준수하고, 목 데이터·카피는 §1.5 전문을 글자 그대로 사용한다(디자인만 다르고 콘텐츠는 동일해야 비교 가능).
+
+---
+
+## 1. 공통 스펙
+
+### 1.1 산출물 파일 구조
+
+```
+design\
+├── index.html                  ← 비교 페이지 (3방향 완료 후 Advisor가 제작)
+├── a-botanical\  home.html / question.html / result.html
+├── b-guide\      home.html / question.html / result.html
+└── c-gallery\    home.html / question.html / result.html
+```
+
+- worker A → `a-botanical\` 3파일만, worker B → `b-guide\` 3파일만, worker C → `c-gallery\` 3파일만 생성. 다른 폴더는 절대 건드리지 않는다.
+- 모든 파일: `<!DOCTYPE html>`, `<html lang="ko">`, `<meta charset="UTF-8">`, viewport 메타, `<title>dearbloom — {화면명} ({방향명})</title>`. UTF-8(BOM 없음) 저장.
+- 화면 간 내비게이션(상대 경로): home CTA → `question.html`, question "다음" → `result.html`, 상단 로고 → `home.html`.
+
+### 1.2 기술 규칙
+
+| 항목 | 확정 | 이유 |
+|---|---|---|
+| CSS | `<style>` 인라인, 순수 CSS만. **Tailwind CDN 금지** | Tailwind Play CDN은 JS 런타임 — 오프라인이면 스타일 전멸 |
+| CSS 변수 | `:root`에 §1.4 팔레트를 `--ivory --ink --stem --rose --lavender --gold`로 선언 후 사용 | hex 일탈 탐지 용이 |
+| JS | 인라인 바닐라, 파일당 50줄 이내. 용도: 결과 3안 탭/전환, 멘트 3톤 탭, 복사 버튼(`navigator.clipboard.writeText` try/catch, 실패 시 무시) | 시연용 최소 |
+| 외부 리소스 | 폰트 CDN(§1.3) 2곳만 허용. 외부 `<img src="http...">` 금지 — 모든 비주얼은 인라인 SVG/CSS 그라디언트 (예외: §2-C data URI) | file:// 더블클릭에도 무결 |
+| 반응형 | 모바일 퍼스트 390px. 콘텐츠 컬럼 `max-width: 430px; margin-inline: auto` (C 풀블리드 섹션은 배경만 풀폭). 768px↑에서 페이지 배경/컬럼 구분해 폰 프레임 느낌 중앙 정렬. 가로 스크롤 금지 | |
+
+**모션 무효화 블록(전 파일 필수):**
+
+```css
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+```
+
+### 1.3 폰트
+
+**Pretendard v1.3.9 — jsDelivr 공식** (본문·버튼·UI):
+
+```html
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet"
+  href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css">
+```
+
+**마루 부리(MaruBuri) — 네이버 공식** (제목·꽃 이름·꽃말). `@font-face`를 `<style>`에 직접 인라인:
+
+```css
+@font-face { font-family: 'MaruBuri'; font-weight: 200; font-display: swap;
+  src: url('https://hangeul.pstatic.net/hangeul_static/webfont/MaruBuri/MaruBuri-ExtraLight.woff2') format('woff2'); }
+@font-face { font-family: 'MaruBuri'; font-weight: 300; font-display: swap;
+  src: url('https://hangeul.pstatic.net/hangeul_static/webfont/MaruBuri/MaruBuri-Light.woff2') format('woff2'); }
+@font-face { font-family: 'MaruBuri'; font-weight: 400; font-display: swap;
+  src: url('https://hangeul.pstatic.net/hangeul_static/webfont/MaruBuri/MaruBuri-Regular.woff2') format('woff2'); }
+@font-face { font-family: 'MaruBuri'; font-weight: 600; font-display: swap;
+  src: url('https://hangeul.pstatic.net/hangeul_static/webfont/MaruBuri/MaruBuri-SemiBold.woff2') format('woff2'); }
+```
+
+- 필요한 굵기만 선언 (A: 300/400, B: 400/600, C: 200/300). `<link rel="preconnect" href="https://hangeul.pstatic.net" crossorigin>` 추가.
+
+**폴백 스택 (반드시 이대로):**
+
+```css
+--font-serif: 'MaruBuri', 'Noto Serif KR', 'Nanum Myeongjo', 'AppleMyungjo', Batang, serif;
+--font-sans: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo',
+             'Malgun Gothic', 'Segoe UI', Roboto, sans-serif;
+```
+
+### 1.4 컬러 팔레트 (전 방향 공통)
+
+| 토큰 | 이름 | Hex | 용도 |
+|---|---|---|---|
+| `--ivory` | Warm Ivory | `#F6F1E8` | 기본 배경 |
+| `--ink` | Ink | `#1F211E` | 본문·헤더 |
+| `--stem` | Deep Stem | `#263B2E` | 주요 CTA·신뢰 요소 |
+| `--rose` | Wine Rose | `#8A3448` | 사랑·기념일 강조 |
+| `--lavender` | Apology Lavender | `#83779C` | 사과·화해 모드 |
+| `--gold` | Pollen Gold | `#C8963E` | 작은 포인트·배지 |
+
+- 배분 60(배경·중립)/30(잉크·구조)/10(포인트) — 방향별 배분은 §2.
+- **사과 배너는 반드시 Lavender 계열.**
+- 파생 허용: 6색의 투명도(rgba)·틴트/셰이드만 (예: 카드 `#FFFFFF`, B 배경 `#FBF9F4`, C 다크 `#141613`, C 딥와인 `#5C2230`). 팔레트 밖 유채색(파랑·청록·형광) 금지.
+- **Pollen Gold 배경 위 텍스트 금지**(보더·아이콘·라벨만). Wine Rose는 다크 배경에서 본문 텍스트 금지(대형 디스플레이·장식만).
+
+### 1.5 목 데이터 전문 (3방향 동일 — 글자 그대로)
+
+**시나리오**: 관계 = 연인 · 마음 = 사과(약속을 잊었어요) · 취향 = 차분한 · 예산 = 3~5만 원 · 내일 직접 전달. 반려동물 정보 미입력 → 결과 카드에 정보성 안전 표시.
+
+#### ① 홈 화면 카피
+
+- 브랜드: `dearbloom` (로고타입) / 보조 표기 `디어블룸`
+- 헤드라인: **하고 싶은 말부터 고르면, 꽃이 대신 말해드려요.**
+- 서브 카피: 관계와 상황만 알려주세요. 어울리는 꽃과 꽃말, 추천 이유, 진짜로 쓸 수 있는 멘트까지 45초 안에 골라드려요.
+- 주 CTA: **45초 만에 추천받기**
+- 보조 진입 2개: `사과해야 해요` / `마음을 전하고 싶어요`
+- 신뢰 3요소:
+  1. **출처가 보이는 꽃말** — 문화와 시대에 따라 다른 꽃말을 출처와 함께 보여드려요.
+  2. **반려동물 안전 확인** — 고양이·강아지에게 위험한 꽃은 미리 걸러드려요.
+  3. **바로 쓰는 멘트 3가지 톤** — 담백하게, 다정하게, 진지하게. 복사해서 바로 보내세요.
+- 오늘의 꽃: **흰 튤립** / 꽃말 **용서, 새로운 시작, 진심** / "빅토리아 시대 꽃말 자료와 현대 플로리스트 가이드에서 반복되는 의미예요." / 출처 라벨 `출처 2곳 검수 · 2026.08`
+- 추천 예시 카드: "**약속을 잊은 연인에게** — 흰 튤립과 '변명 없이 사과할게'라는 첫 문장을 추천했어요."
+- 푸터: `dearbloom — 꽃말은 문화와 시대에 따라 달라요. 출처와 함께 보여드려요.` + 더미 링크: `꽃말 도감` `사과·화해 모드` `팀 부케(준비 중)`
+
+#### ② 질문 화면 (1단계 / 총 5문항)
+
+- 진행 표시: `1 / 5` (20%)
+- 질문: **어떤 사이인가요?** / 보조 카피: 관계에 따라 같은 꽃말도 다르게 풀어드려요.
+- 선택지 6종: **연인 / 배우자 / 썸 / 친구 / 가족 / 동료·선후배**
+  - B용 한 줄 설명(선택): 연인 "사귀는 사이예요" · 배우자 "결혼한 사이예요" · 썸 "아직 조심스러운 사이예요" · 친구 "편한 사이예요" · 가족 "부모님, 형제자매" · 동료·선후배 "일과 배움으로 만난 사이"
+- 렌더 상태: **'연인' 선택됨**
+- 하단: `다음` 버튼 / 마이크로카피 `45초면 충분해요` / 상단 뒤로가기(←)·닫기(×)
+
+#### ③ 결과 화면
+
+상단 맥락 요약: `연인에게 · 사과 · 약속을 잊었어요 · 3~5만 원 · 내일 직접 전달`
+
+사과 원칙 배너 (Lavender 필수): "말과 책임 인정이 먼저, 꽃은 그다음이에요. 아래 멘트부터 준비해 보세요."
+
+**꽃 3안** (라벨 `안심` `의미` `대담` + 부제 그대로):
+
+| 필드 | 1안 — 가장 안전한 선택 (안심) | 2안 — 가장 의미 있는 선택 (의미) | 3안 — 조금 더 기억에 남는 선택 (대담) |
+|---|---|---|---|
+| 꽃 이름 | **분홍 장미** | **흰 튤립** | **푸른 히아신스** |
+| 학명 | Rosa hybrida | Tulipa gesneriana | Hyacinthus orientalis |
+| 꽃말(주인공 문장, 크게) | "다정한 사랑, 그리고 고마움" | "용서, 그리고 새로운 시작" | "변치 않는 마음" |
+| 신뢰 라벨 | 여러 현대 자료에서 반복됨 | 자료 간 차이 있음 · 출처 2곳 | 색상·문화권에 따라 해석이 달라요 |
+| 추천 이유 | 누구에게도 오해 없이 전해지는 꽃이에요. 화려하지 않은 분홍은 잘 보이려는 선물보다, 미안한 마음을 조심스럽게 내미는 손에 가까워요. | '용서를 구한다'는 뜻을 가장 정직하게 담은 꽃이에요. 미안하다는 말에서 멈추지 않고, 다시 솔직하게 시작하고 싶다는 마음까지 전해요. | 흔치 않은 푸른색과 깊은 향이 그 자체로 이야기가 되는 꽃이에요. 히아신스를 '용서를 구하는 꽃'으로 소개하는 자료가 많아, 꽃말을 아는 상대에게는 더 오래 기억돼요. |
+| 피해야 할 경우 | 빨간 장미 한 다발은 사과보다 고백처럼 읽힐 수 있어요. 오늘은 분홍으로. | 고양이·강아지가 있는 집이라면 피해주세요. 튤립은 반려동물에게 독성이 있어요. | 향이 진한 꽃이에요. 향에 민감한 상대라면 안심 쪽을 골라주세요. |
+| 계절·구매 | 연중 구하기 쉬워요 | 봄에 구하기 쉬워요 · 지금은 흰 리시안셔스로 대체 가능 | 겨울~봄에 구하기 쉬워요 · 여름엔 대체 꽃을 제안해요 |
+| 반려동물 배지 | `반려동물 안전` (고양이·강아지 비독성) | `반려동물 주의` (고양이·강아지 독성) | `반려동물 주의` (구근 독성) |
+| 함께 주면 좋은 것 | 손편지 카드 · 따뜻한 디저트 | 회복 약속을 적은 카드 · 함께 마실 차 | 작은 화병 · 짧은 편지 |
+| 가격대 | 3~4만 원대 | 3~5만 원대 | 3~4만 원대 |
+
+⚠ **가격이 사과의 크기에 비례한다는 표현 금지.** "푸른" 히아신스의 푸른색은 팔레트 제약상 **Lavender(#83779C) 계열로 표현**(별도 파랑 도입 금지).
+
+**멘트 3키 (톤 탭 — 동일 텍스트):**
+
+| 톤 키 | 힌트 | headline | message |
+|---|---|---|---|
+| **담백** | 짧고 정확하게, 부담 없이 | 먼저, 미안해. | 어제 약속 잊은 거, 변명하지 않을게. 기다리게 해서 미안해. 다음부터는 우리 약속을 제일 앞에 둘게. 이번 주말은 네가 정하는 대로 하자. |
+| **다정** | 상대의 마음을 먼저 헤아릴 때 | 네 시간을 소홀히 했어. | 너와 한 약속을 잊었다는 게 나도 속상해. 기다리는 동안 서운했을 네 마음을 생각하면 더 미안해. 흰 튤립의 꽃말이 '새로운 시작'이래. 미안하다는 말로 끝내지 않고, 다시 잘하고 싶어. |
+| **진지** | 신뢰가 걸린 일일 때 | 변명 없이 사과할게. | 약속을 잊은 건 바쁘다는 말로 넘길 일이 아니었어. 내 잘못이야. 같은 일이 반복되지 않게 우리 일정부터 먼저 확인할게. 용서는 네 몫이고, 나는 행동으로 보여줄게. |
+
+- 톤 탭 하단 각주: `사과 상황에서는 유쾌 톤을 잠시 꺼두었어요.`
+- 각 멘트에 `복사` 버튼.
+
+**하단 CTA·링크 (동일 문구):**
+- 공유·저장: `카드에 담기`(주) · `카카오톡으로 공유` · `이미지 저장` (href="#" 더미. 카카오 노란색 금지 — 팔레트 내 색으로)
+- 제휴 아웃링크 2개(카드형, href="#"): `이 꽃 주문하러 가기 — 제휴 꽃집 보기` / `내일 도착 꽃 배달 알아보기`
+- 제휴 고지: `구매 링크는 제휴 링크로 연결돼요.`
+- 정보 위계: **꽃·꽃말·이유 먼저, 멘트는 그 아래** (실서비스의 멘트 스트리밍 구조 예고). 멘트 섹션 상단 라벨 `방금 도착한 멘트` 허용.
+
+### 1.6 접근성·품질 공통 규칙
+
+- 본문 대비 4.5:1↑, 최소 폰트 14px, 터치 타깃 44×44px↑.
+- SVG 비주얼: `role="img"`+`aria-label`(예: "흰 튤립 일러스트"), 장식용 `aria-hidden="true"`.
+- 탭: `role="tablist"/"tab"/"tabpanel"`, `aria-selected`, `<button>` 사용.
+- 진행 표시 `aria-label="5문항 중 1번째"`. 헤딩 h1→h2→h3 순차.
+
+### 1.7 꽃 비주얼(SVG)
+
+분홍 장미·흰 튤립·푸른 히아신스를 인라인 SVG로 단순화해 직접 그린다. 사실적일 필요 없음 — 방향별 스타일에 맞는 추상화. viewBox 정사각(0 0 200 200) 권장, 색은 팔레트·파생 틴트만.
+
+---
+
+## 2. 방향별 스펙
+
+### 2-A. 보태니컬 에디토리얼 (`a-botanical\`) — Aesop·Ffern 무드, 조용한 럭셔리
+
+**한 줄 컨셉**: 잘 만든 인쇄물. 향수 브랜드의 리플릿을 넘기는 감각.
+
+**컬러 배분**: 60 = Warm Ivory 단일 배경(카드도 배경색 그대로, 면 분리는 헤어라인) / 30 = Ink(텍스트·1px 룰 `rgba(31,33,30,.25)`) / 10 = Deep Stem(주 CTA·링크) + Gold(번호·배지 보더) + Wine Rose(꽃말 인용 문장에만).
+
+**타이포**: H1 serif 300 32px/1.4(768px↑ 38px) · 꽃말 인용 serif 400 26px/1.5 Wine Rose 따옴표 장식 · 꽃 이름 serif 400 28px / 학명 sans 400 12px `letter-spacing:.08em` Ink 55% · 오버라인(`TODAY'S FLOWER`, `No. 01`) sans 600 11px `letter-spacing:.14em` 대문자 Gold/Ink60% · 본문 sans 400 16px/1.75 · 버튼 sans 500 15px. 섹션 상하 padding 64~80px, 좌우 24px — 여백을 아끼지 않는다.
+
+**그래픽**: 빈티지 세밀화 흉내 라인 드로잉 SVG — `fill:none; stroke:var(--ink); stroke-width:1.3; opacity:.75`, 꽃 1송이+줄기+잎 판화 느낌 곡선. 섹션 모서리 잎사귀 장식(aria-hidden). 이중 헤어라인 액자(1px 보더 + 3px 간격 + 1px). 버튼: Deep Stem 배경+Ivory 텍스트, radius 2px, 풀폭.
+
+**화면별**:
+- `home.html`: 얇은 룰 → 로고 serif 중앙 → 오버라인 `SAY IT WITH FLOWERS` → 튤립 라인 SVG(중앙 ~180px) → H1(중앙) → 서브 → 주 CTA → 보조 2개(언더라인 텍스트 링크) → 헤어라인 → `No. 01 오늘의 꽃`(오버라인+꽃 이름+꽃말 인용+설명+출처 배지) → `No. 02` 신뢰 3요소(번호 목차형, 아이콘 없이 01/02/03 Gold) → `No. 03` 추천 예시(인용 블록) → 푸터(중앙 작은 글씨).
+- `question.html`: 오버라인 `QUESTION 1 OF 5` + 헤어라인 위 20% Ink 진행선(2px) → 질문 H1 serif 좌측 → 보조 카피 → 선택지 6개 = **리스트 행**(카드 아님. 상하 헤어라인, 행 높이 60px, 관계명 sans 500 17px). '연인' 선택 행: 배경 `rgba(38,59,46,.05)` + 좌 3px Deep Stem 보더 + 우측 Gold 점 → `다음` 풀폭 Deep Stem + 마이크로카피(중앙 12px Ink 50%).
+- `result.html`: **에디토리얼 챕터 스크롤 구조(탭 아님 — A의 차별점)**. 맥락 오버라인 → Lavender 배너(`rgba(131,119,156,.12)` 배경+Lavender 좌보더, 텍스트 Ink) → 3안을 `No. 01 가장 안전한 선택` 챕터 연속 배치: 라인 SVG → 꽃 이름+학명 → 꽃말 인용(크게 Rose) → 신뢰 라벨(Gold 보더 배지) → 추천 이유 → `피해야 할 경우` → 계절·반려동물·가격 2열 dl 헤어라인 표 → 함께 주면 좋은 것. 챕터 사이 이중 헤어라인 → 멘트: 오버라인 `방금 도착한 멘트` → 톤 3키 **언더라인 탭**(선택 Ink 2px, 비선택 Ink 45%) → headline serif 22px + message + `복사` 텍스트 버튼 → 각주 → 공유 CTA(주 버튼 1+텍스트 링크 2) → 제휴 2개(헤어라인 카드)+고지 → 푸터.
+
+**모션**: 페이드 인(0.6s)만. 호버 언더라인 두께 변화. 그 외 금지.
+
+**요약**: 카드·그림자·라운드 없음. 헤어라인과 여백과 세리프로만 위계. 서적에 가깝게.
+
+### 2-B. 웜 가이드 (`b-guide\`) — 토스풍 클린, 밝고 친근
+
+**한 줄 컨셉**: 금융 앱처럼 마찰 없는 진행, 꽃집 직원처럼 다정한 말투.
+
+**컬러 배분**: 60 = 배경 `#FBF9F4` + 카드 `#FFFFFF` / 30 = Ink / 10 = Deep Stem(CTA·진행바·선택) + Wine Rose(포인트) + Lavender(사과 배너) + Gold(배지 보더).
+
+**타이포**: 기본 Pretendard, **마루 부리는 꽃 이름·꽃말에만**. H1 sans 700 24px/1.4 좌측 · 꽃 이름 serif 600 24px / 꽃말 serif 400 20px/1.5 Rose · 본문 sans 400 15px/1.65 / 보조 13px Ink 55% / 버튼 sans 600 16px. 카드 radius 20px, `box-shadow: 0 2px 12px rgba(31,33,30,.06)`, padding 20px. 칩/배지 radius 999px.
+
+**그래픽**: 플랫 라운드 SVG — 곡선 셰이프, 팔레트 틴트 채움(분홍 장미 = Rose 25% 틴트 꽃잎+Stem 줄기), 스트로크 없음 또는 2px 라운드. 선택지 아이콘은 단순 이모지 또는 16~20px 미니 SVG 재량.
+
+**화면별**:
+- `home.html`: 상단바(로고 좌측 sans 700) → 인사형 H1(2줄)+서브 → **주 CTA 카드**(흰 카드에 플랫 꽃 SVG+"45초 만에 추천받기" 풀폭 Stem 버튼 radius 14px h56px) → 보조 진입 반폭 칩 2개(`사과해야 해요` Lavender 틴트 / `마음을 전하고 싶어요` Rose 틴트) → 신뢰 3요소(흰 카드 3개 세로, 좌 아이콘+제목+설명) → 추천 예시(채팅 말풍선: 회색 "약속을 잊었어…" / Stem 틴트 답변) → 오늘의 꽃 카드(SVG+이름 serif+꽃말+출처 배지) → 푸터.
+- `question.html`: **토스 문법.** ← 뒤로 + 둥근 트랙 진행바(트랙 `rgba(31,33,30,.08)`, 채움 Stem 20%, `1/5`) → H1 좌측+보조 → 선택지 6개 = **2열 그리드 라운드 카드**(높이 ~88px: 아이콘+관계명 600+한 줄 설명 12px). '연인' = Stem 1.5px 보더+Stem 5% 배경+우상단 체크 원 → **고정 footer**: 풀폭 `다음`(활성)+마이크로카피. 본문 하단 padding으로 가림 방지.
+- `result.html`: 맥락 = **칩 나열**(radius 999px 회색 칩) → Lavender 배너 카드(10% 배경+아이콘) → **세그먼트 컨트롤**(`안심/의미/대담` — 999px 트랙 토글, 선택=Stem 배경+흰 글자)+JS 카드 전환 → 활성 카드: 플랫 SVG(틴트 원 위) → 부제 13px Gold → 꽃 이름 serif → 꽃말 serif Rose → 신뢰 배지 → 이유 → 정보 리스트(아이콘 행: 피해야 할 경우/계절/반려동물 배지(안전=Stem 틴트, 주의=Rose 틴트)/함께/가격) → 멘트 카드: `방금 도착한 멘트`+**톤 칩 3개**(선택=Ink 배경 흰 글자)+말풍선 멘트(headline 600+message)+풀폭 보조 `복사`+각주 → 공유 카드(주 `카드에 담기`+반폭 2개 `카카오톡으로 공유`(Gold 보더 흰 배경)/`이미지 저장`) → 제휴 카드 2개(흰 카드, 우 → 화살표)+고지 13px → 푸터.
+
+**모션**: `:active { transform: scale(.98) }`, 탭 전환 200ms fade, 진행바 width 300ms. 바운스 금지.
+
+**요약**: 정보를 숨기지 않고 카드 안에 다 보여주되 위계는 크기·굵기·칩으로. 마이크로카피가 인격(존댓말, 짧게, 걱정 덜어주기).
+
+### 2-C. 페탈 갤러리 (`c-gallery\`) — FLOWERBX·29CM 무드, 드라마틱
+
+**한 줄 컨셉**: 꽃잎 속으로 들어간 화보. 다크 갤러리에서 한 송이씩 조명을 받는다.
+
+**컬러 배분(다크 변형)**: 60 = 다크 `#141613`(Ink 셰이드) / 30 = Ivory(텍스트·라인) / 10 = Wine Rose(강조·주 CTA) + Gold(라벨) + Lavender(대담 안 색조). 본문은 반드시 Ivory 또는 `rgba(246,241,232,.72)` — **Rose 본문 금지**(대비 미달).
+
+**매크로 꽃 비주얼 — 3층 레이어 (필수 구현)**:
+1. **베이스 — CSS 다층 그라디언트**: `radial-gradient` 2~4개 중첩. 히어로 예: `background: radial-gradient(120% 90% at 70% 20%, #5C2230 0%, transparent 60%), radial-gradient(90% 80% at 20% 80%, rgba(138,52,72,.85) 0%, transparent 55%), radial-gradient(70% 60% at 85% 75%, rgba(131,119,156,.35) 0%, transparent 60%), #141613;` — 안별 색조: 안심 = Rose·딥와인 / 의미 = Stem·`#1B2C21` 그린 / 대담 = Lavender·`#4A4160`.
+2. **미드 — SVG 페탈 셰이프**: 유기적 꽃잎 path 2~3장 `filter: blur(40px)` + `opacity:.5`, 절대 위치, 화면 밖으로 흘러나가게(overflow hidden) — 매크로 렌즈 아웃포커스 연출.
+3. **탑 — 필름 그레인**: 인라인 SVG `<filter><feTurbulence type="fractalNoise" baseFrequency="0.8"/></filter>` 오버레이 rect `opacity:.05` — 밴딩 감춤.
+- 텍스트 구간 스크림: `linear-gradient(180deg, transparent, rgba(20,22,19,.85))`.
+- (선택) 퍼블릭 도메인 세밀화 base64 data URI 허용(총 300KB 이하, 없어도 성립해야 함). 외부 URL `<img>` 금지.
+
+**타이포**: 히어로 H1 serif 200 44px/1.3(768px↑ 56px) Ivory · 영문 오버라인 sans 500 11px `letter-spacing:.22em` 대문자 Gold(`DEARBLOOM`, `THE RESULT`, `01 — SAFE CHOICE`) · 꽃 이름 serif 300 40px / 꽃말 serif 300 22px/1.6 Ivory 90% · 본문 sans 300~400 15px/1.7 Ivory 72% / 숫자 serif 300 · 주 CTA = Rose 솔리드+Ivory, radius 0 / 보조 = 고스트(1px `rgba(246,241,232,.4)` 보더).
+
+**화면별**:
+- `home.html`: **100svh 풀블리드 히어로** — 와인 톤 매크로 그라디언트 전면, 상단 좌 `dearbloom` serif 소문자 로고+우 메뉴 아이콘(장식), 중하단 오버라인 → H1 2줄 개행("하고 싶은 말부터 고르면, / 꽃이 대신 말해드려요.") → 주 CTA(Rose)+보조 고스트 2개 → 하단 스크롤 힌트(↓ 장식) → 스크롤: `오늘의 꽃` 풀블리드(그린 톤, 좌측 대형 꽃 이름+꽃말+출처 Gold) → 신뢰 3요소(헤어라인 `rgba(246,241,232,.15)` 3행, 번호 serif) → 추천 예시(인용 대형 serif) → 푸터.
+- `question.html`: 다크 유지. `01 / 05` serif 대형 숫자 + 헤어라인 진행선(Ivory 15% 트랙, Gold 20% 채움) → H1 serif 36px → **대형 타이포 리스트**: 관계 6종 행당 serif 300 26px 세로 나열(padding 18px 0, 헤어라인 구분). '연인' = Rose 텍스트+우 `→`+좌 짧은 Rose 라인. 비선택 Ivory 65% → 고정 `다음` 고스트+마이크로카피(Ivory 45%).
+- `result.html`: 오버라인 `THE RESULT`+맥락 한 줄(Ivory 60%) → Lavender 배너(`rgba(131,119,156,.18)` 배경, 텍스트 Ivory) → **3안 = 가로 스냅 캐러셀**(`display:flex; overflow-x:auto; scroll-snap-type:x mandatory;` 카드 `flex:0 0 100%; scroll-snap-align:center;` — JS 없이 동작, 도트 3개+`옆으로 넘겨보세요` 힌트). 각 카드 = 세로 긴 풀블리드 무대: 안별 그라디언트+페탈 SVG → 오버라인 `01 — 가장 안전한 선택` Gold → 스크림 위: 꽃 이름 초대형 serif+학명+꽃말 → 하단 정보 시트(다크 반투명 패널): 신뢰 라벨→이유→피해야 할 경우→계절/반려동물/가격(헤어라인 행)→함께 → 캐러셀 아래 공통 멘트: 오버라인 `방금 도착한 멘트` → 톤 3키 **언더라인 탭**(선택=Ivory+Gold 2px, 비선택 Ivory 45%) → headline serif 24px+message+`복사`(고스트 소형)+각주 → CTA: `카드에 담기`(Rose 풀폭)+고스트 반폭 2개 → 제휴 2행(헤어라인, 우 ↗)+고지 → 푸터.
+
+**모션**: 히어로 그라디언트 슬로우 드리프트(`background-position` 또는 페탈 `transform` keyframes 30s ease-in-out infinite alternate — reduced-motion 시 정지), 스냅 스크롤 네이티브, 탭 crossfade 250ms. 패럴랙스·자동재생 금지.
+
+**요약**: 다크 + 초대형 세리프 + 풀블리드 색면. 정보는 무대 아래 시트로 침착하게. 유일하게 "감상"이 먼저 오는 화면.
+
+---
+
+## 3. 검증 체크리스트 (Advisor용)
+
+- 파일 9개 경로·이름 정확, `lang="ko"`·UTF-8·한글 무결, file:// 렌더 정상·콘솔 에러 0
+- 외부 리소스 jsdelivr·pstatic 2곳뿐, 외부 `<img>` 없음
+- 오프라인: 레이아웃 유지·폴백 폰트 가독. 온라인: 제목 serif/본문 sans 렌더 확인
+- 390/768/1280 가로 스크롤 없음, reduced-motion 정지, 대비 4.5:1 스팟, aria 속성
+- 목 데이터 동일성: `분홍 장미`/`흰 튤립`/`푸른 히아신스`/꽃말 3문장/멘트 3톤 전문/관계 6종/헤드라인 — grep 교차
+- 가격∝사과 표현 없음, Lavender 배너 3방향 존재, 유쾌 톤 각주 존재
+- 인터랙션(3안·톤 전환·복사) 동작, 팔레트 밖 hex 없음, 화면 간 링크 정상

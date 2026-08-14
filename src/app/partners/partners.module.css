@@ -1,0 +1,522 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   /partners — 함께하는 꽃집
+   원본: design/landing-v3/partners.html (확정 시안) 을 그대로 옮긴 것.
+   무드: 나이트 보태니컬 아카이브 · 테마는 기본(흰 튤립·다크 그린) 고정 — 전환 UI 없음.
+
+   색은 globals.css 가 이미 가진 변수를 쓰고, 시안에만 있던 아이보리 틴트 3종만
+   아래 .page 안에서 다시 만든다(전역을 건드리지 않으려는 것 뿐, 값은 같은 규칙이다).
+   ═════════════════════════════════════════════════════════════════════ */
+
+.page {
+  --ivory-88: rgba(246, 241, 232, 0.88);
+  --ivory-72: rgba(246, 241, 232, 0.72);
+  --ivory-58: rgba(246, 241, 232, 0.62); /* 6.8:1 — 원본 .58 은 본문 대비가 빠듯해 한 칸 올렸다 */
+  --hair-soft: rgba(246, 241, 232, 0.09);
+
+  --pad: 22px;
+  --maxw: 1180px;
+
+  background: var(--ink-950);
+  color: var(--fg);
+  font-size: 16px;
+  line-height: 1.75;
+}
+
+.page h1,
+.page h2,
+.page h3 {
+  font-family: var(--font-serif);
+  font-weight: 300;
+  margin: 0;
+  line-height: 1.32;
+}
+
+.page p,
+.page ul {
+  margin: 0;
+  padding: 0;
+}
+.page ul {
+  list-style: none;
+}
+.page img,
+.page svg {
+  max-width: 100%;
+}
+
+/* 필름 그레인 (§1.4b) */
+.grain {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23g)'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+}
+
+/* ── 공통 유닛 ───────────────────────────────────────────────────────── */
+.wrap {
+  width: min(100% - (var(--pad) * 2), var(--maxw));
+  margin-inline: auto;
+}
+
+.eyebrow {
+  display: inline-block;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--accent);
+  line-height: 1.6;
+}
+.eyebrowQuiet {
+  color: var(--ivory-58);
+}
+
+.lead {
+  font-size: 16px;
+  line-height: 1.8;
+  color: var(--ivory-72);
+}
+
+/* ── 헤더 ────────────────────────────────────────────────────────────── */
+.siteHead {
+  position: absolute;
+  inset: 0 0 auto 0;
+  z-index: 20;
+  padding-top: 22px;
+}
+.siteHeadRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.logo {
+  font-family: var(--font-logo);
+  font-style: italic;
+  font-size: 23px;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  color: var(--fg);
+  padding: 12px 2px;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  transition: color 0.3s ease;
+}
+.logo:hover {
+  color: var(--accent);
+}
+
+/* ── 1. 인트로 ───────────────────────────────────────────────────────── */
+.intro {
+  position: relative;
+  min-height: 86svh;
+  display: flex;
+  align-items: flex-end;
+  padding: 132px 0 clamp(48px, 9vw, 88px);
+  overflow: hidden;
+  isolation: isolate;
+}
+/* 실사: image-assets #1 — Spruce / Unsplash. 로드 실패 시 그라디언트 폴백만 남는다 */
+.introBg {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-color: var(--ink-950);
+  background-image: linear-gradient(
+      180deg,
+      rgba(11, 12, 10, 0.34) 0%,
+      rgba(11, 12, 10, 0.62) 44%,
+      rgba(11, 12, 10, 0.93) 82%,
+      #0b0c0a 100%
+    ),
+    url('https://images.unsplash.com/photo-1692520883599-d543cfe6d43d?auto=format&fit=crop&w=2560&h=1440&q=80'),
+    radial-gradient(120% 88% at 72% 16%, #1b2c21 0%, rgba(27, 44, 33, 0) 62%),
+    radial-gradient(96% 82% at 10% 92%, rgba(38, 59, 46, 0.92) 0%, rgba(38, 59, 46, 0) 58%);
+  background-size: cover, cover, cover, cover;
+  background-position: center, center 42%, center, center;
+  background-repeat: no-repeat;
+}
+.introInner {
+  position: relative;
+}
+.intro h1 {
+  font-size: clamp(29px, 7.2vw, 56px);
+  line-height: 1.34;
+  margin: 18px 0 0;
+  max-width: 16ch;
+  letter-spacing: -0.01em;
+}
+.intro .lead {
+  margin: 22px 0 0;
+  max-width: 46ch;
+  color: var(--ivory-88);
+}
+.introRule {
+  margin-top: clamp(34px, 6vw, 56px);
+  width: 1px;
+  height: 52px;
+  background: linear-gradient(180deg, var(--hair-2), rgba(246, 241, 232, 0));
+}
+
+/* ── 섹션 공통 ───────────────────────────────────────────────────────── */
+.section {
+  padding: clamp(72px, 11vw, 124px) 0;
+}
+.sectionHead {
+  max-width: 52ch;
+}
+.section h2 {
+  font-size: clamp(25px, 5.2vw, 40px);
+  margin: 14px 0 0;
+}
+.sectionHead .lead {
+  margin: 16px 0 0;
+  max-width: 44ch;
+}
+
+/* ── 2. 함께하는 꽃집 ────────────────────────────────────────────────── */
+.shops {
+  margin: clamp(38px, 6vw, 60px) 0 0;
+  display: grid;
+  gap: clamp(26px, 4vw, 32px);
+  grid-template-columns: 1fr;
+}
+.shop {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--ink-900);
+  border: 1px solid var(--hair-soft);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.shopMedia {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  background-color: var(--stem-900);
+  background-size: cover, cover, cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  overflow: hidden;
+}
+.shopMedia::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(11, 12, 10, 0.08) 0%, rgba(11, 12, 10, 0.55) 100%);
+}
+/* 실사 악센트 — 전부 image-assets 승인 목록 (가게 정면 사진 아님, 보태니컬 컷) */
+.shopA .shopMedia {
+  background-image: url('https://images.unsplash.com/photo-1599056481506-c4975215aff4?auto=format&fit=crop&w=1920&q=80'),
+    radial-gradient(110% 92% at 68% 22%, rgba(38, 59, 46, 0.95) 0%, rgba(38, 59, 46, 0) 64%),
+    linear-gradient(160deg, #1b2c21 0%, #0b0c0a 100%);
+}
+.shopB .shopMedia {
+  background-image: url('https://images.unsplash.com/photo-1776633578019-0d3af1940e5b?auto=format&fit=crop&w=1080&h=1350&q=80'),
+    radial-gradient(96% 88% at 44% 30%, rgba(246, 241, 232, 0.16) 0%, rgba(246, 241, 232, 0) 60%),
+    linear-gradient(170deg, #1b2c21 0%, #0b0c0a 100%);
+  background-position: center 38%;
+}
+.shopC .shopMedia {
+  background-image: url('https://images.unsplash.com/photo-1590791211964-cb77c1e61a3d?auto=format&fit=crop&w=1920&q=80'),
+    radial-gradient(104% 90% at 26% 26%, rgba(38, 59, 46, 0.9) 0%, rgba(38, 59, 46, 0) 62%),
+    linear-gradient(150deg, #1b2c21 0%, #0b0c0a 100%);
+}
+.shopBody {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  padding: 26px 22px 20px;
+}
+.shopPlace {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.shop h3 {
+  font-size: 25px;
+  font-weight: 400;
+  margin: 12px 0 0;
+}
+.shopDesc {
+  font-size: 15px;
+  line-height: 1.78;
+  color: var(--ivory-72);
+  margin: 12px 0 0;
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 20px 0 0;
+}
+.chips li {
+  font-size: 13px;
+  line-height: 1.5;
+  padding: 6px 12px;
+  border: 1px solid rgba(246, 241, 232, 0.22);
+  border-radius: 9999px;
+  color: rgba(246, 241, 232, 0.78);
+  white-space: nowrap;
+}
+.shopGo {
+  margin-top: auto;
+  padding-top: 22px;
+}
+.golink {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 2px; /* 상하 12 + 행높이 21 = 45px 터치 타깃 */
+  font-size: 15px;
+  line-height: 1.4;
+  font-weight: 500;
+  color: var(--fg);
+  border-bottom: 1px solid var(--hair-2);
+  transition: color 0.3s ease, border-color 0.3s ease, gap 0.3s ease;
+}
+.golink svg {
+  flex: none;
+}
+.golink:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  gap: 14px;
+}
+.note {
+  margin: clamp(26px, 4vw, 34px) 0 0;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--ivory-58);
+}
+
+/* ── 3. 자리 잡은 이야기 ─────────────────────────────────────────────── */
+.story {
+  border-top: 1px solid var(--hair-soft);
+  background: linear-gradient(180deg, rgba(27, 44, 33, 0.34) 0%, rgba(11, 12, 10, 0) 62%);
+}
+.cols {
+  display: grid;
+  gap: clamp(40px, 6vw, 64px);
+  grid-template-columns: 1fr;
+  margin-top: clamp(38px, 6vw, 60px);
+}
+.col h3 {
+  font-size: 22px;
+  font-weight: 400;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--hair);
+}
+.rows li {
+  display: grid;
+  grid-template-columns: 34px 1fr;
+  gap: 0 14px;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--hair-soft);
+}
+.no {
+  font-family: var(--font-logo);
+  font-size: 15px;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+  padding-top: 3px;
+}
+.rows b {
+  font-family: var(--font-serif);
+  font-size: 17px;
+  font-weight: 400;
+  line-height: 1.5;
+  display: block;
+}
+.rows p {
+  margin: 8px 0 0;
+  font-size: 15px;
+  line-height: 1.76;
+  color: var(--ivory-72);
+}
+
+/* 입점 문의 패널 — image-assets #14 (Jens Riesenberg / Unsplash) + 강한 스크림 */
+.join {
+  position: relative;
+  padding: clamp(28px, 5vw, 38px) clamp(22px, 4vw, 32px) clamp(30px, 5vw, 38px);
+  border: 1px solid var(--hair-soft);
+  border-radius: 2px;
+  overflow: hidden;
+  isolation: isolate;
+}
+.joinBg {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-color: var(--ink-900);
+  background-image: linear-gradient(180deg, rgba(11, 12, 10, 0.86) 0%, rgba(11, 12, 10, 0.93) 100%),
+    url('https://images.unsplash.com/photo-1690553543873-ccaf9e2a9d5b?auto=format&fit=crop&w=1920&q=80'),
+    linear-gradient(200deg, #1b2c21 0%, #0b0c0a 100%);
+  background-size: cover, cover, cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+.join h3 {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+.join .lead {
+  margin: 14px 0 0;
+  font-size: 15px;
+}
+.join .rows {
+  margin-top: 20px;
+}
+.join .rows li:last-child {
+  border-bottom: 0;
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 14px 30px;
+  margin-top: 26px;
+  background: var(--cta-bg);
+  color: var(--cta-fg);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 600;
+  border: 1px solid var(--cta-bg);
+  border-radius: 2px;
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+.btn:hover {
+  background: transparent;
+  color: var(--fg);
+  border-color: var(--fg);
+}
+.joinAfter {
+  margin: 16px 0 0;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--ivory-58);
+}
+
+/* ── 4. 푸터 ─────────────────────────────────────────────────────────── */
+.siteFoot {
+  border-top: 1px solid var(--hair);
+  padding: clamp(48px, 7vw, 72px) 0 clamp(44px, 6vw, 60px);
+  background: var(--ink-950);
+}
+.footTop {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.footLogo {
+  font-family: var(--font-logo);
+  font-style: italic;
+  font-size: 21px;
+  color: var(--fg);
+  align-self: flex-start;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  transition: color 0.3s ease;
+}
+.footLogo:hover {
+  color: var(--accent);
+}
+.footSay {
+  font-family: var(--font-serif);
+  font-weight: 300;
+  font-size: 17px;
+  line-height: 1.8;
+  color: var(--ivory-88);
+  max-width: 40ch;
+}
+.footNav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 26px;
+  margin: 30px 0 0;
+}
+.footNav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-size: 14px;
+  color: var(--ivory-72);
+  border-bottom: 1px solid transparent;
+  transition: color 0.3s ease, border-color 0.3s ease;
+}
+.footNav a:hover {
+  color: var(--fg);
+  border-color: var(--hair-2);
+}
+.footNotes {
+  margin: 26px 0 0;
+  padding: 22px 0 0;
+  border-top: 1px solid var(--hair-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.footNotes p {
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--ivory-58);
+}
+.credits {
+  margin: 22px 0 0;
+  font-size: 14px;
+  line-height: 1.8;
+  color: var(--ivory-58);
+}
+.credits .eyebrow {
+  display: block;
+  margin-bottom: 6px;
+}
+
+/* ── 반응형 ──────────────────────────────────────────────────────────── */
+@media (min-width: 640px) {
+  .page {
+    --pad: 32px;
+  }
+  .rows li {
+    grid-template-columns: 40px 1fr;
+  }
+}
+@media (min-width: 900px) {
+  .shops {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .shopMedia {
+    aspect-ratio: 4 / 3;
+  }
+  .cols {
+    grid-template-columns: 1.02fr 0.98fr;
+    align-items: start;
+  }
+  .footTop {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 48px;
+  }
+  .footSay {
+    text-align: right;
+  }
+}
+@media (min-width: 1100px) {
+  .page {
+    --pad: 48px;
+  }
+  .intro {
+    min-height: 88svh;
+  }
+}

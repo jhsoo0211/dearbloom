@@ -285,12 +285,11 @@ main{position:relative;z-index:1}
 .pick-note .nic{flex:none;color:var(--lav-tint)}
 .pick-note .nic svg{width:17px;height:17px}
 
-/* ── 꽃 이야기 · 나라별 꽃말 ────────────────────────────────────────── */
+/* ── 꽃에 얽힌 설화 · 나라별 꽃말 ──────────────────────────────────── */
 .story-body{font-size:15px;line-height:1.9;color:var(--fg-70)}
-.src-badge{display:inline-flex;align-items:center;gap:8px;margin-top:16px;min-height:32px;
-  padding:4px 13px;border-radius:9999px;border:1px solid var(--accent-line);
-  font-size:12px;line-height:1.45;color:var(--fg-70)}
-.src-badge .seal{flex:none;width:7px;height:7px;border-radius:50%;background:var(--seal)}
+/* 이야기의 갈래 — 도장 배지(pill+seal)가 아니라 각주 톤으로 (§1.5d) */
+.lore-src{margin-top:14px;padding-left:11px;border-left:1px solid var(--accent-line);
+  font-size:12.5px;line-height:1.6;color:var(--fg-50)}
 .lore-h{margin-top:28px;font-size:10.5px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;
   color:var(--accent)}
 .lore{margin-top:12px}
@@ -334,6 +333,14 @@ main{position:relative;z-index:1}
 .copy:active{transform:scale(.975)}
 .copy svg{width:16px;height:16px}
 .foot-note{margin-top:16px;font-size:13px;color:var(--fg-50)}
+/* §1.5e 함께 담을 한 줄 — 멘트(본문) 이하 위계 */
+.qline{margin-top:22px;padding-top:18px;border-top:1px solid var(--hair)}
+.qline-lab{font-size:10.5px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--accent)}
+.qline-ko{margin-top:12px;font-family:var(--font-serif);font-weight:300;
+  font-size:15px;line-height:1.8;letter-spacing:-.01em;color:var(--fg-70)}
+.qline-by{margin-top:8px;font-size:12.5px;line-height:1.6;color:var(--fg-50)}
+.copy-sm{margin-top:12px;min-height:44px;padding:0 15px;font-size:13px}
 
 /* ── CTA · 제휴 ─────────────────────────────────────────────────────── */
 .btn{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;min-height:54px;
@@ -492,11 +499,11 @@ main{position:relative;z-index:1}
     </ul>
 
     <!-- ═══ 사과 원칙 배너 (Lavender) ═══ -->
-    <aside class="apology" aria-label="사과 원칙 안내">
+    <aside class="apology" aria-label="마음을 먼저 전하는 방법 안내">
       <span class="aic" aria-hidden="true">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.6a7.4 7.4 0 0 1-7.4 7.4c-1.2 0-2.3-.3-3.3-.8L4.6 19.4 5.9 15A7.4 7.4 0 1 1 20 11.6z"/><path d="M12 8v3.6M12 14.3v.1"/></svg>
       </span>
-      <p><b>말과 책임 인정이 먼저</b>, 꽃은 그다음이에요. 아래 멘트부터 준비해 보세요.</p>
+      <p><b>꽃보다 마음이 먼저예요.</b> 아래 문장부터 건네보세요.</p>
     </aside>
 
     <!-- ═══ 세그먼트 3안 ═══ -->
@@ -557,7 +564,7 @@ main{position:relative;z-index:1}
           <svg class="pick-ic" data-ic="0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.6l4.2 4.2L19 7.2"/></svg>
           <svg class="pick-ic" data-ic="1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" hidden><circle cx="12" cy="12" r="8.4"/><path d="M12 8v4.6M12 15.6v.1"/></svg>
           <svg class="pick-ic" data-ic="2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" hidden><circle cx="12" cy="12" r="8.4"/><path d="M9.6 9.8a2.5 2.5 0 1 1 3.3 2.4c-.6.2-.9.7-.9 1.3v.4"/><path d="M12 16.9v.1"/></svg>
-          <span id="pickTrust">여러 자료에서 반복됨</span>
+          <span id="pickTrust">오래, 두루 전해지는 꽃말</span>
         </p>
         <p class="pick-note" id="pickNote" hidden>
           <span class="nic" aria-hidden="true">
@@ -572,7 +579,7 @@ main{position:relative;z-index:1}
     <section class="opt-detail" id="dtl-0" aria-label="분홍 장미 상세">
       <p class="trust-badge">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.6l4.2 4.2L19 7.2"/></svg>
-        여러 현대 자료에서 반복됨
+        오래, 두루 전해지는 꽃말
       </p>
       <p class="reason">누구에게도 오해 없이 전해지는 꽃이에요. 화려하지 않은 분홍은 잘 보이려는 선물보다, 미안한 마음을 조심스럽게 내미는 손에 가까워요.</p>
 
@@ -600,7 +607,7 @@ main{position:relative;z-index:1}
     <section class="opt-detail" id="dtl-1" aria-label="흰 튤립 상세" hidden>
       <p class="trust-badge">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.4"/><path d="M12 8v4.6M12 15.6v.1"/></svg>
-        자료 간 차이 있음 · 출처 2곳
+        시대마다 조금씩 다르게 전해져요
       </p>
       <p class="reason">‘용서를 구한다’는 뜻을 가장 정직하게 담은 꽃이에요. 미안하다는 말에서 멈추지 않고, 다시 솔직하게 시작하고 싶다는 마음까지 전해요.</p>
 
@@ -652,14 +659,14 @@ main{position:relative;z-index:1}
       </dl>
     </section>
 
-    <!-- ═══ 꽃 이야기 · 나라별 꽃말 (§1.5b) ═══ -->
+    <!-- ═══ 꽃에 얽힌 설화 · 나라별 꽃말 (§1.5b) ═══ -->
     <section class="sect" aria-labelledby="story-h">
-      <p class="overline" id="story-h">Lore <span class="ko">꽃 이야기</span></p>
+      <p class="overline" id="story-h">Lore <span class="ko">꽃에 얽힌 설화</span></p>
 
       <div id="storyFull" hidden>
         <article>
           <p class="story-body">튤립은 16~17세기 오스만 제국에서 ‘신이 아끼는 꽃’으로 불리며 궁정 문화의 중심에 있었어요. 이름도 터번을 뜻하는 ‘튈벤트(tülbend)’에서 왔다는 설이 유력해요. 네덜란드로 건너간 뒤에는 알뿌리 하나가 집 한 채 값이 되었던 ‘튤립 마니아’(1637)를 일으킨, 사람 마음을 가장 크게 흔든 꽃이기도 해요.</p>
-          <p><span class="src-badge"><span class="seal" aria-hidden="true"></span>출처: 브리태니커 · 위키피디아 Tulip mania · 검수 2026.08</span></p>
+          <p class="lore-src">이야기의 갈래 — 위키피디아 Tulip mania 외</p>
 
           <h3 class="lore-h">나라별 꽃말</h3>
           <dl class="lore">
@@ -668,7 +675,7 @@ main{position:relative;z-index:1}
             <div class="row"><dt>영국 빅토리아</dt><dd>용서(흰색), 완전한 사랑(붉은색)</dd></div>
             <div class="row"><dt>한국 현대</dt><dd>새로운 시작, 봄의 설렘</dd></div>
           </dl>
-          <p class="lore-note">꽃말은 문화와 시대에 따라 달라요. 자료 간 차이가 있는 해석은 라벨로 표시해요.</p>
+          <p class="lore-note">같은 꽃이 나라마다 다른 이야기를 품어요. 갈래가 나뉘는 해석은 표시해 드려요.</p>
         </article>
       </div>
 
@@ -728,6 +735,20 @@ main{position:relative;z-index:1}
       </div>
 
       <p class="foot-note">사과 상황에서는 유쾌 톤을 잠시 꺼두었어요.</p>
+
+      <!-- §1.5e 인용 한 줄 — 멘트가 주인공, 이건 곁들임 -->
+      <figure class="qline">
+        <figcaption class="qline-lab">함께 담을 한 줄</figcaption>
+        <blockquote>
+          <p class="qline-ko" id="quote-somwol">산에는 꽃 피네, 갈 봄 여름 없이 꽃이 피네.</p>
+        </blockquote>
+        <p class="qline-by">김소월, 〈산유화〉(1925)</p>
+        <!-- 같은 페이지에 '복사' 버튼이 여럿 — 접근성 이름으로 구분한다(가시 텍스트 '복사' 포함) -->
+        <button class="copy copy-sm" type="button" data-copy="quote-somwol" aria-label="함께 담을 한 줄 복사">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11.2" height="11.2" rx="2.6"/><path d="M15 9V6.6A2.6 2.6 0 0 0 12.4 4H6.4A2.6 2.6 0 0 0 3.8 6.6v6A2.6 2.6 0 0 0 6.4 15.2H9"/></svg>
+          <span>복사</span>
+        </button>
+      </figure>
     </section>
 
     <!-- ═══ 공유·저장 ═══ -->
@@ -765,7 +786,7 @@ main{position:relative;z-index:1}
     </section>
 
     <footer class="foot">
-      <p>dearbloom — 꽃말은 문화와 시대에 따라 달라요. 출처와 함께 보여드려요.</p>
+      <p>꽃말은 시대와 나라를 건너며 조금씩 다른 이야기가 돼요. dearbloom은 그 갈래를 함께 들려드려요.</p>
       <div class="credits">
         <h2>Image credits</h2>
         <p>이 화면의 꽃은 실사가 아닌 절차적 3D 모델이에요. 실사 컷은 홈·그룹 화면에서만 사용해요 — Photos: Unsplash</p>
@@ -841,10 +862,10 @@ main{position:relative;z-index:1}
 
   /* ── 색상 재선택 : 꽃말·신뢰 라벨 즉시 갱신 + 3D 꽃잎 색 ── */
   var PICK = {
-    '흰':   { mean:'용서, 새로운 시작', trust:'여러 자료에서 반복됨',        ic:0, hex:'#FFFFFF' },
-    '크림': { mean:'부드러운 진심',     trust:'자료 간 차이 있음',           ic:1, hex:'#F6F1E8' },
-    '분홍': { mean:'애정과 배려',       trust:'자료 간 차이 있음',           ic:1, hex:'#E2CCD1' },
-    '보라': { mean:'영원한 사랑',       trust:'단일 자료 — 참고만 해주세요', ic:2, hex:'#83779C' }
+    '흰':   { mean:'용서, 새로운 시작', trust:'오래, 두루 전해지는 꽃말',        ic:0, hex:'#FFFFFF' },
+    '크림': { mean:'부드러운 진심',     trust:'시대마다 조금씩 다르게 전해져요', ic:1, hex:'#F6F1E8' },
+    '분홍': { mean:'애정과 배려',       trust:'시대마다 조금씩 다르게 전해져요', ic:1, hex:'#E2CCD1' },
+    '보라': { mean:'영원한 사랑',       trust:'드물게 전해지는 이야기예요',      ic:2, hex:'#83779C' }
   };
   var chips = Array.prototype.slice.call(document.querySelectorAll('#colorChips .sw'));
   var pickMean = document.getElementById('pickMean');

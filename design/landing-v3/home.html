@@ -34,7 +34,7 @@
    실사 포토(Unsplash 16선 중 14장) + 꽃-테마 5종 + 오늘의 꽃 로테이션
 
    [v3.1] 꽃이 테마를 구동한다 (§1.4c) — 색을 따로 고르지 않는다.
-   꽃 칩 하나를 고르면 히어로 사진·베이스/강조 컬러·오늘의 꽃(이름·꽃말·설명·출처·사진)·CTA가
+   꽃 칩 하나를 고르면 히어로 사진·베이스/강조 컬러·오늘의 꽃(이름·꽃말·설명·이야기 라벨·사진)·CTA가
    전부 한 세트로 크로스페이드한다. 테마 id = 꽃 id.
      tulip(흰 튤립) · lily(흰 백합) · freesia(프리지아) · anemone(아네모네) · hellebore(헬레보어)
 
@@ -687,6 +687,23 @@ html[data-motion-ready] .trust-row.is-active{ opacity:1; }
   margin-top:clamp(22px,3vw,38px); font-size:11px; font-weight:600;
   letter-spacing:.2em; text-transform:uppercase; color:var(--on-media-mute); }
 
+/* ── 인용 밴드 (§1.5e) ──────────────────────────────────────────────
+   주인공은 꽃·꽃말이므로 위계는 본문 언저리까지만. 사진 없는 무지 밴드로 두어
+   앞뒤 풀블리드 사진 챕터 사이의 숨자리로 쓴다(대비도 항상 확보된다). */
+.qband{
+  background:var(--bg); color:var(--fg);
+  padding-block:clamp(64px,10vh,116px);
+  border-top:1px solid var(--hair);
+  transition:background-color var(--swap) var(--ease);
+}
+.qb{ margin:0; max-width:min(100%, 620px); }
+.qb-ko{
+  font-family:var(--font-serif); font-weight:300;
+  font-size:clamp(19px,2vw,25px); line-height:1.66; letter-spacing:-.01em; color:var(--fg);
+}
+.qb-en{ margin-top:10px; font-size:12.5px; letter-spacing:.06em; color:var(--fg-50); }
+.qb figcaption{ margin-top:18px; font-size:12.5px; line-height:1.6; color:var(--fg-70); }
+
 /* ── 챕터 04 · 피날레 ───────────────────────────────────────────────── */
 .finale{
   position:relative; isolation:isolate; overflow:hidden;
@@ -857,7 +874,7 @@ html.has-motion [data-intro]{ opacity:0; }
 
   <ul class="nav-links">
     <li><a href="#">꽃말 도감</a></li>
-    <li><a href="#">사과·화해</a></li>
+    <li><a href="#">화해의 꽃</a></li>
     <li><a href="#">팀 부케</a></li>
   </ul>
 
@@ -939,8 +956,8 @@ html.has-motion [data-intro]{ opacity:0; }
       </span>
       <p class="hero-note" data-intro>관계와 상황만 알려주세요. 어울리는 꽃과 꽃말, 추천 이유, 진짜로 쓸 수 있는 멘트까지 45초 안에 골라드려요.</p>
       <div class="hero-acts" data-intro>
-        <a class="btn btn-ghost" href="#">사과해야 해요</a>
-        <a class="btn btn-ghost" href="#">마음을 전하고 싶어요</a>
+        <a class="btn btn-ghost" href="#">먼저 손 내밀고 싶을 때</a>
+        <a class="btn btn-ghost" href="#">말로는 다 못 전할 때</a>
         <a class="btn btn-primary" href="#" data-magnetic>45초 만에 추천받기<span class="arw" aria-hidden="true">→</span></a>
       </div>
     </div>
@@ -958,9 +975,10 @@ html.has-motion [data-intro]{ opacity:0; }
         <h2 class="flower-name" id="today-name" data-reveal>흰 튤립</h2>
         <p class="flower-latin" id="today-latin" data-reveal>Tulipa gesneriana</p>
         <p class="meaning" data-reveal><span class="q" aria-hidden="true">“</span><span id="today-meaning">용서, 새로운 시작, 진심</span><span class="q" aria-hidden="true">”</span></p>
-        <p class="note" id="today-note" data-reveal>빅토리아 시대 꽃말 자료와 현대 플로리스트 가이드에서 반복되는 의미예요.</p>
-        <p class="caveat" id="today-caveat" hidden></p>
-        <p data-reveal><span class="src-badge"><span class="seal" aria-hidden="true"></span><span id="today-src">출처 2곳 검수 · 2026.08</span></span></p>
+        <p class="note" id="today-note" data-reveal>빅토리아 시대의 꽃말 이야기와 오늘의 플로리스트가 같은 뜻으로 이어 전하는 꽃이에요.</p>
+        <!-- 안전 각주 — 초기값은 기본 꽃(튤립). 꽃마다 caveat이 있으면 노출된다 -->
+        <p class="caveat" id="today-caveat">반려동물이 있다면 잎과 알뿌리는 조심해 주세요.</p>
+        <p data-reveal><span class="src-badge"><span class="seal" aria-hidden="true"></span><span id="today-src">두 갈래로 전해지는 이야기</span></span></p>
       </div>
 
       <div class="rot" data-reveal>
@@ -1008,8 +1026,8 @@ html.has-motion [data-intro]{ opacity:0; }
         <li class="trust-row" data-trust>
           <span class="num" aria-hidden="true">01</span>
           <div>
-            <h3>출처가 보이는 꽃말</h3>
-            <p>문화와 시대에 따라 다른 꽃말을 출처와 함께 보여드려요.</p>
+            <h3>이야기가 있는 꽃말</h3>
+            <p>같은 꽃도 시대와 나라마다 다른 이야기를 품어요. 그 갈래까지 들려드려요.</p>
           </div>
         </li>
         <li class="trust-row" data-trust>
@@ -1060,6 +1078,20 @@ html.has-motion [data-intro]{ opacity:0; }
   </div>
 </section>
 
+<!-- ═══ 인용 밴드 · 꽃을 사랑한 문장 (§1.5e — 화면당 1개, 본문 이하 위계) ═══ -->
+<section class="chapter qband" aria-labelledby="qband-h">
+  <div class="wrap">
+    <p class="overline" id="qband-h" data-reveal>꽃을 사랑한 문장</p>
+    <figure class="qb" data-reveal>
+      <blockquote>
+        <p class="qb-ko">“대지는 꽃으로 웃는다.”</p>
+        <p class="qb-en" lang="en">Earth laughs in flowers</p>
+      </blockquote>
+      <figcaption>랄프 월도 에머슨, 〈Hamatreya〉(1846)</figcaption>
+    </figure>
+  </div>
+</section>
+
 <!-- ═══════════════ 챕터 04 · 피날레 ═══════════════ -->
 <section class="chapter finale" id="start" aria-labelledby="start-title">
   <div class="media-bg" data-lazy-bg aria-hidden="true"
@@ -1073,8 +1105,8 @@ html.has-motion [data-intro]{ opacity:0; }
       <p class="lede" data-reveal>관계와 상황만 알려주세요. 어울리는 꽃과 꽃말, 추천 이유, 진짜로 쓸 수 있는 멘트까지 45초 안에 골라드려요.</p>
       <div class="finale-acts" data-reveal>
         <a class="btn btn-primary" href="#" data-magnetic>45초 만에 추천받기<span class="arw" aria-hidden="true">→</span></a>
-        <a class="btn btn-ghost" href="#">사과해야 해요</a>
-        <a class="btn btn-ghost" href="#">마음을 전하고 싶어요</a>
+        <a class="btn btn-ghost" href="#">먼저 손 내밀고 싶을 때</a>
+        <a class="btn btn-ghost" href="#">말로는 다 못 전할 때</a>
       </div>
     </div>
   </div>
@@ -1086,10 +1118,10 @@ html.has-motion [data-intro]{ opacity:0; }
 <footer class="footer">
   <div class="wrap">
     <div class="footer-top">
-      <p class="disc">dearbloom — 꽃말은 문화와 시대에 따라 달라요. 출처와 함께 보여드려요.</p>
+      <p class="disc">꽃말은 시대와 나라를 건너며 조금씩 다른 이야기가 돼요. dearbloom은 그 갈래를 함께 들려드려요.</p>
       <nav class="footer-links" aria-label="보조 메뉴">
         <a href="#">꽃말 도감</a>
-        <a href="#">사과·화해 모드</a>
+        <a href="#">화해의 꽃</a>
         <a href="#">팀 부케(준비 중)</a>
       </nav>
     </div>
@@ -1138,16 +1170,18 @@ html.has-motion [data-intro]{ opacity:0; }
     { id:'tulip', meta:'#0B0C0A',
       name:'흰 튤립', latin:'Tulipa gesneriana',
       meaning:'용서, 새로운 시작, 진심',
-      note:'빅토리아 시대 꽃말 자료와 현대 플로리스트 가이드에서 반복되는 의미예요.',
-      src:'출처 2곳 검수 · 2026.08',
+      note:'빅토리아 시대의 꽃말 이야기와 오늘의 플로리스트가 같은 뜻으로 이어 전하는 꽃이에요.',
+      src:'두 갈래로 전해지는 이야기',
+      /* §1.4c — 튤립도 반려동물 각주 필수(백합만 붙으면 안전 정보가 편향돼 보인다) */
+      caveat:'반려동물이 있다면 잎과 알뿌리는 조심해 주세요.',
       alt:'어둠 속에서 조명을 받은 흰 튤립 한 송이',
       credit:'Photo: Liana S / Unsplash',
       img:'https://images.unsplash.com/photo-1772724718360-58108ae57433?auto=format&fit=crop&w=1920&q=80' },
     { id:'lily', meta:'#F6F1E8',
       name:'흰 백합', latin:'Lilium candidum',
       meaning:'순수, 그리고 다시 피는 마음',
-      note:'흰 백합을 순수·재생의 의미로 소개하는 자료가 여러 곳에서 반복돼요.',
-      src:'여러 자료에서 반복됨 · 2026.08',
+      note:'흰 백합을 순수와 다시 피어남으로 읽는 이야기는 오래도록 되풀이돼 왔어요.',
+      src:'오래, 두루 전해지는 꽃말',
       /* §1.4c — 백합 테마 안전 각주 필수 */
       caveat:'반려묘가 있는 집이라면 백합은 피해주세요. 고양이에게는 적은 양도 위험한 꽃이에요.',
       alt:'어두운 배경의 유리 화병에 꽂힌 흰 백합 여러 송이',
@@ -1157,15 +1191,15 @@ html.has-motion [data-intro]{ opacity:0; }
       name:'프리지아', latin:'Freesia refracta',
       meaning:'새로운 시작, 우정',
       note:'흰 프리지아를 먼저 권해요. 봄에 가장 흔하고, 고양이·강아지에게도 안전한 꽃이에요.',
-      src:'여러 현대 자료에서 반복됨 · 2026.08',
+      src:'오래, 두루 전해지는 꽃말',
       alt:'어두운 배경에 놓인 흰 꽃과 초록 잎',
       credit:'Photo: Christina / Unsplash',
       img:'https://images.unsplash.com/photo-1590791211964-cb77c1e61a3d?auto=format&fit=crop&w=1920&q=80' },
     { id:'anemone', meta:'#141613',
       name:'아네모네', latin:'Anemone coronaria',
       meaning:'기다림, 그리고 진심',
-      note:'빅토리아 시대에는 ‘기다림’으로 읽혔고, 현대 자료에서는 색에 따라 다르게 풀이돼요.',
-      src:'색상·문화권에 따라 해석이 달라요 · 2026.08',
+      note:'빅토리아 시대에는 ‘기다림’으로 읽혔고, 요즘은 색에 따라 다르게 풀이돼요.',
+      src:'색상·문화권에 따라 해석이 달라요',
       alt:'어둠 속 자줏빛이 도는 꽃 어레인지',
       credit:'Photo: Margaret Jaszowska / Unsplash',
       /* image-assets.md 16번 — 붉은 기 그레이딩 필수 · 히어로에는 쓰지 않는다 */
@@ -1174,8 +1208,8 @@ html.has-motion [data-intro]{ opacity:0; }
     { id:'hellebore', meta:'#141613',
       name:'헬레보어', latin:'Helleborus orientalis',
       meaning:'위로, 그리고 평온',
-      note:'한겨울에 피는 꽃이에요. 위로·평온이라는 풀이는 아직 자료가 적어 참고만 해주세요.',
-      src:'단일 자료 — 참고만 해주세요 · 2026.08',
+      note:'한겨울에 피는 꽃이에요. 위로·평온이라는 풀이는 아직 드물게 전해져 참고만 해주세요.',
+      src:'드물게 전해지는 이야기예요',
       alt:'검정 배경 위로 고개를 숙인 흰 꽃 한 송이',
       credit:'Photo: Dario Ghisini / Unsplash',
       img:'https://images.unsplash.com/photo-1769445919416-f66fcc827056?auto=format&fit=crop&w=1080&h=1350&q=80' }

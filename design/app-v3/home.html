@@ -346,6 +346,14 @@ body{
   letter-spacing:-.015em;color:var(--on-media)}
 .fl-mean .q{color:var(--accent)}
 .fl-note{margin-top:14px;font-size:14px;line-height:1.72;color:var(--on-media-mute);max-width:31ch}
+/* 안전 각주 — 해당 꽃에만 붙고 나머지는 hidden (§1.4c) */
+.fl-caveat{margin-top:10px;padding-left:11px;border-left:2px solid var(--accent-line);
+  font-size:14px;line-height:1.66;color:var(--on-media-mute);max-width:31ch}
+.fl-caveat[hidden]{display:none}
+/* §1.5e 한 줄 — 주인공(꽃·꽃말) 아래 위계로만 */
+.fl-quote{position:relative;margin-top:18px;max-width:32ch;
+  font-family:var(--font-serif);font-style:italic;font-weight:300;
+  font-size:13.5px;line-height:1.7;color:var(--on-media-mute)}
 .src-badge{display:inline-flex;align-items:center;gap:8px;margin-top:16px;min-height:32px;
   padding:4px 14px;border-radius:9999px;border:1px solid var(--accent-line);
   font-size:12px;line-height:1.45;color:var(--on-media)}
@@ -506,9 +514,14 @@ html[data-flower="lily"] .mode-lav .num{color:#5E5670}
         <h2 class="fl-name" id="today-name">흰 튤립</h2>
         <p class="fl-latin" id="today-latin">Tulipa gesneriana</p>
         <p class="fl-mean"><span class="q" aria-hidden="true">“</span><span id="today-mean">용서, 새로운 시작, 진심</span><span class="q" aria-hidden="true">”</span></p>
-        <p class="fl-note" id="today-note">빅토리아 시대 꽃말 자료와 현대 플로리스트 가이드에서 반복되는 의미예요.</p>
-        <p><span class="src-badge"><span class="seal" aria-hidden="true"></span><span id="today-src">출처 2곳 검수 · 2026.08</span></span></p>
+        <p class="fl-note" id="today-note">빅토리아 시대의 꽃말 이야기와 오늘의 플로리스트가 같은 뜻으로 이어 전하는 꽃이에요.</p>
+        <!-- 안전 각주 — 초기값은 기본 꽃(튤립). caveat이 있는 꽃에서만 노출된다 -->
+        <p class="fl-caveat" id="today-caveat">반려동물이 있다면 잎과 알뿌리는 조심해 주세요.</p>
+        <p><span class="src-badge"><span class="seal" aria-hidden="true"></span><span id="today-src">두 갈래로 전해지는 이야기</span></span></p>
       </div>
+
+      <!-- §1.5e 한 줄 (dearbloom 자작) — 오늘의 꽃 카드 하단, 본문보다 작은 위계 -->
+      <p class="fl-quote">오늘 핀 꽃은, 오늘 하고 싶은 말을 알고 있어요.</p>
 
       <span class="hero-credit" id="today-credit">Photo: Bernd Dittrich / Unsplash</span>
     </section>
@@ -549,8 +562,8 @@ html[data-flower="lily"] .mode-lav .num{color:#5E5670}
       </a>
       <p class="cta-note">45초면 충분해요</p>
       <nav class="entries" aria-label="바로 시작하기">
-        <a class="entry entry-lav" href="question.html"><span class="dotm" aria-hidden="true"></span>사과해야 해요</a>
-        <a class="entry" href="question.html"><span class="dotm" aria-hidden="true"></span>마음을 전하고 싶어요</a>
+        <a class="entry entry-lav" href="question.html"><span class="dotm" aria-hidden="true"></span>먼저 손 내밀고 싶을 때</a>
+        <a class="entry" href="question.html"><span class="dotm" aria-hidden="true"></span>말로는 다 못 전할 때</a>
       </nav>
     </section>
 
@@ -575,8 +588,8 @@ html[data-flower="lily"] .mode-lav .num{color:#5E5670}
         </a>
         <a class="mode mode-lav" href="question.html">
           <span class="num" aria-hidden="true">04</span>
-          <b>사과·화해</b>
-          <span class="mtxt">미안한 마음부터 전해야 해요</span>
+          <b>화해의 꽃</b>
+          <span class="mtxt">먼저 손 내밀고 싶은 날이에요</span>
         </a>
       </nav>
     </section>
@@ -588,8 +601,8 @@ html[data-flower="lily"] .mode-lav .num{color:#5E5670}
         <li>
           <span class="num" aria-hidden="true">01</span>
           <div>
-            <h3>출처가 보이는 꽃말</h3>
-            <p>문화와 시대에 따라 다른 꽃말을 출처와 함께 보여드려요.</p>
+            <h3>이야기가 있는 꽃말</h3>
+            <p>같은 꽃도 시대와 나라마다 다른 이야기를 품어요. 그 갈래까지 들려드려요.</p>
           </div>
         </li>
         <li>
@@ -620,10 +633,10 @@ html[data-flower="lily"] .mode-lav .num{color:#5E5670}
     </section>
 
     <footer class="foot">
-      <p class="disc">dearbloom — 꽃말은 문화와 시대에 따라 달라요. 출처와 함께 보여드려요.</p>
+      <p class="disc">꽃말은 시대와 나라를 건너며 조금씩 다른 이야기가 돼요. dearbloom은 그 갈래를 함께 들려드려요.</p>
       <nav class="foot-links" aria-label="더 보기">
         <a href="#">꽃말 도감</a>
-        <a href="#">사과·화해 모드</a>
+        <a href="#">화해의 꽃</a>
         <a href="#">팀 부케(준비 중)</a>
       </nav>
       <div class="credits">
@@ -659,7 +672,7 @@ html[data-flower="lily"] .mode-lav .num{color:#5E5670}
 <script>
 /* ═══════════════════════════════════════════════════════════════════════
    꽃이 테마를 구동한다 (§1.4c v3.1)
-   칩을 고르면 사진·강조색·꽃말·출처 라벨이 세트로 전환된다.
+   칩을 고르면 사진·강조색·꽃말·이야기 라벨이 세트로 전환된다.
    ═════════════════════════════════════════════════════════════════════ */
 (function(){
   var docEl  = document.documentElement;
@@ -669,28 +682,30 @@ html[data-flower="lily"] .mode-lav .num{color:#5E5670}
     /* 기본 — §1.5 오늘의 꽃 카피를 글자 그대로 */
     tulip:{ name:'흰 튤립', latin:'Tulipa gesneriana',
       mean:'용서, 새로운 시작, 진심',
-      note:'빅토리아 시대 꽃말 자료와 현대 플로리스트 가이드에서 반복되는 의미예요.',
-      src:'출처 2곳 검수 · 2026.08',
+      note:'빅토리아 시대의 꽃말 이야기와 오늘의 플로리스트가 같은 뜻으로 이어 전하는 꽃이에요.',
+      /* 안전 문구 — 백합만 각주가 붙으면 안전 정보가 편향돼 보인다 */
+      caveat:'반려동물이 있다면 잎과 알뿌리는 조심해 주세요.',
+      src:'두 갈래로 전해지는 이야기',
       credit:'Photo: Bernd Dittrich / Unsplash', theme:'#0B0C0A' },
     lily:{ name:'흰 백합', latin:'Lilium candidum',
       mean:'순수, 그리고 다시 피는 마음',
       note:'고양이가 있는 집이라면 백합류는 피해주세요. 고양이에게 특히 위험한 꽃이에요.',
-      src:'여러 자료에서 반복됨 · 2026.08',
+      src:'오래, 두루 전해지는 꽃말',
       credit:'Photo: Evie S. / Unsplash', theme:'#F6F1E8' },
     freesia:{ name:'프리지아', latin:'Freesia refracta',
       mean:'새로운 시작, 우정',
       note:'흰 프리지아를 먼저 권해요. 봄에 가장 흔하고, 고양이·강아지에게도 안전한 꽃이에요.',
-      src:'여러 현대 자료에서 반복됨 · 2026.08',
+      src:'오래, 두루 전해지는 꽃말',
       credit:'Photo: Christina / Unsplash', theme:'#141613' },
     anemone:{ name:'아네모네', latin:'Anemone coronaria',
       mean:'기다림, 그리고 진심',
-      note:'빅토리아 시대에는 ‘기다림’으로 읽혔고, 현대 자료에서는 색에 따라 다르게 풀이돼요.',
-      src:'색상·문화권에 따라 해석이 달라요 · 2026.08',
+      note:'빅토리아 시대에는 ‘기다림’으로 읽혔고, 요즘은 색에 따라 다르게 풀이돼요.',
+      src:'색상·문화권에 따라 해석이 달라요',
       credit:'Photo: Julia Vivcharyk / Unsplash', theme:'#141613' },
     hellebore:{ name:'헬레보어', latin:'Helleborus orientalis',
       mean:'위로, 그리고 평온',
-      note:'겨울에 피는 꽃이에요. 아래 꽃말은 단일 자료에서만 확인했으니 참고만 해주세요.',
-      src:'단일 자료 — 참고만 해주세요 · 2026.08',
+      note:'겨울에 피는 꽃이에요. 아래 꽃말은 드물게 전해지는 이야기라 참고만 해주세요.',
+      src:'드물게 전해지는 이야기예요',
       credit:'Photo: Annie Spratt / Unsplash', theme:'#141613' }
   };
 
@@ -701,6 +716,7 @@ html[data-flower="lily"] .mode-lav .num{color:#5E5670}
   var elLat  = document.getElementById('today-latin');
   var elMean = document.getElementById('today-mean');
   var elNote = document.getElementById('today-note');
+  var elCav  = document.getElementById('today-caveat');
   var elSrc  = document.getElementById('today-src');
   var elCred = document.getElementById('today-credit');
   var metaTh = document.getElementById('meta-theme');
@@ -734,6 +750,8 @@ html[data-flower="lily"] .mode-lav .num{color:#5E5670}
     elLat.textContent  = f.latin;
     elMean.textContent = f.mean;
     elNote.textContent = f.note;
+    elCav.textContent  = f.caveat || '';
+    elCav.hidden       = !f.caveat;
     elSrc.textContent  = f.src;
     elCred.textContent = f.credit;
   }

@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="description" content="dearbloom — 하고 싶은 말부터 고르면, 꽃이 대신 말해드려요.">
+<title>dearbloom — 랜딩 히어로 (웹)</title>
+
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="preconnect" href="https://hangeul.pstatic.net" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap">
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"
+  }
+}
+</script>
+
+<style>
+/* ─────────────────────────────────────────────────────────────
+   dearbloom — 웹 랜딩 히어로
+   팔레트: docs/design-spec.md §1.4 (다크 셰이드 파생)
+   ───────────────────────────────────────────────────────────── */
+
+@font-face {
+  font-family: 'MaruBuri'; font-weight: 300; font-style: normal; font-display: swap;
+  src: url('https://hangeul.pstatic.net/hangeul_static/webfont/MaruBuri/MaruBuri-Light.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'MaruBuri'; font-weight: 200; font-style: normal; font-display: swap;
+  src: url('https://hangeul.pstatic.net/hangeul_static/webfont/MaruBuri/MaruBuri-ExtraLight.woff2') format('woff2');
+}
+
+:root {
+  /* §1.4 팔레트 */
+  --ivory:    #F6F1E8;
+  --ink:      #1F211E;
+  --stem:     #263B2E;
+  --rose:     #8A3448;
+  --lavender: #83779C;
+  --gold:     #C8963E;
+  /* 다크 파생 (§1.4 허용 셰이드) */
+  --night:    #0B0C0A;
+  --wine:     #5C2230;
+
+  --font-serif: 'MaruBuri', 'Noto Serif KR', 'Nanum Myeongjo', 'AppleMyungjo', Batang, serif;
+  --font-sans:  'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo',
+                'Malgun Gothic', 'Segoe UI', Roboto, sans-serif;
+  --font-logo:  'Instrument Serif', 'MaruBuri', Georgia, 'Times New Roman', serif;
+
+  --ease: cubic-bezier(.22,.68,.16,1);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;              /* 풀스크린 히어로 — 스크롤 없음 */
+  overscroll-behavior: none;
+  background: var(--night);
+}
+
+body {
+  font-family: var(--font-sans);
+  color: var(--ivory);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* ── 레이어 0: 3D 캔버스 ───────────────────────────────────── */
+#scene {
+  position: fixed; inset: 0;
+  width: 100%; height: 100%;
+  display: block;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* ── 레이어 1: WebGL 폴백 배경 (§2-C 다층 그라디언트) ─────── */
+/* 기본은 보이는 상태 → WebGL 성공 시 페이드 아웃. JS/모듈 실패에도 무결. */
+.fallback {
+  position: fixed; inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity 1.2s var(--ease);
+  background:
+    radial-gradient(120% 90% at 70% 20%, #5C2230 0%, transparent 60%),
+    radial-gradient(90% 80% at 20% 80%, rgba(138,52,72,.85) 0%, transparent 55%),
+    radial-gradient(70% 60% at 85% 75%, rgba(131,119,156,.35) 0%, transparent 60%),
+    var(--night);
+}
+body.webgl-ok .fallback { opacity: 0; }
+
+/* ── 레이어 6: 비네트 + 스크림 (텍스트 가독성) ─────────────── */
+.vignette {
+  position: fixed; inset: 0;
+  z-index: 6;
+  pointer-events: none;
+  background:
+    radial-gradient(130% 95% at 50% 46%,
+      rgba(11,12,10,0) 26%,
+      rgba(11,12,10,.30) 60%,
+      rgba(11,12,10,.72) 86%,
+      rgba(11,12,10,.92) 100%);
+}
+.scrim {
+  position: fixed; inset: 0;
+  z-index: 7;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg,
+      rgba(11,12,10,.80) 0%,
+      rgba(11,12,10,.34) 14%,
+      rgba(11,12,10,0)   30%,
+      rgba(11,12,10,0)   52%,
+      rgba(11,12,10,.52) 78%,
+      rgba(11,12,10,.90) 100%);
+}
+
+/* ── 레이어 12: 필름 그레인 (§2-C 기법) ────────────────────── */
+.grain {
+  position: fixed; inset: 0;
+  width: 100%; height: 100%;
+  z-index: 12;
+  pointer-events: none;
+  opacity: .04;
+  mix-blend-mode: overlay;
+}
+
+/* ── 리퀴드 글래스 ─────────────────────────────────────────── */
+.liquid-glass {
+  background: rgba(255,255,255,0.01);
+  background-blend-mode: luminosity;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: none;
+  box-shadow: inset 0 1px 1px rgba(255,255,255,0.1);
+  position: relative;
+  overflow: hidden;
+}
+.liquid-glass::before {
+  content: "";
+  position: absolute; inset: 0;
+  border-radius: inherit;
+  padding: 1.4px;
+  background: linear-gradient(180deg,
+    rgba(255,255,255,0.45) 0%,
+    rgba(255,255,255,0.15) 20%,
+    rgba(255,255,255,0)    40%,
+    rgba(255,255,255,0)    60%,
+    rgba(255,255,255,0.15) 80%,
+    rgba(255,255,255,0.45) 100%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+          mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+          mask-composite: exclude;
+  pointer-events: none;
+}
+
+.liquid-glass-strong {
+  background: rgba(255,255,255,0.01);
+  background-blend-mode: luminosity;
+  backdrop-filter: blur(50px);
+  -webkit-backdrop-filter: blur(50px);
+  border: none;
+  box-shadow: inset 0 1px 1px rgba(255,255,255,0.15), 4px 4px 4px rgba(0,0,0,0.05);
+  position: relative;
+  overflow: hidden;
+}
+.liquid-glass-strong::before {
+  content: "";
+  position: absolute; inset: 0;
+  border-radius: inherit;
+  padding: 1.4px;
+  background: linear-gradient(180deg,
+    rgba(255,255,255,0.5)  0%,
+    rgba(255,255,255,0.2)  20%,
+    rgba(255,255,255,0)    40%,
+    rgba(255,255,255,0)    60%,
+    rgba(255,255,255,0.2)  80%,
+    rgba(255,255,255,0.5)  100%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+          mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+          mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* ── 상단 내비 ─────────────────────────────────────────────── */
+.nav {
+  position: fixed;
+  top: 20px; left: 0; right: 0;
+  margin-inline: auto;
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 7px 7px 20px;
+  border-radius: 9999px;
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: opacity .9s var(--ease), transform .9s var(--ease);
+}
+body.is-ready .nav { opacity: 1; transform: none; }
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 44px;
+  padding-right: 6px;
+  color: var(--ivory);
+  text-decoration: none;
+}
+.brand .mark { width: 19px; height: 19px; flex: none; color: var(--ivory); opacity: .92; }
+.brand .wordmark-sm {
+  font-family: var(--font-logo);
+  font-style: italic;
+  font-size: 22px;
+  line-height: 1;
+  letter-spacing: -.01em;
+  padding-top: 2px;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin: 0; padding: 0 4px;
+  list-style: none;
+}
+.nav-links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 13px;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -.005em;
+  color: rgba(246,241,232,.70);
+  text-decoration: none;
+  border-radius: 9999px;
+  transition: color .3s var(--ease), background-color .3s var(--ease);
+  white-space: nowrap;
+}
+.nav-links a:hover,
+.nav-links a:focus-visible { color: var(--ivory); background: rgba(246,241,232,.06); }
+
+.nav-cta {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 22px;
+  border-radius: 9999px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--ivory);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: transform .35s var(--ease), box-shadow .35s var(--ease);
+}
+.nav-cta:hover, .nav-cta:focus-visible {
+  transform: scale(1.04);
+  box-shadow: inset 0 1px 1px rgba(255,255,255,0.22),
+              0 0 22px rgba(246,241,232,.30),
+              0 0 46px rgba(246,241,232,.12);
+}
+
+/* ── 히어로 타이틀 ─────────────────────────────────────────── */
+.hero {
+  position: fixed;
+  top: 126px; left: 0; right: 0;
+  z-index: 20;
+  padding-inline: 20px;
+  text-align: center;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 1s var(--ease), transform 1s var(--ease);
+}
+body.is-ready .hero { opacity: 1; transform: none; }
+
+.hero h1 { margin: 0; font-weight: 400; }
+
+.hero .logotype {
+  display: block;
+  font-family: var(--font-logo);
+  font-style: italic;
+  font-weight: 400;
+  font-size: clamp(72px, 16vw, 240px);
+  line-height: .92;
+  letter-spacing: -0.02em;
+  color: var(--ivory);
+  text-shadow: 0 2px 60px rgba(11,12,10,.55), 0 0 120px rgba(92,34,48,.35);
+}
+
+.hero .sub {
+  display: block;
+  margin-top: clamp(14px, 1.6vw, 26px);
+  font-family: var(--font-serif);
+  font-weight: 300;
+  font-size: clamp(18px, 2.2vw, 28px);
+  line-height: 1.5;
+  letter-spacing: -.01em;
+  color: rgba(246,241,232,.88);
+  text-shadow: 0 1px 24px rgba(11,12,10,.7);
+}
+
+/* ── 하단 행 ───────────────────────────────────────────────── */
+.dock {
+  position: fixed;
+  bottom: 48px; left: 0; right: 0;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: end;
+  gap: 28px;
+  padding-inline: clamp(20px, 4vw, 56px);
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 1s var(--ease), transform 1s var(--ease);
+}
+body.is-ready .dock { opacity: 1; transform: none; transition-delay: .3s; }
+
+.dock-copy {
+  margin: 0;
+  max-width: 240px;
+  font-family: var(--font-sans);
+  font-weight: 300;
+  font-size: 14px;
+  line-height: 1.65;
+  letter-spacing: -.01em;
+  color: rgba(246,241,232,.75);
+  text-shadow: 0 1px 16px rgba(11,12,10,.8);
+}
+.dock-copy.right { justify-self: end; text-align: right; }
+
+.dock-cta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 2px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+  padding: 0 30px;
+  border-radius: 9999px;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -.01em;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: transform .35s var(--ease), box-shadow .35s var(--ease), background-color .35s var(--ease);
+}
+
+.btn-primary {
+  background: var(--ivory);
+  color: var(--ink);
+  box-shadow: 0 2px 30px rgba(246,241,232,.16);
+}
+.btn-primary:hover, .btn-primary:focus-visible {
+  transform: scale(1.03);
+  box-shadow: 0 0 28px rgba(246,241,232,.46), 0 0 70px rgba(246,241,232,.20);
+}
+
+.btn-ghost {
+  color: var(--ivory);
+  font-weight: 500;
+}
+.btn-ghost:hover, .btn-ghost:focus-visible {
+  transform: scale(1.03);
+  box-shadow: inset 0 1px 1px rgba(255,255,255,0.2), 0 0 24px rgba(246,241,232,.20);
+}
+
+/* 포커스 링 */
+a:focus-visible, button:focus-visible {
+  outline: 2px solid rgba(246,241,232,.85);
+  outline-offset: 3px;
+}
+
+/* 스크린리더 전용 */
+.sr-only {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* ── 반응형 ────────────────────────────────────────────────── */
+@media (max-width: 1080px) {
+  .nav-links a { padding: 0 10px; font-size: 13px; }
+  .dock-copy { max-width: 200px; font-size: 13px; }
+}
+
+@media (max-width: 860px) {
+  .nav-links { display: none; }
+  .nav { padding: 7px 7px 7px 18px; }
+  .dock { grid-template-columns: 1fr; justify-items: center; }
+  .dock-copy { display: none; }
+}
+
+@media (max-width: 520px) {
+  .hero { top: 96px; padding-inline: 16px; }
+  .hero .logotype { font-size: clamp(58px, 19vw, 96px); }
+  .hero .sub { font-size: 17px; margin-top: 14px; }
+  .nav { top: 14px; gap: 6px; padding: 6px 6px 6px 16px; }
+  .brand .wordmark-sm { font-size: 20px; }
+  .nav-cta { padding: 0 18px; font-size: 13px; }
+  .dock { bottom: 30px; gap: 14px; }
+  .dock-cta {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    max-width: 320px;
+    gap: 10px;
+  }
+  .btn { width: 100%; min-height: 54px; }
+}
+
+@media (max-height: 620px) {
+  .hero { top: 84px; }
+  .hero .logotype { font-size: clamp(48px, 11vh, 96px); }
+  .hero .sub { font-size: 16px; margin-top: 10px; }
+  .dock { bottom: 22px; }
+}
+
+/* ── 모션 무효화 (§1.2 필수 블록) ──────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<!-- 3D 장미 (장식) -->
+<canvas id="scene" aria-hidden="true"></canvas>
+
+<!-- WebGL 폴백 배경 -->
+<div class="fallback" aria-hidden="true"></div>
+
+<!-- 가독성 오버레이 -->
+<div class="vignette" aria-hidden="true"></div>
+<div class="scrim" aria-hidden="true"></div>
+
+<!-- 필름 그레인 -->
+<svg class="grain" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+  <filter id="db-grain">
+    <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/>
+    <feColorMatrix type="saturate" values="0"/>
+  </filter>
+  <rect width="100%" height="100%" filter="url(#db-grain)"/>
+</svg>
+
+<!-- ── 상단 내비 ── -->
+<nav class="nav liquid-glass" aria-label="주요 메뉴">
+  <a class="brand" href="#" aria-label="dearbloom 홈">
+    <svg class="mark" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <g fill="currentColor">
+        <path d="M12 2.2c2.55 1.85 3.82 3.98 3.82 6.4 0 2.33-1.27 4.18-3.82 5.55-2.55-1.37-3.82-3.22-3.82-5.55 0-2.42 1.27-4.55 3.82-6.4Z"/>
+        <path d="M3.3 9.1c2.94-.5 5.28.14 7.03 1.92 1.62 1.65 2.02 3.74 1.2 6.26-2.86-.24-4.96-1.24-6.28-3.01C3.93 12.5 3.3 10.86 3.3 9.1Z" opacity=".72"/>
+        <path d="M20.7 9.1c-2.94-.5-5.28.14-7.03 1.92-1.62 1.65-2.02 3.74-1.2 6.26 2.86-.24 4.96-1.24 6.28-3.01 1.32-1.77 1.95-3.41 1.95-5.17Z" opacity=".72"/>
+        <path d="M11.45 17.4h1.1V22h-1.1z" opacity=".45"/>
+      </g>
+    </svg>
+    <span class="wordmark-sm">dearbloom</span>
+  </a>
+
+  <ul class="nav-links">
+    <li><a href="#">꽃말 도감</a></li>
+    <li><a href="#">사과·화해</a></li>
+    <li><a href="#">팀 부케</a></li>
+    <li><a href="#">소개</a></li>
+  </ul>
+
+  <a class="nav-cta liquid-glass-strong" href="#">추천 시작</a>
+</nav>
+
+<!-- ── 히어로 타이틀 ── -->
+<header class="hero">
+  <h1>
+    <span class="logotype">dearbloom</span>
+    <span class="sub">하고 싶은 말부터 고르면, 꽃이 대신 말해드려요.</span>
+  </h1>
+</header>
+
+<!-- ── 하단 행 ── -->
+<div class="dock">
+  <p class="dock-copy left">관계와 상황만 알려주세요. 어울리는 꽃과 꽃말, 바로 쓸 수 있는 멘트까지 골라드려요.</p>
+
+  <div class="dock-cta">
+    <a class="btn btn-primary" href="#">45초 만에 추천받기</a>
+    <a class="btn btn-ghost liquid-glass" href="#">꽃말 도감 보기</a>
+  </div>
+
+  <p class="dock-copy right">출처가 보이는 꽃말 · 반려동물 안전 확인 · 멘트 3가지 톤.</p>
+</div>
+
+<!-- UI 페이드인: 모듈 로드 성패와 무관하게 항상 실행 -->
+<script>
+  window.__bloom = { ok: false };
+  requestAnimationFrame(function () {
+    requestAnimationFrame(function () {
+      document.body.classList.add('is-ready');
+    });
+  });
+</script>
+
+<!-- ── 3D 절차적 장미 ── -->
+<script type="module">
+import * as THREE from 'three';
+
+const NIGHT = 0x0B0C0A;
+const REDUCE = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ───────── 결정론적 난수 (매 로드 동일한 꽃) ───────── */
+let _seed = 20260814;
+function rnd() {
+  _seed = (_seed * 1664525 + 1013904223) >>> 0;
+  return _seed / 4294967296;
+}
+const sym = () => rnd() * 2 - 1;
+const lerp = (a, b, t) => a + (b - a) * t;
+
+/* ───────── 꽃잎 폭 프로파일 ─────────
+   밑동은 좁고, 중상단이 가장 넓으며, 끝은 둥근 돔으로 마감 */
+function widthProfile(v) {
+  const rise  = Math.pow(v, 0.40);
+  const taper = 1 - 0.42 * Math.pow(v, 4);
+  let cap = 1;
+  if (v > 0.90) {
+    const k = (v - 0.90) / 0.115;
+    cap = Math.sqrt(Math.max(0, 1 - k * k));
+  }
+  return Math.max(0.02, rise * taper * cap);
+}
+
+/* ───────── 꽃잎 지오메트리 ─────────
+   길이 방향 v(0=밑동 → 1=끝)를 XY 평면 원호로 굽히고(bendAngle),
+   폭 방향 u(-1..1)는 Z로 펼친 뒤 법선 방향으로 컵(오목)·가장자리 말림·러플을 준다.
+   오목한 면은 -X(꽃 중심 축) 쪽을 향한다. */
+function petalGeometry(o) {
+  const segU = o.segU || 22, segV = o.segV || 26;
+  const L = o.length, HW = o.halfWidth;
+  const cup = o.cup, edgeCurl = o.edgeCurl, ruffle = o.ruffle;
+  const bendAngle = o.bendAngle, bendPow = o.bendPow || 1.7;
+
+  // 중심선 적분 (원호)
+  const cx = new Float32Array(segV + 1), cy = new Float32Array(segV + 1);
+  const nx = new Float32Array(segV + 1), ny = new Float32Array(segV + 1);
+  const dv = 1 / segV;
+  let X = 0, Y = 0;
+  for (let j = 0; j <= segV; j++) {
+    const v = j * dv;
+    const phi = bendAngle * Math.pow(v, bendPow);
+    cx[j] = X; cy[j] = Y;
+    nx[j] = Math.cos(phi); ny[j] = -Math.sin(phi);   // 바깥쪽 법선
+    X += Math.sin(phi) * L * dv;
+    Y += Math.cos(phi) * L * dv;
+  }
+
+  const cBase = new THREE.Color(o.baseColor);
+  const cTip  = new THREE.Color(o.tipColor);
+  const tmp   = new THREE.Color();
+
+  const n = (segU + 1) * (segV + 1);
+  const pos = new Float32Array(n * 3);
+  const col = new Float32Array(n * 3);
+  const uvs = new Float32Array(n * 2);
+  const idx = [];
+
+  let p = 0, c = 0, t2 = 0;
+  for (let j = 0; j <= segV; j++) {
+    const v = j * dv;
+    const w = widthProfile(v) * HW;
+    for (let i = 0; i <= segU; i++) {
+      const u = i / segU * 2 - 1;
+      const uu = u * u;
+
+      // 법선 방향 변위(모두 폭 w에 비례): 컵(안쪽) + 끝 모서리 말림(바깥) + 러플
+      // cup/edgeCurl는 "가장자리가 반폭의 몇 배만큼 휘는가" — 1.0을 넘기면 꽃잎이 말려 바늘이 된다
+      let d = -cup * uu * w;
+      d += edgeCurl * uu * uu * Math.pow(v, 3) * w * 0.9;
+      d += ruffle * Math.sin(u * Math.PI * 2.3) * Math.pow(v, 2.6) * w;
+
+      pos[p++] = cx[j] + nx[j] * d;
+      pos[p++] = cy[j] + ny[j] * d;
+      pos[p++] = u * w;
+
+      // 밑동(진함) → 끝(밝음), 가장자리는 더 밝게 — 겹친 꽃잎의 윤곽(나선)을 살린다
+      const f = Math.min(1, Math.pow(v, 1.35) * 0.94 + Math.pow(Math.abs(u), 3) * 0.32);
+      tmp.copy(cBase).lerp(cTip, f);
+      col[c++] = tmp.r; col[c++] = tmp.g; col[c++] = tmp.b;
+
+      uvs[t2++] = (u + 1) * 0.5; uvs[t2++] = v;
+    }
+  }
+  for (let j = 0; j < segV; j++) {
+    for (let i = 0; i < segU; i++) {
+      const a = j * (segU + 1) + i, b = a + 1, cI = a + segU + 1, dI = cI + 1;
+      idx.push(a, cI, b, b, cI, dI);
+    }
+  }
+
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  g.setAttribute('color',    new THREE.BufferAttribute(col, 3));
+  g.setAttribute('uv',       new THREE.BufferAttribute(uvs, 2));
+  g.setIndex(idx);
+  g.computeVertexNormals();
+  return g;
+}
+
+/* ───────── 꽃잎 결(맥) 텍스처 — bump + roughness ───────── */
+function veinTexture() {
+  const S = 512;
+  const cv = document.createElement('canvas');
+  cv.width = cv.height = S;
+  const x = cv.getContext('2d');
+
+  x.fillStyle = '#b8b8b8';
+  x.fillRect(0, 0, S, S);
+
+  // 밑동(캔버스 하단 = uv v0)에서 끝으로 뻗는 맥
+  x.lineCap = 'round';
+  for (let i = 0; i < 34; i++) {
+    const spread = (i / 33) * 2 - 1;
+    const ex = S / 2 + spread * S * 0.56;
+    const bow = spread * S * 0.16;
+    x.beginPath();
+    x.moveTo(S / 2, S + 8);
+    x.quadraticCurveTo(S / 2 + bow, S * 0.45, ex, -12);
+    x.lineWidth = 1.1 + Math.abs(Math.sin(i * 2.7)) * 1.9;
+    x.strokeStyle = 'rgba(244,244,244,' + (0.16 + Math.abs(Math.cos(i * 1.9)) * 0.24) + ')';
+    x.stroke();
+  }
+  // 잔주름
+  for (let i = 0; i < 90; i++) {
+    const yy = Math.random() * S;
+    x.beginPath();
+    x.moveTo(Math.random() * S, yy);
+    x.lineTo(Math.random() * S, yy + (Math.random() * 40 - 20));
+    x.lineWidth = 0.6;
+    x.strokeStyle = 'rgba(150,150,150,0.16)';
+    x.stroke();
+  }
+  // 밑동 그늘
+  const gr = x.createLinearGradient(0, S, 0, S * 0.55);
+  gr.addColorStop(0, 'rgba(70,70,70,0.55)');
+  gr.addColorStop(1, 'rgba(70,70,70,0)');
+  x.fillStyle = gr;
+  x.fillRect(0, 0, S, S);
+
+  const tex = new THREE.CanvasTexture(cv);
+  tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
+  return tex;
+}
+
+/* ───────── 환경맵 (외부 에셋 없이 캔버스 그라디언트 → PMREM) ───────── */
+function makeEnv(renderer) {
+  const cv = document.createElement('canvas');
+  cv.width = 256; cv.height = 128;
+  const x = cv.getContext('2d');
+
+  const g = x.createLinearGradient(0, 0, 0, 128);
+  g.addColorStop(0.00, '#4a382e');
+  g.addColorStop(0.42, '#1c1715');
+  g.addColorStop(1.00, '#080907');
+  x.fillStyle = g; x.fillRect(0, 0, 256, 128);
+
+  const key = x.createRadialGradient(64, 30, 0, 64, 30, 66);
+  key.addColorStop(0, '#ffe6c2'); key.addColorStop(1, 'rgba(0,0,0,0)');
+  x.fillStyle = key; x.fillRect(0, 0, 256, 128);
+
+  const rim = x.createRadialGradient(196, 18, 0, 196, 18, 54);
+  rim.addColorStop(0, '#c8963e'); rim.addColorStop(1, 'rgba(0,0,0,0)');
+  x.fillStyle = rim; x.fillRect(0, 0, 256, 128);
+
+  const bounce = x.createRadialGradient(130, 122, 0, 130, 122, 70);
+  bounce.addColorStop(0, 'rgba(138,52,72,.25)'); bounce.addColorStop(1, 'rgba(0,0,0,0)');
+  x.fillStyle = bounce; x.fillRect(0, 0, 256, 128);
+
+  const tex = new THREE.CanvasTexture(cv);
+  tex.mapping = THREE.EquirectangularReflectionMapping;
+  tex.colorSpace = THREE.SRGBColorSpace;
+
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  const rt = pmrem.fromEquirectangular(tex);
+  tex.dispose();
+  pmrem.dispose();
+  return rt.texture;
+}
+
+/* ───────── 부팅 ───────── */
+function fail(err) {
+  console.warn('[dearbloom] 3D 비활성화 — 폴백 배경으로 대체합니다.', err && err.message ? err.message : err);
+  document.body.classList.remove('webgl-ok');
+}
+
+let renderer = null;
+try {
+  renderer = new THREE.WebGLRenderer({
+    canvas: document.getElementById('scene'),
+    antialias: true,
+    alpha: false,
+    powerPreference: 'high-performance'
+  });
+} catch (e) { renderer = null; fail(e); }
+
+if (renderer) {
+  try {
+    boot(renderer);
+    window.__bloom.ok = true;
+    document.body.classList.add('webgl-ok');
+  } catch (e) {
+    fail(e);
+    try { renderer.dispose(); } catch (_) {}
+  }
+}
+
+function boot(renderer) {
+  const canvas = renderer.domElement;
+
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setSize(window.innerWidth, window.innerHeight, false);
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.05;
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(NIGHT);
+  scene.fog = new THREE.Fog(NIGHT, 6, 19);
+  scene.environment = makeEnv(renderer);
+  if ('environmentIntensity' in scene) scene.environmentIntensity = 0.30;
+
+  const camera = new THREE.PerspectiveCamera(34, window.innerWidth / window.innerHeight, 0.1, 120);
+  const ELEV = 0.40;          // 카메라 고도각(rad) — 꽃 속이 들여다보이는 각도
+  const PIVOT_Y = 0.42;       // 꽃 중심 높이
+  const LOOK_Y = PIVOT_Y + 0.62;   // 위로 틸트 → 꽃이 화면 중앙보다 아래
+  let camDist = 7.2, camBaseY = 3.2, camBaseZ = 6.6;
+
+  /* ── 조명: 키(따뜻한 아이보리) + 림(골드) + 로즈 필 + 낮은 앰비언트 ── */
+  const key = new THREE.DirectionalLight(0xFFE7C8, 3.8);
+  key.position.set(2.6, 7.4, 5.2);
+  scene.add(key);
+
+  const rim = new THREE.DirectionalLight(0xC8963E, 3.4);
+  rim.position.set(-3.4, 4.0, -6.6);
+  scene.add(rim);
+
+  const rim2 = new THREE.DirectionalLight(0xF6F1E8, 1.4);
+  rim2.position.set(5.6, 2.0, -5.2);
+  scene.add(rim2);
+
+  const fill = new THREE.DirectionalLight(0x8A3448, 0.30);
+  fill.position.set(-4.8, -1.8, 2.4);
+  scene.add(fill);
+
+  // 코어 글로우 — 꽃 속 나선이 검은 구멍으로 죽지 않게 안쪽에서 은은히
+  const coreGlow = new THREE.PointLight(0xFFD2A6, 1.5, 2.2, 2);
+  coreGlow.position.set(0, 0.78, 0);
+  scene.add(coreGlow);
+
+  scene.add(new THREE.AmbientLight(0x2A1E22, 0.30));
+  scene.add(new THREE.HemisphereLight(0xC8B8A8, 0x140E12, 0.18));
+
+  /* ── 머티리얼 ── */
+  const vein = veinTexture();
+  vein.anisotropy = renderer.capabilities.getMaxAnisotropy();
+
+  const petalMat = new THREE.MeshPhysicalMaterial({
+    vertexColors: true,
+    side: THREE.DoubleSide,
+    roughness: 0.62,
+    metalness: 0.0,
+    sheen: 0.42,
+    sheenColor: new THREE.Color(0xF6F1E8),
+    sheenRoughness: 0.8,
+    clearcoat: 0.15,
+    clearcoatRoughness: 0.45,
+    roughnessMap: vein,
+    bumpMap: vein,
+    bumpScale: 0.9,
+    envMapIntensity: 0.9
+  });
+
+  const leafMat = new THREE.MeshPhysicalMaterial({
+    vertexColors: true,
+    side: THREE.DoubleSide,
+    roughness: 0.72,
+    metalness: 0.0,
+    sheen: 0.3,
+    sheenColor: new THREE.Color(0xC8D8BC),
+    clearcoat: 0.1,
+    bumpMap: vein,
+    bumpScale: 0.7,
+    envMapIntensity: 0.7
+  });
+
+  /* ── 장미 조립 ── */
+  const root = new THREE.Group();      // 패럴랙스 담당
+  const flower = new THREE.Group();    // 자전 담당
+  root.add(flower);
+  scene.add(root);
+
+  const N = 54;                        // 꽃잎 수
+  const cIn0 = new THREE.Color('#2A0B12');   // 중심 꽃잎 밑동 (가장 깊은 그늘)
+  const cIn1 = new THREE.Color('#7E3143');   // 중심 꽃잎 끝 — 나선이 빛을 받도록
+  const cOu0 = new THREE.Color('#6E2837');   // 바깥 꽃잎 밑동
+  const cOu1 = new THREE.Color('#B4566E');   // 바깥 꽃잎 끝
+  const cKiss = new THREE.Color('#E6CFC7');  // 최외곽 팁 아이보리 기미
+  const cb = new THREE.Color(), ct = new THREE.Color();
+
+  const petalGeos = [];
+
+  for (let i = 0; i < N; i++) {
+    const t  = i / (N - 1);           // 0 = 중심, 1 = 최외곽
+    const tS = t * t * (3 - 2 * t);   // smoothstep
+
+    // 색: 중심 딥와인 → 바깥 밝은 로즈 → 최외곽 팁에 아이보리 기미
+    cb.copy(cIn0).lerp(cOu0, tS);
+    ct.copy(cIn1).lerp(cOu1, Math.pow(t, 0.9));
+    if (t > 0.78) ct.lerp(cKiss, ((t - 0.78) / 0.22) * 0.30);
+    // 꽃잎별 명도 편차 — 인접 꽃잎이 한 덩어리로 뭉개지지 않게
+    const vary = 0.86 + rnd() * 0.28;
+    cb.multiplyScalar(vary); ct.multiplyScalar(vary);
+
+    const geo = petalGeometry({
+      segU: t < 0.25 ? 16 : 22,
+      segV: t < 0.25 ? 20 : 26,
+      length: 1.0,
+      halfWidth: lerp(0.44, 0.74, Math.pow(t, 0.75)) * (0.94 + rnd() * 0.12),
+      cup:       lerp(0.95, 0.30, Math.pow(t, 0.70)),
+      edgeCurl:  lerp(0.05, 0.85, Math.pow(t, 1.35)),
+      ruffle:    lerp(0.012, 0.09, t) * (0.7 + rnd() * 0.6),
+      // 안쪽은 음수 = 끝이 중심 위로 말려 들어감(꽃봉오리 furl), 바깥은 양수 = 젖혀짐
+      bendAngle: (-0.42 + 1.77 * Math.pow(t, 1.15)) * (0.92 + rnd() * 0.16),
+      bendPow:   lerp(2.4, 1.45, t),
+      baseColor: cb.getHex(),
+      tipColor:  ct.getHex()
+    });
+    petalGeos.push(geo);
+
+    const mesh = new THREE.Mesh(geo, petalMat);
+
+    // 황금각 나선 배치 — 모든 꽃잎은 작은 화탁에 붙고, 벌어짐은 기울기가 만든다
+    const angle  = i * 2.39996323 + sym() * 0.05;
+    const radius = 0.06 + 0.46 * Math.pow(t, 0.95);
+    const height = lerp(0.50, -0.02, Math.pow(t, 0.55));
+    const tilt   = lerp(0.12, 1.30, Math.pow(t, 0.95)) + sym() * 0.09;
+    const scale  = lerp(0.60, 1.34, Math.pow(t, 0.66)) * (0.94 + rnd() * 0.12);
+
+    const pivot = new THREE.Object3D();
+    pivot.rotation.y = angle;
+
+    const lean = new THREE.Object3D();
+    lean.position.set(radius, height, 0);
+    lean.rotation.z = -tilt;
+
+    const spin = new THREE.Object3D();
+    spin.rotation.y = sym() * 0.30;                    // 줄기축 트위스트
+    spin.rotation.x = sym() * 0.10;
+    spin.scale.setScalar(scale);
+
+    spin.add(mesh);
+    lean.add(spin);
+    pivot.add(lean);
+    flower.add(pivot);
+  }
+
+  // 중심 코어(꽃 속이 비어 보이지 않게)
+  const core = new THREE.Mesh(
+    new THREE.IcosahedronGeometry(0.14, 2),
+    new THREE.MeshPhysicalMaterial({ color: 0x2C0C14, roughness: 0.85, metalness: 0 })
+  );
+  core.position.y = 0.40;
+  flower.add(core);
+
+  // 꽃받침(세팔) 5장 — 아래로 젖혀진 Deep Stem 톤
+  for (let i = 0; i < 5; i++) {
+    const g = petalGeometry({
+      segU: 10, segV: 18,
+      length: 1.0, halfWidth: 0.20,
+      cup: 0.7, edgeCurl: 0.15, ruffle: 0.05,
+      bendAngle: 1.05, bendPow: 1.5,
+      baseColor: 0x1B2C21, tipColor: 0x3F6047
+    });
+    petalGeos.push(g);
+    const m = new THREE.Mesh(g, leafMat);
+    const pivot = new THREE.Object3D();
+    pivot.rotation.y = i * (Math.PI * 2 / 5) + 0.4;
+    const lean = new THREE.Object3D();
+    lean.position.set(0.40, -0.14, 0);
+    lean.rotation.z = -2.30;
+    lean.scale.setScalar(1.05 + rnd() * 0.25);
+    lean.add(m);
+    pivot.add(lean);
+    flower.add(pivot);
+  }
+
+  // 화탁 + 짧은 줄기
+  const hipMat = new THREE.MeshPhysicalMaterial({ color: 0x24382B, roughness: 0.8, metalness: 0 });
+  const hip = new THREE.Mesh(new THREE.SphereGeometry(0.34, 32, 20), hipMat);
+  hip.scale.set(1, 0.9, 1);
+  hip.position.y = -0.22;
+  flower.add(hip);
+
+  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.13, 2.6, 20), hipMat);
+  stem.position.y = -1.55;
+  flower.add(stem);
+
+  /* ── 떠다니는 꽃잎 파티클 ── */
+  const P_COUNT = 22;
+  const pGeo = petalGeometry({
+    segU: 10, segV: 12,
+    length: 1.0, halfWidth: 0.5,
+    cup: 0.85, edgeCurl: 0.5, ruffle: 0.06,
+    bendAngle: 1.25, bendPow: 1.6,
+    baseColor: 0x7A2C3E, tipColor: 0xDCB6B4
+  });
+  const pMat = new THREE.MeshPhysicalMaterial({
+    vertexColors: true,
+    side: THREE.DoubleSide,
+    roughness: 0.66,
+    metalness: 0.0,
+    sheen: 0.5,
+    sheenColor: new THREE.Color(0xF6F1E8),
+    transparent: true,
+    opacity: 0.62,
+    depthWrite: false,
+    envMapIntensity: 0.8
+  });
+  const motes = new THREE.InstancedMesh(pGeo, pMat, P_COUNT);
+  motes.frustumCulled = false;
+  root.add(motes);
+
+  const Y_TOP = 4.6, Y_BOT = -3.8;
+  const state = [];
+  for (let i = 0; i < P_COUNT; i++) {
+    state.push({
+      x: sym() * 6.2,
+      y: lerp(Y_BOT, Y_TOP, rnd()),
+      z: lerp(-2.2, 2.8, rnd()),
+      rx: sym() * Math.PI, ry: sym() * Math.PI, rz: sym() * Math.PI,
+      sx: sym() * 0.42, sy: sym() * 0.55, sz: sym() * 0.36,
+      fall: 0.13 + rnd() * 0.22,
+      sway: 0.18 + rnd() * 0.30,
+      phase: rnd() * Math.PI * 2,
+      s: 0.10 + rnd() * 0.15
+    });
+  }
+  const dummy = new THREE.Object3D();
+  function writeMotes(elapsed) {
+    for (let i = 0; i < P_COUNT; i++) {
+      const p = state[i];
+      dummy.position.set(p.x + Math.sin(elapsed * p.sway + p.phase) * 0.5, p.y, p.z);
+      dummy.rotation.set(p.rx, p.ry, p.rz);
+      dummy.scale.setScalar(p.s);
+      dummy.updateMatrix();
+      motes.setMatrixAt(i, dummy.matrix);
+    }
+    motes.instanceMatrix.needsUpdate = true;
+  }
+  writeMotes(0);
+
+  /* ── 배치: 화면 중앙보다 약간 아래, 크게 ── */
+  flower.position.y = 0.0;
+  flower.scale.setScalar(0.98);
+
+  /* ── 리사이즈 / 프레이밍 ── */
+  function resize() {
+    const w = window.innerWidth, h = window.innerHeight;
+    const aspect = w / h;
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setSize(w, h, false);
+    camera.aspect = aspect;
+    // 세로로 긴 화면에서는 카메라를 뒤로 빼 꽃 전체가 담기게
+    camDist = 7.2 * Math.pow(Math.max(1, 1.05 / aspect), 0.52);
+    camBaseY = PIVOT_Y + camDist * Math.sin(ELEV);
+    camBaseZ = camDist * Math.cos(ELEV);
+    camera.position.set(0, camBaseY, camBaseZ);
+    camera.updateProjectionMatrix();
+    camera.lookAt(0, LOOK_Y, 0);
+    scene.fog.near = Math.max(2, camDist - 2.8);
+    scene.fog.far  = camDist + 13;
+  }
+  resize();
+  window.addEventListener('resize', resize, { passive: true });
+  window.addEventListener('orientationchange', resize, { passive: true });
+
+  /* ── 마우스 패럴랙스 ── */
+  let mx = 0, my = 0, px = 0, py = 0;
+  if (!REDUCE) {
+    window.addEventListener('pointermove', (e) => {
+      mx = (e.clientX / window.innerWidth) * 2 - 1;
+      my = (e.clientY / window.innerHeight) * 2 - 1;
+    }, { passive: true });
+    window.addEventListener('pointerleave', () => { mx = 0; my = 0; }, { passive: true });
+  }
+
+  /* ── 컨텍스트 손실 ── */
+  canvas.addEventListener('webglcontextlost', (e) => {
+    e.preventDefault();
+    document.body.classList.remove('webgl-ok');
+  }, false);
+  canvas.addEventListener('webglcontextrestored', () => {
+    document.body.classList.add('webgl-ok');
+  }, false);
+
+  /* ── 렌더 루프 ── */
+  const SPIN_PER_SEC = (Math.PI * 2) / 110;   // 1회전 110초
+  let last = performance.now(), elapsed = 0, spin = 0;
+
+  function frame(now) {
+    requestAnimationFrame(frame);
+    const dt = Math.min(0.05, (now - last) / 1000);
+    last = now; elapsed += dt;
+
+    spin += dt * SPIN_PER_SEC;
+    flower.rotation.y = spin;
+
+    px += (mx - px) * 0.06;
+    py += (my - py) * 0.06;
+    root.rotation.y = px * 0.085;
+    root.rotation.x = py * 0.055;
+    camera.position.x = px * 0.42;
+    camera.position.y = camBaseY - py * 0.32;
+    camera.lookAt(0, LOOK_Y, 0);
+
+    for (let i = 0; i < P_COUNT; i++) {
+      const p = state[i];
+      p.y -= p.fall * dt;
+      p.rx += p.sx * dt; p.ry += p.sy * dt; p.rz += p.sz * dt;
+      if (p.y < Y_BOT) { p.y = Y_TOP; p.x = sym() * 6.2; p.z = lerp(-2.2, 2.8, rnd()); }
+    }
+    writeMotes(elapsed);
+
+    renderer.render(scene, camera);
+  }
+
+  if (REDUCE) {
+    // 자전·파티클·패럴랙스 정지 — 정지 프레임 1회 렌더
+    flower.rotation.y = 0.35;
+    renderer.render(scene, camera);
+    window.addEventListener('resize', () => {
+      renderer.render(scene, camera);
+    }, { passive: true });
+  } else {
+    requestAnimationFrame(frame);
+  }
+}
+</script>
+
+</body>
+</html>

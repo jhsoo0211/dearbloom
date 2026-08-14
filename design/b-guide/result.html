@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>dearbloom — 결과 (웜 가이드)</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="preconnect" href="https://hangeul.pstatic.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css">
+<style>
+/* ── 마루 부리: 꽃 이름·꽃말 전용 (400/600) ───────────────────── */
+@font-face{font-family:'MaruBuri';font-weight:400;font-display:swap;
+  src:url('https://hangeul.pstatic.net/hangeul_static/webfont/MaruBuri/MaruBuri-Regular.woff2') format('woff2');}
+@font-face{font-family:'MaruBuri';font-weight:600;font-display:swap;
+  src:url('https://hangeul.pstatic.net/hangeul_static/webfont/MaruBuri/MaruBuri-SemiBold.woff2') format('woff2');}
+
+:root{
+  --ivory:#F6F1E8; --ink:#1F211E; --stem:#263B2E;
+  --rose:#8A3448; --lavender:#83779C; --gold:#C8963E;
+  --bg:#FBF9F4; --card:#FFFFFF;
+  --gold-deep:#8A672B; --lavender-deep:#5E5670;
+  --muted:rgba(31,33,30,.65);
+  --muted-strong:rgba(31,33,30,.72); /* 회색 틴트 면 위 텍스트 대비 확보 */
+  --line:rgba(31,33,30,.10);
+  --shadow:0 2px 12px rgba(31,33,30,.06);
+  --font-serif:'MaruBuri','Noto Serif KR','Nanum Myeongjo','AppleMyungjo',Batang,serif;
+  --font-sans:'Pretendard',-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo',
+              'Malgun Gothic','Segoe UI',Roboto,sans-serif;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font-family:var(--font-sans);font-size:15px;line-height:1.65;color:var(--ink);
+  background:var(--bg);-webkit-font-smoothing:antialiased;overflow-x:hidden;
+  word-break:keep-all;overflow-wrap:break-word}
+svg{display:block}
+p{margin:0}
+ul{margin:0;padding:0;list-style:none}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+dl,dd,dt{margin:0}
+[hidden]{display:none !important}
+:focus-visible{outline:3px solid rgba(38,59,46,.5);outline-offset:2px;border-radius:10px}
+
+.app{width:100%;max-width:430px;margin-inline:auto;background:var(--bg);
+  min-height:100vh;min-height:100dvh;display:flex;flex-direction:column}
+@media (min-width:768px){
+  body{background:var(--ivory);padding:28px 0}
+  .app{min-height:auto;border-radius:28px;box-shadow:0 14px 44px rgba(31,33,30,.12)}
+}
+
+/* 상단바 */
+.topbar{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:4px;
+  height:56px;padding:0 12px;background:rgba(251,249,244,.93);backdrop-filter:blur(8px);
+  border-radius:28px 28px 0 0}
+.iconbtn{width:44px;height:44px;border-radius:999px;display:grid;place-items:center}
+.iconbtn:hover{background:rgba(31,33,30,.05)}
+.topbar .logo{font-weight:700;font-size:17px;letter-spacing:-.02em;
+  min-height:44px;display:inline-flex;align-items:center;padding:0 6px}
+
+.page{padding:6px 20px 40px;display:flex;flex-direction:column;gap:14px}
+h1{margin:2px 0 0;font-size:24px;line-height:1.4;font-weight:700;letter-spacing:-.02em}
+h2{margin:0;font-size:17px;font-weight:700;letter-spacing:-.02em}
+.sec{display:flex;flex-direction:column;gap:10px;margin-top:12px}
+.card{background:var(--card);border-radius:20px;box-shadow:var(--shadow);padding:20px}
+
+/* 맥락 칩 */
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.chips li{padding:7px 12px;border-radius:999px;background:rgba(31,33,30,.06);
+  font-size:13px;color:var(--muted-strong)}
+
+/* 사과 배너 (Lavender) */
+.banner{display:flex;gap:13px;align-items:flex-start;padding:16px 18px;border-radius:20px;
+  background:rgba(131,119,156,.14)}
+.banner .ic{flex:0 0 34px;width:34px;height:34px;border-radius:999px;
+  background:rgba(131,119,156,.28);display:grid;place-items:center}
+.banner strong{display:block;font-size:14px;font-weight:700;color:var(--lavender-deep);margin-bottom:3px}
+.banner p{font-size:14.5px;line-height:1.6}
+
+/* 세그먼트 컨트롤 */
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:4px;
+  border-radius:999px;background:rgba(31,33,30,.07)}
+.seg button{min-height:44px;border-radius:999px;font-size:14.5px;font-weight:600;
+  color:var(--muted-strong);transition:background-color .2s ease,color .2s ease,transform .12s ease}
+.seg button:active{transform:scale(.98)}
+.seg button[aria-selected="true"]{background:var(--stem);color:#fff}
+
+/* 꽃 카드 */
+.panel{animation:fadein .2s ease}
+@keyframes fadein{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.bloom{width:132px;height:132px;margin:0 auto 14px;border-radius:999px;display:grid;place-items:center}
+.bloom svg{width:108px;height:108px}
+.bloom-safe{background:rgba(138,52,72,.09)}
+.bloom-mean{background:rgba(38,59,46,.09)}
+.bloom-bold{background:rgba(131,119,156,.14)}
+.subtitle{font-size:13px;font-weight:700;color:var(--gold-deep);letter-spacing:.01em}
+.flower-name{font-family:var(--font-serif);font-weight:600;font-size:24px;line-height:1.35;margin:4px 0 2px}
+.sciname{font-size:12.5px;color:var(--muted);letter-spacing:.02em;font-style:italic}
+.flower-word{font-family:var(--font-serif);font-weight:400;font-size:20px;line-height:1.5;
+  color:var(--rose);margin-top:10px}
+.badge{display:inline-flex;align-items:center;gap:6px;margin-top:12px;padding:6px 12px;
+  border:1px solid rgba(200,150,62,.6);border-radius:999px;
+  font-size:12.5px;font-weight:600;color:var(--gold-deep);background:#fff}
+.reason{margin-top:14px;font-size:15px;line-height:1.7}
+
+/* 정보 리스트 */
+.info{margin-top:16px;padding-top:6px;border-top:1px solid var(--line)}
+.row{display:flex;gap:12px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:0}
+.row .ic{flex:0 0 28px;width:28px;height:28px;border-radius:999px;display:grid;place-items:center;margin-top:2px}
+.ic-ros{background:rgba(138,52,72,.10)}
+.ic-stem{background:rgba(38,59,46,.10)}
+.ic-lav{background:rgba(131,119,156,.16)}
+.ic-gold{background:rgba(200,150,62,.16)}
+.row dt{font-size:13px;font-weight:600;color:var(--muted);margin-bottom:2px}
+.row dd{font-size:14.5px;line-height:1.6}
+.pill{display:inline-flex;align-items:center;padding:4px 10px;border-radius:999px;
+  font-size:12.5px;font-weight:700;margin-right:6px}
+.pill-safe{background:rgba(38,59,46,.12);color:var(--stem)}
+.pill-warn{background:rgba(138,52,72,.12);color:var(--rose)}
+.petnote{display:block;margin-top:5px;font-size:13px;color:var(--muted)}
+
+/* 멘트 */
+.tones{display:flex;gap:8px;margin:12px 0 4px}
+.tones button{flex:1;min-height:44px;border-radius:999px;background:rgba(31,33,30,.06);
+  font-size:14.5px;font-weight:600;color:var(--muted-strong);
+  transition:background-color .2s ease,color .2s ease,transform .12s ease}
+.tones button:active{transform:scale(.98)}
+.tones button[aria-selected="true"]{background:var(--ink);color:#fff}
+.tone-hint{font-size:13px;color:var(--muted);margin-top:8px}
+.speech{margin-top:12px;padding:16px 18px;border-radius:18px 18px 18px 6px;
+  background:rgba(38,59,46,.07)}
+.speech h3{margin:0 0 8px;font-size:16px;font-weight:600;letter-spacing:-.01em}
+.speech p{font-size:14.5px;line-height:1.75}
+.btn{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;min-height:52px;
+  border-radius:14px;font-weight:600;font-size:15.5px;transition:transform .12s ease}
+.btn:active{transform:scale(.98)}
+.btn-primary{background:var(--stem);color:#fff;min-height:56px;font-size:16px}
+.btn-soft{background:rgba(31,33,30,.06)}
+.btn-gold{background:#fff;border:1.5px solid rgba(200,150,62,.75);color:var(--gold-deep)}
+.btn-copy{margin-top:12px}
+.footnote{margin-top:12px;font-size:13px;color:var(--muted)}
+
+/* 공유 */
+.share{display:flex;flex-direction:column;gap:10px}
+.share-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* 제휴 */
+.aff{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:18px 20px;transition:transform .12s ease}
+.aff:active{transform:scale(.99)}
+.aff .at{display:block;font-size:15px;font-weight:600;letter-spacing:-.01em}
+.aff .ad{display:block;font-size:13px;color:var(--muted);margin-top:2px}
+.aff .arrow{flex:0 0 24px}
+.notice{font-size:13px;color:var(--muted);padding:0 2px}
+
+/* 푸터 */
+.foot{margin-top:22px;padding-top:18px;border-top:1px solid var(--line);
+  display:flex;flex-direction:column;gap:12px}
+.foot p{font-size:13px;color:var(--muted);line-height:1.6}
+.foot-links{display:flex;flex-wrap:wrap;gap:8px}
+.foot-links a{padding:9px 14px;min-height:44px;display:inline-flex;align-items:center;
+  border-radius:999px;background:rgba(31,33,30,.05);font-size:13px;color:var(--muted-strong)}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{
+    animation-duration:0.01ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:0.01ms !important;
+    scroll-behavior:auto !important;
+  }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="topbar">
+    <a class="iconbtn" href="question.html" aria-label="질문으로 돌아가기">
+      <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="#1F211E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </a>
+    <a class="logo" href="home.html">dearbloom</a>
+  </header>
+
+  <main class="page">
+
+    <h1>이 마음엔<br>이 꽃이 어울려요.</h1>
+
+    <ul class="chips" aria-label="입력하신 상황">
+      <li>연인에게</li><li>사과</li><li>약속을 잊었어요</li><li>3~5만 원</li><li>내일 직접 전달</li>
+    </ul>
+
+    <div class="banner">
+      <span class="ic" aria-hidden="true">
+        <svg width="18" height="18" viewBox="0 0 24 24"><path d="M12 4.2v10" stroke="#5E5670" stroke-width="2.2" stroke-linecap="round"/><circle cx="12" cy="18.6" r="1.5" fill="#5E5670"/></svg>
+      </span>
+      <div>
+        <strong>사과할 때 순서</strong>
+        <p>말과 책임 인정이 먼저, 꽃은 그다음이에요. 아래 멘트부터 준비해 보세요.</p>
+      </div>
+    </div>
+
+    <section class="sec" aria-labelledby="h-picks">
+      <h2 id="h-picks">추천 3안</h2>
+      <div class="seg" role="tablist" aria-label="추천 3안 고르기">
+        <button type="button" role="tab" id="tab-safe" aria-controls="panel-safe" aria-selected="true" tabindex="0">안심</button>
+        <button type="button" role="tab" id="tab-mean" aria-controls="panel-mean" aria-selected="false" tabindex="-1">의미</button>
+        <button type="button" role="tab" id="tab-bold" aria-controls="panel-bold" aria-selected="false" tabindex="-1">대담</button>
+      </div>
+
+      <!-- 1안 · 안심 -->
+      <article class="card panel" id="panel-safe" role="tabpanel" aria-labelledby="tab-safe" tabindex="0">
+        <div class="bloom bloom-safe">
+          <svg viewBox="0 0 200 200" role="img" aria-label="분홍 장미 일러스트">
+            <path d="M100 192 L100 118" stroke="#263B2E" stroke-width="8" stroke-linecap="round" fill="none"/>
+            <path d="M100 182 C78 180 62 164 60 142 C84 140 98 158 100 182 Z" fill="rgba(38,59,46,.5)"/>
+            <path d="M100 166 C122 164 138 148 140 126 C116 124 102 142 100 166 Z" fill="rgba(38,59,46,.32)"/>
+            <circle cx="70" cy="72" r="30" fill="rgba(138,52,72,.2)"/>
+            <circle cx="130" cy="72" r="30" fill="rgba(138,52,72,.2)"/>
+            <circle cx="100" cy="42" r="28" fill="rgba(138,52,72,.2)"/>
+            <circle cx="80" cy="100" r="26" fill="rgba(138,52,72,.26)"/>
+            <circle cx="120" cy="100" r="26" fill="rgba(138,52,72,.26)"/>
+            <circle cx="100" cy="76" r="34" fill="rgba(138,52,72,.42)"/>
+            <circle cx="100" cy="76" r="21" fill="rgba(138,52,72,.55)"/>
+            <circle cx="100" cy="76" r="9" fill="rgba(138,52,72,.72)"/>
+          </svg>
+        </div>
+        <p class="subtitle">1안 — 가장 안전한 선택</p>
+        <h3 class="flower-name">분홍 장미</h3>
+        <p class="sciname">Rosa hybrida</p>
+        <p class="flower-word">"다정한 사랑, 그리고 고마움"</p>
+        <span class="badge">여러 현대 자료에서 반복됨</span>
+        <p class="reason">누구에게도 오해 없이 전해지는 꽃이에요. 화려하지 않은 분홍은 잘 보이려는 선물보다, 미안한 마음을 조심스럽게 내미는 손에 가까워요.</p>
+
+        <dl class="info">
+          <div class="row">
+            <span class="ic ic-ros" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24"><path d="M12 5v8" stroke="#8A3448" stroke-width="2.4" stroke-linecap="round"/><circle cx="12" cy="18" r="1.6" fill="#8A3448"/></svg></span>
+            <div><dt>피해야 할 경우</dt><dd>빨간 장미 한 다발은 사과보다 고백처럼 읽힐 수 있어요. 오늘은 분홍으로.</dd></div>
+          </div>
+          <div class="row">
+            <span class="ic ic-stem" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24"><path d="M5 19c0-7 5-12 14-13 1 9-4 14-11 14H5Z" fill="none" stroke="#263B2E" stroke-width="1.9" stroke-linejoin="round"/></svg></span>
+            <div><dt>계절·구매</dt><dd>연중 구하기 쉬워요</dd></div>
+          </div>
+          <div class="row">
+            <span class="ic ic-lav" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="#5E5670"><circle cx="7" cy="8" r="2.2"/><circle cx="12" cy="6" r="2.2"/><circle cx="17" cy="8" r="2.2"/><circle cx="19" cy="13" r="2"/><path d="M12 11c3 0 5.5 2.6 5.5 5 0 1.8-1.6 2.6-3.2 2.2-1.5-.4-3.1-.4-4.6 0C8.1 18.6 6.5 17.8 6.5 16c0-2.4 2.5-5 5.5-5Z"/></svg></span>
+            <div><dt>반려동물</dt><dd><span class="pill pill-safe">반려동물 안전</span>고양이·강아지 비독성
+              <span class="petnote">반려동물 정보를 아직 못 받아서, 안내만 드려요.</span></dd></div>
+          </div>
+          <div class="row">
+            <span class="ic ic-gold" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24"><rect x="3.5" y="9" width="17" height="10.5" rx="2" fill="none" stroke="#8A672B" stroke-width="1.9"/><path d="M3.5 13h17M12 9v10.5M12 9c-2.5-4-7-3-6 0m6 0c2.5-4 7-3 6 0" fill="none" stroke="#8A672B" stroke-width="1.9" stroke-linejoin="round"/></svg></span>
+            <div><dt>함께 주면 좋은 것</dt><dd>손편지 카드 · 따뜻한 디저트</dd></div>
+          </div>
+          <div class="row">
+            <span class="ic ic-stem" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24"><path d="M7 5l5 6 5-6M6 12h12M6 15.5h12M12 11v8" fill="none" stroke="#263B2E" stroke-width="1.9" stroke-linecap="round"/></svg></span>
+            <div><dt>가격대</dt><dd>3~4만 원대</dd></div>
+          </div>
+        </dl>
+      </article>
+
+      <!-- 2안 · 의미 -->
+      <article class="card panel" id="panel-mean" role="tabpanel" aria-labelledby="tab-mean" tabindex="0" hidden>
+        <div class="bloom bloom-mean">
+          <svg viewBox="0 0 200 200" role="img" aria-label="흰 튤립 일러스트">
+            <path d="M100 190 L100 104" stroke="#263B2E" stroke-width="8" stroke-linecap="round" fill="none"/>
+            <path d="M100 178 C74 176 58 158 56 132 C84 130 98 148 100 178 Z" fill="rgba(38,59,46,.5)"/>
+            <path d="M100 162 C126 160 142 142 144 116 C116 114 102 132 100 162 Z" fill="rgba(38,59,46,.32)"/>
+            <path d="M62 82 C62 52 78 34 100 34 C122 34 138 52 138 82 C138 106 122 120 100 120 C78 120 62 106 62 82 Z" fill="#FFFFFF" stroke="rgba(31,33,30,.2)" stroke-width="3" stroke-linejoin="round"/>
+            <path d="M100 34 C112 46 116 62 116 82 C116 102 110 114 100 120 C90 114 84 102 84 82 C84 62 88 46 100 34 Z" fill="rgba(31,33,30,.05)"/>
+          </svg>
+        </div>
+        <p class="subtitle">2안 — 가장 의미 있는 선택</p>
+        <h3 class="flower-name">흰 튤립</h3>
+        <p class="sciname">Tulipa gesneriana</p>
+        <p class="flower-word">"용서, 그리고 새로운 시작"</p>
+        <span class="badge">자료 간 차이 있음 · 출처 2곳</span>
+        <p class="reason">'용서를 구한다'는 뜻을 가장 정직하게 담은 꽃이에요. 미안하다는 말에서 멈추지 않고, 다시 솔직하게 시작하고 싶다는 마음까지 전해요.</p>
+
+        <dl class="info">
+          <div class="row">
+            <span class="ic ic-ros" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24"><path d="M12 5v8" stroke="#8A3448" stroke-width="2.4" stroke-linecap="round"/><circle cx="12" cy="18" r="1.6" fill="#8A3448"/></svg></span>
+            <div><dt>피해야 할 경우</dt><dd>고양이·강아지가 있는 집이라면 피해주세요. 튤립은 반려동물에게 독성이 있어요.</dd></div>
+          </div>
+          <div class="row">
+            <span class="ic ic-stem" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24"><path d="M5 19c0-7 5-12 14-13 1 9-4 14-11 14H5Z" fill="none" stroke="#263B2E" stroke-width="1.9" stroke-linejoin="round"/></svg></span>
+            <div><dt>계절·구매</dt><dd>봄에 구하기 쉬워요 · 지금은 흰 리시안셔스로 대체 가능</dd></div>
+          </div>
+          <div class="row">
+            <span class="ic ic-lav" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="#5E5670"><circle cx="7" cy="8" r="2.2"/><circle cx="12" cy="6" r="2.2"/><circle cx="17" cy="8" r="2.2"/><circle cx="19" cy="13" r="2"/><path d="M12 11c3 0 5.5 2.6 5.5 5 0 1.8-1.6 2.6-3.2 2.2-1.5-.4-3.1-.4-4.6 0C8.1 18.6 6.5 17.8 6.5 16c0-2.4 2.5-5 5.5-5Z"/></svg></span>
+            <div><dt>반려동물</dt><dd><span class="pill pill-warn">반려동물 주의</span>고양이·강아지 독성
+              <span class="petnote">반려동물 정보를 아직 못 받아서, 안내만 드려요.</span></dd></div>
+          </div>
+          <div class="row">
+            <span class="ic ic-gold" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24"><rect x="3.5" y="9" width="17" height="10.5" rx="2" fill="none" stroke="#8A672B" stroke-width="1.9"/><path d="M3.5 13h17M12 9v10.5M12 9c-2.5-4-7-3-6 0m6 0c2.5-4 7-3 6 0" fill="none" stroke="#8A672B" stroke-width="1.9" stroke-linejoin="round"/></svg></span>
+            <div><dt>함께 주면 좋은 것</dt><dd>회복 약속을 적은 카드 · 함께 마실 차</dd></div>
+          </div>
+          <div class="row">
+            <span class="ic ic-stem" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24"><path d="M7 5l5 6 5-6M6 12h12M6 15.5h12M12 11v8" fill="none" stroke="#263B2E" stroke-width="1.9" stroke-linecap="round"/></svg></span>
+            <div><dt>가격대</dt><dd>3~5만 원대</dd></div>
+          </div>
+        </dl>
+      </article>
+
+      <!-- 3안 · 대담 -->
+      <article class="card panel" id="panel-bold" role="tabpanel" aria-labelledby="tab-bold" tabindex="0" hidden>
+        <div class="bloom bloom-bold">
+          <svg viewBox="0 0 200 200" role="img" aria-label="푸른 히아신스 일러스트">
+            <path d="M100 192 L100 122" stroke="#263B2E" stroke-width="8" stroke-linecap="round" fill="none"/>
+            <path d="M84 192 C76 162 80 138 92 118" stroke="rgba(38,59,46,.5)" stroke-width="11" stroke-linecap="round" fill="none"/>
+            <path d="M118 192 C126 162 122 138 110 118" stroke="rgba(38,59,46,.32)" stroke-width="11" stroke-linecap="round" fill="none"/>
+            <g fill="rgba(131,119,156,.34)">
+              <circle cx="100" cy="28" r="14"/>
+              <circle cx="80" cy="52" r="15"/><circle cx="120" cy="52" r="15"/><circle cx="100" cy="54" r="14"/>
+              <circle cx="70" cy="80" r="16"/><circle cx="100" cy="82" r="16"/><circle cx="130" cy="80" r="16"/>
+              <circle cx="82" cy="108" r="15"/><circle cx="118" cy="108" r="15"/>
+            </g>
+            <g fill="rgba(131,119,156,.62)">
+              <circle cx="100" cy="28" r="5"/><circle cx="80" cy="52" r="5"/><circle cx="120" cy="52" r="5"/>
+              <circle cx="70" cy="80" r="5.5"/><circle cx="100" cy="82" r="5.5"/><circle cx="130" cy="80" r="5.5"/>
+              <circle cx="82" cy="108" r="5"/><circle cx="118" cy="108" r="5"/>
+            </g>
+          </svg>
+        </div>
+        <p class="subtitle">3안 — 조금 더 기억에 남는 선택</p>
+        <h3 class="flower-name">푸른 히아신스</h3>
+        <p class="sciname">Hyacinthus orientalis</p>
+        <p class="flower-word">"변치 않는 마음"</p>
+        <span class="badge">색상·문화권에 따라 해석이 달라요</span>
+        <p class="reason">흔치 않은 푸른색과 깊은 향이 그 자체로 이야기가 되는 꽃이에요. 히아신스를 '용서를 구하는 꽃'으로 소개하는 자료가 많아, 꽃말을 아는 상대에게는 더 오래 기억돼요.</p>
+
+        <dl class="info">
+          <div class="row">
+            <span class="ic ic-ros" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24"><path d="M12 5v8" stroke="#8A3448" stroke-width="2.4" stroke-linecap="round"/><circle cx="12" cy="18" r="1.6" fill="#8A3448"/></svg></span>
+            <div><dt>피해야 할 경우</dt><dd>향이 진한 꽃이에요. 향에 민감한 상대라면 안심 쪽을 골라주세요.</dd></div>
+          </div>
+          <div class="row">
+            <span class="ic ic-stem" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24"><path d="M5 19c0-7 5-12 14-13 1 9-4 14-11 14H5Z" fill="none" stroke="#263B2E" stroke-width="1.9" stroke-linejoin="round"/></svg></span>
+            <div><dt>계절·구매</dt><dd>겨울~봄에 구하기 쉬워요 · 여름엔 대체 꽃을 제안해요</dd></div>
+          </div>
+          <div class="row">
+            <span class="ic ic-lav" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="#5E5670"><circle cx="7" cy="8" r="2.2"/><circle cx="12" cy="6" r="2.2"/><circle cx="17" cy="8" r="2.2"/><circle cx="19" cy="13" r="2"/><path d="M12 11c3 0 5.5 2.6 5.5 5 0 1.8-1.6 2.6-3.2 2.2-1.5-.4-3.1-.4-4.6 0C8.1 18.6 6.5 17.8 6.5 16c0-2.4 2.5-5 5.5-5Z"/></svg></span>
+            <div><dt>반려동물</dt><dd><span class="pill pill-warn">반려동물 주의</span>구근 독성
+              <span class="petnote">반려동물 정보를 아직 못 받아서, 안내만 드려요.</span></dd></div>
+          </div>
+          <div class="row">
+            <span class="ic ic-gold" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24"><rect x="3.5" y="9" width="17" height="10.5" rx="2" fill="none" stroke="#8A672B" stroke-width="1.9"/><path d="M3.5 13h17M12 9v10.5M12 9c-2.5-4-7-3-6 0m6 0c2.5-4 7-3 6 0" fill="none" stroke="#8A672B" stroke-width="1.9" stroke-linejoin="round"/></svg></span>
+            <div><dt>함께 주면 좋은 것</dt><dd>작은 화병 · 짧은 편지</dd></div>
+          </div>
+          <div class="row">
+            <span class="ic ic-stem" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24"><path d="M7 5l5 6 5-6M6 12h12M6 15.5h12M12 11v8" fill="none" stroke="#263B2E" stroke-width="1.9" stroke-linecap="round"/></svg></span>
+            <div><dt>가격대</dt><dd>3~4만 원대</dd></div>
+          </div>
+        </dl>
+      </article>
+    </section>
+
+    <section class="sec" aria-labelledby="h-msg">
+      <h2 id="h-msg">방금 도착한 멘트</h2>
+      <div class="card">
+        <div class="tones" role="tablist" aria-label="멘트 톤 고르기">
+          <button type="button" role="tab" id="tab-plain" aria-controls="p-plain" aria-selected="true" tabindex="0">담백</button>
+          <button type="button" role="tab" id="tab-warm" aria-controls="p-warm" aria-selected="false" tabindex="-1">다정</button>
+          <button type="button" role="tab" id="tab-deep" aria-controls="p-deep" aria-selected="false" tabindex="-1">진지</button>
+        </div>
+
+        <div class="panel" id="p-plain" role="tabpanel" aria-labelledby="tab-plain" tabindex="0">
+          <p class="tone-hint">짧고 정확하게, 부담 없이</p>
+          <div class="speech" id="msg-plain">
+            <h3>먼저, 미안해.</h3>
+            <p>어제 약속 잊은 거, 변명하지 않을게. 기다리게 해서 미안해. 다음부터는 우리 약속을 제일 앞에 둘게. 이번 주말은 네가 정하는 대로 하자.</p>
+          </div>
+          <button type="button" class="btn btn-soft btn-copy" data-copy="msg-plain">복사</button>
+        </div>
+
+        <div class="panel" id="p-warm" role="tabpanel" aria-labelledby="tab-warm" tabindex="0" hidden>
+          <p class="tone-hint">상대의 마음을 먼저 헤아릴 때</p>
+          <div class="speech" id="msg-warm">
+            <h3>네 시간을 소홀히 했어.</h3>
+            <p>너와 한 약속을 잊었다는 게 나도 속상해. 기다리는 동안 서운했을 네 마음을 생각하면 더 미안해. 흰 튤립의 꽃말이 '새로운 시작'이래. 미안하다는 말로 끝내지 않고, 다시 잘하고 싶어.</p>
+          </div>
+          <button type="button" class="btn btn-soft btn-copy" data-copy="msg-warm">복사</button>
+        </div>
+
+        <div class="panel" id="p-deep" role="tabpanel" aria-labelledby="tab-deep" tabindex="0" hidden>
+          <p class="tone-hint">신뢰가 걸린 일일 때</p>
+          <div class="speech" id="msg-deep">
+            <h3>변명 없이 사과할게.</h3>
+            <p>약속을 잊은 건 바쁘다는 말로 넘길 일이 아니었어. 내 잘못이야. 같은 일이 반복되지 않게 우리 일정부터 먼저 확인할게. 용서는 네 몫이고, 나는 행동으로 보여줄게.</p>
+          </div>
+          <button type="button" class="btn btn-soft btn-copy" data-copy="msg-deep">복사</button>
+        </div>
+
+        <p class="footnote">사과 상황에서는 유쾌 톤을 잠시 꺼두었어요.</p>
+      </div>
+    </section>
+
+    <section class="sec" aria-labelledby="h-share">
+      <h2 id="h-share">이대로 간직하기</h2>
+      <div class="card share">
+        <a class="btn btn-primary" href="#">카드에 담기</a>
+        <div class="share-row">
+          <a class="btn btn-gold" href="#">카카오톡으로 공유</a>
+          <a class="btn btn-soft" href="#">이미지 저장</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="sec" aria-labelledby="h-aff">
+      <h2 id="h-aff">어디서 살 수 있나요?</h2>
+      <a class="card aff" href="#">
+        <span>
+          <span class="at">이 꽃 주문하러 가기</span>
+          <span class="ad">제휴 꽃집 보기</span>
+        </span>
+        <span class="arrow" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" fill="none" stroke="#263B2E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+      </a>
+      <a class="card aff" href="#">
+        <span>
+          <span class="at">내일 도착 꽃 배달 알아보기</span>
+          <span class="ad">내일 직접 전달 일정에 맞춰요</span>
+        </span>
+        <span class="arrow" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" fill="none" stroke="#263B2E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+      </a>
+      <p class="notice">구매 링크는 제휴 링크로 연결돼요.</p>
+    </section>
+
+    <footer class="foot">
+      <p>dearbloom — 꽃말은 문화와 시대에 따라 달라요. 출처와 함께 보여드려요.</p>
+      <nav class="foot-links" aria-label="더 보기">
+        <a href="#">꽃말 도감</a>
+        <a href="#">사과·화해 모드</a>
+        <a href="#">팀 부케(준비 중)</a>
+      </nav>
+    </footer>
+
+  </main>
+</div>
+<script>
+(function () {
+  function bind(list) {
+    var tabs = [].slice.call(list.querySelectorAll('[role="tab"]'));
+    tabs.forEach(function (tab) {
+      tab.addEventListener('click', function () {
+        tabs.forEach(function (t) {
+          var on = t === tab;
+          t.setAttribute('aria-selected', on ? 'true' : 'false');
+          t.tabIndex = on ? 0 : -1;
+          var panel = document.getElementById(t.getAttribute('aria-controls'));
+          if (panel) { panel.hidden = !on; }
+        });
+      });
+    });
+  }
+  [].forEach.call(document.querySelectorAll('[role="tablist"]'), bind);
+
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest ? e.target.closest('[data-copy]') : null;
+    if (!btn) { return; }
+    var src = document.getElementById(btn.getAttribute('data-copy'));
+    if (!src) { return; }
+    var label = btn.textContent;
+    try {
+      navigator.clipboard.writeText(src.innerText).then(function () {
+        btn.textContent = '복사했어요';
+        setTimeout(function () { btn.textContent = label; }, 1600);
+      }, function () {});
+    } catch (err) {}
+  });
+})();
+</script>
+</body>
+</html>

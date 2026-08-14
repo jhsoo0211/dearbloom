@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>dearbloom — 질문 (웜 가이드)</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="preconnect" href="https://hangeul.pstatic.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css">
+<style>
+/* ── 마루 부리: 꽃 이름·꽃말 전용 (400/600) ───────────────────── */
+@font-face{font-family:'MaruBuri';font-weight:400;font-display:swap;
+  src:url('https://hangeul.pstatic.net/hangeul_static/webfont/MaruBuri/MaruBuri-Regular.woff2') format('woff2');}
+@font-face{font-family:'MaruBuri';font-weight:600;font-display:swap;
+  src:url('https://hangeul.pstatic.net/hangeul_static/webfont/MaruBuri/MaruBuri-SemiBold.woff2') format('woff2');}
+
+:root{
+  --ivory:#F6F1E8; --ink:#1F211E; --stem:#263B2E;
+  --rose:#8A3448; --lavender:#83779C; --gold:#C8963E;
+  --bg:#FBF9F4; --card:#FFFFFF;
+  --gold-deep:#8A672B; --lavender-deep:#5E5670;
+  --muted:rgba(31,33,30,.65);
+  --muted-strong:rgba(31,33,30,.72); /* 회색 틴트 면 위 텍스트 대비 확보 */
+  --line:rgba(31,33,30,.10);
+  --shadow:0 2px 12px rgba(31,33,30,.06);
+  --font-serif:'MaruBuri','Noto Serif KR','Nanum Myeongjo','AppleMyungjo',Batang,serif;
+  --font-sans:'Pretendard',-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo',
+              'Malgun Gothic','Segoe UI',Roboto,sans-serif;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font-family:var(--font-sans);font-size:15px;line-height:1.65;color:var(--ink);
+  background:var(--bg);-webkit-font-smoothing:antialiased;overflow-x:hidden;
+  word-break:keep-all;overflow-wrap:break-word}
+svg{display:block}
+p{margin:0}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+:focus-visible{outline:3px solid rgba(38,59,46,.5);outline-offset:2px;border-radius:10px}
+
+.app{width:100%;max-width:430px;margin-inline:auto;background:var(--bg);
+  min-height:100vh;min-height:100dvh;display:flex;flex-direction:column}
+@media (min-width:768px){
+  body{background:var(--ivory);padding:28px 0}
+  .app{min-height:calc(100dvh - 56px);border-radius:28px;box-shadow:0 14px 44px rgba(31,33,30,.12)}
+}
+
+/* 상단 내비 */
+.navbar{display:flex;align-items:center;justify-content:space-between;height:56px;padding:0 12px}
+.iconbtn{width:44px;height:44px;border-radius:999px;display:grid;place-items:center;
+  transition:background-color .2s ease,transform .12s ease}
+.iconbtn:active{transform:scale(.94)}
+.iconbtn:hover{background:rgba(31,33,30,.05)}
+.navbar .logo{font-weight:700;font-size:16px;letter-spacing:-.02em;
+  min-height:44px;display:inline-flex;align-items:center;padding:0 10px}
+
+/* 진행바 */
+.progress{padding:2px 20px 0}
+.track{height:6px;border-radius:999px;background:rgba(31,33,30,.08);overflow:hidden}
+.fill{height:100%;width:20%;border-radius:999px;background:var(--stem);
+  transition:width .3s ease}
+.progress-row{display:flex;align-items:center;justify-content:space-between;margin-top:8px}
+.step{font-size:13px;font-weight:600;color:var(--muted);letter-spacing:.01em}
+.step b{color:var(--stem)}
+.step-hint{font-size:13px;color:var(--muted)}
+
+/* 질문 */
+.page{flex:1;padding:20px 20px 24px;display:flex;flex-direction:column;gap:18px}
+h1{margin:0 0 8px;font-size:24px;line-height:1.4;font-weight:700;letter-spacing:-.02em}
+.sub{font-size:15px;color:var(--muted)}
+
+/* 선택지 2열 그리드 */
+.options{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.opt{position:relative;min-height:88px;padding:14px 14px 13px;text-align:left;
+  background:var(--card);border:1.5px solid transparent;border-radius:18px;
+  box-shadow:var(--shadow);display:flex;flex-direction:column;gap:6px;
+  transition:transform .12s ease,border-color .2s ease,background-color .2s ease}
+.opt:active{transform:scale(.98)}
+.opt .oname{font-size:16px;font-weight:600;letter-spacing:-.01em}
+.opt .odesc{font-size:12px;line-height:1.5;color:var(--muted)}
+.opt .oicon{width:22px;height:22px}
+.opt[aria-checked="true"]{border-color:var(--stem);background:rgba(38,59,46,.05)}
+.check{position:absolute;top:12px;right:12px;width:20px;height:20px;border-radius:999px;
+  background:var(--stem);display:none;place-items:center}
+.opt[aria-checked="true"] .check{display:grid}
+
+/* 고정 footer */
+.footbar{position:sticky;bottom:0;padding:12px 20px 18px;
+  background:linear-gradient(180deg,rgba(251,249,244,0),var(--bg) 26%);
+  border-radius:0 0 28px 28px}
+.btn{display:flex;align-items:center;justify-content:center;width:100%;min-height:56px;
+  border-radius:14px;font-weight:600;font-size:16px;transition:transform .12s ease}
+.btn:active{transform:scale(.98)}
+.btn-primary{background:var(--stem);color:#fff}
+.microcopy{margin-top:10px;font-size:13px;color:var(--muted);text-align:center}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{
+    animation-duration:0.01ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:0.01ms !important;
+    scroll-behavior:auto !important;
+  }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="navbar">
+    <a class="iconbtn" href="home.html" aria-label="이전 단계로">
+      <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="#1F211E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </a>
+    <a class="logo" href="home.html">dearbloom</a>
+    <a class="iconbtn" href="home.html" aria-label="추천 그만두기">
+      <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="#1F211E" stroke-width="2" stroke-linecap="round"/></svg>
+    </a>
+  </header>
+
+  <div class="progress">
+    <div class="track" role="progressbar" aria-label="5문항 중 1번째" aria-valuemin="1" aria-valuemax="5" aria-valuenow="1">
+      <div class="fill"></div>
+    </div>
+    <div class="progress-row">
+      <span class="step"><b>1</b> / 5</span>
+      <span class="step-hint">관계 · 마음 · 취향 · 예산 · 전달</span>
+    </div>
+  </div>
+
+  <main class="page">
+    <div>
+      <h1>어떤 사이인가요?</h1>
+      <p class="sub">관계에 따라 같은 꽃말도 다르게 풀어드려요.</p>
+    </div>
+
+    <div class="options" role="radiogroup" aria-label="어떤 사이인가요?">
+      <button type="button" class="opt" role="radio" aria-checked="true">
+        <svg class="oicon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.2s-7.4-4.5-7.4-9.5A4.3 4.3 0 0 1 12 8.3a4.3 4.3 0 0 1 7.4 2.4c0 5-7.4 9.5-7.4 9.5Z" fill="rgba(138,52,72,.22)" stroke="#8A3448" stroke-width="1.7" stroke-linejoin="round"/></svg>
+        <span class="oname">연인</span>
+        <span class="odesc">사귀는 사이예요</span>
+        <span class="check" aria-hidden="true">
+          <svg width="12" height="12" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+      </button>
+
+      <button type="button" class="opt" role="radio" aria-checked="false">
+        <svg class="oicon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9.5" cy="13.5" r="5.2" fill="none" stroke="#8A672B" stroke-width="1.7"/><circle cx="15.5" cy="13.5" r="5.2" fill="none" stroke="#263B2E" stroke-width="1.7"/><path d="M12 4.4l1.6 2.6h-3.2Z" fill="#C8963E"/></svg>
+        <span class="oname">배우자</span>
+        <span class="odesc">결혼한 사이예요</span>
+        <span class="check" aria-hidden="true">
+          <svg width="12" height="12" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+      </button>
+
+      <button type="button" class="opt" role="radio" aria-checked="false">
+        <svg class="oicon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l1.9 5.1 5.1 1.9-5.1 1.9L12 17.5l-1.9-5.1L5 10.5l5.1-1.9Z" fill="rgba(131,119,156,.3)" stroke="#5E5670" stroke-width="1.5" stroke-linejoin="round"/><circle cx="18" cy="18" r="1.8" fill="#5E5670"/></svg>
+        <span class="oname">썸</span>
+        <span class="odesc">아직 조심스러운 사이예요</span>
+        <span class="check" aria-hidden="true">
+          <svg width="12" height="12" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+      </button>
+
+      <button type="button" class="opt" role="radio" aria-checked="false">
+        <svg class="oicon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8.5" r="3.2" fill="none" stroke="#263B2E" stroke-width="1.7"/><circle cx="16" cy="9.5" r="2.6" fill="none" stroke="#263B2E" stroke-width="1.7" opacity=".55"/><path d="M3.6 19c.6-3 2.8-4.6 5.4-4.6s4.8 1.6 5.4 4.6" fill="none" stroke="#263B2E" stroke-width="1.7" stroke-linecap="round"/><path d="M16.4 14.6c2 .3 3.4 1.8 4 4.4" fill="none" stroke="#263B2E" stroke-width="1.7" stroke-linecap="round" opacity=".55"/></svg>
+        <span class="oname">친구</span>
+        <span class="odesc">편한 사이예요</span>
+        <span class="check" aria-hidden="true">
+          <svg width="12" height="12" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+      </button>
+
+      <button type="button" class="opt" role="radio" aria-checked="false">
+        <svg class="oicon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.8 12 4.5l8 6.3V19a1.2 1.2 0 0 1-1.2 1.2H5.2A1.2 1.2 0 0 1 4 19Z" fill="rgba(38,59,46,.12)" stroke="#263B2E" stroke-width="1.7" stroke-linejoin="round"/><path d="M9.8 20.2v-5.4h4.4v5.4" fill="none" stroke="#263B2E" stroke-width="1.7" stroke-linejoin="round"/></svg>
+        <span class="oname">가족</span>
+        <span class="odesc">부모님, 형제자매</span>
+        <span class="check" aria-hidden="true">
+          <svg width="12" height="12" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+      </button>
+
+      <button type="button" class="opt" role="radio" aria-checked="false">
+        <svg class="oicon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="7.8" width="17" height="11.4" rx="2.4" fill="none" stroke="#263B2E" stroke-width="1.7"/><path d="M9 7.8V6.2A1.4 1.4 0 0 1 10.4 4.8h3.2A1.4 1.4 0 0 1 15 6.2v1.6" fill="none" stroke="#263B2E" stroke-width="1.7" stroke-linejoin="round"/><path d="M3.5 12.6h17" stroke="#263B2E" stroke-width="1.7" opacity=".5"/></svg>
+        <span class="oname">동료·선후배</span>
+        <span class="odesc">일과 배움으로 만난 사이</span>
+        <span class="check" aria-hidden="true">
+          <svg width="12" height="12" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+      </button>
+    </div>
+  </main>
+
+  <div class="footbar">
+    <a class="btn btn-primary" href="result.html">다음</a>
+    <p class="microcopy">45초면 충분해요</p>
+  </div>
+
+</div>
+<script>
+(function(){
+  var opts = [].slice.call(document.querySelectorAll('.opt'));
+  opts.forEach(function(opt){
+    opt.addEventListener('click', function(){
+      opts.forEach(function(o){
+        o.setAttribute('aria-checked', o === opt ? 'true' : 'false');
+      });
+    });
+  });
+})();
+</script>
+</body>
+</html>

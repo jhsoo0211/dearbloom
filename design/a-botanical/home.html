@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>dearbloom — 홈 (보태니컬 에디토리얼)</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="preconnect" href="https://hangeul.pstatic.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css">
+<style>
+@font-face { font-family: 'MaruBuri'; font-weight: 300; font-display: swap;
+  src: url('https://hangeul.pstatic.net/hangeul_static/webfont/MaruBuri/MaruBuri-Light.woff2') format('woff2'); }
+@font-face { font-family: 'MaruBuri'; font-weight: 400; font-display: swap;
+  src: url('https://hangeul.pstatic.net/hangeul_static/webfont/MaruBuri/MaruBuri-Regular.woff2') format('woff2'); }
+
+:root{
+  --ivory:#F6F1E8;
+  --ink:#1F211E;
+  --stem:#263B2E;
+  --rose:#8A3448;
+  --lavender:#83779C;
+  --gold:#C8963E;
+  --ivory-shade:#EBE4D6;
+  --gold-deep:#8A682B;
+  --ink-mute:rgba(31,33,30,.65);
+  --rule:rgba(31,33,30,.25);
+  --rule-soft:rgba(31,33,30,.14);
+  --font-serif:'MaruBuri','Noto Serif KR','Nanum Myeongjo','AppleMyungjo',Batang,serif;
+  --font-sans:'Pretendard',-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun Gothic','Segoe UI',Roboto,sans-serif;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--ivory);color:var(--ink);font-family:var(--font-sans);font-size:16px;line-height:1.75;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+h1,h2,h3,h4,p,ol,ul,dl,dd,blockquote,figure{margin:0;padding:0}
+ol,ul{list-style:none}
+img,svg{max-width:100%}
+[hidden]{display:none !important}
+
+.page{position:relative;max-width:430px;margin-inline:auto;background:var(--ivory);min-height:100vh;overflow:hidden}
+@media (min-width:768px){
+  body{background:var(--ivory-shade)}
+  .page{border-left:1px solid var(--rule);border-right:1px solid var(--rule)}
+}
+
+a:focus-visible,button:focus-visible{outline:2px solid var(--stem);outline-offset:3px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+/* ── 마스트헤드 ───────────────────────── */
+.masthead{border-top:1px solid var(--ink);padding:26px 24px 0;text-align:center}
+.logo{display:inline-block;font:400 23px/1.2 var(--font-serif);letter-spacing:.05em;color:var(--ink);text-decoration:none;padding:6px 4px}
+.logo-sub{display:block;margin-top:6px}
+
+/* ── 공용 타이포 ──────────────────────── */
+.overline{font:600 11px/1.5 var(--font-sans);letter-spacing:.14em;color:var(--ink-mute)}
+.overline.gold{color:var(--gold-deep)}
+.h1{font:300 32px/1.4 var(--font-serif);letter-spacing:-.01em}
+@media (min-width:768px){.h1{font-size:38px}}
+.lede{font:400 16px/1.75 var(--font-sans);color:var(--ink)}
+.body{font:400 16px/1.75 var(--font-sans)}
+.body-s{font:400 15px/1.7 var(--font-sans);color:var(--ink-mute)}
+.flower-name{font:400 28px/1.35 var(--font-serif);letter-spacing:-.01em}
+.quote{font:400 26px/1.5 var(--font-serif);color:var(--rose)}
+.quote::before{content:'\201C'}
+.quote::after{content:'\201D'}
+.badge{display:inline-block;font:600 12px/1.2 var(--font-sans);letter-spacing:.08em;color:var(--gold-deep);border:1px solid rgba(200,150,62,.65);padding:8px 12px}
+
+/* ── 섹션·룰 ─────────────────────────── */
+section{position:relative;padding:64px 24px}
+.hero{padding:44px 24px 72px;text-align:center}
+.hair{border:0;border-top:1px solid var(--rule);margin:0 24px}
+
+/* ── 버튼·링크 ───────────────────────── */
+.btn{display:flex;align-items:center;justify-content:center;width:100%;min-height:54px;border:0;border-radius:2px;background:var(--stem);color:var(--ivory);font:500 15px/1.2 var(--font-sans);letter-spacing:.02em;text-decoration:none;cursor:pointer;transition:opacity .2s ease}
+.btn:hover{opacity:.88}
+.ulink{display:inline-block;color:var(--stem);text-decoration:none;font:500 15px/1.4 var(--font-sans);border-bottom:1px solid rgba(38,59,46,.45);padding:11px 2px 3px;transition:border-bottom-width .2s ease}
+.ulink:hover{border-bottom-width:2px;padding-bottom:2px}
+.quick{margin-top:26px;display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap}
+.quick .sep{color:var(--rule);font-size:14px}
+
+/* ── 일러스트 ────────────────────────── */
+.ill{display:block;width:180px;height:180px;margin:0 auto 26px}
+.ill .line{fill:none;stroke:var(--ink);stroke-width:1.3;opacity:.75;stroke-linecap:round;stroke-linejoin:round}
+.sprig{position:absolute;width:118px;height:59px;opacity:.3;pointer-events:none}
+.sprig .line{fill:none;stroke:var(--ink);stroke-width:1.3;stroke-linecap:round;stroke-linejoin:round}
+.sprig-a{top:18px;right:-16px;transform:rotate(-8deg)}
+.sprig-b{bottom:16px;left:-18px;transform:rotate(172deg)}
+
+/* ── 오늘의 꽃 ───────────────────────── */
+.today .source{margin-top:22px}
+.today .quote{margin:14px 0 18px}
+
+/* ── 목차형 신뢰 3요소 ───────────────── */
+.index li{display:flex;gap:18px;padding:22px 0;border-top:1px solid var(--rule-soft)}
+.index li:last-child{border-bottom:1px solid var(--rule-soft)}
+.num{flex:0 0 26px;font:600 11px/2 var(--font-sans);letter-spacing:.14em;color:var(--gold-deep)}
+.index h3{font:400 19px/1.5 var(--font-serif);margin-bottom:5px}
+
+/* ── 인용 액자 (이중 헤어라인) ────────── */
+.pull{margin:4px;padding:26px 22px;border:1px solid var(--rule);outline:1px solid var(--rule);outline-offset:3px;font:400 20px/1.7 var(--font-serif)}
+.pull strong{font-weight:400;color:var(--rose)}
+
+/* ── 푸터 ────────────────────────────── */
+.foot{margin:0 24px;padding:38px 0 60px;border-top:1px solid var(--rule);text-align:center}
+.foot p{font:400 14px/1.7 var(--font-sans);color:var(--ink-mute)}
+.foot-links{margin-top:12px;display:flex;justify-content:center;align-items:center;gap:12px;flex-wrap:wrap}
+.foot-links a{display:inline-block;padding:12px 2px;font:400 14px/1.4 var(--font-sans);color:var(--ink-mute);text-decoration:none;border-bottom:1px solid var(--rule-soft)}
+.foot-links a:hover{border-bottom-color:var(--ink)}
+.foot-links .sep{color:var(--rule)}
+
+/* ── 모션 ────────────────────────────── */
+/* fill-mode 없음: 애니메이션이 늦게 시작하거나 실행되지 않아도 기본 상태가 항상 보인다 */
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.fade{animation:fadeIn .6s ease}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="masthead">
+    <a class="logo" href="home.html">dearbloom</a>
+    <span class="logo-sub overline">디어블룸</span>
+  </header>
+
+  <section class="hero fade">
+    <svg class="sprig sprig-a" viewBox="0 0 120 60" aria-hidden="true" focusable="false"><g class="line"><path d="M4 30 C34 30 68 26 112 14"/><path d="M30 30 C32 20 42 14 54 14 C50 24 40 30 30 30"/><path d="M52 26 C54 16 64 10 76 10 C72 20 62 26 52 26"/><path d="M74 22 C76 12 86 6 98 6 C94 16 84 22 74 22"/><path d="M30 30 C32 40 42 46 54 46 C50 36 40 30 30 30"/><path d="M52 34 C54 44 64 50 76 50 C72 40 62 34 52 34"/></g></svg>
+
+    <p class="overline">SAY IT WITH FLOWERS</p>
+
+    <svg class="ill" viewBox="0 0 200 200" role="img" aria-label="흰 튤립 라인 일러스트" style="margin-top:26px">
+      <path d="M72 62 C70 44 76 30 84 22 C90 34 96 26 100 20 C104 26 110 34 116 22 C124 30 130 44 128 62 C128 84 116 96 100 96 C84 96 72 84 72 62 Z" fill="rgba(255,255,255,.82)" stroke="none"/>
+      <g class="line">
+        <path d="M100 92 C98 120 101 150 100 186"/>
+        <path d="M99 150 C78 148 62 130 58 106 C78 110 94 126 99 146"/>
+        <path d="M101 138 C120 134 136 118 140 96 C122 100 106 116 101 134"/>
+        <path d="M72 62 C72 84 84 96 100 96 C116 96 128 84 128 62"/>
+        <path d="M72 62 C70 44 76 30 84 22 C88 36 90 50 90 64"/>
+        <path d="M128 62 C130 44 124 30 116 22 C112 36 110 50 110 64"/>
+        <path d="M90 64 C88 44 94 28 100 20 C106 28 112 44 110 64"/>
+        <path d="M84 72 C87 82 92 88 99 91"/>
+        <path d="M116 72 C113 82 108 88 101 91"/>
+      </g>
+    </svg>
+
+    <h1 class="h1">하고 싶은 말부터 고르면,<br>꽃이 대신 말해드려요.</h1>
+
+    <p class="lede" style="margin-top:20px">관계와 상황만 알려주세요. 어울리는 꽃과 꽃말, 추천 이유, 진짜로 쓸 수 있는 멘트까지 45초 안에 골라드려요.</p>
+
+    <a class="btn" href="question.html" style="margin-top:36px">45초 만에 추천받기</a>
+
+    <div class="quick">
+      <a class="ulink" href="question.html">사과해야 해요</a>
+      <span class="sep" aria-hidden="true">·</span>
+      <a class="ulink" href="question.html">마음을 전하고 싶어요</a>
+    </div>
+  </section>
+
+  <hr class="hair">
+
+  <section class="today">
+    <h2 class="overline gold">No. 01 &nbsp;오늘의 꽃</h2>
+    <p class="flower-name" style="margin-top:16px">흰 튤립</p>
+    <blockquote class="quote">용서, 새로운 시작, 진심</blockquote>
+    <p class="body">빅토리아 시대 꽃말 자료와 현대 플로리스트 가이드에서 반복되는 의미예요.</p>
+    <p class="source"><span class="badge">출처 2곳 검수 · 2026.08</span></p>
+  </section>
+
+  <hr class="hair">
+
+  <section class="trust">
+    <h2 class="overline gold">No. 02 &nbsp;믿고 고르셔도 되는 이유</h2>
+    <ol class="index" style="margin-top:24px">
+      <li>
+        <span class="num" aria-hidden="true">01</span>
+        <div>
+          <h3>출처가 보이는 꽃말</h3>
+          <p class="body-s">문화와 시대에 따라 다른 꽃말을 출처와 함께 보여드려요.</p>
+        </div>
+      </li>
+      <li>
+        <span class="num" aria-hidden="true">02</span>
+        <div>
+          <h3>반려동물 안전 확인</h3>
+          <p class="body-s">고양이·강아지에게 위험한 꽃은 미리 걸러드려요.</p>
+        </div>
+      </li>
+      <li>
+        <span class="num" aria-hidden="true">03</span>
+        <div>
+          <h3>바로 쓰는 멘트 3가지 톤</h3>
+          <p class="body-s">담백하게, 다정하게, 진지하게. 복사해서 바로 보내세요.</p>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <hr class="hair">
+
+  <section class="example">
+    <svg class="sprig sprig-b" viewBox="0 0 120 60" aria-hidden="true" focusable="false"><g class="line"><path d="M4 30 C34 30 68 26 112 14"/><path d="M30 30 C32 20 42 14 54 14 C50 24 40 30 30 30"/><path d="M52 26 C54 16 64 10 76 10 C72 20 62 26 52 26"/><path d="M74 22 C76 12 86 6 98 6 C94 16 84 22 74 22"/><path d="M30 30 C32 40 42 46 54 46 C50 36 40 30 30 30"/><path d="M52 34 C54 44 64 50 76 50 C72 40 62 34 52 34"/></g></svg>
+    <h2 class="overline gold">No. 03 &nbsp;이렇게 추천했어요</h2>
+    <blockquote class="pull" style="margin-top:22px">
+      <strong>약속을 잊은 연인에게</strong> — 흰 튤립과 ‘변명 없이 사과할게’라는 첫 문장을 추천했어요.
+    </blockquote>
+  </section>
+
+  <footer class="foot">
+    <p>dearbloom — 꽃말은 문화와 시대에 따라 달라요. 출처와 함께 보여드려요.</p>
+    <nav class="foot-links" aria-label="푸터 링크">
+      <a href="#">꽃말 도감</a>
+      <span class="sep" aria-hidden="true">·</span>
+      <a href="#">사과·화해 모드</a>
+      <span class="sep" aria-hidden="true">·</span>
+      <a href="#">팀 부케(준비 중)</a>
+    </nav>
+  </footer>
+
+</div>
+</body>
+</html>

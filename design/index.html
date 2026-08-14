@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>dearbloom — 디자인 시안 비교</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css">
+<style>
+:root{
+  --ivory:#F6F1E8; --ink:#1F211E; --stem:#263B2E; --rose:#8A3448; --lavender:#83779C; --gold:#C8963E;
+  --gold-deep:#8A672B; --mute:rgba(31,33,30,.65); --line:rgba(31,33,30,.14);
+  --sans:'Pretendard',-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun Gothic','Segoe UI',Roboto,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--ivory);color:var(--ink);font-family:var(--sans);line-height:1.65;word-break:keep-all;
+  padding:48px 24px 80px}
+.wrap{max-width:960px;margin-inline:auto}
+h1{font-size:clamp(26px,4vw,34px);font-weight:700;letter-spacing:-.02em}
+.sub{color:var(--mute);margin-top:10px;max-width:640px}
+h2{font-size:13px;font-weight:600;letter-spacing:.14em;color:var(--gold-deep);text-transform:uppercase;
+  margin:56px 0 16px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+.grid{display:grid;gap:16px}
+@media(min-width:760px){.grid.cols2{grid-template-columns:1fr 1fr}.grid.cols3{grid-template-columns:1fr 1fr 1fr}}
+.card{border:1px solid var(--line);background:#fff;border-radius:14px;padding:22px;position:relative}
+.card.reco{border:1.5px solid var(--stem);box-shadow:0 2px 14px rgba(38,59,46,.10)}
+.badge{position:absolute;top:18px;right:18px;font-size:11px;font-weight:600;letter-spacing:.08em;
+  color:var(--ivory);background:var(--stem);border-radius:999px;padding:4px 10px}
+.card h3{font-size:18px;font-weight:700}
+.card .mood{color:var(--mute);font-size:14px;margin:6px 0 14px}
+.links{display:flex;flex-wrap:wrap;gap:8px}
+.links a{display:inline-block;font-size:14px;font-weight:600;color:var(--stem);text-decoration:none;
+  border:1px solid rgba(38,59,46,.35);border-radius:999px;padding:9px 16px;min-height:24px}
+.links a:hover{background:rgba(38,59,46,.06)}
+.links a.dark{color:#fff;background:var(--ink);border-color:var(--ink)}
+.links a.dark:hover{background:#000}
+.note{font-size:13px;color:var(--mute);margin-top:12px}
+table{width:100%;border-collapse:collapse;font-size:14px;background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+th,td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;letter-spacing:.06em;color:var(--mute);font-weight:600}
+tr:last-child td{border-bottom:none}
+.sw{display:inline-block;width:14px;height:14px;border-radius:50%;margin-right:4px;vertical-align:-2px;border:1px solid rgba(31,33,30,.15)}
+footer{margin-top:64px;padding-top:20px;border-top:1px solid var(--line);font-size:13px;color:var(--mute)}
+.tbl-wrap{overflow-x:auto}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>dearbloom 디자인 시안</h1>
+  <p class="sub">모든 화면은 동일한 목 데이터를 사용합니다 — 연인 × 사과(약속) 시나리오, 그룹은 "팀원 4명에게 · 고마움".
+  콘텐츠가 같으므로 디자인만 비교하면 됩니다. 팔레트:
+  <span class="sw" style="background:#F6F1E8"></span><span class="sw" style="background:#1F211E"></span><span class="sw" style="background:#263B2E"></span><span class="sw" style="background:#8A3448"></span><span class="sw" style="background:#83779C"></span><span class="sw" style="background:#C8963E"></span></p>
+
+  <h2>웹 랜딩 (데스크톱 쇼피스)</h2>
+  <div class="grid cols2">
+    <div class="card reco">
+      <span class="badge">추천</span>
+      <h3>랜딩 v2 — 시네마틱 스크롤</h3>
+      <p class="mood">절차적 3D 장미(62장)가 스크롤에 따라 카메라 무브 · Lenis+GSAP 챕터 연출 · 리퀴드 글래스 · 워드 리빌 · 꽃잎 파티클</p>
+      <div class="links"><a class="dark" href="landing-v2/home.html">열어 보기 →</a></div>
+      <p class="note">온라인 필요(three.js·GSAP CDN). 데스크톱에서 먼저 보세요 — 모바일 390px도 대응.</p>
+    </div>
+    <div class="card">
+      <h3>랜딩 v1 — 단일 히어로</h3>
+      <p class="mood">한 화면 풀스크린 3D 장미(54장) + 글래스 내비 + 마우스 패럴랙스. 가볍고 집중된 버전</p>
+      <div class="links"><a href="landing/home.html">열어 보기 →</a></div>
+    </div>
+  </div>
+
+  <h2>앱 플로우 (모바일 390px 기준)</h2>
+  <div class="card reco" style="margin-bottom:16px">
+    <span class="badge">추천 · 최신 요구 반영</span>
+    <h3>앱 v2 — 다크 시네마 글래스 + 3D 꽃 뷰어</h3>
+    <p class="mood">결과 화면에서 장미·튤립·히아신스를 절차적 3D로 렌더(드래그 회전) · 색상 재선택 칩(3D 색 연동) ·
+    꽃 이야기·나라별 꽃말 · 모드 4종 · 그룹(각각/단체 부케 + 안전 교집합 배너)</p>
+    <div class="links">
+      <a class="dark" href="app-v2/home.html">홈(모드 선택)</a>
+      <a href="app-v2/question.html">질문</a>
+      <a href="app-v2/result.html">결과 + 3D 뷰어</a>
+      <a href="app-v2/group.html">여러 명·단체 부케</a>
+    </div>
+    <p class="note">결과·그룹까지 눌러봐야 전체가 보입니다: 색 칩 전환, 각각/단체 토글, "지수님의 반려묘…" 안전 배너.</p>
+  </div>
+  <div class="grid cols3">
+    <div class="card">
+      <h3>A 보태니컬 에디토리얼</h3>
+      <p class="mood">인쇄물 감성 — 헤어라인·여백·세리프, 챕터형 결과. 조용한 럭셔리 (라이트)</p>
+      <div class="links"><a href="a-botanical/home.html">홈</a><a href="a-botanical/question.html">질문</a><a href="a-botanical/result.html">결과</a></div>
+    </div>
+    <div class="card">
+      <h3>B 웜 가이드</h3>
+      <p class="mood">토스풍 클린 — 카드·칩·세그먼트, 마찰 없는 진행, 다정한 마이크로카피 (라이트)</p>
+      <div class="links"><a href="b-guide/home.html">홈</a><a href="b-guide/question.html">질문</a><a href="b-guide/result.html">결과</a></div>
+    </div>
+    <div class="card">
+      <h3>C 페탈 갤러리</h3>
+      <p class="mood">다크 화보 — 매크로 그라디언트 색면, 초대형 세리프, 스냅 캐러셀 (다크·2D)</p>
+      <div class="links"><a href="c-gallery/home.html">홈</a><a href="c-gallery/question.html">질문</a><a href="c-gallery/result.html">결과</a></div>
+    </div>
+  </div>
+
+  <h2>한눈 비교</h2>
+  <div class="tbl-wrap">
+  <table>
+    <tr><th>방향</th><th>첫인상</th><th>어울리는 경우</th><th>리스크</th></tr>
+    <tr><td><strong>앱 v2</strong> (다크+3D)</td><td>프리미엄, 시각적 압도</td><td>브랜드를 "작품"처럼 — 최신 요구(3D·모드·그룹·색상) 전부 반영</td><td>구현 난도·성능 관리 필요(이미 폴백 검증됨)</td></tr>
+    <tr><td>A 보태니컬</td><td>절제된 고급 인쇄물</td><td>차분한 신뢰, 편집 콘텐츠 중심</td><td>화려함 기대엔 심심할 수 있음</td></tr>
+    <tr><td>B 웜 가이드</td><td>친근하고 빠름</td><td>전환율·사용성 최우선</td><td>차별성 낮음(익숙한 문법)</td></tr>
+    <tr><td>C 페탈 갤러리</td><td>드라마틱 화보</td><td>감상 중심, SNS 공유컷</td><td>정보 탐색은 느림</td></tr>
+    <tr><td><strong>랜딩 v2</strong></td><td>Awwwards급 연출</td><td>서비스 소개·마케팅 관문</td><td>온라인 CDN 의존(폴백 있음)</td></tr>
+    <tr><td>랜딩 v1</td><td>집중된 한 방</td><td>가볍고 빠른 첫 화면</td><td>스크롤 스토리 없음</td></tr>
+  </table>
+  </div>
+
+  <footer>2026-08-14 · 선택된 방향이 실제 서비스 디자인 시스템이 됩니다. 웹(랜딩)과 앱(플로우)은 따로 골라도 됩니다.</footer>
+</div>
+</body>
+</html>

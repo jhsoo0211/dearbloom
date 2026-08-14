@@ -1,0 +1,1515 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   dearbloom 랜딩 — 나이트 보태니컬 아카이브 (실구현)
+   원본 시안: design/landing-v3/home.html · 스펙: docs/design-spec.md §1.4b·§1.4c·§1.5*
+
+   규칙
+     · 색·폰트 변수는 **globals.css 가 단일 원본**이다. 여기서 팔레트를 다시 정의하지 않는다.
+     · 모든 클래스는 `db-` 접두사 — 이 파일은 전역 CSS 라 다른 페이지와 이름이 겹치면 안 된다.
+     · 테마는 `[data-flower]` 변수 세트로 갈린다.
+       전역은 `.db-page` 가, **카드 국소 색감은 `.db-slide` 가** 각각 소유한다(§1.4c v3.3).
+     · 사진 위 텍스트는 국소 스크림 + 마루 부리 400 + 소프트 섀도(§1.5g). 하드 아웃라인 금지.
+   ═════════════════════════════════════════════════════════════════════ */
+
+/* ── 페이지 셸 ──────────────────────────────────────────────────────── */
+.db-page {
+  --db-shell: min(1340px, calc(100% - clamp(28px, 6vw, 120px)));
+  position: relative;
+  isolation: isolate;
+  background: var(--bg);
+  color: var(--fg);
+  transition: background-color var(--swap) var(--ease), color var(--swap) var(--ease);
+}
+
+.db-page *,
+.db-page *::before,
+.db-page *::after {
+  box-sizing: border-box;
+}
+
+.db-shell {
+  width: var(--db-shell);
+  margin-inline: auto;
+}
+
+/* 리셋은 `:where()` 로 감싸 **명시도 0** 으로 둔다.
+   `.db-page p{margin:0}`(0-1-1)처럼 두면 뒤따르는 단일 클래스 규칙(`.db-gate-sub{margin-bottom}`,
+   `.db-carousel-hint{margin-left:auto}`, `.db-room-title{font-weight:300}` 등)이 전부 리셋에 져서
+   여백과 자간이 조용히 무너진다. 실제로 그렇게 무너진 것을 확인하고 바꿨다. */
+:where(.db-page) :where(h1, h2, h3) {
+  margin: 0;
+  font-weight: 400;
+}
+:where(.db-page) :where(p) {
+  margin: 0;
+}
+:where(.db-page) :where(ul, ol) {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+:where(.db-page) :where(img) {
+  display: block;
+  max-width: 100%;
+}
+:where(.db-page) :where(button) {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+:where(.db-page) :where(a) {
+  color: inherit;
+}
+
+/* Lenis(스무스 스크롤) 최소 규칙 — 패키지 CSS 대신 필요한 것만 */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+/* ── 필름 그레인 · 진행 바 ──────────────────────────────────────────── */
+.db-grain {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 70;
+  pointer-events: none;
+  opacity: var(--grain-opacity);
+  mix-blend-mode: var(--grain-blend);
+}
+
+.db-progress {
+  position: fixed;
+  inset: 0 0 auto 0;
+  height: 2px;
+  z-index: 66;
+  pointer-events: none;
+  background: var(--hair);
+}
+.db-progress span {
+  display: block;
+  height: 100%;
+  width: 100%;
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  background: linear-gradient(90deg, var(--accent-line), var(--accent));
+}
+
+/* ── 리퀴드 글래스 ──────────────────────────────────────────────────── */
+.db-glass {
+  position: relative;
+  overflow: hidden;
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px) saturate(135%);
+  -webkit-backdrop-filter: blur(16px) saturate(135%);
+  box-shadow: inset 0 1px 1px var(--glass-hi-2), var(--glass-shadow);
+  transition: background-color var(--swap) var(--ease), box-shadow var(--swap) var(--ease);
+}
+.db-glass::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.4px;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    var(--glass-hi) 0%,
+    var(--glass-hi-2) 22%,
+    transparent 42%,
+    transparent 58%,
+    var(--glass-hi-2) 80%,
+    var(--glass-hi) 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .db-glass {
+    background: var(--glass-bg-fb);
+  }
+}
+
+/* ── 내비 ───────────────────────────────────────────────────────────── */
+.db-nav {
+  position: fixed;
+  top: 18px;
+  left: 0;
+  right: 0;
+  margin-inline: auto;
+  width: max-content;
+  max-width: calc(100vw - 24px);
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 6px 6px 18px;
+  border-radius: 9999px;
+  color: var(--fg);
+  transition: top 0.5s var(--ease), background-color var(--swap) var(--ease),
+    box-shadow var(--swap) var(--ease);
+}
+body.db-nav-compact .db-nav {
+  top: 10px;
+}
+.db-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 44px;
+  padding-right: 6px;
+  text-decoration: none;
+  color: var(--fg);
+}
+.db-brand .db-mark {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  opacity: 0.9;
+}
+.db-brand .db-wm {
+  font-family: var(--font-logo);
+  font-style: italic;
+  font-size: 22px;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  padding-top: 2px;
+}
+.db-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 4px;
+}
+.db-nav-links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 12px;
+  font-size: 13.5px;
+  line-height: 1;
+  color: var(--fg-50);
+  text-decoration: none;
+  border-radius: 9999px;
+  white-space: nowrap;
+  transition: color 0.3s var(--ease), background-color 0.3s var(--ease);
+}
+.db-nav-links a:hover,
+.db-nav-links a:focus-visible {
+  color: var(--fg);
+  background: var(--hair);
+}
+.db-nav-cta {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 20px;
+  border-radius: 9999px;
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  text-decoration: none;
+  background: var(--cta-bg);
+  color: var(--cta-fg);
+  transition: transform 0.35s var(--ease), box-shadow 0.35s var(--ease),
+    background-color var(--swap) var(--ease), color var(--swap) var(--ease);
+}
+.db-nav-cta:hover,
+.db-nav-cta:focus-visible {
+  transform: scale(1.04);
+  box-shadow: 0 0 26px var(--cta-glow);
+}
+
+/* ── 타이포·버튼 유틸 ───────────────────────────────────────────────── */
+.db-overline {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 clamp(16px, 2.2vw, 26px);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.db-overline .db-ko {
+  text-transform: none;
+  letter-spacing: 0.03em;
+  font-weight: 400;
+  color: var(--fg-50);
+}
+.db-overline::after {
+  content: '';
+  flex: 1;
+  max-width: 110px;
+  height: 1px;
+  background: var(--accent-line);
+}
+.db-overline.db-on-media {
+  color: var(--on-media);
+}
+.db-overline.db-on-media .db-ko {
+  color: var(--on-media-mute);
+}
+
+.db-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 52px;
+  padding: 0 26px;
+  border-radius: 9999px;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: transform 0.35s var(--ease), box-shadow 0.35s var(--ease),
+    background-color var(--swap) var(--ease), color var(--swap) var(--ease),
+    border-color var(--swap) var(--ease);
+}
+.db-btn-primary {
+  background: var(--cta-bg);
+  color: var(--cta-fg);
+}
+.db-btn-primary:hover,
+.db-btn-primary:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 34px var(--cta-glow);
+}
+.db-btn-ghost {
+  background: transparent;
+  color: var(--on-media);
+  border: 1px solid var(--ghost-line);
+  font-weight: 500;
+}
+.db-btn-ghost:hover,
+.db-btn-ghost:focus-visible {
+  border-color: var(--on-media);
+  transform: translateY(-2px);
+}
+.db-btn .db-arw {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  opacity: 0.7;
+}
+
+/* ═══════════════ 히어로 ═══════════════ */
+.db-hero {
+  position: relative;
+  isolation: isolate;
+  min-height: 100vh;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  padding-block: clamp(96px, 12vh, 140px) clamp(26px, 4vh, 46px);
+  overflow: hidden;
+}
+.db-hero-media {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background: var(--frame-fallback);
+  overflow: hidden;
+}
+.db-hero-media picture,
+.db-hero-media img {
+  width: 100%;
+  height: 100%;
+}
+.db-hero-media img {
+  object-fit: cover;
+  filter: var(--db-grade, ) var(--media-filter);
+  transform: scale(1.03);
+  transition: filter var(--swap) var(--ease);
+}
+@keyframes db-kenburns {
+  from {
+    transform: scale(1.05) translate3d(-1.1%, -0.9%, 0);
+  }
+  to {
+    transform: scale(1.13) translate3d(1.1%, 0.9%, 0);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .db-hero-media img {
+    animation: db-kenburns 28s ease-in-out infinite alternate;
+  }
+}
+.db-hero-scrim,
+.db-hero-vig {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  transition: background var(--swap) var(--ease);
+}
+.db-hero-scrim {
+  background: var(--scrim-hero);
+}
+.db-hero-vig {
+  background: var(--vignette);
+}
+
+.db-hero-body {
+  margin-top: auto;
+  position: relative;
+}
+.db-hero-top {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 28px;
+  position: relative;
+  margin-bottom: clamp(14px, 2.2vh, 26px);
+}
+.db-hero-lead {
+  display: block;
+  font-family: var(--font-serif);
+  font-weight: 300;
+  font-size: clamp(21px, 2.5vw, 36px);
+  line-height: 1.46;
+  letter-spacing: -0.01em;
+  color: var(--on-media);
+  max-width: min(100%, 760px);
+  text-shadow: 0 1px 24px rgba(11, 12, 10, 0.55);
+}
+[data-flower='lily'] .db-hero-lead {
+  text-shadow: 0 1px 20px rgba(246, 241, 232, 0.7);
+}
+.db-logotype {
+  display: block;
+  font-family: var(--font-logo);
+  font-style: italic;
+  font-weight: 400;
+  font-size: clamp(66px, 13.6vw, 214px);
+  line-height: 0.9;
+  letter-spacing: -0.022em;
+  color: var(--on-media);
+  margin-bottom: clamp(16px, 2.6vh, 34px);
+  text-shadow: 0 2px 30px rgba(11, 12, 10, 0.45);
+}
+[data-flower='lily'] .db-logotype {
+  text-shadow: 0 2px 26px rgba(246, 241, 232, 0.72);
+}
+.db-hero-h1 {
+  display: block;
+}
+
+/* 히어로 오늘의 꽃 패널 — 사진 위 텍스트라 유리 안에 둔다(§1.5g 배치 우선) */
+.db-hero-card {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 16px);
+  z-index: 4;
+  width: max-content;
+  max-width: min(360px, 46vw);
+  padding: 14px 18px 16px;
+  border-radius: 20px;
+  color: var(--on-media);
+}
+@media (max-width: 1180px), (max-height: 860px) {
+  .db-hero-card {
+    position: static;
+    margin-bottom: clamp(14px, 2.2vh, 24px);
+    max-width: min(360px, 100%);
+  }
+}
+.db-hero-card .db-cap {
+  display: block;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--on-media);
+}
+.db-hero-card .db-hero-flower {
+  display: block;
+  margin-top: 8px;
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: 22px;
+  line-height: 1.3;
+  color: var(--on-media);
+  text-shadow: 0 1px 24px rgba(11, 12, 10, 0.55);
+}
+[data-flower='lily'] .db-hero-card .db-hero-flower {
+  text-shadow: 0 1px 20px rgba(246, 241, 232, 0.7);
+}
+.db-hero-card .db-hero-meaning {
+  margin-top: 4px;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--on-media-mute);
+}
+.db-hero-card .db-hero-caveat {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--hair);
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--on-media-mute);
+}
+
+.db-hero-foot {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: clamp(18px, 2.4vw, 40px);
+  padding-top: clamp(16px, 2.4vh, 26px);
+  border-top: 1px solid var(--hair);
+}
+.db-hero-note {
+  font-size: 14px;
+  line-height: 1.68;
+  color: var(--on-media-mute);
+  max-width: min(100%, 430px);
+}
+.db-hero-acts {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.db-hero-acts .db-btn-ghost {
+  min-height: 52px;
+  padding: 0 20px;
+  font-size: 14px;
+}
+.db-scroll-hint {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  pointer-events: none;
+  white-space: nowrap;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--on-media-mute);
+}
+.db-scroll-hint .db-bar {
+  display: block;
+  width: 38px;
+  height: 1px;
+  background: var(--on-media-mute);
+  position: relative;
+  overflow: hidden;
+}
+.db-scroll-hint .db-bar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  width: 40%;
+  background: var(--accent);
+  animation: db-slide 2.6s var(--ease) infinite;
+}
+@keyframes db-slide {
+  0% {
+    transform: translateX(-100%);
+  }
+  60%,
+  100% {
+    transform: translateX(250%);
+  }
+}
+
+/* ═══════════════ 챕터 공통 ═══════════════ */
+.db-chapter {
+  position: relative;
+  isolation: isolate;
+}
+.db-media-bg {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background: var(--frame-fallback);
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  filter: var(--media-filter);
+  transition: filter var(--swap) var(--ease);
+}
+.db-media-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: var(--scrim-panel);
+  transition: background var(--swap) var(--ease);
+}
+.db-media-scrim.db-is-band {
+  background: var(--scrim-band);
+}
+
+/* ═══════════════ 챕터 01 · 오늘의 꽃 (v3.3 슬라이드) ═══════════════ */
+.db-today {
+  background: var(--bg);
+  padding-block: clamp(88px, 14vh, 168px);
+  transition: background-color var(--swap) var(--ease);
+}
+.db-today-head {
+  max-width: min(100%, 720px);
+  margin-bottom: clamp(30px, 5vh, 56px);
+}
+.db-today-title {
+  font-family: var(--font-serif);
+  font-weight: 300;
+  font-size: clamp(29px, 4vw, 54px);
+  line-height: 1.28;
+  letter-spacing: -0.02em;
+  color: var(--fg);
+}
+.db-today-lede {
+  margin-top: clamp(14px, 2vw, 20px);
+  font-size: 15.5px;
+  line-height: 1.78;
+  color: var(--fg-70);
+}
+
+/* 캐러셀 ------------------------------------------------------------- */
+.db-carousel {
+  position: relative;
+}
+.db-track {
+  /* 슬라이드의 offsetParent 를 트랙으로 고정한다 — 활성 카드 계산이
+     offsetLeft(레이아웃 좌표) 기준이라 중간에 다른 positioned 조상이 끼면 어긋난다. */
+  position: relative;
+  display: flex;
+  gap: clamp(16px, 2vw, 26px);
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: 0;
+  padding-block: 4px clamp(18px, 2.4vw, 26px);
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  cursor: grab;
+}
+.db-track::-webkit-scrollbar {
+  display: none;
+}
+.db-track.db-dragging {
+  cursor: grabbing;
+  scroll-snap-type: none;
+  user-select: none;
+}
+/* 스냅은 **시작 정렬**이다. 데스크톱에서는 카드가 3장 넘게 보이는데, 가운데 정렬로 두면
+   앞뒤 카드가 이미 화면 안이라 "다음"을 눌러도 스크롤이 0에 붙어 아무 일도 일어나지 않는다. */
+.db-slide {
+  flex: 0 0 min(86%, 380px);
+  scroll-snap-align: start;
+  display: flex;
+}
+
+.db-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  border: 1px solid var(--hair);
+  border-radius: 22px;
+  overflow: hidden;
+  background: var(--bg-2);
+  box-shadow: 0 30px 80px rgba(11, 12, 10, 0.34);
+  transition: background-color var(--swap) var(--ease), border-color var(--swap) var(--ease);
+}
+.db-slide[data-flower='lily'] .db-card {
+  box-shadow: 0 30px 70px rgba(31, 33, 30, 0.16);
+}
+
+/* 사진 영역은 카테고리와 무관하게 **다크 트리트먼트**로 통일한다.
+   승인 사진(docs/image-assets.md)이 전부 다크 무디 컷이라, 라이트 카테고리(아이보리)에서
+   밝은 스크림을 얹으면 사진이 뿌옇게 죽는다(§1.5g "사진을 죽이지 말 것").
+   글자는 Warm Ivory + 알파 파생만 쓴다 — 팔레트 밖 색 없음. */
+.db-card-media {
+  --db-media-fg: var(--ivory);
+  --db-media-mute: rgba(246, 241, 232, 0.82);
+  position: relative;
+  aspect-ratio: 4 / 5;
+  max-height: min(40vh, 380px);
+  overflow: hidden;
+  background: var(--frame-fallback);
+}
+.db-card-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: var(--db-grade, ) var(--media-filter);
+  transition: transform 0.5s var(--ease), filter var(--swap) var(--ease);
+}
+.db-card:hover .db-card-media img {
+  transform: scale(1.03);
+}
+/* 사진이 없는 꽃 — 카테고리 색감 그라디언트(§v3.3 브리프) */
+.db-card-fallback {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(92% 72% at 28% 16%, var(--hair-2) 0%, transparent 62%),
+    linear-gradient(158deg, var(--bg-3) 0%, var(--bg-2) 55%, var(--bg) 100%);
+}
+.db-card-fallback::after {
+  content: '';
+  position: absolute;
+  inset: 16% 26% 34%;
+  border: 1px solid var(--hair);
+  border-radius: 50% 50% 46% 46% / 62% 62% 38% 38%;
+  opacity: 0.8;
+}
+
+/* §1.5g 국소 스크림 — 텍스트 블록 뒤에만, 가장자리는 넉넉히 페더 */
+.db-card-scrim {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 68%;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(11, 12, 10, 0) 0%,
+    rgba(11, 12, 10, 0.22) 30%,
+    rgba(11, 12, 10, 0.62) 64%,
+    rgba(11, 12, 10, 0.86) 100%
+  );
+}
+.db-card-boost {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 82%;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(11, 12, 10, 0) 0%,
+    rgba(11, 12, 10, 0.3) 34%,
+    rgba(11, 12, 10, 0.72) 68%,
+    rgba(11, 12, 10, 0.92) 100%
+  );
+  transition: opacity 0.26s var(--ease);
+}
+.db-card-media:hover .db-card-boost,
+.db-card-media:focus-within .db-card-boost,
+.db-card-media.db-revealed .db-card-boost {
+  opacity: 1;
+}
+
+.db-card-nameblock {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  display: flex;
+}
+.db-card-reveal {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  padding: 18px 20px 18px;
+  text-align: left;
+}
+/* §1.5g 타이포 보강 — 마루 부리 400(300 금지) + 소프트 섀도 */
+.db-card-name {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: clamp(26px, 3vw, 34px);
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: var(--db-media-fg);
+  text-shadow: 0 1px 24px rgba(11, 12, 10, 0.55), 0 1px 3px rgba(11, 12, 10, 0.45);
+  transition: transform 0.24s var(--ease);
+  transform-origin: left bottom;
+}
+.db-card-media:hover .db-card-name,
+.db-card-media:focus-within .db-card-name,
+.db-card-media.db-revealed .db-card-name {
+  transform: scale(1.03);
+}
+.db-card-latin {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  font-style: italic;
+  color: var(--db-media-mute);
+  text-shadow: 0 1px 12px rgba(11, 12, 10, 0.7);
+}
+/* 호버 강화 상태에서 한 줄 더 — 기본 상태에서도 카드 본문에 같은 내용이 있어
+   "호버로만 보이는 정보"가 되지 않는다(§1.5g 앤티패턴 회피) */
+.db-card-teaser {
+  margin-top: 6px;
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--db-media-fg);
+  text-shadow: 0 1px 18px rgba(11, 12, 10, 0.75);
+  transition: opacity 0.24s var(--ease), max-height 0.28s var(--ease);
+}
+.db-card-media:hover .db-card-teaser,
+.db-card-media:focus-within .db-card-teaser,
+.db-card-media.db-revealed .db-card-teaser {
+  opacity: 1;
+  max-height: 5.4em;
+}
+
+.db-card-badge {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 13px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--on-media);
+}
+.db-card-badge.db-today-badge {
+  border: 1px solid var(--accent-line);
+}
+.db-card-badge .db-seal {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--seal);
+  flex: none;
+}
+/* 사진 크레딧은 카드에 겹치지 않고 푸터 "Image credits" 로 일괄 표기한다.
+   (docs/image-assets.md 사용 규칙 2 — 겹칠 수 없는 자리는 푸터 표기로 대체) */
+
+.db-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+  padding: clamp(16px, 1.8vw, 22px);
+  background: var(--bg-2);
+  transition: background-color var(--swap) var(--ease);
+}
+.db-card-meaning {
+  font-family: var(--font-serif);
+  font-weight: 300;
+  font-size: clamp(19px, 1.6vw, 23px);
+  line-height: 1.5;
+  letter-spacing: -0.015em;
+  color: var(--fg);
+}
+.db-card-meaning .db-q {
+  color: var(--accent);
+}
+.db-src-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  align-self: flex-start;
+  padding: 7px 14px;
+  border-radius: 9999px;
+  border: 1px solid var(--accent-line);
+  font-size: 12px;
+  color: var(--fg-70);
+}
+.db-src-badge .db-seal {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--seal);
+  flex: none;
+}
+.db-card-story {
+  padding-top: 14px;
+  border-top: 1px solid var(--hair);
+}
+.db-card-story .db-lab {
+  display: block;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+.db-card-story p {
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--fg-70);
+}
+.db-card-story .db-story-title {
+  color: var(--fg);
+}
+.db-occasions {
+  padding-top: 14px;
+  border-top: 1px solid var(--hair);
+}
+.db-occasions .db-lab {
+  display: block;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+.db-occasions li {
+  position: relative;
+  padding-left: 14px;
+  font-size: 14px;
+  line-height: 1.72;
+  color: var(--fg-70);
+}
+.db-occasions li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.72em;
+  width: 5px;
+  height: 1px;
+  background: var(--accent-line);
+}
+.db-caveat {
+  padding-left: 13px;
+  border-left: 2px solid var(--accent-line);
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--fg-70);
+}
+.db-adopt {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 48px;
+  margin-top: auto;
+  padding: 0 18px;
+  border-radius: 9999px;
+  border: 1px solid var(--ghost-line);
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--fg);
+  transition: border-color 0.3s var(--ease), background-color 0.3s var(--ease),
+    color 0.3s var(--ease);
+}
+.db-adopt:hover,
+.db-adopt:focus-visible {
+  border-color: var(--fg);
+  background: var(--hair);
+}
+.db-adopt[aria-pressed='true'] {
+  border-color: var(--accent-line);
+  color: var(--accent);
+}
+.db-adopt .db-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex: none;
+  background: linear-gradient(140deg, var(--bg-3) 0%, var(--bg-2) 58%, var(--accent) 58%);
+  box-shadow: inset 0 0 0 1px var(--hair-2);
+}
+
+/* 캐러셀 컨트롤 ------------------------------------------------------ */
+.db-carousel-foot {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding-top: clamp(14px, 2vw, 20px);
+  border-top: 1px solid var(--hair);
+}
+.db-arrows {
+  display: flex;
+  gap: 8px;
+}
+.db-arrow {
+  width: 48px;
+  height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid var(--ghost-line);
+  color: var(--fg);
+  transition: border-color 0.3s var(--ease), background-color 0.3s var(--ease), opacity 0.3s;
+}
+.db-arrow:hover:not(:disabled),
+.db-arrow:focus-visible {
+  border-color: var(--fg);
+  background: var(--hair);
+}
+.db-arrow:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.db-arrow svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+}
+.db-dots {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  max-width: 100%;
+  gap: 4px;
+}
+.db-counter {
+  font-family: var(--font-serif);
+  font-size: 15px;
+  letter-spacing: 0.06em;
+  color: var(--fg-50);
+}
+.db-counter span {
+  color: var(--accent);
+}
+.db-dots button {
+  width: 22px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.db-dots button i {
+  display: block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--hair-2);
+  transition: background-color 0.3s var(--ease), width 0.3s var(--ease);
+}
+.db-dots button[aria-current='true'] i {
+  width: 18px;
+  border-radius: 9999px;
+  background: var(--accent);
+}
+.db-carousel-hint {
+  margin-left: auto;
+  font-size: 12.5px;
+  color: var(--fg-50);
+}
+
+/* ═══════════════ 챕터 02 · 신뢰 3요소 (scroll room) ═══════════════ */
+.db-room {
+  position: relative;
+}
+.db-room-media {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100svh;
+  z-index: 0;
+  overflow: hidden;
+}
+.db-room-flow {
+  position: relative;
+  z-index: 1;
+  margin-top: -100vh;
+  margin-top: -100svh;
+  padding-block: clamp(120px, 22vh, 220px) clamp(96px, 18vh, 190px);
+}
+.db-room-head {
+  max-width: min(100%, 620px);
+  margin-bottom: clamp(56px, 9vh, 120px);
+}
+.db-room-title {
+  font-family: var(--font-serif);
+  font-weight: 300;
+  font-size: clamp(29px, 4vw, 56px);
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+  color: var(--on-media);
+}
+.db-trust {
+  display: grid;
+  gap: 0;
+  max-width: 840px;
+  margin-left: auto;
+}
+.db-trust-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: clamp(20px, 3.4vw, 52px);
+  padding-block: clamp(28px, 4.4vh, 52px);
+  border-top: 1px solid var(--hair);
+  transition: opacity 0.55s var(--ease);
+}
+.db-trust-row:last-child {
+  border-bottom: 1px solid var(--hair);
+}
+.db-page.db-motion-ready .db-trust-row {
+  opacity: 0.45;
+}
+.db-page.db-motion-ready .db-trust-row.db-is-active {
+  opacity: 1;
+}
+.db-trust-row .db-num {
+  font-family: var(--font-serif);
+  font-weight: 200;
+  font-size: clamp(26px, 3vw, 42px);
+  line-height: 1;
+  color: var(--accent);
+}
+.db-trust-row h3 {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: clamp(19px, 2.1vw, 28px);
+  line-height: 1.4;
+  color: var(--on-media);
+  margin-bottom: 8px;
+}
+.db-trust-row p {
+  font-size: 15.5px;
+  line-height: 1.76;
+  color: var(--on-media-mute);
+  max-width: min(100%, 520px);
+}
+.db-trust-row .db-eg {
+  margin-top: 10px;
+  font-size: 14px;
+  color: var(--on-media);
+  font-family: var(--font-serif);
+}
+
+/* ═══════════════ 구분면 밴드 ═══════════════ */
+.db-band {
+  position: relative;
+  isolation: isolate;
+  min-height: 44vh;
+  min-height: 44svh;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+.db-band-in {
+  text-align: center;
+}
+.db-band-in .db-lab {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--on-media);
+}
+.db-band-in .db-sub {
+  margin-top: 12px;
+  font-size: 13.5px;
+  color: var(--on-media-mute);
+}
+.db-band-in .db-rule {
+  display: block;
+  width: 64px;
+  height: 1px;
+  margin: 20px auto 0;
+  background: var(--accent-line);
+}
+
+/* ═══════════════ 챕터 03 · 추천 예시 ═══════════════ */
+.db-example {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  min-height: 96vh;
+  min-height: 96svh;
+  display: flex;
+  align-items: center;
+  padding-block: clamp(96px, 16vh, 180px);
+}
+.db-quote {
+  /* 큰 따옴표 글리프가 line-height 0.6 으로 위로 솟아 오버라인을 침범한다 — 그만큼 내려 준다. */
+  margin: clamp(18px, 3vh, 44px) 0 0;
+  max-width: min(100%, 960px);
+}
+.db-quote .db-mk {
+  display: block;
+  font-family: var(--font-logo);
+  font-size: clamp(56px, 7vw, 110px);
+  line-height: 0.6;
+  color: var(--accent);
+  margin-bottom: clamp(10px, 1.6vw, 20px);
+}
+.db-quote p {
+  font-family: var(--font-serif);
+  font-weight: 300;
+  font-size: clamp(26px, 4.2vw, 60px);
+  line-height: 1.38;
+  letter-spacing: -0.02em;
+  color: var(--on-media);
+}
+.db-quote .db-lead {
+  color: var(--accent);
+}
+.db-quote figcaption {
+  margin-top: clamp(22px, 3vw, 38px);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--on-media-mute);
+}
+
+/* ═══════════════ 인용 밴드 (§1.5e) ═══════════════ */
+.db-qband {
+  background: var(--bg);
+  color: var(--fg);
+  padding-block: clamp(64px, 10vh, 116px);
+  border-top: 1px solid var(--hair);
+  transition: background-color var(--swap) var(--ease);
+}
+.db-qb {
+  margin: 0;
+  max-width: min(100%, 620px);
+}
+.db-qb-ko {
+  font-family: var(--font-serif);
+  font-weight: 300;
+  font-size: clamp(19px, 2vw, 25px);
+  line-height: 1.66;
+  letter-spacing: -0.01em;
+  color: var(--fg);
+}
+.db-qb-en {
+  margin-top: 10px;
+  font-size: 12.5px;
+  letter-spacing: 0.06em;
+  color: var(--fg-50);
+}
+.db-qb figcaption {
+  margin-top: 18px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--fg-70);
+}
+
+/* ═══════════════ 챕터 04 · 피날레 ═══════════════ */
+.db-finale {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  min-height: 100vh;
+  min-height: 100svh;
+  display: flex;
+  align-items: center;
+  padding-block: clamp(110px, 16vh, 180px);
+}
+.db-finale-in {
+  max-width: min(100%, 860px);
+}
+.db-finale h2 {
+  font-family: var(--font-serif);
+  font-weight: 300;
+  font-size: clamp(30px, 4.6vw, 66px);
+  line-height: 1.28;
+  letter-spacing: -0.024em;
+  color: var(--on-media);
+  margin-bottom: clamp(18px, 2.4vw, 28px);
+}
+.db-finale .db-lede {
+  font-size: 16px;
+  line-height: 1.76;
+  color: var(--on-media-mute);
+  max-width: min(100%, 560px);
+  margin-bottom: clamp(30px, 4vw, 46px);
+}
+.db-finale-acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* ═══════════════ 푸터 ═══════════════ */
+.db-footer {
+  position: relative;
+  background: var(--bg);
+  color: var(--fg);
+  padding-block: clamp(60px, 9vh, 110px) clamp(50px, 7vh, 80px);
+  transition: background-color var(--swap) var(--ease);
+}
+.db-footer-top {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px 40px;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding-bottom: clamp(30px, 4vh, 48px);
+  border-bottom: 1px solid var(--hair);
+}
+.db-footer .db-disc {
+  font-size: 14.5px;
+  line-height: 1.72;
+  color: var(--fg-70);
+  max-width: min(100%, 560px);
+}
+.db-footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 4px;
+}
+.db-footer-links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 9999px;
+  font-size: 13.5px;
+  color: var(--fg-70);
+  text-decoration: none;
+  transition: color 0.3s var(--ease), background-color 0.3s var(--ease);
+}
+.db-footer-links a:hover,
+.db-footer-links a:focus-visible {
+  color: var(--fg);
+  background: var(--hair);
+}
+.db-credits {
+  padding-top: clamp(26px, 3.6vh, 40px);
+}
+.db-credits h2 {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 10px;
+}
+.db-credits p {
+  font-size: 12.5px;
+  line-height: 1.8;
+  color: var(--fg-50);
+  max-width: min(100%, 900px);
+}
+.db-credits .db-lic {
+  margin-top: 8px;
+}
+
+/* ═══════════════ 로딩 게이트 ═══════════════
+   JS 없이 **CSS 만으로** 첫 프레임부터 떠 있어야 한다(마운트를 기다리면 히어로가 번쩍인다).
+   그래서 `<html>` 에 클래스를 심는 부트 스크립트 대신 미디어 쿼리로 켠다 —
+   루트 엘리먼트를 건드리면 하이드레이션 불일치(className diff)가 난다.
+   모션을 끈 사용자에게는 애초에 뜨지 않고, JS 가 죽어도 8.5초면 CSS 가 걷어 낸다. */
+.db-gate {
+  display: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .db-page .db-gate {
+    display: grid;
+    place-items: center;
+    position: fixed;
+    inset: 0;
+    z-index: 120;
+    background: var(--bg);
+    padding: 24px;
+    animation: db-gate-failsafe 0.5s var(--ease) 8.5s forwards;
+  }
+  /* 입장하면 페이드아웃 — visibility 는 페이드가 끝난 뒤에 꺼서 클릭을 막지 않는다. */
+  .db-page.db-entered .db-gate {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.55s var(--ease), visibility 0s linear 0.55s;
+  }
+}
+@keyframes db-gate-failsafe {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+.db-gate-in {
+  text-align: center;
+  max-width: 420px;
+}
+.db-gate-over {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 16px;
+}
+.db-gate-logo {
+  font-family: var(--font-logo);
+  font-style: italic;
+  font-size: clamp(46px, 9vw, 84px);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--fg);
+  margin-bottom: 14px;
+}
+.db-gate-sub {
+  font-size: 13.5px;
+  color: var(--fg-50);
+  margin-bottom: 26px;
+}
+.db-gate-bar {
+  position: relative;
+  height: 1px;
+  background: var(--hair);
+  overflow: hidden;
+  margin-bottom: 26px;
+}
+.db-gate-bar span {
+  position: absolute;
+  inset: 0;
+  transform-origin: 0 50%;
+  transform: scaleX(0);
+  background: var(--accent);
+  transition: transform 0.35s linear;
+}
+.db-gate-btn {
+  min-height: 52px;
+  padding: 0 30px;
+  border-radius: 9999px;
+  font-size: 15px;
+  font-weight: 600;
+  background: var(--cta-bg);
+  color: var(--cta-fg);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s var(--ease), transform 0.35s var(--ease);
+}
+.db-gate-btn.db-ready {
+  opacity: 1;
+  pointer-events: auto;
+}
+.db-gate-btn:hover {
+  transform: translateY(-2px);
+}
+
+/* ═══════════════ 모션 프리셋 ═══════════════
+   인트로 대상은 GSAP 이 잡기 전까지 숨어 있다. 모션이 아예 안 뜨는 경우를 대비해
+   9초짜리 페일세이프 애니메이션을 함께 걸어 둔다 — 스크립트가 죽어도 글자가 갇히지 않는다. */
+@media (prefers-reduced-motion: no-preference) {
+  .db-page:not(.db-motion-off) [data-db-intro] {
+    opacity: 0;
+    animation: db-intro-failsafe 0.4s var(--ease) 9s forwards;
+  }
+}
+@keyframes db-intro-failsafe {
+  to {
+    opacity: 1;
+  }
+}
+.db-mask {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: bottom;
+  line-height: inherit;
+  padding-bottom: 0.16em;
+  margin-bottom: -0.16em;
+}
+.db-word {
+  display: inline-block;
+  will-change: transform;
+}
+
+/* ═══════════════ 반응형 ═══════════════ */
+@media (max-width: 1180px) {
+  .db-hero-foot {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .db-hero-foot .db-scroll-hint {
+    display: none;
+  }
+}
+@media (max-width: 1080px) {
+  .db-trust {
+    margin-left: 0;
+  }
+  .db-hero-foot {
+    grid-template-columns: 1fr;
+    align-items: start;
+    gap: 20px;
+  }
+  .db-hero-acts {
+    justify-content: flex-start;
+  }
+}
+@media (max-width: 860px) {
+  .db-nav-links {
+    display: none;
+  }
+}
+@media (max-width: 640px) {
+  .db-page {
+    font-size: 15.5px;
+  }
+  .db-hero {
+    padding-block: 92px 84px;
+  }
+  .db-hero-top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+  }
+  .db-hero-acts {
+    width: 100%;
+  }
+  .db-hero-acts .db-btn {
+    flex: 1 1 auto;
+  }
+  .db-hero-acts .db-btn-primary {
+    flex-basis: 100%;
+    order: -1;
+  }
+  .db-finale-acts .db-btn-primary {
+    flex-basis: 100%;
+  }
+  .db-nav {
+    padding: 6px 6px 6px 14px;
+  }
+  .db-brand .db-wm {
+    font-size: 20px;
+  }
+  .db-nav-cta {
+    padding: 0 16px;
+    font-size: 13px;
+  }
+  .db-slide {
+    flex: 0 0 min(88%, 340px);
+  }
+  .db-room-flow {
+    padding-block: clamp(96px, 18vh, 150px) clamp(80px, 14vh, 140px);
+  }
+  .db-trust-row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .db-footer-top {
+    flex-direction: column;
+  }
+  .db-carousel-hint {
+    margin-left: 0;
+    flex-basis: 100%;
+  }
+}
+
+/* ═══════════════ reduced-motion ═══════════════ */
+@media (prefers-reduced-motion: reduce) {
+  .db-hero-media img {
+    animation: none !important;
+    transform: scale(1.03) !important;
+  }
+  .db-scroll-hint .db-bar::after {
+    display: none;
+  }
+  .db-track {
+    scroll-behavior: auto;
+  }
+}

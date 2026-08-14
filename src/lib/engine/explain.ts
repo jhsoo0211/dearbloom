@@ -1,6 +1,7 @@
 import { monthFromISO } from './normalize';
 import type { ScoredFlower } from './score';
 import type {
+  ColorOption,
   ColorSuggestion,
   FlowerData,
   FlowerMeaningRow,
@@ -134,10 +135,46 @@ export function buildColorSuggestion(
 }
 
 /**
+ * 사용자가 색을 다시 고를 수 있도록, 그 꽃이 실제로 나오는 색 전체를 선택지로 편다.
+ * 색별 꽃말은 buildColorSuggestion 과 같은 규칙으로 찾는다
+ * (색이 일치하는 행 → 색을 가리지 않는 행 → 둘 다 없으면 꽃말 없이 색 이름만).
+ * suggestedColor 와 같은 색에는 isSuggested 를 세워 기본 제안이 무엇이었는지 남긴다.
+ */
+export function buildColorOptions(
+  flower: FlowerData,
+  meanings: FlowerMeaningRow[],
+  suggestedColor?: string,
+): ColorOption[] {
+  const wanted = suggestedColor?.trim().toLowerCase();
+  const seen = new Set<string>();
+  const options: ColorOption[] = [];
+
+  for (const raw of flower.colors) {
+    const color = raw.trim();
+    if (color === '') continue;
+    const key = color.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+
+    const option: ColorOption = { color, isSuggested: key === wanted };
+    const meaning = findMeaning(meanings, flower.id, color);
+    if (meaning) {
+      option.meaningKo = meaning.meaningKo;
+      option.sourceId = meaning.sourceId;
+      option.confidenceLevel = meaning.confidenceLevel;
+    }
+    options.push(option);
+  }
+
+  return options;
+}
+
+/**
  * 선정된 안을 최종 응답 형태로 바꾼다.
  * fitScore는 0~1 내부 점수를 0~100 정수로 환산한 값이다.
  * substitutes는 같은 intent 규칙에 걸린 차순위 후보 중 아직 추천되지 않은 최대 2개.
  * meanings를 주지 않으면 색과 근거만 제안하고 꽃말은 비운다(출처 없는 꽃말은 싣지 않는다).
+ * colorOptions는 사용자가 색을 다시 고를 수 있도록 그 꽃의 색 전체를 함께 싣는다.
  */
 export function buildResults(
   picked: ScoredFlower[],
@@ -157,13 +194,17 @@ export function buildResults(
     .sort((a, b) => b.score.total - a.score.total)
     .filter((s) => !pickedIds.has(s.flower.id) && intentFlowerIds.has(s.flower.id));
 
-  return picked.map((p) => ({
-    flower: toRef(p),
-    fitScore: Math.round(p.score.total * 100),
-    reasons: [...p.score.matched],
-    cautions: [...(cautionsByFlower.get(p.flower.id) ?? [])],
-    substitutes: substitutePool.slice(0, 2).map(toRef),
-    availability: availabilityFor(p.flower.bloomMonths, input.dateISO),
-    colorSuggestion: buildColorSuggestion(p.flower, input, meanings),
-  }));
+  return picked.map((p) => {
+    const colorSuggestion = buildColorSuggestion(p.flower, input, meanings);
+    return {
+      flower: toRef(p),
+      fitScore: Math.round(p.score.total * 100),
+      reasons: [...p.score.matched],
+      cautions: [...(cautionsByFlower.get(p.flower.id) ?? [])],
+      substitutes: substitutePool.slice(0, 2).map(toRef),
+      availability: availabilityFor(p.flower.bloomMonths, input.dateISO),
+      colorSuggestion,
+      colorOptions: buildColorOptions(p.flower, meanings, colorSuggestion?.color),
+    };
+  });
 }

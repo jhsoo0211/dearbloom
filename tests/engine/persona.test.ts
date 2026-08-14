@@ -174,11 +174,12 @@ describe('colorSuggestion (색상 추천)', () => {
     const withMeanings = recommend(input, testRuleSetWithMeanings);
     const withoutMeanings = recommend(input, testRuleSet);
 
-    // 색 제안을 뺀 나머지 결과는 완전히 동일하다(하위 호환).
+    // 꽃말에서 나오는 색 정보(제안·선택지)를 뺀 나머지 결과는 완전히 동일하다(하위 호환).
     const strip = (results: RecoResult[]) =>
       results.map((result) => {
         const copy = { ...result };
         delete copy.colorSuggestion;
+        delete copy.colorOptions;
         return copy;
       });
     expect(strip(withoutMeanings)).toEqual(strip(withMeanings));

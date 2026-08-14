@@ -36,6 +36,7 @@ export function recommend(
 export * from './diversity';
 export * from './exclude';
 export * from './explain';
+export * from './group';
 export * from './normalize';
 export * from './score';
 export * from './types';

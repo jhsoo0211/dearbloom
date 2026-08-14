@@ -131,6 +131,19 @@ export interface ColorSuggestion {
   reason: string;
 }
 
+/**
+ * 결과 화면에서 사용자가 색을 직접 다시 고를 수 있게 주는 선택지 한 칸.
+ * 그 꽃이 실제로 나오는 색만 담고, 색별 꽃말은 출처를 찾았을 때만 채운다.
+ */
+export interface ColorOption {
+  color: string;
+  meaningKo?: string;
+  sourceId?: string;
+  confidenceLevel?: FlowerMeaningRow['confidenceLevel'];
+  /** 엔진이 기본으로 제안한 색(colorSuggestion.color)과 같은 색인지. */
+  isSuggested: boolean;
+}
+
 export interface RecoResult {
   flower: FlowerRef;
   fitScore: number;
@@ -140,6 +153,8 @@ export interface RecoResult {
   availability: SeasonStatus;
   /** 색 정보가 아예 없는 꽃이면 null. */
   colorSuggestion?: ColorSuggestion | null;
+  /** 사용자가 직접 다시 고를 수 있는 색 목록. 색 정보가 없는 꽃이면 빈 배열. */
+  colorOptions?: ColorOption[];
 }
 
 /**

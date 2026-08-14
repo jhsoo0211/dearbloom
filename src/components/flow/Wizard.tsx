@@ -209,7 +209,9 @@ export default function Wizard({ options, defaultDateISO, action, onResult }: Wi
   const [colorPrefs, setColorPrefs] = useState<string[]>([]);
   const [pets, setPets] = useState<string[]>([]);
   const [fragranceSensitive, setFragranceSensitive] = useState(false);
-  const [personalCue, setPersonalCue] = useState('');
+  // §1.5j 자유 서술 2필드. 둘 다 선택이고, 서버로만 건너가며 저장되지 않는다.
+  const [recipientNote, setRecipientNote] = useState('');
+  const [episode, setEpisode] = useState('');
   const [budgetKey, setBudgetKey] = useState('');
   const [dateISO, setDateISO] = useState(defaultDateISO);
   const [pending, setPending] = useState(false);
@@ -237,7 +239,8 @@ export default function Wizard({ options, defaultDateISO, action, onResult }: Wi
         colorPrefs,
         pets,
         fragranceSensitive,
-        personalCue,
+        recipientNote,
+        episode,
         budgetKey,
         dateISO,
       });
@@ -407,19 +410,40 @@ export default function Wizard({ options, defaultDateISO, action, onResult }: Wi
                 </div>
               </fieldset>
 
+              {/* §1.5j — 이야기로 적어 주면 그 안에서 분위기·색·꽃 단서를 읽어 낸다. */}
               <fieldset className={styles.group}>
-                <legend className={styles.groupHead}>한 줄 메모</legend>
-                <p className={styles.groupNote}>
-                  예: 조용한 카페에서 책 읽는 걸 좋아해요. (선택)
-                </p>
-                <input
-                  className={styles.field}
-                  type="text"
-                  value={personalCue}
-                  maxLength={80}
-                  onChange={(e) => setPersonalCue(e.target.value)}
-                  aria-label="상대에 대한 한 줄 메모"
+                <legend className={styles.groupHead}>들려주고 싶은 이야기</legend>
+                <p className={styles.groupNote}>둘 다 선택이에요. 한 줄이면 충분해요.</p>
+
+                <label className={styles.fieldLabel} htmlFor="q-recipient-note">
+                  상대방은 어떤 사람인가요?
+                </label>
+                <textarea
+                  id="q-recipient-note"
+                  className={`${styles.field} ${styles.fieldArea}`}
+                  rows={2}
+                  maxLength={200}
+                  placeholder="예: 조용한 카페에서 책 읽는 걸 좋아해요"
+                  value={recipientNote}
+                  onChange={(e) => setRecipientNote(e.target.value)}
                 />
+
+                <label className={styles.fieldLabel} htmlFor="q-episode">
+                  함께한 기억이나 에피소드가 있나요?
+                </label>
+                <textarea
+                  id="q-episode"
+                  className={`${styles.field} ${styles.fieldArea}`}
+                  rows={3}
+                  maxLength={400}
+                  placeholder="예: 작년 봄에 같이 튤립 축제에 갔어요"
+                  value={episode}
+                  onChange={(e) => setEpisode(e.target.value)}
+                />
+
+                <p className={styles.fieldNote}>
+                  적어주신 이야기는 추천과 멘트에만 쓰고, 저장하지 않아요.
+                </p>
               </fieldset>
             </>
           ) : null}
@@ -490,10 +514,16 @@ export default function Wizard({ options, defaultDateISO, action, onResult }: Wi
                 <dt>전하는 날</dt>
                 <dd>{dateISO || '정하지 않았어요'}</dd>
               </div>
-              {personalCue.trim() !== '' ? (
+              {recipientNote.trim() !== '' ? (
                 <div className={styles.row}>
-                  <dt>메모</dt>
-                  <dd>{personalCue.trim()}</dd>
+                  <dt>어떤 분</dt>
+                  <dd>{recipientNote.trim()}</dd>
+                </div>
+              ) : null}
+              {episode.trim() !== '' ? (
+                <div className={styles.row}>
+                  <dt>함께한 기억</dt>
+                  <dd>{episode.trim()}</dd>
                 </div>
               ) : null}
             </dl>

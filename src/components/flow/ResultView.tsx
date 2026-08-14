@@ -3,15 +3,18 @@
 /**
  * 결과 화면 — 확정 시안 `design/app-v3/result.html` 을 실데이터로 옮긴 것.
  *
- * 위계는 시안 그대로다: 3D 무대 → 맥락 → (사과면) 배너 → 3안 세그먼트 →
- * 꽃 이름·꽃말 → 색 다시 고르기 → 추천 이유·주의·정보 → 이런 날 건네보세요 →
- * 꽃에 얽힌 설화 → 나라별 꽃말 → 멘트 → 함께 담을 한 줄 → CTA.
+ * 위계는 §1.5i 가 확정한 5단이다(위 → 아래):
+ *   ① 꽃(3D) + 이름 + 꽃말 (+ 색 다시 고르기)
+ *   ② 꽃에 얽힌 설화 + 나라별 꽃말   ← 멘트보다 위. "정보"보다 "이야기"가 먼저다
+ *   ③ 추천 이유 · 이런 날 건네보세요
+ *   ④ 멘트 3톤 + 함께 담을 한 줄
+ *   ⑤ 최하단 참고(작게) — 반려동물 배지 · 계절 · 향 · 관리 · 가격 1줄 · 제휴 고지
  *
  * 값은 전부 서버가 만들어 준 `ResultPayload` 다. 여기서 문장을 새로 지어내지 않는다
  * (라벨 사전·엔진·카탈로그는 서버 쪽에만 있다).
  */
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import Link from 'next/link';
 
 import FlowerViewer from './FlowerViewer';
@@ -38,6 +41,9 @@ const FORM_TONE: Record<FlowerForm, string> = {
   tulip: 'rgba(200, 150, 62, 0.22)',
   spike: 'rgba(131, 119, 156, 0.34)',
 };
+
+/** 결 필터의 `전체` 칸 — 서버가 내려보내는 필터 목록의 첫 값과 같은 key 다. */
+const MOOD_ALL = 'all';
 
 function IconCopy() {
   return (
@@ -72,6 +78,194 @@ function IconArrow() {
   );
 }
 
+function IconClose() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      aria-hidden="true"
+    >
+      <path d="M6 6l12 12M18 6L6 18" />
+    </svg>
+  );
+}
+
+/** 이야기 한 편의 꼬리표들(갈래·문화권·신뢰). 목록·시트·대표 이야기가 같은 모양을 쓴다. */
+function StoryMeta({ story }: { story: StoryCard }) {
+  return (
+    <p className={styles.storyMeta}>
+      {story.isOriginal ? (
+        <span className={`${styles.tagline} ${styles.tagOriginal}`}>{story.typeLabel}</span>
+      ) : (
+        <span className={styles.tagline}>{story.typeLabel}</span>
+      )}
+      {story.regionLabel ? <span className={styles.tagline}>{story.regionLabel}</span> : null}
+      <span className={styles.tagline}>{story.confidenceLabel}</span>
+    </p>
+  );
+}
+
+/* ------------------------------------------------------------------ *
+ * 이야기 상세 시트 (§1.5i)
+ * ------------------------------------------------------------------ */
+
+interface StorySheetProps {
+  story: StoryCard;
+  /** 필터를 통과한 이야기 안에서의 자리(1부터). */
+  position: number;
+  total: number;
+  onPrev: () => void;
+  onNext: () => void;
+  onClose: () => void;
+}
+
+/**
+ * 바텀 시트. 열려 있는 동안만 마운트되므로 "마운트 = 열림" 이다.
+ *
+ * 접근성은 네 가지를 직접 챙긴다 — `aria-modal`, 포커스 트랩(Tab 순환),
+ * ESC·배경 탭 닫기, body 스크롤 잠금. 등장 모션은 CSS 애니메이션이라
+ * `prefers-reduced-motion` 전역 규칙(globals.css)이 알아서 0으로 만든다.
+ */
+function StorySheet({ story, position, total, onPrev, onNext, onClose }: StorySheetProps) {
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const bodyRef = useRef<HTMLDivElement>(null);
+
+  // 열려 있는 동안 뒤 화면이 따라 스크롤되지 않게 잠그고, 닫으면 부르던 자리로 포커스를 돌린다.
+  useEffect(() => {
+    const opener = document.activeElement as HTMLElement | null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      opener?.focus?.();
+    };
+  }, []);
+
+  // 이전/다음으로 넘길 때마다 제목으로 포커스를 옮긴다(스크린리더가 새 이야기를 읽게).
+  useEffect(() => {
+    bodyRef.current?.scrollTo({ top: 0 });
+    titleRef.current?.focus();
+  }, [story.id]);
+
+  function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      onClose();
+      return;
+    }
+    if (event.key !== 'Tab') return;
+
+    const focusables = sheetRef.current?.querySelectorAll<HTMLElement>(
+      'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    );
+    if (!focusables || focusables.length === 0) return;
+
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  }
+
+  return (
+    <div className={styles.sheetRoot}>
+      {/* 배경 탭으로도 닫힌다 — 같은 동작을 하는 닫기 버튼이 시트 안에 있어 여기는 장식이다. */}
+      <div className={styles.sheetScrim} onClick={onClose} aria-hidden="true" />
+
+      <div
+        className={styles.sheet}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="story-sheet-title"
+        ref={sheetRef}
+        onKeyDown={onKeyDown}
+      >
+        <span className={styles.sheetGrip} aria-hidden="true" />
+
+        <div className={styles.sheetHead}>
+          <p className={styles.sheetCount}>
+            {position} / {total}
+          </p>
+          <button
+            type="button"
+            className={styles.sheetClose}
+            onClick={onClose}
+            aria-label="이야기 닫기"
+          >
+            <IconClose />
+          </button>
+        </div>
+
+        <div className={styles.sheetBody} ref={bodyRef}>
+          <h3 className={styles.storyTitle} id="story-sheet-title" tabIndex={-1} ref={titleRef}>
+            {story.title}
+          </h3>
+          {story.hook ? <p className={styles.storyHook}>{story.hook}</p> : null}
+          <p className={styles.storyBody}>{story.body}</p>
+          <StoryMeta story={story} />
+          {story.moodLabels.length > 0 ? (
+            <p className={styles.storyItemMoods}>
+              {story.moodLabels.map((label) => (
+                <span className={styles.tagline} key={label}>
+                  {label}
+                </span>
+              ))}
+            </p>
+          ) : null}
+          {story.sourceTitle ? (
+            <p className={styles.loreSrc}>
+              이야기의 갈래 —{' '}
+              {story.sourceUrl ? (
+                <a
+                  className={styles.sheetLink}
+                  href={story.sourceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {story.sourceTitle}
+                </a>
+              ) : (
+                story.sourceTitle
+              )}
+            </p>
+          ) : null}
+        </div>
+
+        <div className={styles.sheetNav}>
+          <button
+            type="button"
+            className={styles.sheetNavBtn}
+            onClick={onPrev}
+            disabled={total < 2}
+          >
+            이전 이야기
+          </button>
+          <button
+            type="button"
+            className={styles.sheetNavBtn}
+            onClick={onNext}
+            disabled={total < 2}
+          >
+            다음 이야기
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ *
+ * 결과 화면
+ * ------------------------------------------------------------------ */
+
 export interface ResultViewProps {
   payload: ResultPayload;
   /** 질문 처음으로 돌아가기. */
@@ -88,7 +282,8 @@ export default function ResultView({ payload, onRestart }: ResultViewProps) {
   );
   const [tone, setTone] = useState(0);
   const [storiesOpen, setStoriesOpen] = useState(false);
-  const [openStory, setOpenStory] = useState<string | null>(null);
+  const [moodFilter, setMoodFilter] = useState<string>(MOOD_ALL);
+  const [openStoryId, setOpenStoryId] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
 
   const option = payload.options[active];
@@ -99,6 +294,40 @@ export default function ResultView({ payload, onRestart }: ResultViewProps) {
   const confidence = chip?.meaningKo
     ? chip.confidenceLabel
     : option.fallbackMeaning?.confidenceLabel;
+
+  /** 대표 이야기를 맨 앞에 둔 그 꽃의 이야기 전부(§1.5i — k 제한 없이 내려온다). */
+  const allStories = useMemo(() => {
+    const featured = option.stories.featured;
+    return featured ? [featured, ...option.stories.others] : option.stories.others;
+  }, [option.stories]);
+
+  /** 실제로 이야기가 있는 결만 칩으로 세운다(빈 필터를 눌러 보게 하지 않는다). */
+  const moodChips = useMemo(
+    () =>
+      payload.storyMoodFilters.filter(
+        (filter) =>
+          filter.key === MOOD_ALL || allStories.some((story) => story.moods.includes(filter.key)),
+      ),
+    [payload.storyMoodFilters, allStories],
+  );
+
+  const filteredStories = useMemo(
+    () =>
+      moodFilter === MOOD_ALL
+        ? allStories
+        : allStories.filter((story) => story.moods.includes(moodFilter)),
+    [allStories, moodFilter],
+  );
+
+  /**
+   * 시트의 이전/다음이 도는 목록.
+   * 대표 이야기는 필터와 상관없이 열 수 있어서, 열린 이야기가 필터 밖이면 전체를 돈다.
+   */
+  const navStories = filteredStories.some((story) => story.id === openStoryId)
+    ? filteredStories
+    : allStories;
+  const navIndex = navStories.findIndex((story) => story.id === openStoryId);
+  const openStory = navIndex === -1 ? null : navStories[navIndex];
 
   const viewerFlowers = useMemo(
     () =>
@@ -136,10 +365,18 @@ export default function ResultView({ payload, onRestart }: ResultViewProps) {
     }
   }
 
+  /** 다른 안으로 갈아탈 때 이야기 상태(펼침·필터·시트)는 초기화한다 — 꽃이 바뀌면 이야기도 다르다. */
+  function selectOption(next: number) {
+    setActive(next);
+    setStoriesOpen(false);
+    setMoodFilter(MOOD_ALL);
+    setOpenStoryId(null);
+  }
+
   function moveTab(delta: number) {
     const count = payload.options.length;
     const next = (active + delta + count) % count;
-    setActive(next);
+    selectOption(next);
     document.getElementById(`opt-tab-${next}`)?.focus();
   }
 
@@ -150,19 +387,16 @@ export default function ResultView({ payload, onRestart }: ResultViewProps) {
     document.getElementById(`tone-tab-${next}`)?.focus();
   }
 
-  const currentTone = payload.tones[tone];
-
-  function renderStoryMeta(story: StoryCard) {
-    return (
-      <p className={styles.storyMeta}>
-        {story.isOriginal && story.originalLabel ? (
-          <span className={`${styles.tagline} ${styles.tagOriginal}`}>{story.originalLabel}</span>
-        ) : null}
-        {story.regionLabel ? <span className={styles.tagline}>{story.regionLabel}</span> : null}
-        <span className={styles.tagline}>{story.confidenceLabel}</span>
-      </p>
-    );
+  /** 시트의 이전/다음 — 필터 결과 안에서 순환한다. */
+  function moveStory(delta: number) {
+    if (navStories.length === 0 || navIndex === -1) return;
+    const next = (navIndex + delta + navStories.length) % navStories.length;
+    setOpenStoryId(navStories[next].id);
   }
+
+  const currentTone = payload.tones[tone];
+  const hasCueBand = Boolean(payload.episodeText) || payload.storyCues.length > 0;
+  const featured = option.stories.featured;
 
   return (
     <>
@@ -209,6 +443,7 @@ export default function ResultView({ payload, onRestart }: ResultViewProps) {
         <main>
           <h1 className="sr-only">추천 결과 — {payload.contextChips.join(' · ')}</h1>
 
+          {/* ═══ ① 꽃 — 주인공 ═══ */}
           <FlowerViewer flowers={viewerFlowers} activeIndex={active} tag={option.segmentTag} />
 
           <ul className={styles.ctx} aria-label="입력한 조건">
@@ -216,6 +451,25 @@ export default function ResultView({ payload, onRestart }: ResultViewProps) {
               <li key={chipText}>{chipText}</li>
             ))}
           </ul>
+
+          {/* §1.5j — 적어 준 이야기에서 읽어 낸 단서를 먼저 되비춘다 */}
+          {hasCueBand ? (
+            <section className={styles.cueBand} aria-label="들려주신 이야기에서 찾은 단서">
+              <p className={styles.cueLede}>당신이 들려준 이야기를 담아 골랐어요</p>
+              {payload.storyCues.length > 0 ? (
+                <ul className={styles.cueChips}>
+                  {payload.storyCues.map((cue) => (
+                    <li className={styles.tagline} key={cue}>
+                      {cue}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+              {payload.episodeText ? (
+                <p className={styles.cueEcho}>{payload.episodeText}</p>
+              ) : null}
+            </section>
+          ) : null}
 
           {payload.isApology ? (
             <aside className={styles.apology} aria-label="마음을 먼저 전하는 방법 안내">
@@ -258,7 +512,7 @@ export default function ResultView({ payload, onRestart }: ResultViewProps) {
                 aria-controls="opt-panel"
                 aria-selected={index === active}
                 tabIndex={index === active ? 0 : -1}
-                onClick={() => setActive(index)}
+                onClick={() => selectOption(index)}
                 onKeyDown={(e) => {
                   if (e.key === 'ArrowRight') {
                     e.preventDefault();
@@ -311,7 +565,7 @@ export default function ResultView({ payload, onRestart }: ResultViewProps) {
               </div>
             </section>
 
-            {/* ═══ 색 다시 고르기 (§1.5c) ═══ */}
+            {/* ═══ 색 다시 고르기 (§1.5c) — 꽃말 바로 옆자리를 지킨다 ═══ */}
             {option.colors.length > 0 ? (
               <section className={styles.sect} aria-labelledby="pick-h">
                 <p className={styles.overline} id="pick-h">
@@ -382,125 +636,36 @@ export default function ResultView({ payload, onRestart }: ResultViewProps) {
               </section>
             ) : null}
 
-            {/* ═══ 추천 이유 · 주의 · 정보 ═══ */}
-            <section className={styles.optDetail} aria-label={`${option.nameKo} 상세`}>
-              <p className={styles.overline}>
-                Why <span className={styles.ko}>이 꽃을 고른 이유</span>
-              </p>
-              <ul className={styles.reasons}>
-                {option.reasons.length > 0 ? (
-                  option.reasons.map((reason) => <li key={reason}>{reason}</li>)
-                ) : (
-                  <li>고르신 조건에서 크게 어긋나는 데가 없는 꽃이에요.</li>
-                )}
-              </ul>
-
-              {option.otherCautions.map((caution) => (
-                <div className={styles.warn} key={caution}>
-                  <span className={styles.wic} aria-hidden="true">
-                    <svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.7"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M12 4.4 21 19.6H3z" />
-                      <path d="M12 10v4M12 16.7v.1" />
-                    </svg>
-                  </span>
-                  <div>
-                    <h4>먼저 봐주세요</h4>
-                    <p>{caution}</p>
-                  </div>
-                </div>
-              ))}
-
-              <dl className={styles.facts}>
-                <div className={styles.row}>
-                  <dt>계절·수급</dt>
-                  <dd>
-                    {option.availabilityLabel}
-                    {option.substitutes.length > 0
-                      ? ` · 대신 ${option.substitutes.join(', ')}도 좋아요`
-                      : ''}
-                  </dd>
-                </div>
-                <div className={styles.row}>
-                  <dt>향</dt>
-                  <dd>{option.fragranceLabel}</dd>
-                </div>
-                <div className={styles.row}>
-                  <dt>가격대</dt>
-                  <dd className={styles.price}>{option.priceLabel}</dd>
-                </div>
-                {option.careSummary ? (
-                  <div className={styles.row}>
-                    <dt>관리</dt>
-                    <dd>{option.careSummary}</dd>
-                  </div>
-                ) : null}
-                <div className={styles.row}>
-                  <dt>반려동물</dt>
-                  <dd>
-                    <span
-                      className={`${styles.pet} ${
-                        option.petBadge.toxic ? styles.petCare : styles.petSafe
-                      }`}
-                    >
-                      {option.petBadge.label}
-                    </span>
-                    <span className={styles.petNote}>{option.petBadge.summary}</span>
-                    <details className={styles.petMore}>
-                      <summary>자세히</summary>
-                      <ul>
-                        {option.petBadge.details.map((detail) => (
-                          <li key={detail}>{detail}</li>
-                        ))}
-                        {option.petCautions.map((caution) => (
-                          <li key={caution}>{caution}</li>
-                        ))}
-                        {option.petBadge.alternatives.length > 0 ? (
-                          <li>
-                            대신 권하는 꽃: {option.petBadge.alternatives.join(', ')}
-                          </li>
-                        ) : null}
-                      </ul>
-                    </details>
-                  </dd>
-                </div>
-              </dl>
-
-              {option.occasions.length > 0 ? (
-                <>
-                  <p className={styles.loreH}>이런 날 건네보세요</p>
-                  <ul className={styles.occasions}>
-                    {option.occasions.map((occasion) => (
-                      <li key={occasion}>{occasion}</li>
-                    ))}
-                  </ul>
-                </>
-              ) : null}
-            </section>
-
-            {/* ═══ 꽃에 얽힌 설화 ═══ */}
+            {/* ═══ ② 꽃에 얽힌 설화 — 멘트보다 위(§1.5i) ═══ */}
             <section className={styles.sect} aria-labelledby="story-h">
               <p className={styles.overline} id="story-h">
                 Lore <span className={styles.ko}>꽃에 얽힌 설화</span>
               </p>
 
-              {option.stories.featured ? (
+              {featured ? (
                 <article>
-                  <h3 className={styles.storyTitle}>{option.stories.featured.title}</h3>
-                  {option.stories.featured.hook ? (
-                    <p className={styles.storyHook}>{option.stories.featured.hook}</p>
+                  <h3 className={styles.storyTitle}>
+                    <button
+                      type="button"
+                      className={styles.storyOpen}
+                      onClick={() => setOpenStoryId(featured.id)}
+                    >
+                      {featured.title}
+                    </button>
+                  </h3>
+                  {featured.hook ? <p className={styles.storyHook}>{featured.hook}</p> : null}
+                  <p className={styles.storyBody}>{featured.body}</p>
+                  <StoryMeta story={featured} />
+                  {featured.sourceNote ? (
+                    <p className={styles.loreSrc}>{featured.sourceNote}</p>
                   ) : null}
-                  <p className={styles.storyBody}>{option.stories.featured.body}</p>
-                  {renderStoryMeta(option.stories.featured)}
-                  {option.stories.featured.sourceNote ? (
-                    <p className={styles.loreSrc}>{option.stories.featured.sourceNote}</p>
-                  ) : null}
+                  <button
+                    type="button"
+                    className={styles.storyDetail}
+                    onClick={() => setOpenStoryId(featured.id)}
+                  >
+                    이 이야기 자세히 보기
+                  </button>
                 </article>
               ) : (
                 <p className={styles.storyBody}>
@@ -532,50 +697,71 @@ export default function ResultView({ payload, onRestart }: ResultViewProps) {
                   </button>
 
                   {storiesOpen ? (
-                    <div className={styles.storyList}>
-                      {option.stories.others.map((story) => {
-                        const open = openStory === story.id;
-                        return (
+                    <>
+                      {/* 결 필터 — 있는 결만 세운다(§1.5i) */}
+                      {moodChips.length > 1 ? (
+                        <div className={styles.moodFilter} role="group" aria-label="이야기 결 고르기">
+                          {moodChips.map((filter) => {
+                            const on = filter.key === moodFilter;
+                            return (
+                              <button
+                                key={filter.key}
+                                type="button"
+                                className={
+                                  on ? `${styles.moodChip} ${styles.moodChipOn}` : styles.moodChip
+                                }
+                                aria-pressed={on}
+                                onClick={() => setMoodFilter(filter.key)}
+                              >
+                                {filter.label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      ) : null}
+
+                      <div className={styles.storyList}>
+                        {filteredStories.map((story) => (
                           <button
                             key={story.id}
                             type="button"
                             className={styles.storyItem}
-                            aria-expanded={open}
-                            onClick={() => setOpenStory(open ? null : story.id)}
+                            onClick={() => setOpenStoryId(story.id)}
                           >
                             <span className={styles.storyItemHead}>
                               {story.title}
                               <span className={styles.tar} aria-hidden="true">
-                                {open ? '접기' : '펼치기'}
+                                자세히
                               </span>
                             </span>
                             {story.hook ? (
                               <span className={styles.storyItemHook}>{story.hook}</span>
                             ) : null}
-                            {open ? (
-                              <>
-                                <span className={styles.storyItemBody}>{story.body}</span>
-                                {story.isOriginal && story.originalLabel ? (
-                                  <span className={styles.storyItemHook}>
-                                    {story.originalLabel}
-                                  </span>
-                                ) : null}
-                                {story.sourceNote ? (
-                                  <span className={styles.loreSrc} style={{ display: 'block' }}>
-                                    {story.sourceNote}
-                                  </span>
-                                ) : null}
-                              </>
-                            ) : null}
+                            <span className={styles.storyItemMoods}>
+                              {story.id === featured?.id ? (
+                                <span className={`${styles.tagline} ${styles.tagFeatured}`}>
+                                  먼저 보여 드린 이야기
+                                </span>
+                              ) : null}
+                              {story.moodLabels.map((label) => (
+                                <span className={styles.tagline} key={label}>
+                                  {label}
+                                </span>
+                              ))}
+                            </span>
                           </button>
-                        );
-                      })}
-                    </div>
+                        ))}
+                      </div>
+
+                      {filteredStories.length === 0 ? (
+                        <p className={styles.storyEmpty}>이 결의 이야기는 아직 없어요.</p>
+                      ) : null}
+                    </>
                   ) : null}
                 </>
               ) : null}
 
-              {/* ═══ 나라별 꽃말 ═══ */}
+              {/* ═══ 나라별 꽃말 — 설화와 같은 블록에 붙인다(§1.5i) ═══ */}
               {option.cultureMeanings.length > 0 ? (
                 <>
                   <h3 className={styles.loreH}>나라별 꽃말</h3>
@@ -600,146 +786,242 @@ export default function ResultView({ payload, onRestart }: ResultViewProps) {
                 </>
               ) : null}
             </section>
-          </div>
 
-          {/* ═══ 멘트 ═══ */}
-          <section className={styles.sect} aria-labelledby="msg-h">
-            <p className={styles.overline} id="msg-h">
-              Message <span className={styles.ko}>방금 도착한 멘트</span>
-            </p>
-
-            <div className={styles.tones} role="tablist" aria-label="멘트 톤 선택">
-              {payload.tones.map((item, index) => (
-                <button
-                  key={item.key}
-                  type="button"
-                  role="tab"
-                  id={`tone-tab-${index}`}
-                  aria-controls="tone-panel"
-                  aria-selected={index === tone}
-                  tabIndex={index === tone ? 0 : -1}
-                  onClick={() => setTone(index)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'ArrowRight') {
-                      e.preventDefault();
-                      moveTone(1);
-                    }
-                    if (e.key === 'ArrowLeft') {
-                      e.preventDefault();
-                      moveTone(-1);
-                    }
-                  }}
-                >
-                  {item.label}
-                </button>
-              ))}
-            </div>
-
-            <div
-              className={styles.tonePanel}
-              id="tone-panel"
-              role="tabpanel"
-              aria-labelledby={`tone-tab-${tone}`}
-              tabIndex={0}
-            >
-              <p className={styles.toneHint}>{currentTone.hint}</p>
-              <div className={styles.msg}>
-                <h3 className="sr-only">{currentTone.label} 톤 멘트</h3>
-                {currentTone.body ? (
-                  <p>{currentTone.body}</p>
+            {/* ═══ ③ 추천 이유 · 이런 날 건네보세요 ═══ */}
+            <section className={styles.optDetail} aria-label={`${option.nameKo} 추천 이유`}>
+              <p className={styles.overline}>
+                Why <span className={styles.ko}>이 꽃을 고른 이유</span>
+              </p>
+              <ul className={styles.reasons}>
+                {option.reasons.length > 0 ? (
+                  option.reasons.map((reason) => <li key={reason}>{reason}</li>)
                 ) : (
-                  <p className={styles.msgEmpty}>{currentTone.emptyNote}</p>
+                  <li>고르신 조건에서 크게 어긋나는 데가 없는 꽃이에요.</li>
                 )}
+              </ul>
+
+              {/* 안전에 걸리는 주의는 접지 않는다(§1.5h — 위계만 내리고 문구는 직설 유지) */}
+              {option.otherCautions.map((caution) => (
+                <div className={styles.warn} key={caution}>
+                  <span className={styles.wic} aria-hidden="true">
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.7"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M12 4.4 21 19.6H3z" />
+                      <path d="M12 10v4M12 16.7v.1" />
+                    </svg>
+                  </span>
+                  <div>
+                    <h4>먼저 봐주세요</h4>
+                    <p>{caution}</p>
+                  </div>
+                </div>
+              ))}
+
+              {option.occasions.length > 0 ? (
+                <>
+                  <p className={styles.loreH}>이런 날 건네보세요</p>
+                  <ul className={styles.occasions}>
+                    {option.occasions.map((occasion) => (
+                      <li key={occasion}>{occasion}</li>
+                    ))}
+                  </ul>
+                </>
+              ) : null}
+            </section>
+
+            {/* ═══ ④ 멘트 ═══ */}
+            <section className={styles.sect} aria-labelledby="msg-h">
+              <p className={styles.overline} id="msg-h">
+                Message <span className={styles.ko}>방금 도착한 멘트</span>
+              </p>
+
+              <div className={styles.tones} role="tablist" aria-label="멘트 톤 선택">
+                {payload.tones.map((item, index) => (
+                  <button
+                    key={item.key}
+                    type="button"
+                    role="tab"
+                    id={`tone-tab-${index}`}
+                    aria-controls="tone-panel"
+                    aria-selected={index === tone}
+                    tabIndex={index === tone ? 0 : -1}
+                    onClick={() => setTone(index)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'ArrowRight') {
+                        e.preventDefault();
+                        moveTone(1);
+                      }
+                      if (e.key === 'ArrowLeft') {
+                        e.preventDefault();
+                        moveTone(-1);
+                      }
+                    }}
+                  >
+                    {item.label}
+                  </button>
+                ))}
               </div>
-              {currentTone.body ? (
+
+              <div
+                className={styles.tonePanel}
+                id="tone-panel"
+                role="tabpanel"
+                aria-labelledby={`tone-tab-${tone}`}
+                tabIndex={0}
+              >
+                <p className={styles.toneHint}>{currentTone.hint}</p>
+                <div className={styles.msg}>
+                  <h3 className="sr-only">{currentTone.label} 톤 멘트</h3>
+                  {currentTone.body ? (
+                    <p>{currentTone.body}</p>
+                  ) : (
+                    <p className={styles.msgEmpty}>{currentTone.emptyNote}</p>
+                  )}
+                </div>
+                {currentTone.body ? (
+                  <button
+                    type="button"
+                    className={styles.copy}
+                    onClick={() => copy(currentTone.body as string, `tone-${tone}`)}
+                  >
+                    <IconCopy />
+                    <span>{copied === `tone-${tone}` ? '복사했어요' : '복사'}</span>
+                  </button>
+                ) : null}
+              </div>
+
+              <p className={styles.footNote}>{payload.messageNote}</p>
+              {payload.toneOffNote ? (
+                <p className={styles.footNote}>{payload.toneOffNote}</p>
+              ) : null}
+
+              {/* §1.5e 인용 한 줄 — 멘트가 주인공, 이건 곁들임 */}
+              <figure className={styles.qline}>
+                <figcaption className={styles.qlineLab}>함께 담을 한 줄</figcaption>
+                <blockquote>
+                  <p className={styles.qlineKo}>{payload.quote.textKo}</p>
+                </blockquote>
+                <p className={styles.qlineBy}>{payload.quote.attribution}</p>
                 <button
                   type="button"
-                  className={styles.copy}
-                  onClick={() => copy(currentTone.body as string, `tone-${tone}`)}
+                  className={`${styles.copy} ${styles.copySm}`}
+                  aria-label="함께 담을 한 줄 복사"
+                  onClick={() => copy(payload.quote.textKo, 'quote')}
                 >
                   <IconCopy />
-                  <span>{copied === `tone-${tone}` ? '복사했어요' : '복사'}</span>
+                  <span>{copied === 'quote' ? '복사했어요' : '복사'}</span>
                 </button>
-              ) : null}
-            </div>
+              </figure>
+            </section>
 
-            <p className={styles.footNote}>{payload.messageNote}</p>
-            {payload.toneOffNote ? <p className={styles.footNote}>{payload.toneOffNote}</p> : null}
-
-            {/* §1.5e 인용 한 줄 — 멘트가 주인공, 이건 곁들임 */}
-            <figure className={styles.qline}>
-              <figcaption className={styles.qlineLab}>함께 담을 한 줄</figcaption>
-              <blockquote>
-                <p className={styles.qlineKo}>{payload.quote.textKo}</p>
-              </blockquote>
-              <p className={styles.qlineBy}>{payload.quote.attribution}</p>
-              <button
-                type="button"
-                className={`${styles.copy} ${styles.copySm}`}
-                aria-label="함께 담을 한 줄 복사"
-                onClick={() => copy(payload.quote.textKo, 'quote')}
-              >
-                <IconCopy />
-                <span>{copied === 'quote' ? '복사했어요' : '복사'}</span>
+            {/* ═══ 공유·저장 (더미) ═══ */}
+            <section className={styles.sect} aria-label="공유하고 저장하기">
+              <button type="button" className={`${styles.btn} ${styles.btnPrimary}`}>
+                카드에 담기
+                <IconArrow />
               </button>
-            </figure>
-          </section>
+              <div className={styles.btnPair}>
+                <button type="button" className={`${styles.btn} ${styles.btnGhost}`}>
+                  링크로 공유
+                </button>
+                <button
+                  type="button"
+                  className={`${styles.btn} ${styles.btnGhost}`}
+                  onClick={onRestart}
+                >
+                  다시 골라보기
+                </button>
+              </div>
+            </section>
 
-          {/* ═══ 공유·저장 (더미) ═══ */}
-          <section className={styles.sect} aria-label="공유하고 저장하기">
-            <button type="button" className={`${styles.btn} ${styles.btnPrimary}`}>
-              카드에 담기
-              <IconArrow />
-            </button>
-            <div className={styles.btnPair}>
-              <button type="button" className={`${styles.btn} ${styles.btnGhost}`}>
-                링크로 공유
-              </button>
-              <button type="button" className={`${styles.btn} ${styles.btnGhost}`} onClick={onRestart}>
-                다시 골라보기
-              </button>
-            </div>
-          </section>
+            {/* ═══ ⑤ 최하단 참고 — 작게. 안전·계절·가격·구매는 "찾을 수 있으면 충분"(§1.5i) ═══ */}
+            <section className={styles.sect} aria-labelledby="notes-h">
+              <p className={styles.overline} id="notes-h">
+                Notes <span className={styles.ko}>참고</span>
+              </p>
 
-          {/* ═══ 제휴 ═══ */}
-          <section className={styles.sect} aria-labelledby="aff-h">
-            <p className={styles.overline} id="aff-h">
-              Where to buy <span className={styles.ko}>주문하기</span>
-            </p>
-            <div className={styles.aff}>
-              <a href="#">
-                <span className={styles.txt}>이 꽃 주문하러 가기 — 제휴 꽃집 보기</span>
-                <span className={styles.ar} aria-hidden="true">
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
+              <div className={styles.notes}>
+                {/* 반려동물은 소형 배지 1곳 + 접힌 상세가 전부다(§1.5h) */}
+                <div className={styles.noteLine}>
+                  <span
+                    className={`${styles.pet} ${
+                      option.petBadge.toxic ? styles.petCare : styles.petSafe
+                    }`}
                   >
-                    <path d="M7 17 17 7M8.6 7H17v8.4" />
-                  </svg>
-                </span>
-              </a>
-              <a href="#">
-                <span className={styles.txt}>내일 도착 꽃 배달 알아보기</span>
-                <span className={styles.ar} aria-hidden="true">
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M7 17 17 7M8.6 7H17v8.4" />
-                  </svg>
-                </span>
-              </a>
-            </div>
-            <p className={styles.disc}>구매 링크는 제휴 링크로 연결돼요.</p>
-          </section>
+                    {option.petBadge.label}
+                  </span>
+                  <span>{option.petBadge.summary}</span>
+                  <details className={styles.petMore}>
+                    <summary>자세히</summary>
+                    <ul>
+                      {option.petBadge.details.map((detail) => (
+                        <li key={detail}>{detail}</li>
+                      ))}
+                      {option.petCautions.map((caution) => (
+                        <li key={caution}>{caution}</li>
+                      ))}
+                      {option.petBadge.alternatives.length > 0 ? (
+                        <li>대신 권하는 꽃: {option.petBadge.alternatives.join(', ')}</li>
+                      ) : null}
+                    </ul>
+                  </details>
+                </div>
+
+                <div className={styles.noteLine}>
+                  {option.availabilityLabel}
+                  {option.substitutes.length > 0
+                    ? ` · 대신 ${option.substitutes.join(', ')}도 좋아요`
+                    : ''}
+                </div>
+                <div className={styles.noteLine}>{option.fragranceLabel}</div>
+                {option.careSummary ? (
+                  <div className={styles.noteLine}>{option.careSummary}</div>
+                ) : null}
+                {/* 가격은 한 줄 언급까지다 — 표·강조 금지(§1.5i) */}
+                <div className={styles.noteLine}>{option.priceLabel}</div>
+              </div>
+
+              <div className={styles.aff} style={{ marginTop: 18 }}>
+                <a href="#">
+                  <span className={styles.txt}>이 꽃 주문하러 가기 — 제휴 꽃집 보기</span>
+                  <span className={styles.ar} aria-hidden="true">
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M7 17 17 7M8.6 7H17v8.4" />
+                    </svg>
+                  </span>
+                </a>
+                <a href="#">
+                  <span className={styles.txt}>내일 도착 꽃 배달 알아보기</span>
+                  <span className={styles.ar} aria-hidden="true">
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M7 17 17 7M8.6 7H17v8.4" />
+                    </svg>
+                  </span>
+                </a>
+              </div>
+              <p className={styles.disc}>구매 링크는 제휴 링크로 연결돼요.</p>
+            </section>
+          </div>
 
           <footer className={styles.foot}>
             <p>
@@ -756,6 +1038,18 @@ export default function ResultView({ payload, onRestart }: ResultViewProps) {
           </footer>
         </main>
       </div>
+
+      {/* 폰 프레임 밖(=.flow 바로 아래)에 세운다 — .phone 의 overflow:hidden 을 피하려고. */}
+      {openStory ? (
+        <StorySheet
+          story={openStory}
+          position={navIndex + 1}
+          total={navStories.length}
+          onPrev={() => moveStory(-1)}
+          onNext={() => moveStory(1)}
+          onClose={() => setOpenStoryId(null)}
+        />
+      ) : null}
     </>
   );
 }

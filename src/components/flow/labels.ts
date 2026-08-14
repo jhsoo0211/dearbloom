@@ -10,7 +10,7 @@
  * `types.ts` 만 import 한다 — 이 파일이 엔진 배럴을 끌어오기 때문이다(zod 포함).
  */
 
-import { TRAIT_LABELS } from '@/lib/engine';
+import { STORY_MOODS, TRAIT_LABELS } from '@/lib/engine';
 import type {
   Intent,
   RecipientTrait,
@@ -18,6 +18,8 @@ import type {
   SeasonStatus,
   Severity,
   Species,
+  StoryMood,
+  StoryType,
   Tone,
 } from '@/lib/engine';
 import type { ColorChoice, FlowerForm } from './types';
@@ -363,6 +365,44 @@ export function eraLabel(era?: string): string | undefined {
  * 창작을 사실처럼 보이게 하지 않는 것이 §1.5f 의 유일한 금지선이다.
  */
 export const ORIGINAL_STORY_LABEL = 'dearbloom이 지어 본 이야기예요';
+
+/**
+ * 네 갈래 전부의 표기(§1.5f). 상세 시트에서 이야기의 출신을 한 줄로 밝힌다.
+ * 문구는 §1.5d 이야기 톤 — `history` 도 "사실"이 아니라 "기록"이라고 적는다.
+ */
+export const STORY_TYPE_LABELS: Record<StoryType, string> = {
+  folklore: '오래 전해 온 설화',
+  history: '기록으로 남은 이야기',
+  literary: '문학에서 온 이야기',
+  original: ORIGINAL_STORY_LABEL,
+};
+
+/** stories.csv 의 storyType 은 선택 컬럼이다 — 비어 있으면 설화로 본다(엔진 주석과 같은 기본값). */
+export function storyTypeLabel(storyType?: StoryType): string {
+  return STORY_TYPE_LABELS[storyType ?? 'folklore'];
+}
+
+/**
+ * 이야기의 결(mood) → 한국어(§1.5i). 목록 필터 칩과 이야기 칩이 같은 말을 쓴다.
+ * 어휘 원본은 엔진의 `STORY_MOODS` 이고, 순서도 그쪽을 따른다.
+ */
+export const STORY_MOOD_LABELS: Record<StoryMood, string> = {
+  romantic: '로맨틱',
+  tragic: '비극',
+  funny: '유쾌',
+  mythic: '신화',
+  dramatic: '드라마',
+  healing: '위로',
+};
+
+/** 필터 칩의 `전체` 칸. 값은 mood 어휘와 겹치지 않는 `all` 이다. */
+export const STORY_MOOD_ALL = { key: 'all', label: '전체' } as const;
+
+/** 결 필터 칩 목록 — `전체` 다음에 STORY_MOODS 순서 그대로. */
+export const STORY_MOOD_FILTERS: { key: string; label: string }[] = [
+  { key: STORY_MOOD_ALL.key, label: STORY_MOOD_ALL.label },
+  ...STORY_MOODS.map((mood) => ({ key: mood, label: STORY_MOOD_LABELS[mood] })),
+];
 
 /* ------------------------------------------------------------------ *
  * 3안 라벨 · 꽃 형태 · 상황 예시

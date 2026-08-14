@@ -45,7 +45,13 @@ export interface WizardSubmission {
   colorPrefs: string[];
   pets: string[];
   fragranceSensitive: boolean;
-  personalCue: string;
+  /**
+   * §1.5j `상대방은 어떤 사람인가요?` 자유 서술(선택).
+   * ⚠ 이 값과 `episode` 는 추천·멘트에만 쓰고 로그·DB 어디에도 남기지 않는다.
+   */
+  recipientNote: string;
+  /** §1.5j `함께한 기억이나 에피소드가 있나요?` 자유 서술(선택). 저장하지 않는다. */
+  episode: string;
   budgetKey: string;
   dateISO: string;
 }
@@ -69,13 +75,30 @@ export interface StoryCard {
   title: string;
   hook?: string;
   body: string;
-  /** §1.5f — 창작 이야기는 반드시 라벨을 달아 사실처럼 보이지 않게 한다. */
+  /** §1.5f — 창작 이야기는 라벨을 눈에 띄게 세운다(사실처럼 보이지 않게). 표시 강조에만 쓴다. */
   isOriginal: boolean;
-  originalLabel?: string;
+  /** story_type 한국어 라벨(네 갈래 전부). `original` 이면 "dearbloom이 지어 본 이야기예요". */
+  typeLabel: string;
   /** `이야기의 갈래 — …` 각주(§1.5d). 창작 이야기는 출처가 면제라 없을 수 있다. */
   sourceNote?: string;
+  /** 각주를 링크로 세울 때 쓰는 조각 — 상세 시트에서 원문으로 건너간다(§1.5i). */
+  sourceTitle?: string;
+  sourceUrl?: string;
   confidenceLabel: string;
   regionLabel?: string;
+  /**
+   * 이야기의 결(stories.csv 의 moods). 어휘 원본은 엔진의 `StoryMood` 이고
+   * 여기서는 필터 비교용 문자열로만 쓴다(클라이언트가 엔진을 import 하지 않게).
+   */
+  moods: string[];
+  /** moods 를 한국어로 옮긴 칩 라벨. moods 와 같은 순서다. */
+  moodLabels: string[];
+}
+
+/** 이야기 목록 상단의 결 필터 칩 한 칸(§1.5i). `all` 이 `전체`다. */
+export interface StoryMoodFilter {
+  key: string;
+  label: string;
 }
 
 /** 나라별 꽃말 표의 한 행. */
@@ -167,6 +190,18 @@ export interface ResultPayload {
   quote: QuoteView;
   /** 멘트가 아직 LLM 이 아니라 준비된 예문이라는 고지. */
   messageNote: string;
+  /**
+   * §1.5j 자유 서술에서 찾아낸 단서 칩(한국어 라벨). 못 찾았으면 비어 있다.
+   * 원문이 아니라 **매칭된 단서만** 담는다.
+   */
+  storyCues: string[];
+  /**
+   * 사용자가 적어 준 에피소드 원문 — 결과 화면에 그대로 되비추기 위한 값이다.
+   * ⚠ 클라이언트 상태로만 살아 있다(§1.5j: 로그·분석·DB 저장 금지).
+   */
+  episodeText?: string;
+  /** 이야기 목록의 결 필터 칩(전체 + 6종). 화면은 실제로 있는 결만 골라 세운다. */
+  storyMoodFilters: StoryMoodFilter[];
 }
 
 /** 서버 액션의 응답. 실패도 화면이 다룰 수 있게 값으로 돌려준다. */

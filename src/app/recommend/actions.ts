@@ -15,7 +15,14 @@
 
 import { loadCatalog } from '@/lib/data/catalog';
 import type { Catalog, CatalogFlower, CatalogMeaning } from '@/lib/data/types';
-import { pickStories, reasonText, recommend } from '@/lib/engine';
+import {
+  flowerCueName,
+  flowerCueSlug,
+  inferCuesFromTexts,
+  pickStories,
+  reasonText,
+  recommend,
+} from '@/lib/engine';
 import type {
   Intent,
   RecoInput,
@@ -31,13 +38,14 @@ import {
   FALLBACK_QUOTE,
   FRAGRANCE_LABELS,
   INTENT_LABELS,
-  ORIGINAL_STORY_LABEL,
   OPTION_LABELS,
   PRICE_LABELS,
   RELATIONSHIP_TO_LABELS,
   SEVERITY_LABELS,
   SPECIES_LABELS,
   STORY_CONFIDENCE_LABELS,
+  STORY_MOOD_FILTERS,
+  STORY_MOOD_LABELS,
   TONE_LABELS,
   TONE_ORDER,
   TRAIT_LABEL_BY_SLUG,
@@ -47,6 +55,7 @@ import {
   flowerForm,
   flowerOccasions,
   regionLabel,
+  storyTypeLabel,
   toxicPartLabel,
 } from '@/components/flow/labels';
 import type {
@@ -102,13 +111,20 @@ function toStoryCard(story: StoryRow): StoryCard {
     title: story.title,
     body: story.storyKo,
     isOriginal,
+    typeLabel: storyTypeLabel(story.storyType),
     confidenceLabel: STORY_CONFIDENCE_LABELS[story.confidenceLevel],
+    moods: story.moods,
+    moodLabels: story.moods.map((mood) => STORY_MOOD_LABELS[mood]),
   };
 
   if (story.hook) card.hook = story.hook;
-  if (isOriginal) card.originalLabel = ORIGINAL_STORY_LABEL;
   // 창작(original)만 출처가 면제다 — 나머지는 갈래를 각주로 밝힌다(§1.5d).
-  if (!isOriginal && story.sourceTitle) card.sourceNote = `이야기의 갈래 — ${story.sourceTitle}`;
+  if (!isOriginal && story.sourceTitle) {
+    card.sourceNote = `이야기의 갈래 — ${story.sourceTitle}`;
+    card.sourceTitle = story.sourceTitle;
+    // 상세 시트에서만 원문으로 건너뛴다 — 각주 톤을 지키려고 링크는 제목에만 건다(§1.5i).
+    if (story.sourceUrl) card.sourceUrl = story.sourceUrl;
+  }
   if (region) card.regionLabel = era ? `${region} · ${era}` : region;
 
   return card;
@@ -228,7 +244,9 @@ function toOptionView(
   const petCautions = result.cautions.filter((c) => c.includes('반려동물'));
   const otherCautions = result.cautions.filter((c) => !c.includes('반려동물'));
 
-  const stories = pickStories(flower.id, intent, catalog.stories);
+  // k 를 열어 두고 그 꽃의 이야기를 **전부** 내려보낸다(§1.5i — 썰 탐색이 결과 화면의 핵심).
+  // featured 선별과 mood 다양성 정렬은 그대로다.
+  const stories = pickStories(flower.id, intent, catalog.stories, Number.POSITIVE_INFINITY);
 
   const view: FlowOptionView = {
     index,
@@ -266,6 +284,41 @@ function toOptionView(
 }
 
 /* ------------------------------------------------------------------ *
+ * §1.5j 자유 서술
+ * ------------------------------------------------------------------ */
+
+/** 순서를 지키며 중복만 지운다(사용자가 직접 고른 값이 앞, 추론한 값이 뒤). */
+function mergeUnique(chosen: string[], inferred: string[]): string[] {
+  return Array.from(new Set([...chosen, ...inferred].map((v) => v.trim()).filter((v) => v !== '')));
+}
+
+/**
+ * 추론한 단서 → 화면에 세울 한국어 칩.
+ * **사용자가 직접 고른 칩은 넣지 않는다** — "적어 준 이야기에서 우리가 읽어 낸 것"만 보여 준다.
+ */
+function cueChips(cues: {
+  recipientTraits: string[];
+  colorPrefs: string[];
+  personalCues: string[];
+}): string[] {
+  const chips = [
+    ...cues.recipientTraits
+      .map((slug) => TRAIT_LABEL_BY_SLUG[slug as keyof typeof TRAIT_LABEL_BY_SLUG])
+      .filter((label): label is string => Boolean(label))
+      .map((label) => `${label} 분위기`),
+    ...cues.colorPrefs.map((slug) => colorChoice(slug).label),
+    ...cues.personalCues
+      .map(flowerCueSlug)
+      .filter((slug): slug is string => slug !== undefined)
+      // 사전의 첫 낱말이 사람들이 실제로 쓰는 짧은 이름이다(`흰 튤립` 이 아니라 `튤립`).
+      .map(flowerCueName)
+      .filter((name): name is string => name !== undefined)
+      .map((name) => `${name}의 기억`),
+  ];
+  return Array.from(new Set(chips));
+}
+
+/* ------------------------------------------------------------------ *
  * 서버 액션
  * ------------------------------------------------------------------ */
 
@@ -285,19 +338,28 @@ export async function submitRecommendation(
   }
 
   const budget = budgetChoice(submission.budgetKey);
-  const cue = submission.personalCue.trim();
   const dateISO = submission.dateISO.trim();
+
+  /*
+   * §1.5j — 자유 서술 2필드.
+   * 원문은 이 함수 안에서만 살아 있다. 로그·에러 메시지에 절대 싣지 않고,
+   * 화면으로 돌려보내는 것도 에피소드 한 덩이(클라이언트 상태)뿐이다.
+   */
+  const recipientNote = submission.recipientNote.trim();
+  const episode = submission.episode.trim();
+  const inferred = inferCuesFromTexts([recipientNote, episode]);
 
   // 어휘 검사는 recommend() 안의 normalizeInput(zod)이 한다 — 여기서는 모양만 맞춘다.
   // (단언은 "아직 검사 전"이라는 뜻일 뿐이고, 어휘 밖 값이면 바로 아래에서 throw 된다.)
   const input: RecoInput = {
     relationship: submission.relationship as Relationship,
     intent: submission.intent as Intent,
-    recipientTraits: submission.recipientTraits,
-    colorPrefs: submission.colorPrefs,
+    // 직접 고른 칩이 먼저, 글에서 읽어 낸 단서가 뒤 — 겹치면 한 번만 남는다.
+    recipientTraits: mergeUnique(submission.recipientTraits, inferred.recipientTraits),
+    colorPrefs: mergeUnique(submission.colorPrefs, inferred.colorPrefs),
     pets: submission.pets as Species[],
     fragranceSensitive: submission.fragranceSensitive,
-    personalCues: cue === '' ? [] : [cue],
+    personalCues: [recipientNote, episode, ...inferred.personalCues].filter((v) => v !== ''),
   };
   if (budget) {
     input.budgetKrw = {};
@@ -309,8 +371,10 @@ export async function submitRecommendation(
   let picks: RecoResult[];
   try {
     picks = recommend(input, catalog);
-  } catch (error) {
-    console.error('[recommend] 입력을 해석하지 못했습니다.', error);
+  } catch {
+    // ⚠ 오류 객체를 그대로 찍지 않는다 — 검증 오류에는 받은 값(자유 서술 원문)이 섞일 수
+    //   있고, §1.5j 의 금지선은 "원문은 로그 어디에도 남기지 않는다" 이다.
+    console.error('[recommend] 입력을 해석하지 못했습니다. (내용은 남기지 않습니다)');
     return { ok: false, message: '입력을 다시 확인해 주세요. 관계와 마음은 꼭 골라야 해요.' };
   }
 
@@ -358,7 +422,11 @@ export async function submitRecommendation(
     quote: pickQuote(catalog),
     messageNote:
       '지금 보이는 멘트는 미리 준비해 둔 예문이에요. 상황에 맞춰 직접 써 드리는 기능은 곧 붙습니다.',
+    storyCues: cueChips(inferred),
+    storyMoodFilters: STORY_MOOD_FILTERS,
   };
+
+  if (episode !== '') payload.episodeText = episode;
 
   if (intent === 'apology') payload.toneOffNote = '사과 상황에서는 유쾌 톤을 잠시 꺼두었어요.';
 

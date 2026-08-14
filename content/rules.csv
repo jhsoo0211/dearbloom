@@ -1,0 +1,7 @@
+rule_id,relationship_type,intent,occasion,apology_level,aesthetic_tags,budget_range,urgency,flower_id,fit_score,avoid_reason,note
+rule-001,lover,confession,,,romantic|classic,2-3,normal,rose-red,92,,seed-sample: 고백 상황의 기본값
+rule-002,crush,confession,,,light|fresh,1-2,normal,freesia,78,,seed-sample: 부담을 덜고 싶을 때
+rule-003,lover,apology,after-argument,3,minimal|clean,2-3,urgent,tulip-white,88,,seed-sample: 용서를 구하는 자리
+rule-004,friend,gratitude,,,fresh|light,1-2,normal,freesia,85,,seed-sample: 편안한 감사 표현
+rule-005,colleague,gratitude,job-change,,casual|round,1-2,normal,gerbera,84,,seed-sample: 직장 관계의 무난한 선택
+rule-006,lover,apology,after-argument,3,,2-3,normal,lily-asiatic,,향이 강하고 장례 연상 가능,seed-sample: 회피 규칙

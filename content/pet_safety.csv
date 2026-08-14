@@ -1,0 +1,11 @@
+flower_id,species,toxic,severity,toxic_parts,safe_alternative_flower_ids,source_url,reviewed_at
+rose-red,cat,false,none,,,https://www.aspca.org/pet-care/animal-poison-control/toxic-and-non-toxic-plants/rose,2026-08-14
+rose-red,dog,false,none,,,https://www.aspca.org/pet-care/animal-poison-control/toxic-and-non-toxic-plants/rose,2026-08-14
+tulip-white,cat,true,mild_gi,bulb|stem|leaf,freesia|gerbera,https://www.aspca.org/pet-care/animal-poison-control/toxic-and-non-toxic-plants/tulip,2026-08-14
+tulip-white,dog,true,mild_gi,bulb|stem|leaf,freesia|gerbera,https://www.aspca.org/pet-care/animal-poison-control/toxic-and-non-toxic-plants/tulip,2026-08-14
+freesia,cat,false,none,,,https://www.aspca.org/pet-care/animal-poison-control/toxic-and-non-toxic-plants/freesia,2026-08-14
+freesia,dog,false,none,,,https://www.aspca.org/pet-care/animal-poison-control/toxic-and-non-toxic-plants/freesia,2026-08-14
+lily-asiatic,cat,true,life_threatening,flower|leaf|pollen|vase_water,freesia|gerbera,https://www.aspca.org/pet-care/animal-poison-control/toxic-and-non-toxic-plants/lily,2026-08-14
+lily-asiatic,dog,true,mild_gi,flower|leaf,freesia|gerbera,https://www.aspca.org/pet-care/animal-poison-control/toxic-and-non-toxic-plants/lily,2026-08-14
+gerbera,cat,false,none,,,https://www.aspca.org/pet-care/animal-poison-control/toxic-and-non-toxic-plants/gerber-daisy,2026-08-14
+gerbera,dog,false,none,,,https://www.aspca.org/pet-care/animal-poison-control/toxic-and-non-toxic-plants/gerber-daisy,2026-08-14

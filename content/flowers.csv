@@ -1,0 +1,6 @@
+id,name_ko,name_en,scientific_name,colors,bloom_months,fragrance_level,price_band,aesthetic_tags,care_summary,image_url,image_license,image_source_url,reviewed_at,reviewer,editorial_note
+rose-red,빨간 장미,Red Rose,Rosa hybrida,red|pink,5|6|7|8|9|10,2,2,classic|romantic|structured,"줄기를 45도로 자르고, 이틀에 한 번 물을 갈아 주세요.",,,,2026-08-14,content-team,seed-sample: 검토 전 샘플 데이터
+tulip-white,흰 튤립,White Tulip,Tulipa gesneriana,white,3|4|5,1,2,minimal|clean|spring,"서늘한 곳에 두고, 물은 얕게 채워 주세요.",,,,2026-08-14,content-team,seed-sample: 검토 전 샘플 데이터
+freesia,프리지아,Freesia,Freesia refracta,yellow|white|purple,2|3|4|5,3,1,fresh|light|spring,꽃봉오리가 절반쯤 열렸을 때 사면 오래 갑니다.,,,,2026-08-14,content-team,seed-sample: 검토 전 샘플 데이터
+lily-asiatic,아시아틱 백합,Asiatic Lily,Lilium hybridum,orange|pink|white|yellow,6|7|8,1,2,bold|statement|structured,꽃가루를 미리 떼면 옷과 화병 오염을 줄일 수 있습니다.,,,,2026-08-14,content-team,seed-sample: 검토 전 샘플 데이터
+gerbera,거베라,Gerbera Daisy,Gerbera jamesonii,red|pink|yellow|orange|white,5|6|7|8|9|10,0,1,cheerful|round|casual,줄기가 무르기 쉬우니 물을 자주 갈아 주세요.,,,,2026-08-14,content-team,seed-sample: 검토 전 샘플 데이터

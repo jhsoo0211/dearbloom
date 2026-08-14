@@ -1,0 +1,8 @@
+flower_id,color,meaning_ko,culture_region,era,source_id,source_url,confidence_level,caution_note,editorial_note,reviewed_at
+rose-red,red,열정적인 사랑과 깊은 애정,western,victorian,greenaway-1884,https://www.gutenberg.org/ebooks/31591,repeated,,seed-sample: 검토 전 샘플 데이터,2026-08-14
+rose-red,pink,"감사와 우아함, 부드러운 호감",western,victorian,greenaway-1884,https://www.gutenberg.org/ebooks/31591,repeated,,seed-sample: 검토 전 샘플 데이터,2026-08-14
+tulip-white,white,용서를 구하는 마음과 새로운 시작,korea,modern,wikipedia-language-of-flowers,https://en.wikipedia.org/wiki/Language_of_flowers,varies,"국내에서 널리 쓰이는 해석으로, 영어권 자료와 뜻이 어긋납니다",seed-sample: 검토 전 샘플 데이터,2026-08-14
+tulip-white,white,순수한 마음과 존경,western,victorian,greenaway-1884,https://www.gutenberg.org/ebooks/31591,varies,빅토리아 시대 자료 기준 해석입니다,seed-sample: 검토 전 샘플 데이터,2026-08-14
+freesia,yellow,새로운 시작과 변함없는 우정,global,modern,wikipedia-language-of-flowers,https://en.wikipedia.org/wiki/Language_of_flowers,single_source,,seed-sample: 검토 전 샘플 데이터,2026-08-14
+lily-asiatic,orange,위엄과 순수함,western,victorian,greenaway-1884,https://www.gutenberg.org/ebooks/31591,repeated,장례와 추모를 연상시킬 수 있어 상황을 가려 써야 합니다,seed-sample: 검토 전 샘플 데이터,2026-08-14
+gerbera,pink,언제나 곁에 있는 밝은 응원,global,modern,wikipedia-language-of-flowers,https://en.wikipedia.org/wiki/Language_of_flowers,single_source,,seed-sample: 검토 전 샘플 데이터,2026-08-14

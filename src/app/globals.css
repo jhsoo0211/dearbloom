@@ -1,26 +1,410 @@
 @import "tailwindcss";
 
+/* ═══════════════════════════════════════════════════════════════════════
+   dearbloom 전역 스타일 — 나이트 보태니컬 아카이브
+   원본: docs/design-spec.md §1.2·§1.3·§1.4·§1.4b·§1.4c / 확정 시안: design/landing-v3
+
+   구조
+     1. 폰트          — MaruBuri @font-face (Pretendard·Instrument Serif 는 layout.tsx 의 link)
+     2. 팔레트        — §1.4 6색 + 승인 파생 셰이드. hex 일탈을 여기서만 감시한다.
+     3. 꽃-테마 5종   — [data-flower="…"] 변수 세트. 꽃이 바뀌면 컨셉 컬러가 따라 바뀐다(§1.4c).
+     4. Tailwind 브리지 — @theme inline 으로 토큰을 유틸리티에 노출
+     5. 베이스        — 리셋·타이포·모션 무효화
+
+   색 규칙(어기면 접근성·톤이 무너진다)
+     · Pollen Gold(#C8963E) **배경 위 텍스트 금지** — 보더·아이콘·라벨·텍스트색으로만.
+     · Wine Rose(#8A3448) 는 다크 배경에서 본문 텍스트 금지 → 틴트(#C98A9B) 사용.
+     · Apology Lavender(#83779C) 원색은 다크 위 4.4:1 로 본문 미달 → 틴트(#A99CC2) 사용.
+     · 팔레트 밖 유채색(파랑·청록·형광) 금지.
+   ═════════════════════════════════════════════════════════════════════ */
+
+/* ── 1. 마루 부리 (§1.3) — 네이버 공식 웹폰트, 필요한 굵기만 ──────────── */
+@font-face {
+  font-family: 'MaruBuri';
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+  src: url('https://hangeul.pstatic.net/hangeul_static/webfont/MaruBuri/MaruBuri-ExtraLight.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'MaruBuri';
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+  src: url('https://hangeul.pstatic.net/hangeul_static/webfont/MaruBuri/MaruBuri-Light.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'MaruBuri';
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  src: url('https://hangeul.pstatic.net/hangeul_static/webfont/MaruBuri/MaruBuri-Regular.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'MaruBuri';
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  src: url('https://hangeul.pstatic.net/hangeul_static/webfont/MaruBuri/MaruBuri-SemiBold.woff2') format('woff2');
+}
+
+/* ── 2. 팔레트 · 폰트 스택 (§1.3·§1.4) ──────────────────────────────── */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* §1.4 팔레트 6색 */
+  --ivory: #F6F1E8;
+  --ink: #1F211E;
+  --stem: #263B2E;
+  --rose: #8A3448;
+  --lavender: #83779C;
+  --gold: #C8963E;
+
+  /* 승인 파생 셰이드·틴트 (§1.4 "파생 허용" + §1.4b·§1.4c) */
+  --ink-950: #0B0C0A;
+  --ink-900: #141613;
+  --stem-900: #1B2C21;
+  --wine: #5C2230;
+  --plum: #4A4160;
+  --gold-deep: #8A672B;
+  --rose-tint: #C98A9B;
+  --lavender-tint: #A99CC2;
+  --ivory-2: #FBF9F4;
+  --ivory-3: #F1EADC;
+
+  /* 폰트 스택 — §1.3 그대로.
+     실제 스택은 --font-stack-* 에 한 번만 적고, 스펙이 정한 이름(--font-sans/--font-serif)은
+     거기에 별칭을 건다. Tailwind 의 @theme 이 같은 이름을 다시 선언하는데(아래 4번),
+     이름이 겹친 채로 서로를 가리키면 var() 순환이 되어 폰트가 통째로 죽는다. */
+  --font-stack-sans: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo',
+    'Malgun Gothic', 'Segoe UI', Roboto, sans-serif;
+  --font-stack-serif: 'MaruBuri', 'Noto Serif KR', 'Nanum Myeongjo', 'AppleMyungjo', Batang, serif;
+  --font-stack-logo: 'Instrument Serif', 'MaruBuri', Georgia, 'Times New Roman', serif;
+
+  --font-sans: var(--font-stack-sans);
+  --font-serif: var(--font-stack-serif);
+  --font-logo: var(--font-stack-logo);
+
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  /* 테마 크로스페이드 길이. 모션 무효화 블록이 이 값을 덮는다. */
+  --swap: 0.6s;
+
+  /* 이미지 로드 실패 시 드러나는 폴백 면 — 전 테마 공통 다크 보태니컬 */
+  --frame-fallback: linear-gradient(158deg, #1B2C21 0%, #141613 48%, #0B0C0A 100%);
 }
 
+/* ═══ 3. 꽃-테마 5종 (§1.4c v3.1) ══════════════════════════════════════
+   `<html data-flower="…">` 하나로 배경·강조·CTA·사진 틴트가 세트로 바뀐다.
+   기본값(속성이 없을 때)은 흰 튤립 = 나이트 보태니컬.
+   대비 수치 주석은 확정 시안에서 실측한 값이다. 색을 바꾸면 다시 재야 한다. */
+
+/* ── 테마 1 · 흰 튤립 — Night Botanical (기본) ─────────────────────── */
+:root,
+[data-flower='tulip'] {
+  --bg: #0B0C0A;
+  --bg-2: #141613;
+  --bg-3: #1B2C21;
+  --fg: #F6F1E8;
+  --fg-70: rgba(246, 241, 232, 0.80);   /* 10.9:1 */
+  --fg-50: rgba(246, 241, 232, 0.62);   /*  6.8:1 */
+  --hair: rgba(246, 241, 232, 0.16);
+  --hair-2: rgba(246, 241, 232, 0.28);
+  --accent: #C8963E;                    /* 골드 텍스트 7.4:1 */
+  --accent-line: rgba(200, 150, 62, 0.55);
+  --seal: #C8963E;
+  --cta-bg: #F6F1E8;
+  --cta-fg: #0B0C0A;
+  --cta-glow: rgba(246, 241, 232, 0.26);
+  --ghost-line: rgba(246, 241, 232, 0.42);
+  --focus: #C8963E;
+  /* 유리에 옅은 잉크 틴트 — 내비·칩이 사진의 밝은 구간 위를 지나도 본문 대비가 4.5:1 아래로 안 내려가게 */
+  --glass-bg: rgba(11, 12, 10, 0.30);
+  --glass-bg-fb: rgba(20, 22, 19, 0.88);
+  --glass-hi: rgba(255, 255, 255, 0.44);
+  --glass-hi-2: rgba(255, 255, 255, 0.14);
+  --glass-shadow: 0 18px 44px rgba(11, 12, 10, 0.46);
+  --on-media: #F6F1E8;
+  --on-media-mute: rgba(246, 241, 232, 0.80);
+  --media-filter: saturate(1.02) contrast(1.03);
+  --veil-back: rgba(246, 241, 232, 0.13);
+  --scrim-hero:
+    linear-gradient(180deg, rgba(27, 44, 33, 0.34) 0%, rgba(27, 44, 33, 0.10) 42%, rgba(11, 12, 10, 0.18) 100%),
+    linear-gradient(180deg, rgba(11, 12, 10, 0.56) 0%, rgba(11, 12, 10, 0.14) 24%, rgba(11, 12, 10, 0.30) 42%,
+      rgba(11, 12, 10, 0.76) 58%, rgba(11, 12, 10, 0.92) 80%, rgba(11, 12, 10, 0.97) 100%);
+  --scrim-panel:
+    linear-gradient(180deg, rgba(27, 44, 33, 0.40) 0%, rgba(27, 44, 33, 0.28) 100%),
+    linear-gradient(180deg, rgba(11, 12, 10, 0.80) 0%, rgba(11, 12, 10, 0.68) 46%, rgba(11, 12, 10, 0.84) 100%);
+  --scrim-band:
+    linear-gradient(180deg, rgba(11, 12, 10, 0.78) 0%, rgba(11, 12, 10, 0.62) 50%, rgba(11, 12, 10, 0.82) 100%);
+  --vignette: radial-gradient(128% 92% at 50% 44%,
+    rgba(11, 12, 10, 0) 26%, rgba(11, 12, 10, 0.22) 60%, rgba(11, 12, 10, 0.62) 88%, rgba(11, 12, 10, 0.86) 100%);
+  --grain-blend: overlay;
+  --grain-opacity: 0.05;
+  color-scheme: dark;
+}
+
+/* ── 테마 2 · 흰 백합 — Ivory Studio (라이트) ──────────────────────── */
+[data-flower='lily'] {
+  --bg: #F6F1E8;
+  --bg-2: #FBF9F4;
+  --bg-3: #F1EADC;
+  --fg: #1F211E;
+  --fg-70: rgba(31, 33, 30, 0.78);      /*  7.4:1 */
+  --fg-50: rgba(31, 33, 30, 0.68);      /*  5.2:1 */
+  --hair: rgba(31, 33, 30, 0.18);
+  --hair-2: rgba(31, 33, 30, 0.32);
+  --accent: #263B2E;                    /* 스템 텍스트 10.7:1 (라이트에서 골드 텍스트 금지) */
+  --accent-line: rgba(200, 150, 62, 0.85);
+  --seal: #8A672B;
+  --cta-bg: #263B2E;
+  --cta-fg: #F6F1E8;
+  --cta-glow: rgba(38, 59, 46, 0.28);
+  --ghost-line: rgba(31, 33, 30, 0.42);
+  --focus: #263B2E;
+  /* 라이트 테마의 유리는 더 불투명하게 — 잉크 글자가 사진의 어두운 구간 위에서도 4.5:1 유지 */
+  --glass-bg: rgba(251, 249, 244, 0.82);
+  --glass-bg-fb: rgba(246, 241, 232, 0.94);
+  --glass-hi: rgba(255, 255, 255, 0.90);
+  --glass-hi-2: rgba(31, 33, 30, 0.14);
+  --glass-shadow: 0 18px 44px rgba(31, 33, 30, 0.14);
+  --on-media: #1F211E;
+  --on-media-mute: rgba(31, 33, 30, 0.74);
+  --media-filter: grayscale(0.14) brightness(1.07) contrast(0.95);
+  --veil-back: rgba(31, 33, 30, 0.14);
+  --scrim-hero:
+    linear-gradient(180deg, rgba(246, 241, 232, 0.26) 0%, rgba(246, 241, 232, 0.06) 22%,
+      rgba(246, 241, 232, 0.10) 34%, rgba(246, 241, 232, 0.70) 52%, rgba(246, 241, 232, 0.94) 72%,
+      rgba(246, 241, 232, 0.99) 100%),
+    linear-gradient(180deg, rgba(38, 59, 46, 0.10) 0%, rgba(38, 59, 46, 0) 46%);
+  --scrim-panel:
+    linear-gradient(180deg, rgba(246, 241, 232, 0.90) 0%, rgba(246, 241, 232, 0.86) 48%, rgba(246, 241, 232, 0.93) 100%);
+  --scrim-band:
+    linear-gradient(180deg, rgba(246, 241, 232, 0.88) 0%, rgba(246, 241, 232, 0.82) 50%, rgba(246, 241, 232, 0.91) 100%);
+  --vignette: radial-gradient(128% 92% at 50% 44%,
+    rgba(246, 241, 232, 0) 28%, rgba(246, 241, 232, 0.20) 62%, rgba(246, 241, 232, 0.66) 90%, rgba(246, 241, 232, 0.88) 100%);
+  --grain-blend: multiply;
+  --grain-opacity: 0.035;
+  color-scheme: light;
+}
+
+/* ── 테마 3 · 프리지아 — Ink & Gold ────────────────────────────────── */
+[data-flower='freesia'] {
+  --bg: #141613;
+  --bg-2: #0B0C0A;
+  --bg-3: #1B2C21;
+  --fg: #F6F1E8;
+  --fg-70: rgba(246, 241, 232, 0.80);   /* 10.6:1 */
+  --fg-50: rgba(246, 241, 232, 0.62);   /*  6.8:1 */
+  --hair: rgba(246, 241, 232, 0.16);
+  --hair-2: rgba(200, 150, 62, 0.34);
+  --accent: #C8963E;                    /* 골드 텍스트 6.8:1 (§1.4 는 골드 "배경" 위 텍스트만 금지) */
+  --accent-line: rgba(200, 150, 62, 0.68);
+  --seal: #C8963E;
+  /* CTA 는 Gold Deep — 원색 #C8963E 배경은 텍스트 금지라 셰이드로 내린다 (4.9:1) */
+  --cta-bg: #8A672B;
+  --cta-fg: #FBF9F4;
+  --cta-glow: rgba(200, 150, 62, 0.40);
+  --ghost-line: rgba(246, 241, 232, 0.42);
+  --focus: #C8963E;
+  --glass-bg: rgba(11, 12, 10, 0.32);
+  --glass-bg-fb: rgba(20, 22, 19, 0.88);
+  --glass-hi: rgba(255, 255, 255, 0.44);
+  --glass-hi-2: rgba(200, 150, 62, 0.18);
+  --glass-shadow: 0 18px 44px rgba(11, 12, 10, 0.48);
+  --on-media: #F6F1E8;
+  --on-media-mute: rgba(246, 241, 232, 0.80);
+  --media-filter: saturate(1.05) contrast(1.05) brightness(0.99);
+  --veil-back: rgba(200, 150, 62, 0.17);
+  --scrim-hero:
+    linear-gradient(180deg, rgba(138, 103, 43, 0.26) 0%, rgba(138, 103, 43, 0.08) 40%, rgba(11, 12, 10, 0.20) 100%),
+    linear-gradient(180deg, rgba(20, 22, 19, 0.58) 0%, rgba(20, 22, 19, 0.16) 24%, rgba(11, 12, 10, 0.34) 42%,
+      rgba(11, 12, 10, 0.78) 58%, rgba(11, 12, 10, 0.93) 80%, rgba(11, 12, 10, 0.98) 100%);
+  --scrim-panel:
+    linear-gradient(180deg, rgba(138, 103, 43, 0.24) 0%, rgba(138, 103, 43, 0.14) 100%),
+    linear-gradient(180deg, rgba(11, 12, 10, 0.82) 0%, rgba(20, 22, 19, 0.70) 46%, rgba(11, 12, 10, 0.86) 100%);
+  --scrim-band:
+    linear-gradient(180deg, rgba(138, 103, 43, 0.20) 0%, rgba(138, 103, 43, 0.12) 100%),
+    linear-gradient(180deg, rgba(11, 12, 10, 0.78) 0%, rgba(11, 12, 10, 0.62) 50%, rgba(11, 12, 10, 0.84) 100%);
+  --vignette: radial-gradient(128% 92% at 50% 44%,
+    rgba(11, 12, 10, 0) 26%, rgba(20, 22, 19, 0.24) 60%, rgba(11, 12, 10, 0.62) 88%, rgba(11, 12, 10, 0.90) 100%);
+  --grain-blend: overlay;
+  --grain-opacity: 0.05;
+  color-scheme: dark;
+}
+
+/* ── 테마 4 · 아네모네 — Evening Wine ──────────────────────────────── */
+[data-flower='anemone'] {
+  --bg: #141613;
+  --bg-2: #0B0C0A;
+  --bg-3: #5C2230;
+  --fg: #F6F1E8;
+  --fg-70: rgba(246, 241, 232, 0.80);   /* 11.4:1 */
+  --fg-50: rgba(246, 241, 232, 0.62);   /*  6.8:1 */
+  --hair: rgba(246, 241, 232, 0.16);
+  --hair-2: rgba(201, 138, 155, 0.34);
+  --accent: #C98A9B;                    /* 로즈 틴트 6.6:1 (다크 위 Wine Rose 본문 금지) */
+  --accent-line: rgba(138, 52, 72, 0.72);
+  --seal: #C98A9B;
+  --cta-bg: #8A3448;
+  --cta-fg: #F6F1E8;
+  --cta-glow: rgba(138, 52, 72, 0.44);
+  --ghost-line: rgba(246, 241, 232, 0.42);
+  --focus: #C98A9B;
+  --glass-bg: rgba(20, 22, 19, 0.34);
+  --glass-bg-fb: rgba(20, 22, 19, 0.88);
+  --glass-hi: rgba(255, 255, 255, 0.42);
+  --glass-hi-2: rgba(201, 138, 155, 0.18);
+  --glass-shadow: 0 18px 44px rgba(11, 12, 10, 0.48);
+  --on-media: #F6F1E8;
+  --on-media-mute: rgba(246, 241, 232, 0.80);
+  --media-filter: saturate(0.96) contrast(1.04);
+  --veil-back: rgba(201, 138, 155, 0.16);
+  /* 이 테마의 히어로(#11)는 가운데가 밝은 컷이라 상단 스톱을 더 눌러야 내비가 4.5:1 을 넘긴다. */
+  --scrim-hero:
+    linear-gradient(180deg, rgba(92, 34, 48, 0.34) 0%, rgba(92, 34, 48, 0.16) 40%, rgba(92, 34, 48, 0.34) 70%,
+      rgba(74, 65, 96, 0.20) 100%),
+    linear-gradient(180deg, rgba(20, 22, 19, 0.74) 0%, rgba(20, 22, 19, 0.30) 26%, rgba(11, 12, 10, 0.38) 42%,
+      rgba(11, 12, 10, 0.78) 58%, rgba(11, 12, 10, 0.92) 80%, rgba(11, 12, 10, 0.97) 100%);
+  --scrim-panel:
+    linear-gradient(180deg, rgba(92, 34, 48, 0.42) 0%, rgba(92, 34, 48, 0.30) 100%),
+    linear-gradient(180deg, rgba(11, 12, 10, 0.80) 0%, rgba(20, 22, 19, 0.70) 46%, rgba(11, 12, 10, 0.86) 100%);
+  --scrim-band:
+    linear-gradient(180deg, rgba(92, 34, 48, 0.30) 0%, rgba(92, 34, 48, 0.22) 100%),
+    linear-gradient(180deg, rgba(11, 12, 10, 0.76) 0%, rgba(11, 12, 10, 0.62) 50%, rgba(11, 12, 10, 0.82) 100%);
+  --vignette: radial-gradient(128% 92% at 50% 44%,
+    rgba(11, 12, 10, 0) 26%, rgba(92, 34, 48, 0.18) 58%, rgba(11, 12, 10, 0.60) 88%, rgba(11, 12, 10, 0.88) 100%);
+  --grain-blend: overlay;
+  --grain-opacity: 0.055;
+  color-scheme: dark;
+}
+
+/* ── 테마 5 · 헬레보어 — Deep Lavender ─────────────────────────────── */
+[data-flower='hellebore'] {
+  --bg: #141613;
+  --bg-2: #0B0C0A;
+  --bg-3: #4A4160;
+  --fg: #F6F1E8;
+  --fg-70: rgba(246, 241, 232, 0.80);   /* 10.6:1 */
+  --fg-50: rgba(246, 241, 232, 0.62);   /*  6.8:1 */
+  --hair: rgba(246, 241, 232, 0.16);
+  --hair-2: rgba(169, 156, 194, 0.34);
+  --accent: #A99CC2;                    /* 라벤더 틴트 7.1:1 (원색 #83779C 는 4.4:1 → 본문 금지) */
+  --accent-line: rgba(131, 119, 156, 0.72);
+  --seal: #A99CC2;
+  --cta-bg: #4A4160;                    /* 8.4:1 */
+  --cta-fg: #F6F1E8;
+  --cta-glow: rgba(131, 119, 156, 0.42);
+  --ghost-line: rgba(246, 241, 232, 0.42);
+  --focus: #A99CC2;
+  --glass-bg: rgba(11, 12, 10, 0.32);
+  --glass-bg-fb: rgba(20, 22, 19, 0.88);
+  --glass-hi: rgba(255, 255, 255, 0.42);
+  --glass-hi-2: rgba(169, 156, 194, 0.18);
+  --glass-shadow: 0 18px 44px rgba(11, 12, 10, 0.48);
+  --on-media: #F6F1E8;
+  --on-media-mute: rgba(246, 241, 232, 0.80);
+  --media-filter: saturate(0.94) contrast(1.03);
+  --veil-back: rgba(169, 156, 194, 0.17);
+  --scrim-hero:
+    linear-gradient(180deg, rgba(74, 65, 96, 0.34) 0%, rgba(74, 65, 96, 0.14) 40%, rgba(74, 65, 96, 0.32) 70%,
+      rgba(27, 44, 33, 0.16) 100%),
+    linear-gradient(180deg, rgba(20, 22, 19, 0.56) 0%, rgba(20, 22, 19, 0.14) 24%, rgba(11, 12, 10, 0.32) 42%,
+      rgba(11, 12, 10, 0.78) 58%, rgba(11, 12, 10, 0.92) 80%, rgba(11, 12, 10, 0.97) 100%);
+  --scrim-panel:
+    linear-gradient(180deg, rgba(74, 65, 96, 0.44) 0%, rgba(74, 65, 96, 0.30) 100%),
+    linear-gradient(180deg, rgba(11, 12, 10, 0.80) 0%, rgba(20, 22, 19, 0.70) 46%, rgba(11, 12, 10, 0.86) 100%);
+  --scrim-band:
+    linear-gradient(180deg, rgba(74, 65, 96, 0.32) 0%, rgba(74, 65, 96, 0.22) 100%),
+    linear-gradient(180deg, rgba(11, 12, 10, 0.76) 0%, rgba(11, 12, 10, 0.62) 50%, rgba(11, 12, 10, 0.82) 100%);
+  --vignette: radial-gradient(128% 92% at 50% 44%,
+    rgba(11, 12, 10, 0) 26%, rgba(74, 65, 96, 0.20) 58%, rgba(11, 12, 10, 0.60) 88%, rgba(11, 12, 10, 0.88) 100%);
+  --grain-blend: overlay;
+  --grain-opacity: 0.05;
+  color-scheme: dark;
+}
+
+/* ── 4. Tailwind 브리지 ─────────────────────────────────────────────
+   토큰을 유틸리티로 노출한다: bg-bg / text-fg / border-hair / font-serif …
+   `inline` 이라 값이 var() 참조로 그대로 남아, 테마가 바뀌면 유틸리티도 따라 바뀐다. */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-bg: var(--bg);
+  --color-bg-2: var(--bg-2);
+  --color-bg-3: var(--bg-3);
+  --color-fg: var(--fg);
+  --color-fg-70: var(--fg-70);
+  --color-fg-50: var(--fg-50);
+  --color-hair: var(--hair);
+  --color-hair-2: var(--hair-2);
+  --color-accent: var(--accent);
+  --color-accent-line: var(--accent-line);
+  --color-cta: var(--cta-bg);
+  --color-cta-fg: var(--cta-fg);
+  --color-focus: var(--focus);
+  --color-on-media: var(--on-media);
+  --color-on-media-mute: var(--on-media-mute);
+
+  /* 팔레트 원색 — 맥락색이 아니라 "그 색 자체"가 필요할 때만 */
+  --color-ivory: var(--ivory);
+  --color-ink: var(--ink);
+  --color-stem: var(--stem);
+  --color-rose: var(--rose);
+  --color-lavender: var(--lavender);
+  --color-gold: var(--gold);
+
+  /* 스펙 이름과 같은 키라서 값은 --font-stack-* 를 가리켜야 한다(순환 방지 · 위 2번 주석). */
+  --font-sans: var(--font-stack-sans);
+  --font-serif: var(--font-stack-serif);
+  --font-logo: var(--font-stack-logo);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ── 5. 베이스 ──────────────────────────────────────────────────────── */
+html {
+  overflow-x: clip;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.7;
+  letter-spacing: -0.005em;
+  overflow-x: clip;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  /* 한국어는 어절 단위로 끊는다 — 단어 중간 절단 방지 (§1.6) */
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  /* 꽃 칩으로 테마가 바뀔 때 배경·글자색이 함께 크로스페이드 */
+  transition: background-color var(--swap) var(--ease), color var(--swap) var(--ease);
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* 스크린리더 전용 텍스트 */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── 모션 무효화 (§1.2 · 전 파일 필수) ─────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

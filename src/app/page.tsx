@@ -1,69 +1,79 @@
-import Image from "next/image";
+import { loadCatalog } from '@/lib/data/catalog';
+import { DEFAULT_FLOWER_THEME } from '@/lib/theme/flowers';
 
-export default function Home() {
+/**
+ * 임시 홈 셸.
+ *
+ * 실제 랜딩은 확정 시안 `design/landing-v3/home.html`(웹)·`design/app-v3/home.html`(앱)을
+ * 옮기는 후속 작업이다. 여기서는 **기반이 살아 있는지**만 보여 준다:
+ * 폰트(로고 세리프·본문 산세리프)·꽃-테마 변수·서버에서 읽은 콘텐츠 카탈로그.
+ *
+ * 오늘의 꽃은 지금 기본 테마(흰 튤립) 고정이다. 꽃 칩으로 테마가 바뀌는 로테이션(§1.4c)은
+ * 랜딩 구현에서 붙인다.
+ */
+export default async function Home() {
+  const catalog = await loadCatalog();
+  const theme = DEFAULT_FLOWER_THEME;
+  const flower = catalog.flowers.find((item) => item.id === theme.catalogFlowerId);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+    <main className="mx-auto flex min-h-dvh w-full max-w-[430px] flex-col justify-between px-6 py-14 sm:max-w-[560px]">
+      <header>
+        <p
+          className="text-[clamp(38px,11vw,56px)] leading-none italic"
+          style={{ fontFamily: 'var(--font-logo)' }}
+        >
+          dearbloom
+        </p>
+        <p className="mt-4 text-[15px]" style={{ color: 'var(--fg-70)' }}>
+          하고 싶은 말부터 고르면, 꽃이 대신 말해드려요.
+        </p>
+      </header>
+
+      {/* 오늘의 꽃 자리 — 사진·꽃 칩·크로스페이드는 후속 랜딩 작업에서 채운다 */}
+      <section
+        aria-label="오늘의 꽃"
+        className="my-12 rounded-[18px] border p-6"
+        style={{ borderColor: 'var(--hair)', background: 'var(--bg-2)' }}
+      >
+        <p
+          className="text-[11px] uppercase tracking-[0.18em]"
+          style={{ color: 'var(--accent)' }}
+        >
+          오늘의 꽃
+        </p>
+        <p
+          className="mt-3 text-[28px] leading-tight"
+          style={{ fontFamily: 'var(--font-serif)' }}
+        >
+          {theme.nameKo}
+        </p>
+        <p className="mt-1 text-[13px] italic" style={{ color: 'var(--fg-50)' }}>
+          {flower?.scientificName ?? theme.latin}
+        </p>
+        <p
+          className="mt-5 text-[20px] leading-relaxed"
+          style={{ fontFamily: 'var(--font-serif)' }}
+        >
+          “{theme.meaning}”
+        </p>
+        <p className="mt-3 text-[14px]" style={{ color: 'var(--fg-70)' }}>
+          {theme.note}
+        </p>
+        <p className="mt-4 text-[12px]" style={{ color: 'var(--fg-50)' }}>
+          {theme.sourceLabel}
+        </p>
+      </section>
+
+      <footer className="text-[12px]" style={{ color: 'var(--fg-50)' }}>
+        <p>
+          콘텐츠 {catalog.flowers.length}종 · 꽃말 {catalog.meanings.length}줄 · 이야기{' '}
+          {catalog.stories.length}편을 읽었어요.
+        </p>
+        <p className="mt-2">
+          화면 구현은 확정 시안 <code>design/landing-v3</code> · <code>design/app-v3</code> 참조.
+        </p>
+      </footer>
+    </main>
   );
 }

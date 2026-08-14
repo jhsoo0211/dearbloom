@@ -1,0 +1,1376 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#0B0C0A" id="meta-theme">
+<meta name="description" content="dearbloom — 하고 싶은 말부터 고르면, 꽃이 대신 말해드려요.">
+<title>dearbloom — 랜딩 v3 (나이트 보태니컬 아카이브)</title>
+
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="preconnect" href="https://hangeul.pstatic.net" crossorigin>
+<link rel="preconnect" href="https://images.unsplash.com" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap">
+
+<!-- 히어로 1장만 preload (디바이스당 정확히 1개 매칭) -->
+<link rel="preload" as="image" fetchpriority="high" media="(min-width:721px)"
+      href="https://images.unsplash.com/photo-1692520883599-d543cfe6d43d?auto=format&fit=crop&w=2560&h=1440&q=80">
+<link rel="preload" as="image" fetchpriority="high" media="(max-width:720px)"
+      href="https://images.unsplash.com/photo-1692520883599-d543cfe6d43d?auto=format&fit=crop&w=1440&h=1800&q=80">
+
+<!-- 모션 스택 (버전 핀) -->
+<script defer src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/lenis@1.3.11/dist/lenis.min.js"></script>
+
+<style>
+/* ═══════════════════════════════════════════════════════════════════════
+   dearbloom — 웹 랜딩 v3 · 나이트 보태니컬 아카이브
+   실사 포토(Unsplash 16선 중 10장) + 컨셉 컬러 테마 3종 + 오늘의 꽃 로테이션
+
+   팔레트: docs/design-spec.md §1.4 6색 + 승인 파생 셰이드만
+     F6F1E8 ivory / 1F211E ink / 263B2E stem / 8A3448 rose / 83779C lavender / C8963E gold
+     파생: 0B0C0A · 141613 · 1B2C21 · 5C2230 · 4A4160 · 8A672B · C98A9B · FBF9F4
+   팔레트 밖 유채색(파랑·청록·형광) 없음.
+   ═════════════════════════════════════════════════════════════════════ */
+
+/* ── 마루 부리 (§1.3) ────────────────────────────────────────────────── */
+@font-face { font-family:'MaruBuri'; font-weight:200; font-style:normal; font-display:swap;
+  src:url('https://hangeul.pstatic.net/hangeul_static/webfont/MaruBuri/MaruBuri-ExtraLight.woff2') format('woff2'); }
+@font-face { font-family:'MaruBuri'; font-weight:300; font-style:normal; font-display:swap;
+  src:url('https://hangeul.pstatic.net/hangeul_static/webfont/MaruBuri/MaruBuri-Light.woff2') format('woff2'); }
+@font-face { font-family:'MaruBuri'; font-weight:400; font-style:normal; font-display:swap;
+  src:url('https://hangeul.pstatic.net/hangeul_static/webfont/MaruBuri/MaruBuri-Regular.woff2') format('woff2'); }
+
+/* ── 리셋 ───────────────────────────────────────────────────────────── */
+*,*::before,*::after{ box-sizing:border-box; }
+html,body{ margin:0; padding:0; }
+html{ overflow-x:clip; scroll-behavior:smooth; -webkit-text-size-adjust:100%; }
+body{ overflow-x:clip; }
+img{ display:block; max-width:100%; }
+button{ font:inherit; color:inherit; background:none; border:none; cursor:pointer; }
+a{ color:inherit; }
+ul,ol{ margin:0; padding:0; list-style:none; }
+h1,h2,h3{ margin:0; font-weight:400; }
+p{ margin:0; }
+:focus-visible{ outline:2px solid var(--focus); outline-offset:3px; border-radius:2px; }
+.sr-only{ position:absolute; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden;
+  clip:rect(0 0 0 0); clip-path:inset(50%); white-space:nowrap; border:0; }
+
+/* ── 전역 토큰 ──────────────────────────────────────────────────────── */
+:root{
+  /* §1.4 팔레트 */
+  --ivory:#F6F1E8; --ink:#1F211E; --stem:#263B2E; --rose:#8A3448; --lavender:#83779C; --gold:#C8963E;
+  /* 승인 파생 */
+  --ink-950:#0B0C0A; --ink-900:#141613; --stem-900:#1B2C21; --wine:#5C2230;
+  --plum:#4A4160; --gold-deep:#8A672B; --rose-tint:#C98A9B; --ivory-2:#FBF9F4;
+
+  --font-sans:'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo',
+              'Malgun Gothic', 'Segoe UI', Roboto, sans-serif;
+  --font-serif:'MaruBuri', 'Noto Serif KR', 'Nanum Myeongjo', 'AppleMyungjo', Batang, serif;
+  --font-logo:'Instrument Serif', 'MaruBuri', Georgia, 'Times New Roman', serif;
+
+  --ease:cubic-bezier(.22,1,.36,1);
+  --shell:min(1340px, calc(100% - clamp(28px,6vw,120px)));
+  --swap:.6s;
+
+  /* 프레임 폴백(이미지 실패 시 노출) — 전 테마 공통 다크 보태니컬 */
+  --frame-fb:linear-gradient(158deg, #1B2C21 0%, #141613 48%, #0B0C0A 100%);
+}
+
+/* ══ 테마 1 · Night Botanical (기본) ═══════════════════════════════════ */
+:root, html[data-theme="night"]{
+  --bg:#0B0C0A; --bg-2:#141613; --bg-3:#1B2C21;
+  --fg:#F6F1E8;
+  --fg-70:rgba(246,241,232,.80);   /* 10.9:1 */
+  --fg-50:rgba(246,241,232,.62);   /*  6.8:1 */
+  --hair:rgba(246,241,232,.16); --hair-2:rgba(246,241,232,.28);
+  --accent:#C8963E;                /* 골드 텍스트 7.4:1 */
+  --accent-line:rgba(200,150,62,.55);
+  --seal:#C8963E;
+  --cta-bg:#F6F1E8; --cta-fg:#0B0C0A; --cta-glow:rgba(246,241,232,.26);
+  --ghost-line:rgba(246,241,232,.42);
+  --focus:#C8963E;
+  --glass-bg:rgba(246,241,232,.015); --glass-bg-fb:rgba(20,22,19,.86);
+  --glass-hi:rgba(255,255,255,.44); --glass-hi-2:rgba(255,255,255,.14);
+  --glass-shadow:0 18px 44px rgba(11,12,10,.46);
+  --on-media:#F6F1E8; --on-media-mute:rgba(246,241,232,.80);
+  --media-filter:saturate(1.02) contrast(1.03);
+  --veil-back:rgba(246,241,232,.13);
+  --scrim-hero:
+    linear-gradient(180deg, rgba(27,44,33,.34) 0%, rgba(27,44,33,.10) 42%, rgba(11,12,10,.18) 100%),
+    linear-gradient(180deg, rgba(11,12,10,.56) 0%, rgba(11,12,10,.14) 24%, rgba(11,12,10,.30) 42%,
+                            rgba(11,12,10,.76) 58%, rgba(11,12,10,.92) 80%, rgba(11,12,10,.97) 100%);
+  --scrim-room:
+    linear-gradient(180deg, rgba(27,44,33,.40) 0%, rgba(27,44,33,.28) 100%),
+    linear-gradient(180deg, rgba(11,12,10,.80) 0%, rgba(11,12,10,.68) 46%, rgba(11,12,10,.84) 100%);
+  --scrim-band:
+    linear-gradient(180deg, rgba(11,12,10,.78) 0%, rgba(11,12,10,.62) 50%, rgba(11,12,10,.82) 100%);
+  --vignette:radial-gradient(128% 92% at 50% 44%,
+    rgba(11,12,10,0) 26%, rgba(11,12,10,.22) 60%, rgba(11,12,10,.62) 88%, rgba(11,12,10,.86) 100%);
+  --grain-blend:overlay; --grain-op:.05;
+  --gate-bg:#0B0C0A;
+}
+
+/* ══ 테마 2 · Ivory Studio (라이트) ════════════════════════════════════ */
+html[data-theme="ivory"]{
+  --bg:#F6F1E8; --bg-2:#FBF9F4; --bg-3:#F1EADC;
+  --fg:#1F211E;
+  --fg-70:rgba(31,33,30,.78);      /*  7.4:1 */
+  --fg-50:rgba(31,33,30,.68);      /*  5.2:1 */
+  --hair:rgba(31,33,30,.18); --hair-2:rgba(31,33,30,.32);
+  --accent:#263B2E;                /* 스템 텍스트 10.7:1 (골드 텍스트 금지) */
+  --accent-line:rgba(200,150,62,.85);
+  --seal:#8A672B;
+  --cta-bg:#263B2E; --cta-fg:#F6F1E8; --cta-glow:rgba(38,59,46,.28);
+  --ghost-line:rgba(31,33,30,.42);
+  --focus:#263B2E;
+  --glass-bg:rgba(255,255,255,.30); --glass-bg-fb:rgba(246,241,232,.90);
+  --glass-hi:rgba(255,255,255,.90); --glass-hi-2:rgba(31,33,30,.14);
+  --glass-shadow:0 18px 44px rgba(31,33,30,.14);
+  --on-media:#1F211E; --on-media-mute:rgba(31,33,30,.74);
+  --media-filter:grayscale(.14) brightness(1.07) contrast(.95);
+  --veil-back:rgba(31,33,30,.14);
+  --scrim-hero:
+    linear-gradient(180deg, rgba(246,241,232,.26) 0%, rgba(246,241,232,.06) 22%, rgba(246,241,232,.10) 34%,
+                            rgba(246,241,232,.70) 52%, rgba(246,241,232,.94) 72%, rgba(246,241,232,.99) 100%),
+    linear-gradient(180deg, rgba(38,59,46,.10) 0%, rgba(38,59,46,0) 46%);
+  --scrim-room:
+    linear-gradient(180deg, rgba(246,241,232,.90) 0%, rgba(246,241,232,.86) 48%, rgba(246,241,232,.93) 100%);
+  --scrim-band:
+    linear-gradient(180deg, rgba(246,241,232,.88) 0%, rgba(246,241,232,.82) 50%, rgba(246,241,232,.91) 100%);
+  --vignette:radial-gradient(128% 92% at 50% 44%,
+    rgba(246,241,232,0) 28%, rgba(246,241,232,.20) 62%, rgba(246,241,232,.66) 90%, rgba(246,241,232,.88) 100%);
+  --grain-blend:multiply; --grain-op:.035;
+  --gate-bg:#F6F1E8;
+}
+
+/* ══ 테마 3 · Evening Rose ═════════════════════════════════════════════ */
+html[data-theme="rose"]{
+  --bg:#141613; --bg-2:#0B0C0A; --bg-3:#5C2230;
+  --fg:#F6F1E8;
+  --fg-70:rgba(246,241,232,.80);   /* 11.4:1 */
+  --fg-50:rgba(246,241,232,.62);   /*  6.8:1 */
+  --hair:rgba(246,241,232,.16); --hair-2:rgba(201,138,155,.34);
+  --accent:#C98A9B;                /* 로즈 틴트 6.6:1 (다크 위 Wine Rose 본문 금지 → 틴트) */
+  --accent-line:rgba(138,52,72,.72);
+  --seal:#C98A9B;
+  --cta-bg:#8A3448; --cta-fg:#F6F1E8; --cta-glow:rgba(138,52,72,.44);
+  --ghost-line:rgba(246,241,232,.42);
+  --focus:#C98A9B;
+  --glass-bg:rgba(246,241,232,.018); --glass-bg-fb:rgba(20,22,19,.86);
+  --glass-hi:rgba(255,255,255,.42); --glass-hi-2:rgba(201,138,155,.18);
+  --glass-shadow:0 18px 44px rgba(11,12,10,.48);
+  --on-media:#F6F1E8; --on-media-mute:rgba(246,241,232,.80);
+  --media-filter:saturate(.96) contrast(1.04);
+  --veil-back:rgba(201,138,155,.16);
+  --scrim-hero:
+    linear-gradient(180deg, rgba(92,34,48,.30) 0%, rgba(92,34,48,.14) 40%, rgba(92,34,48,.34) 70%, rgba(74,65,96,.20) 100%),
+    linear-gradient(180deg, rgba(20,22,19,.56) 0%, rgba(20,22,19,.14) 24%, rgba(11,12,10,.32) 42%,
+                            rgba(11,12,10,.78) 58%, rgba(11,12,10,.92) 80%, rgba(11,12,10,.97) 100%);
+  --scrim-room:
+    linear-gradient(180deg, rgba(92,34,48,.42) 0%, rgba(92,34,48,.30) 100%),
+    linear-gradient(180deg, rgba(11,12,10,.80) 0%, rgba(20,22,19,.70) 46%, rgba(11,12,10,.86) 100%);
+  --scrim-band:
+    linear-gradient(180deg, rgba(92,34,48,.30) 0%, rgba(92,34,48,.22) 100%),
+    linear-gradient(180deg, rgba(11,12,10,.76) 0%, rgba(11,12,10,.62) 50%, rgba(11,12,10,.82) 100%);
+  --vignette:radial-gradient(128% 92% at 50% 44%,
+    rgba(11,12,10,0) 26%, rgba(92,34,48,.18) 58%, rgba(11,12,10,.60) 88%, rgba(11,12,10,.88) 100%);
+  --grain-blend:overlay; --grain-op:.055;
+  --gate-bg:#141613;
+}
+
+/* ── 바디 ───────────────────────────────────────────────────────────── */
+body{
+  background:var(--bg); color:var(--fg);
+  font-family:var(--font-sans); font-size:16px; line-height:1.7;
+  font-weight:400; letter-spacing:-.005em;
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+  /* 한국어 어절 단위 줄바꿈 — 단어 중간 절단 방지 */
+  word-break:keep-all; overflow-wrap:break-word;
+  transition:background-color var(--swap) var(--ease), color var(--swap) var(--ease);
+}
+.wrap{ width:var(--shell); margin-inline:auto; }
+
+/* ── 필름 그레인 (전역 · 테마별 블렌드) ─────────────────────────────── */
+.grain{
+  position:fixed; inset:0; width:100%; height:100%; z-index:70; pointer-events:none;
+  opacity:var(--grain-op); mix-blend-mode:var(--grain-blend);
+  transition:opacity var(--swap) var(--ease);
+}
+
+/* ── 스크롤 진행 ────────────────────────────────────────────────────── */
+.progress{ position:fixed; inset:0 0 auto 0; height:2px; z-index:66; pointer-events:none;
+  background:var(--hair); }
+.progress span{ display:block; height:100%; width:100%; transform:scaleX(0); transform-origin:0 50%;
+  background:linear-gradient(90deg, var(--accent-line), var(--accent)); }
+
+/* ── 리퀴드 글래스 ──────────────────────────────────────────────────── */
+.glass{
+  position:relative; overflow:hidden;
+  background:var(--glass-bg);
+  backdrop-filter:blur(16px) saturate(135%); -webkit-backdrop-filter:blur(16px) saturate(135%);
+  box-shadow:inset 0 1px 1px var(--glass-hi-2), var(--glass-shadow);
+  transition:background-color var(--swap) var(--ease), box-shadow var(--swap) var(--ease);
+}
+.glass::before{
+  content:""; position:absolute; inset:0; border-radius:inherit; padding:1.4px; pointer-events:none;
+  background:linear-gradient(180deg, var(--glass-hi) 0%, var(--glass-hi-2) 22%,
+    transparent 42%, transparent 58%, var(--glass-hi-2) 80%, var(--glass-hi) 100%);
+  -webkit-mask:linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite:xor; mask:linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite:exclude;
+}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .glass{ background:var(--glass-bg-fb); }
+}
+
+/* ── 내비 pill ──────────────────────────────────────────────────────── */
+.nav{
+  position:fixed; top:18px; left:0; right:0; margin-inline:auto; width:max-content;
+  max-width:calc(100vw - 24px); z-index:60;
+  display:flex; align-items:center; gap:6px;
+  padding:6px 6px 6px 18px; border-radius:9999px;
+  color:var(--fg);
+  transition:top .5s var(--ease), background-color var(--swap) var(--ease), box-shadow var(--swap) var(--ease);
+}
+html.has-motion .nav{ opacity:0; }
+body.nav-compact .nav{ top:10px; }
+.brand{ display:inline-flex; align-items:center; gap:9px; min-height:44px; padding-right:6px;
+  text-decoration:none; color:var(--fg); }
+.brand .mark{ width:18px; height:18px; flex:none; opacity:.9; }
+.brand .wm{ font-family:var(--font-logo); font-style:italic; font-size:22px; line-height:1;
+  letter-spacing:-.01em; padding-top:2px; }
+.nav-links{ display:flex; align-items:center; gap:2px; padding:0 4px; }
+.nav-links a{ display:inline-flex; align-items:center; min-height:44px; padding:0 12px;
+  font-size:13.5px; line-height:1; color:var(--fg-50); text-decoration:none;
+  border-radius:9999px; white-space:nowrap; transition:color .3s var(--ease), background-color .3s var(--ease); }
+.nav-links a:hover, .nav-links a:focus-visible{ color:var(--fg); background:var(--hair); }
+.nav-cta{
+  display:inline-flex; align-items:center; min-height:44px; padding:0 20px; border-radius:9999px;
+  font-size:13.5px; font-weight:600; line-height:1; white-space:nowrap; text-decoration:none;
+  background:var(--cta-bg); color:var(--cta-fg);
+  transition:transform .35s var(--ease), box-shadow .35s var(--ease),
+             background-color var(--swap) var(--ease), color var(--swap) var(--ease);
+}
+.nav-cta:hover, .nav-cta:focus-visible{ transform:scale(1.04); box-shadow:0 0 26px var(--cta-glow); }
+
+/* ── 테마 스와치 ────────────────────────────────────────────────────── */
+.swatches{ display:flex; align-items:center; gap:8px; }
+.sw{
+  position:relative; display:inline-flex; align-items:center; gap:9px;
+  min-height:44px; padding:0 14px 0 10px; border-radius:9999px;
+  font-size:12px; font-weight:500; letter-spacing:.01em; line-height:1; white-space:nowrap;
+  color:var(--on-media-mute);
+  border:1px solid transparent;
+  transition:color .3s var(--ease), border-color .3s var(--ease), background-color .3s var(--ease);
+}
+.sw .chip{
+  width:20px; height:20px; border-radius:50%; flex:none;
+  box-shadow:inset 0 0 0 1px rgba(246,241,232,.30), 0 1px 4px rgba(11,12,10,.5);
+}
+.sw[data-theme="night"] .chip{ background:linear-gradient(140deg,#1B2C21 0%,#0B0C0A 62%,#C8963E 62%,#C8963E 100%); }
+.sw[data-theme="ivory"] .chip{ background:linear-gradient(140deg,#F6F1E8 0%,#F1EADC 62%,#263B2E 62%,#263B2E 100%); }
+.sw[data-theme="rose"]  .chip{ background:linear-gradient(140deg,#5C2230 0%,#141613 62%,#8A3448 62%,#8A3448 100%); }
+.sw:hover{ color:var(--on-media); background:rgba(128,128,128,.14); }
+.sw[aria-pressed="true"]{ color:var(--on-media); border-color:var(--accent-line); background:rgba(128,128,128,.16); }
+.sw[aria-pressed="true"] .chip{ box-shadow:inset 0 0 0 1px rgba(246,241,232,.5), 0 0 0 2px var(--accent-line); }
+
+.sw-rail{
+  position:absolute; right:0; bottom:calc(100% + 16px); z-index:4;
+  display:flex; flex-direction:column; align-items:flex-end; gap:10px;
+}
+.sw-rail .sw-cap{
+  font-size:10.5px; font-weight:600; letter-spacing:.18em; text-transform:uppercase;
+  color:var(--on-media-mute);
+}
+.sw-rail .swatches{ padding:6px; border-radius:9999px; }
+
+/* 내비 미니 스와치 */
+.sw-mini{ display:flex; align-items:center; gap:2px; padding:0 4px; }
+.sw-mini .sw{ min-height:44px; width:34px; padding:0; justify-content:center; }
+.sw-mini .sw .chip{ width:15px; height:15px; }
+.sw-mini .sw .lbl{ position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); }
+
+/* 모바일 하단 고정 바 */
+.sw-dock{
+  position:fixed; left:50%; transform:translateX(-50%);
+  bottom:calc(12px + env(safe-area-inset-bottom, 0px)); z-index:62;
+  display:none; padding:5px; border-radius:9999px;
+}
+.sw-dock .sw{ padding:0 11px 0 8px; font-size:11.5px; }
+
+/* ── 타이포 유틸 ────────────────────────────────────────────────────── */
+.overline{
+  display:flex; align-items:center; gap:12px; margin:0 0 clamp(16px,2.2vw,26px);
+  font-size:11px; font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:var(--accent);
+}
+.overline .ko{ text-transform:none; letter-spacing:.03em; font-weight:400; color:var(--fg-50); }
+.overline::after{ content:""; flex:1; max-width:110px; height:1px; background:var(--accent-line); }
+.overline.on-media{ color:var(--on-media); }
+.overline.on-media .ko{ color:var(--on-media-mute); }
+
+/* ── 버튼 ───────────────────────────────────────────────────────────── */
+.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:9px;
+  min-height:52px; padding:0 26px; border-radius:9999px;
+  font-size:15px; font-weight:600; line-height:1; text-decoration:none; white-space:nowrap;
+  transition:transform .35s var(--ease), box-shadow .35s var(--ease),
+             background-color var(--swap) var(--ease), color var(--swap) var(--ease),
+             border-color var(--swap) var(--ease);
+}
+.btn-primary{ background:var(--cta-bg); color:var(--cta-fg); }
+.btn-primary:hover, .btn-primary:focus-visible{ transform:translateY(-2px); box-shadow:0 12px 34px var(--cta-glow); }
+.btn-ghost{
+  background:transparent; color:var(--on-media); border:1px solid var(--ghost-line); font-weight:500;
+}
+.btn-ghost:hover, .btn-ghost:focus-visible{ border-color:var(--on-media); transform:translateY(-2px); }
+.btn .arw{ font-family:var(--font-sans); font-size:14px; opacity:.7; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   히어로
+   ═════════════════════════════════════════════════════════════════════ */
+.hero{
+  position:relative; isolation:isolate;
+  min-height:100vh; min-height:100svh;
+  display:flex; flex-direction:column;
+  padding-block:clamp(96px,12vh,140px) clamp(26px,4vh,46px);
+  overflow:hidden;
+}
+.hero-media{ position:absolute; inset:0; z-index:-2; background:var(--frame-fb); overflow:hidden; }
+.hlayer{
+  position:absolute; inset:0;
+  background-position:center; background-size:cover; background-repeat:no-repeat;
+  filter:var(--media-filter);
+  opacity:0; animation-play-state:paused;
+  transition:opacity var(--swap) var(--ease), filter var(--swap) var(--ease);
+  will-change:opacity, transform;
+}
+.hlayer.is-on{ opacity:1; animation-play-state:running; }
+@keyframes kenburns{
+  from{ transform:scale(1.05) translate3d(-1.1%,-0.9%,0); }
+  to  { transform:scale(1.13) translate3d(1.1%,0.9%,0); }
+}
+html.has-motion .hlayer{ animation:kenburns 28s ease-in-out infinite alternate; }
+html:not(.has-motion) .hlayer{ transform:scale(1.03); }
+
+.hero-scrim{ position:absolute; inset:0; z-index:-1; pointer-events:none;
+  background:var(--scrim-hero); transition:background var(--swap) var(--ease); }
+.hero-vig{ position:absolute; inset:0; z-index:-1; pointer-events:none;
+  background:var(--vignette); transition:background var(--swap) var(--ease); }
+
+.hero-body{ margin-top:auto; position:relative; }
+.hero-top{
+  display:flex; align-items:flex-end; justify-content:space-between; gap:28px;
+  position:relative; margin-bottom:clamp(14px,2.2vh,26px);
+}
+.hero-lead{
+  display:block;
+  font-family:var(--font-serif); font-weight:300;
+  font-size:clamp(21px,2.5vw,36px); line-height:1.46; letter-spacing:-.01em;
+  color:var(--on-media); max-width:min(100%, 760px);
+  text-shadow:0 1px 24px rgba(11,12,10,.28);
+}
+html[data-theme="ivory"] .hero-lead{ text-shadow:0 1px 20px rgba(246,241,232,.6); }
+
+.logotype{
+  display:block; font-family:var(--font-logo); font-style:italic; font-weight:400;
+  font-size:clamp(66px,13.6vw,214px); line-height:.9; letter-spacing:-.022em;
+  color:var(--on-media); margin-bottom:clamp(16px,2.6vh,34px);
+}
+.hero-h1{ display:block; }
+
+.hero-foot{
+  display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center;
+  gap:clamp(18px,2.4vw,40px);
+  padding-top:clamp(16px,2.4vh,26px); border-top:1px solid var(--hair);
+}
+.hero-note{ font-size:14px; line-height:1.68; color:var(--on-media-mute); max-width:min(100%, 430px); }
+.hero-acts{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
+.hero-acts .btn-ghost{ min-height:52px; padding:0 20px; font-size:14px; }
+
+.scroll-hint{
+  display:flex; align-items:center; gap:10px; pointer-events:none; white-space:nowrap;
+  font-size:10.5px; font-weight:600; letter-spacing:.2em; text-transform:uppercase;
+  color:var(--on-media-mute);
+}
+.scroll-hint .bar{ display:block; width:38px; height:1px; background:var(--on-media-mute); position:relative; overflow:hidden; }
+.scroll-hint .bar::after{ content:""; position:absolute; inset:0; width:40%;
+  background:var(--accent); animation:slide 2.6s var(--ease) infinite; }
+@keyframes slide{ 0%{transform:translateX(-100%)} 60%,100%{transform:translateX(250%)} }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   챕터 공통
+   ═════════════════════════════════════════════════════════════════════ */
+.chapter{ position:relative; isolation:isolate; }
+.media-bg{
+  position:absolute; inset:0; z-index:-2; background:var(--frame-fb);
+  background-position:center; background-size:cover; background-repeat:no-repeat;
+  filter:var(--media-filter); transition:filter var(--swap) var(--ease);
+}
+.media-scrim{ position:absolute; inset:0; z-index:-1; pointer-events:none;
+  background:var(--scrim-room); transition:background var(--swap) var(--ease); }
+/* 주의: 수식 클래스명을 섹션 클래스(.band)와 겹치게 두면 .band의 position:relative가
+   .media-scrim의 position:absolute를 덮어써 스크림이 통째로 사라진다. 반드시 별도 이름 사용. */
+.media-scrim.is-band{ background:var(--scrim-band); }
+
+/* ── 챕터 01 · 오늘의 꽃 ────────────────────────────────────────────── */
+.today{ background:var(--bg); padding-block:clamp(88px,14vh,168px); transition:background-color var(--swap) var(--ease); }
+.today-grid{
+  display:grid; grid-template-columns:minmax(0,1fr) minmax(0,.92fr);
+  gap:clamp(34px,6vw,92px); align-items:center;
+}
+.today-copy{ min-width:0; }
+.today-swap{ transition:opacity .3s var(--ease), transform .3s var(--ease); }
+.today-swap.is-out{ opacity:0; transform:translateY(10px); }
+
+.flower-name{
+  font-family:var(--font-serif); font-weight:300;
+  font-size:clamp(34px,4.4vw,60px); line-height:1.16; letter-spacing:-.02em; color:var(--fg);
+  margin-bottom:6px;
+}
+.flower-latin{
+  font-size:12px; font-weight:400; letter-spacing:.09em; color:var(--fg-50);
+  margin-bottom:clamp(18px,2.4vw,28px);
+}
+.meaning{
+  font-family:var(--font-serif); font-weight:300;
+  font-size:clamp(23px,3.05vw,40px); line-height:1.5; letter-spacing:-.015em;
+  color:var(--fg); margin-bottom:clamp(18px,2.4vw,28px);
+}
+.meaning .q{ color:var(--accent); }
+.note{ font-size:15.5px; line-height:1.78; color:var(--fg-70); max-width:min(100%, 560px);
+  margin-bottom:clamp(20px,2.6vw,30px); }
+.src-badge{
+  display:inline-flex; align-items:center; gap:9px; padding:8px 15px; border-radius:9999px;
+  border:1px solid var(--accent-line); font-size:12px; letter-spacing:.01em; color:var(--fg-70);
+}
+.src-badge .seal{ width:7px; height:7px; border-radius:50%; background:var(--seal); flex:none; }
+
+/* 로테이션 컨트롤 */
+.rot{ display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+  margin-top:clamp(24px,3.2vw,38px); padding-top:clamp(18px,2.4vw,26px); border-top:1px solid var(--hair); }
+.rot-btn{
+  display:inline-flex; align-items:center; gap:10px; min-height:48px; padding:0 20px;
+  border-radius:9999px; border:1px solid var(--ghost-line); color:var(--fg); font-size:14px; font-weight:500;
+  transition:border-color .3s var(--ease), background-color .3s var(--ease), transform .3s var(--ease);
+}
+.rot-btn:hover{ border-color:var(--fg); transform:translateY(-2px); }
+.rot-pause{ width:48px; min-height:48px; padding:0; justify-content:center; }
+.rot-pause svg{ width:14px; height:14px; fill:currentColor; }
+.rot-pause .ico-play{ display:none; }
+.rot-pause[aria-pressed="true"] .ico-play{ display:block; }
+.rot-pause[aria-pressed="true"] .ico-pause{ display:none; }
+.rot-dots{ display:flex; align-items:center; gap:7px; margin-left:2px; }
+.rot-dots i{ display:block; width:6px; height:6px; border-radius:50%; background:var(--hair-2);
+  transition:background-color .3s var(--ease), width .3s var(--ease); }
+.rot-dots i.on{ width:22px; border-radius:9999px; background:var(--accent); }
+.rot-tick{ position:relative; flex:0 1 130px; min-width:60px; height:1px; background:var(--hair); overflow:hidden; }
+.rot-tick span{ position:absolute; inset:0; transform-origin:0 50%; transform:scaleX(0); background:var(--accent); }
+html.has-motion .rot-tick span{ animation:tick 10s linear infinite; }
+@keyframes tick{ from{ transform:scaleX(0) } to{ transform:scaleX(1) } }
+.rot-tick.is-paused span{ animation-play-state:paused; }
+
+/* Vero 텍스트 레이어링 스테이지 */
+.stage{ position:relative; min-width:0; --ft:clamp(38px,6.4vw,86px);
+  padding-top:var(--ft); overflow:hidden; }
+.frame{
+  position:relative; z-index:2; margin:0 auto; width:min(100%, 480px);
+  aspect-ratio:4/5; overflow:hidden; background:var(--frame-fb);
+  box-shadow:0 30px 80px rgba(11,12,10,.34);
+}
+html[data-theme="ivory"] .frame{ box-shadow:0 30px 70px rgba(31,33,30,.20); }
+/* --img-grade: 컷별 그레이딩 슬롯. image-assets.md 16번(붉은 기 섞인 컷)은
+   채도를 낮춰 로맨스 코드로 읽히지 않게 한 뒤에만 쓴다. */
+.frame img{
+  width:100%; height:100%; object-fit:cover;
+  filter:var(--img-grade, ) var(--media-filter);
+  transition:opacity .3s var(--ease), filter var(--swap) var(--ease);
+}
+.frame img.is-out{ opacity:0; }
+.frame-cap{
+  position:absolute; right:10px; bottom:9px; z-index:3;
+  font-size:10px; letter-spacing:.05em; color:rgba(246,241,232,.78);
+  text-shadow:0 1px 6px rgba(11,12,10,.9);
+}
+/* transform은 GSAP 전용으로 비워 둔다 — 중앙 정렬은 left/right + text-align,
+   수직 걸침은 top의 em 계산으로 처리 (GSAP이 transform을 덮어써도 위치가 무너지지 않음) */
+.veil{
+  position:absolute; left:0; right:0; text-align:center;
+  top:calc(var(--ft) - .52em);
+  white-space:nowrap; pointer-events:none;
+  font-family:var(--font-serif); font-weight:200; letter-spacing:-.03em; line-height:1;
+  font-size:clamp(56px,9.4vw,132px);
+}
+.veil.back{ z-index:1; color:var(--veil-back); }
+.veil.front{ z-index:3; color:#F6F1E8;
+  text-shadow:0 2px 18px rgba(11,12,10,.55);
+  clip-path:polygon(22% 0, 47% 0, 47% 100%, 22% 100%); }
+
+/* ── 챕터 02 · 신뢰 3요소 (Alethia 대비 · Deep Beauty scroll room) ──── */
+.room{ position:relative; }
+.room-media{ position:sticky; top:0; height:100vh; height:100svh; z-index:0; overflow:hidden; }
+.room-flow{ position:relative; z-index:1; margin-top:-100vh; margin-top:-100svh;
+  padding-block:clamp(120px,22vh,220px) clamp(96px,18vh,190px); }
+.room-head{ max-width:min(100%, 620px); margin-bottom:clamp(56px,9vh,120px); }
+.room-title{
+  font-family:var(--font-serif); font-weight:300;
+  font-size:clamp(29px,4vw,56px); line-height:1.3; letter-spacing:-.02em; color:var(--on-media);
+}
+.trust{ display:grid; gap:0; max-width:840px; margin-left:auto; }
+.trust-row{
+  display:grid; grid-template-columns:auto minmax(0,1fr); gap:clamp(20px,3.4vw,52px);
+  padding-block:clamp(28px,4.4vh,52px); border-top:1px solid var(--hair);
+  transition:opacity .55s var(--ease);
+}
+.trust-row:last-child{ border-bottom:1px solid var(--hair); }
+html[data-motion-ready] .trust-row{ opacity:.4; }
+html[data-motion-ready] .trust-row.is-active{ opacity:1; }
+.trust-row .num{
+  font-family:var(--font-serif); font-weight:200; font-size:clamp(26px,3vw,42px);
+  line-height:1; color:var(--accent); }
+.trust-row h3{
+  font-family:var(--font-serif); font-weight:400; font-size:clamp(19px,2.1vw,28px);
+  line-height:1.4; color:var(--on-media); margin-bottom:8px; }
+.trust-row p{ font-size:15.5px; line-height:1.76; color:var(--on-media-mute); max-width:min(100%, 520px); }
+
+/* ── 구분면 밴드 ────────────────────────────────────────────────────── */
+.band{
+  position:relative; isolation:isolate; min-height:44vh; min-height:44svh;
+  display:grid; place-items:center; overflow:hidden;
+}
+.band-in{ text-align:center; }
+.band-in .lab{
+  font-size:11px; font-weight:600; letter-spacing:.28em; text-transform:uppercase; color:var(--on-media);
+}
+.band-in .sub{ margin-top:12px; font-size:13.5px; color:var(--on-media-mute); }
+.band-in .rule{ display:block; width:64px; height:1px; margin:20px auto 0; background:var(--accent-line); }
+
+/* ── 챕터 03 · 추천 예시 ────────────────────────────────────────────── */
+.example{
+  position:relative; isolation:isolate; overflow:hidden;
+  min-height:96vh; min-height:96svh; display:flex; align-items:center;
+  padding-block:clamp(96px,16vh,180px);
+}
+.quote{ margin:0; max-width:min(100%, 960px); }
+.quote .mk{ display:block; font-family:var(--font-logo); font-size:clamp(56px,7vw,110px);
+  line-height:.6; color:var(--accent); margin-bottom:clamp(10px,1.6vw,20px); }
+.quote p{
+  font-family:var(--font-serif); font-weight:300;
+  font-size:clamp(26px,4.2vw,60px); line-height:1.38; letter-spacing:-.02em; color:var(--on-media);
+}
+.quote .lead{ color:var(--accent); }
+.quote figcaption{
+  margin-top:clamp(22px,3vw,38px); font-size:11px; font-weight:600;
+  letter-spacing:.2em; text-transform:uppercase; color:var(--on-media-mute); }
+
+/* ── 챕터 04 · 피날레 ───────────────────────────────────────────────── */
+.finale{
+  position:relative; isolation:isolate; overflow:hidden;
+  min-height:100vh; min-height:100svh; display:flex; align-items:center;
+  padding-block:clamp(110px,16vh,180px);
+}
+.finale-in{ max-width:min(100%, 860px); }
+.finale h2{
+  font-family:var(--font-serif); font-weight:300;
+  font-size:clamp(30px,4.6vw,66px); line-height:1.28; letter-spacing:-.024em; color:var(--on-media);
+  margin-bottom:clamp(18px,2.4vw,28px);
+}
+.finale .lede{ font-size:16px; line-height:1.76; color:var(--on-media-mute); max-width:min(100%, 560px);
+  margin-bottom:clamp(30px,4vw,46px); }
+.finale-acts{ display:flex; flex-wrap:wrap; gap:12px; }
+
+/* ── 푸터 ───────────────────────────────────────────────────────────── */
+.footer{
+  position:relative; background:var(--bg); color:var(--fg);
+  padding-block:clamp(60px,9vh,110px) clamp(50px,7vh,80px);
+  transition:background-color var(--swap) var(--ease);
+}
+.footer-top{ display:flex; flex-wrap:wrap; gap:24px 40px; justify-content:space-between;
+  align-items:flex-start; padding-bottom:clamp(30px,4vh,48px); border-bottom:1px solid var(--hair); }
+.footer .disc{ font-size:14.5px; line-height:1.72; color:var(--fg-70); max-width:min(100%, 560px); }
+.footer-links{ display:flex; flex-wrap:wrap; gap:6px 4px; }
+.footer-links a{ display:inline-flex; align-items:center; min-height:44px; padding:0 14px;
+  border-radius:9999px; font-size:13.5px; color:var(--fg-70); text-decoration:none;
+  transition:color .3s var(--ease), background-color .3s var(--ease); }
+.footer-links a:hover, .footer-links a:focus-visible{ color:var(--fg); background:var(--hair); }
+.credits{ padding-top:clamp(26px,3.6vh,40px); }
+.credits h2{ font-size:11px; font-weight:600; letter-spacing:.2em; text-transform:uppercase;
+  color:var(--accent); margin-bottom:10px; }
+.credits p{ font-size:12.5px; line-height:1.8; color:var(--fg-50); max-width:min(100%, 900px); }
+.credits .lic{ margin-top:8px; }
+
+/* ── 로딩 게이트 (Lacoste 입장 의식) ────────────────────────────────── */
+.gate{ display:none; }
+html.gating .gate{
+  display:grid; place-items:center; position:fixed; inset:0; z-index:120;
+  background:var(--gate-bg); padding:24px;
+}
+html.gating body{ overflow:hidden; }
+.gate-in{ text-align:center; max-width:420px; }
+.gate-over{ font-size:10.5px; font-weight:600; letter-spacing:.28em; text-transform:uppercase;
+  color:var(--accent); margin-bottom:16px; }
+.gate-logo{ font-family:var(--font-logo); font-style:italic; font-size:clamp(46px,9vw,84px);
+  line-height:1; letter-spacing:-.02em; color:var(--fg); margin-bottom:14px; }
+.gate-sub{ font-size:13.5px; color:var(--fg-50); margin-bottom:26px; }
+.gate-bar{ position:relative; height:1px; background:var(--hair); overflow:hidden; margin-bottom:26px; }
+.gate-bar span{ position:absolute; inset:0; transform-origin:0 50%; transform:scaleX(0);
+  background:var(--accent); transition:transform .35s linear; }
+.gate-btn{
+  min-height:52px; padding:0 30px; border-radius:9999px; font-size:15px; font-weight:600;
+  background:var(--cta-bg); color:var(--cta-fg); opacity:0; pointer-events:none;
+  transition:opacity .5s var(--ease), transform .35s var(--ease);
+}
+.gate-btn.ready{ opacity:1; pointer-events:auto; }
+.gate-btn:hover{ transform:translateY(-2px); }
+.gate.leaving{ opacity:0; transition:opacity .55s var(--ease); pointer-events:none; }
+
+/* ── 모션 프리셋 ────────────────────────────────────────────────────── */
+html.has-motion [data-intro]{ opacity:0; }
+/* 마스크가 줄 높이를 부풀리지 않도록: 디센더 여유만 padding으로 주고 margin으로 상쇄 */
+.m-mask{ display:inline-block; overflow:hidden; vertical-align:bottom; line-height:inherit;
+  padding-bottom:.16em; margin-bottom:-.16em; }
+.m-word{ display:inline-block; will-change:transform; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   반응형
+   ═════════════════════════════════════════════════════════════════════ */
+@media (max-width:1180px){
+  .hero-foot{ grid-template-columns:minmax(0,1fr) auto; }
+  .hero-foot .scroll-hint{ display:none; }
+}
+@media (max-width:1080px){
+  .today-grid{ grid-template-columns:1fr; gap:clamp(40px,7vw,64px); }
+  .stage{ order:-1; }
+  .trust{ margin-left:0; }
+  .hero-foot{ grid-template-columns:1fr; align-items:start; gap:20px; }
+  .hero-acts{ justify-content:flex-start; }
+}
+@media (max-width:860px){
+  .nav-links{ display:none; }
+  .sw-mini{ display:none; }
+  .sw-rail{ display:none; }
+  .sw-dock{ display:flex; }
+  body{ padding-bottom:80px; }
+  .hero{ padding-bottom:96px; }
+}
+@media (max-width:640px){
+  body{ font-size:15.5px; }
+  .hero{ padding-block:92px 100px; }
+  .hero-top{ flex-direction:column; align-items:flex-start; gap:0; }
+  .hero-acts{ width:100%; }
+  .hero-acts .btn{ flex:1 1 auto; }
+  /* 모바일에서는 주 CTA를 먼저 */
+  .hero-acts .btn-primary{ flex-basis:100%; order:-1; }
+  .finale-acts .btn-primary{ flex-basis:100%; }
+  .nav{ padding:6px 6px 6px 14px; }
+  .brand .wm{ font-size:20px; }
+  .nav-cta{ padding:0 16px; font-size:13px; }
+  .veil{ font-size:clamp(50px,15vw,80px); }
+  .frame{ width:min(100%, 360px); }
+  .room-flow{ padding-block:clamp(96px,18vh,150px) clamp(80px,14vh,140px); }
+  .trust-row{ grid-template-columns:1fr; gap:10px; }
+  .footer-top{ flex-direction:column; }
+  .rot{ gap:10px; }
+  .rot-tick{ flex:1 1 100%; }
+}
+
+/* ── reduced-motion 전면 대응 ───────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{
+    animation-duration:0.01ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:0.01ms !important;
+    scroll-behavior:auto !important;
+  }
+  html{ scroll-behavior:auto; }
+  .hlayer{ animation:none !important; transform:scale(1.03) !important; }
+  .scroll-hint .bar::after{ display:none; }
+  .rot-tick span{ animation:none !important; transform:scaleX(0) !important; }
+}
+</style>
+
+<script>
+/* 게이트 활성화 (모션 허용 시에만) + 하드 페일세이프 */
+(function(){
+  var d = document.documentElement;
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduce) return;
+  d.classList.add('has-motion');
+  d.classList.add('gating');
+  setTimeout(function(){ d.classList.remove('gating'); }, 8000);
+})();
+</script>
+</head>
+
+<body data-theme-host>
+
+<!-- ═══ 로딩 게이트 ═══ -->
+<div class="gate" id="gate" role="dialog" aria-modal="true" aria-labelledby="gate-title">
+  <div class="gate-in">
+    <p class="gate-over">Night Botanical Archive</p>
+    <p class="gate-logo" id="gate-title">dearbloom</p>
+    <p class="gate-sub">오늘의 꽃 아카이브를 여는 중이에요.</p>
+    <div class="gate-bar" aria-hidden="true"><span id="gate-fill"></span></div>
+    <button class="gate-btn" id="gate-btn" type="button">들어가기</button>
+  </div>
+</div>
+
+<div class="progress" aria-hidden="true"><span id="progress-fill"></span></div>
+
+<!-- ═══ 내비 ═══ -->
+<nav class="nav glass" aria-label="주요 메뉴">
+  <a class="brand" href="#hero" aria-label="dearbloom 홈">
+    <svg class="mark" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <g fill="currentColor">
+        <path d="M12 2.2c2.55 1.85 3.82 3.98 3.82 6.4 0 2.33-1.27 4.18-3.82 5.55-2.55-1.37-3.82-3.22-3.82-5.55 0-2.42 1.27-4.55 3.82-6.4Z"/>
+        <path d="M3.3 9.1c2.94-.5 5.28.14 7.03 1.92 1.62 1.65 2.02 3.74 1.2 6.26-2.86-.24-4.96-1.24-6.28-3.01C3.93 12.5 3.3 10.86 3.3 9.1Z" opacity=".72"/>
+        <path d="M20.7 9.1c-2.94-.5-5.28.14-7.03 1.92-1.62 1.65-2.02 3.74-1.2 6.26 2.86-.24 4.96-1.24 6.28-3.01 1.32-1.77 1.95-3.41 1.95-5.17Z" opacity=".72"/>
+        <path d="M11.45 17.4h1.1V22h-1.1z" opacity=".45"/>
+      </g>
+    </svg>
+    <span class="wm">dearbloom</span>
+  </a>
+
+  <ul class="nav-links">
+    <li><a href="#">꽃말 도감</a></li>
+    <li><a href="#">사과·화해</a></li>
+    <li><a href="#">팀 부케</a></li>
+  </ul>
+
+  <div class="sw-mini swatches" role="group" aria-label="컨셉 컬러 선택 (간략)">
+    <button class="sw" type="button" data-theme="night" aria-pressed="true">
+      <span class="chip" aria-hidden="true"></span><span class="lbl">Night Botanical</span></button>
+    <button class="sw" type="button" data-theme="ivory" aria-pressed="false">
+      <span class="chip" aria-hidden="true"></span><span class="lbl">Ivory Studio</span></button>
+    <button class="sw" type="button" data-theme="rose" aria-pressed="false">
+      <span class="chip" aria-hidden="true"></span><span class="lbl">Evening Rose</span></button>
+  </div>
+
+  <a class="nav-cta" href="#start">추천 시작</a>
+</nav>
+
+<main id="main">
+
+<!-- ═══════════════ 히어로 ═══════════════ -->
+<section class="hero" id="hero" aria-labelledby="hero-h1">
+  <div class="hero-media" aria-hidden="true">
+    <div class="hlayer is-on" data-theme-layer="night"
+      data-src-d="https://images.unsplash.com/photo-1692520883599-d543cfe6d43d?auto=format&fit=crop&w=2560&h=1440&q=80"
+      data-src-m="https://images.unsplash.com/photo-1692520883599-d543cfe6d43d?auto=format&fit=crop&w=1440&h=1800&q=80"></div>
+    <div class="hlayer" data-theme-layer="ivory"
+      data-src-d="https://images.unsplash.com/photo-1768243243786-721dab163e7f?auto=format&fit=crop&w=2560&h=1440&q=80"
+      data-src-m="https://images.unsplash.com/photo-1768243243786-721dab163e7f?auto=format&fit=crop&w=1440&h=1800&q=80"></div>
+    <div class="hlayer" data-theme-layer="rose"
+      data-src-d="https://images.unsplash.com/photo-1518343161123-c7e9ab4dc4da?auto=format&fit=crop&w=2560&h=1440&q=80"
+      data-src-m="https://images.unsplash.com/photo-1518343161123-c7e9ab4dc4da?auto=format&fit=crop&w=1440&h=1800&q=80"></div>
+  </div>
+  <div class="hero-scrim" aria-hidden="true"></div>
+  <div class="hero-vig" aria-hidden="true"></div>
+
+  <div class="wrap hero-body">
+    <div class="hero-top">
+      <h1 class="hero-h1" id="hero-h1"
+          aria-label="dearbloom — 하고 싶은 말부터 고르면, 꽃이 대신 말해드려요.">
+        <span class="hero-lead" data-intro data-motion-text="words" aria-hidden="true">하고 싶은 말부터 고르면, 꽃이 대신 말해드려요.</span>
+      </h1>
+
+      <div class="sw-rail" data-intro>
+        <span class="sw-cap" id="sw-cap">컨셉 컬러</span>
+        <div class="swatches glass" role="group" aria-labelledby="sw-cap">
+          <button class="sw" type="button" data-theme="night" aria-pressed="true">
+            <span class="chip" aria-hidden="true"></span><span class="lbl">Night Botanical</span></button>
+          <button class="sw" type="button" data-theme="ivory" aria-pressed="false">
+            <span class="chip" aria-hidden="true"></span><span class="lbl">Ivory Studio</span></button>
+          <button class="sw" type="button" data-theme="rose" aria-pressed="false">
+            <span class="chip" aria-hidden="true"></span><span class="lbl">Evening Rose</span></button>
+        </div>
+      </div>
+    </div>
+
+    <span class="logotype" aria-hidden="true" data-intro data-motion-text="chars">dearbloom</span>
+
+    <div class="hero-foot">
+      <span class="scroll-hint" aria-hidden="true" data-intro>
+        <span class="bar"></span><span>scroll</span>
+      </span>
+      <p class="hero-note" data-intro>관계와 상황만 알려주세요. 어울리는 꽃과 꽃말, 추천 이유, 진짜로 쓸 수 있는 멘트까지 45초 안에 골라드려요.</p>
+      <div class="hero-acts" data-intro>
+        <a class="btn btn-ghost" href="#">사과해야 해요</a>
+        <a class="btn btn-ghost" href="#">마음을 전하고 싶어요</a>
+        <a class="btn btn-primary" href="#" data-magnetic>45초 만에 추천받기<span class="arw" aria-hidden="true">→</span></a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ 챕터 01 · 오늘의 꽃 ═══════════════ -->
+<section class="chapter today" id="today" aria-labelledby="today-name">
+  <div class="wrap today-grid">
+
+    <div class="today-copy">
+      <p class="overline" data-reveal>No.&nbsp;01 <span class="ko">오늘의 꽃</span></p>
+
+      <div id="today-live" class="today-swap">
+        <h2 class="flower-name" id="today-name" data-reveal>흰 튤립</h2>
+        <p class="flower-latin" id="today-latin" data-reveal>Tulipa gesneriana</p>
+        <p class="meaning" data-reveal><span class="q" aria-hidden="true">“</span><span id="today-meaning">용서, 새로운 시작, 진심</span><span class="q" aria-hidden="true">”</span></p>
+        <p class="note" id="today-note" data-reveal>빅토리아 시대 꽃말 자료와 현대 플로리스트 가이드에서 반복되는 의미예요.</p>
+        <p data-reveal><span class="src-badge"><span class="seal" aria-hidden="true"></span><span id="today-src">출처 2곳 검수 · 2026.08</span></span></p>
+      </div>
+
+      <div class="rot" data-reveal>
+        <button class="rot-btn" type="button" id="rot-next">다음 꽃 <span aria-hidden="true">→</span></button>
+        <button class="rot-btn rot-pause" type="button" id="rot-pause" aria-pressed="false" aria-label="오늘의 꽃 자동 전환 일시정지">
+          <svg class="ico-pause" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="1.5" width="3" height="9" rx="1"/><rect x="7" y="1.5" width="3" height="9" rx="1"/></svg>
+          <svg class="ico-play" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.6 10.4 6 3 10.4Z"/></svg>
+        </button>
+        <span class="rot-dots" id="rot-dots" aria-hidden="true"><i class="on"></i><i></i><i></i></span>
+        <span class="rot-tick" id="rot-tick" aria-hidden="true"><span></span></span>
+      </div>
+    </div>
+
+    <!-- Vero식 텍스트 레이어링: 꽃 이름이 사진 위·아래로 엮인다 -->
+    <div class="stage" data-reveal>
+      <span class="veil back" aria-hidden="true" data-veil>흰 튤립</span>
+      <figure class="frame">
+        <img id="today-img" width="1080" height="1350" loading="lazy" decoding="async"
+             alt="어둠 속에서 조명을 받은 흰 튤립 한 송이"
+             src="https://images.unsplash.com/photo-1772724718360-58108ae57433?auto=format&fit=crop&w=1920&q=80">
+        <figcaption class="frame-cap" id="today-credit">Photo: Liana S / Unsplash</figcaption>
+      </figure>
+      <span class="veil front" aria-hidden="true" data-veil>흰 튤립</span>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════════ 챕터 02 · 신뢰 3요소 (scroll room) ═══════════════ -->
+<section class="chapter room" id="trust" aria-labelledby="trust-title">
+  <div class="room-media" aria-hidden="true">
+    <div class="media-bg" data-lazy-bg
+      data-src="https://images.unsplash.com/photo-1599056481506-c4975215aff4?auto=format&fit=crop&w=1920&q=80"></div>
+    <div class="media-scrim"></div>
+  </div>
+
+  <div class="room-flow">
+    <div class="wrap">
+      <div class="room-head">
+        <p class="overline on-media" data-reveal>No.&nbsp;02 <span class="ko">신뢰 3요소</span></p>
+        <h2 class="room-title" id="trust-title" data-motion-text="words">꽃을 고르는 일이 불안하지 않도록.</h2>
+      </div>
+
+      <ol class="trust">
+        <li class="trust-row" data-trust>
+          <span class="num" aria-hidden="true">01</span>
+          <div>
+            <h3>출처가 보이는 꽃말</h3>
+            <p>문화와 시대에 따라 다른 꽃말을 출처와 함께 보여드려요.</p>
+          </div>
+        </li>
+        <li class="trust-row" data-trust>
+          <span class="num" aria-hidden="true">02</span>
+          <div>
+            <h3>반려동물 안전 확인</h3>
+            <p>고양이·강아지에게 위험한 꽃은 미리 걸러드려요.</p>
+          </div>
+        </li>
+        <li class="trust-row" data-trust>
+          <span class="num" aria-hidden="true">03</span>
+          <div>
+            <h3>바로 쓰는 멘트 3가지 톤</h3>
+            <p>담백하게, 다정하게, 진지하게. 복사해서 바로 보내세요.</p>
+          </div>
+        </li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ 구분면 밴드 ═══ -->
+<section class="chapter band" aria-hidden="true">
+  <div class="media-bg" data-lazy-bg
+    data-src="https://images.unsplash.com/photo-1690553543873-ccaf9e2a9d5b?auto=format&fit=crop&w=1920&q=80"></div>
+  <div class="media-scrim is-band"></div>
+  <div class="band-in">
+    <p class="lab">Night Botanical Archive</p>
+    <p class="sub">밤에 자란 식물들의 기록 · 2026</p>
+    <span class="rule"></span>
+  </div>
+</section>
+
+<!-- ═══════════════ 챕터 03 · 추천 예시 ═══════════════ -->
+<section class="chapter example" id="example" aria-labelledby="example-title">
+  <div class="media-bg" data-lazy-bg aria-hidden="true"
+    data-src="https://images.unsplash.com/photo-1778779213344-f6108acf3e01?auto=format&fit=crop&w=1920&q=80"></div>
+  <div class="media-scrim" aria-hidden="true"></div>
+
+  <div class="wrap">
+    <p class="overline on-media" data-reveal>No.&nbsp;03 <span class="ko">추천 예시</span></p>
+    <h2 class="sr-only" id="example-title">추천 예시 — 약속을 잊은 연인에게</h2>
+    <figure class="quote">
+      <span class="mk" aria-hidden="true">“</span>
+      <p data-motion-text="words"><span class="lead">약속을 잊은 연인에게</span> — 흰 튤립과 ‘변명 없이 사과할게’라는 첫 문장을 추천했어요.</p>
+      <figcaption>dearbloom recommendation</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ═══════════════ 챕터 04 · 피날레 ═══════════════ -->
+<section class="chapter finale" id="start" aria-labelledby="start-title">
+  <div class="media-bg" data-lazy-bg aria-hidden="true"
+    data-src="https://images.unsplash.com/photo-1676927116782-658e14df1dc5?auto=format&fit=crop&w=1600&q=80"></div>
+  <div class="media-scrim" aria-hidden="true"></div>
+
+  <div class="wrap">
+    <div class="finale-in">
+      <p class="overline on-media" data-reveal>No.&nbsp;04 <span class="ko">시작하기</span></p>
+      <h2 id="start-title" data-motion-text="words">하고 싶은 말부터 고르면, 꽃이 대신 말해드려요.</h2>
+      <p class="lede" data-reveal>관계와 상황만 알려주세요. 어울리는 꽃과 꽃말, 추천 이유, 진짜로 쓸 수 있는 멘트까지 45초 안에 골라드려요.</p>
+      <div class="finale-acts" data-reveal>
+        <a class="btn btn-primary" href="#" data-magnetic>45초 만에 추천받기<span class="arw" aria-hidden="true">→</span></a>
+        <a class="btn btn-ghost" href="#">사과해야 해요</a>
+        <a class="btn btn-ghost" href="#">마음을 전하고 싶어요</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- ═══════════════ 푸터 ═══════════════ -->
+<footer class="footer">
+  <div class="wrap">
+    <div class="footer-top">
+      <p class="disc">dearbloom — 꽃말은 문화와 시대에 따라 달라요. 출처와 함께 보여드려요.</p>
+      <nav class="footer-links" aria-label="보조 메뉴">
+        <a href="#">꽃말 도감</a>
+        <a href="#">사과·화해 모드</a>
+        <a href="#">팀 부케(준비 중)</a>
+      </nav>
+    </div>
+    <div class="credits">
+      <h2>Image credits</h2>
+      <p>Photos: Unsplash — Spruce, Evie S., Annie Spratt, Liana S, Christina, Margaret Jaszowska, Waseem Khan, Jens Riesenberg, Julia Vivcharyk, dariana</p>
+      <p class="lic">Unsplash License · 상업적 사용 가능 · 출처 표기는 dearbloom 자체 운용 원칙입니다.</p>
+    </div>
+  </div>
+</footer>
+
+<!-- 필름 그레인 -->
+<svg class="grain" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+  <filter id="db-grain"><feTurbulence type="fractalNoise" baseFrequency="0.82" numOctaves="3" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter>
+  <rect width="100%" height="100%" filter="url(#db-grain)"/>
+</svg>
+
+<!-- 모바일 하단 고정 스와치 -->
+<div class="sw-dock swatches glass" role="group" aria-label="컨셉 컬러 선택">
+  <button class="sw" type="button" data-theme="night" aria-pressed="true">
+    <span class="chip" aria-hidden="true"></span><span class="lbl">Night</span></button>
+  <button class="sw" type="button" data-theme="ivory" aria-pressed="false">
+    <span class="chip" aria-hidden="true"></span><span class="lbl">Ivory</span></button>
+  <button class="sw" type="button" data-theme="rose" aria-pressed="false">
+    <span class="chip" aria-hidden="true"></span><span class="lbl">Rose</span></button>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════════
+   dearbloom v3 — 테마 시스템 · 오늘의 꽃 로테이션 · 시네마 모션
+   ═════════════════════════════════════════════════════════════════════ */
+(function () {
+  var docEl  = document.documentElement;
+  var REDUCE = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var isMobile = function () { return window.matchMedia('(max-width:720px)').matches; };
+
+  /* ───────── 데이터 ───────── */
+  var THEMES = {
+    night: { color:'#0B0C0A', flower:0 },
+    ivory: { color:'#F6F1E8', flower:1 },
+    rose:  { color:'#141613', flower:2 }
+  };
+
+  var FLOWERS = [
+    { name:'흰 튤립', latin:'Tulipa gesneriana',
+      meaning:'용서, 새로운 시작, 진심',
+      note:'빅토리아 시대 꽃말 자료와 현대 플로리스트 가이드에서 반복되는 의미예요.',
+      src:'출처 2곳 검수 · 2026.08',
+      alt:'어둠 속에서 조명을 받은 흰 튤립 한 송이',
+      credit:'Photo: Liana S / Unsplash',
+      img:'https://images.unsplash.com/photo-1772724718360-58108ae57433?auto=format&fit=crop&w=1920&q=80' },
+    { name:'프리지아', latin:'Freesia refracta',
+      meaning:'새로운 시작, 우정',
+      note:'흰 프리지아를 먼저 권해요. 봄에 가장 흔하고, 고양이·강아지에게도 안전한 꽃이에요.',
+      src:'여러 현대 자료에서 반복됨 · 2026.08',
+      alt:'어두운 배경에 놓인 흰 꽃과 초록 잎',
+      credit:'Photo: Christina / Unsplash',
+      img:'https://images.unsplash.com/photo-1590791211964-cb77c1e61a3d?auto=format&fit=crop&w=1920&q=80' },
+    { name:'아네모네', latin:'Anemone coronaria',
+      meaning:'기다림, 그리고 진심',
+      note:'빅토리아 시대에는 ‘기다림’으로 읽혔고, 현대 자료에서는 색에 따라 다르게 풀이돼요.',
+      src:'색상·문화권에 따라 해석이 달라요 · 2026.08',
+      alt:'어둠 속 자줏빛이 도는 꽃 어레인지',
+      credit:'Photo: Margaret Jaszowska / Unsplash',
+      /* image-assets.md 16번 — 붉은 기 그레이딩 필수 */
+      grade:'saturate(.5) hue-rotate(-12deg) brightness(.98)',
+      img:'https://images.unsplash.com/photo-1634771141792-12c6a8df9103?auto=format&fit=crop&w=1920&q=80' }
+  ];
+
+  /* ───────── DOM ───────── */
+  var swatches = [].slice.call(document.querySelectorAll('.sw[data-theme]'));
+  var layers   = [].slice.call(document.querySelectorAll('.hlayer'));
+  var metaTh   = document.getElementById('meta-theme');
+  var live     = document.getElementById('today-live');
+  var elName   = document.getElementById('today-name');
+  var elLatin  = document.getElementById('today-latin');
+  var elMean   = document.getElementById('today-meaning');
+  var elNote   = document.getElementById('today-note');
+  var elSrc    = document.getElementById('today-src');
+  var elImg    = document.getElementById('today-img');
+  var elCred   = document.getElementById('today-credit');
+  var veils    = [].slice.call(document.querySelectorAll('[data-veil]'));
+  var dots     = [].slice.call(document.querySelectorAll('#rot-dots i'));
+  var tick     = document.getElementById('rot-tick');
+
+  var themeId = 'night';
+  var flowerI = 0;
+
+  /* ───────── 히어로 레이어 로딩 ───────── */
+  /* 성공한 경우에만 배경을 칠한다 — 실패하면 폴백 그라디언트를 유지하고
+     loaded 표시를 지워 다음 기회(테마 전환·리사이즈)에 재시도한다 */
+  function loadLayer(l, done) {
+    if (l.dataset.loaded) { if (done) done(); return; }
+    l.dataset.loaded = '1';
+    var src = isMobile() ? l.dataset.srcM : l.dataset.srcD;
+    var probe = new Image();
+    probe.onload = function () { l.style.backgroundImage = 'url("' + src + '")'; if (done) done(); };
+    probe.onerror = function () { delete l.dataset.loaded; if (done) done(); };
+    probe.src = src;
+  }
+  loadLayer(layers[0]);
+  /* 나머지 테마 히어로는 순차 워밍 — 동시 다발 요청에 의한 커넥션 리셋 방지 */
+  function warmRest() {
+    var q = layers.slice(1), i = 0;
+    (function step() {
+      if (i >= q.length) return;
+      loadLayer(q[i++], function () { setTimeout(step, 240); });
+    })();
+  }
+  if (window.requestIdleCallback) requestIdleCallback(warmRest, { timeout: 3500 });
+  else setTimeout(warmRest, 2200);
+
+  /* ───────── 테마 ───────── */
+  function setTheme(id, syncFlower) {
+    if (!THEMES[id]) return;
+    themeId = id;
+    docEl.setAttribute('data-theme', id);
+    if (metaTh) metaTh.setAttribute('content', THEMES[id].color);
+    layers.forEach(function (l) {
+      var on = l.dataset.themeLayer === id;
+      if (on) loadLayer(l);
+      l.classList.toggle('is-on', on);
+    });
+    swatches.forEach(function (b) {
+      b.setAttribute('aria-pressed', String(b.dataset.theme === id));
+    });
+    if (syncFlower !== false) setFlower(THEMES[id].flower, false);
+  }
+  swatches.forEach(function (b) {
+    b.addEventListener('click', function () { setTheme(b.dataset.theme, true); });
+  });
+
+  /* ───────── 오늘의 꽃 ───────── */
+  var swapTimer = null;
+  function paint(f) {
+    elName.textContent  = f.name;
+    elLatin.textContent = f.latin;
+    elMean.textContent  = f.meaning;
+    elNote.textContent  = f.note;
+    elSrc.textContent   = f.src;
+    elCred.textContent  = f.credit;
+    elImg.alt = f.alt;
+    elImg.src = f.img;
+    elImg.parentElement.style.setProperty('--img-grade', f.grade || '');
+    veils.forEach(function (v) { v.textContent = f.name; });
+    dots.forEach(function (d, i) { d.classList.toggle('on', i === flowerI); });
+  }
+  function setFlower(i, announce) {
+    i = ((i % FLOWERS.length) + FLOWERS.length) % FLOWERS.length;
+    if (i === flowerI && live.dataset.init) return;
+    flowerI = i;
+    live.dataset.init = '1';
+    live.setAttribute('aria-live', announce ? 'polite' : 'off');
+    if (REDUCE) { paint(FLOWERS[i]); return; }
+    live.classList.add('is-out');
+    elImg.classList.add('is-out');
+    clearTimeout(swapTimer);
+    swapTimer = setTimeout(function () {
+      paint(FLOWERS[flowerI]);
+      live.classList.remove('is-out');
+      elImg.classList.remove('is-out');
+    }, 300);
+  }
+  function restartTick() {
+    if (!tick || REDUCE) return;
+    var s = tick.firstElementChild;
+    s.style.animation = 'none'; void s.offsetWidth; s.style.animation = '';
+  }
+  document.getElementById('rot-next').addEventListener('click', function () {
+    setFlower(flowerI + 1, true); restartTick();
+  });
+
+  /* 자동 로테이션 — 10초, CSS 애니메이션 1회전 = 1교체 (완전 동기) */
+  var paused = false, offscreen = false, hidden = false;
+  var pauseBtn = document.getElementById('rot-pause');
+  function syncTick() {
+    if (!tick) return;
+    tick.classList.toggle('is-paused', paused || offscreen || hidden || REDUCE);
+  }
+  pauseBtn.addEventListener('click', function () {
+    paused = !paused;
+    pauseBtn.setAttribute('aria-pressed', String(paused));
+    pauseBtn.setAttribute('aria-label', paused ? '오늘의 꽃 자동 전환 재생' : '오늘의 꽃 자동 전환 일시정지');
+    syncTick();
+  });
+  if (!REDUCE && tick) {
+    tick.firstElementChild.addEventListener('animationiteration', function () {
+      if (!paused && !offscreen && !hidden) setFlower(flowerI + 1, false);
+    });
+    document.addEventListener('visibilitychange', function () {
+      hidden = document.hidden; syncTick();
+    });
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(function (es) {
+        offscreen = !es[0].isIntersecting; syncTick();
+      }, { threshold: 0.15 }).observe(document.getElementById('today'));
+      offscreen = true;
+    }
+    var rotBox = document.querySelector('.rot');
+    ['pointerenter', 'focusin'].forEach(function (ev) {
+      rotBox.addEventListener(ev, function () { hidden = true; syncTick(); });
+    });
+    ['pointerleave', 'focusout'].forEach(function (ev) {
+      rotBox.addEventListener(ev, function () { hidden = document.hidden; syncTick(); });
+    });
+  } else {
+    pauseBtn.setAttribute('aria-pressed', 'true');
+    pauseBtn.setAttribute('aria-label', '오늘의 꽃 자동 전환 재생');
+    paused = true;
+  }
+  syncTick();
+
+  /* 이미지 실패 → 프레임 그라디언트 폴백 (깨진 아이콘 노출 금지) */
+  elImg.addEventListener('error', function () { elImg.style.visibility = 'hidden'; });
+  elImg.addEventListener('load',  function () { elImg.style.visibility = ''; });
+
+  /* ───────── 섹션 배경 지연 로딩 ───────── */
+  var bgs = [].slice.call(document.querySelectorAll('[data-lazy-bg]'));
+  /* 사진 레이어 아래에 폴백 그라디언트를 함께 깔아 둔다 — 실패해도 깨진 자리 없음 */
+  function fill(el) {
+    if (el.dataset.loaded) return;
+    el.dataset.loaded = '1';
+    el.style.backgroundImage = 'url("' + el.dataset.src + '"), var(--frame-fb)';
+  }
+  if ('IntersectionObserver' in window) {
+    var bgIO = new IntersectionObserver(function (es) {
+      es.forEach(function (e) { if (e.isIntersecting) { fill(e.target); bgIO.unobserve(e.target); } });
+    }, { rootMargin: '400px 0px' });
+    bgs.forEach(function (el) { bgIO.observe(el); });
+  } else { bgs.forEach(fill); }
+
+  /* ───────── 진행 바 ───────── */
+  var pfill = document.getElementById('progress-fill');
+  function onScroll() {
+    var h = document.documentElement.scrollHeight - window.innerHeight;
+    pfill.style.transform = 'scaleX(' + (h > 0 ? Math.min(1, window.scrollY / h) : 0) + ')';
+    document.body.classList.toggle('nav-compact', window.scrollY > 80);
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+
+  /* ───────── 로딩 게이트 (Lacoste 입장 의식) ───────── */
+  var gate = document.getElementById('gate');
+  var gfill = document.getElementById('gate-fill');
+  var gbtn = document.getElementById('gate-btn');
+  var entered = false;
+  function enter() {
+    if (entered) return; entered = true;
+    gate.classList.add('leaving');
+    docEl.classList.remove('gating');
+    setTimeout(function () { gate.style.display = 'none'; }, 600);
+    startIntro();
+  }
+  if (docEl.classList.contains('gating')) {
+    var done = 0, need = 2;
+    var step = function () { done++; gfill.style.transform = 'scaleX(' + Math.min(1, done / need) + ')'; if (done >= need) ready(); };
+    var ready = function () { gbtn.classList.add('ready'); gbtn.focus({ preventScroll: true }); };
+    gfill.style.transform = 'scaleX(.12)';
+    var probe = new Image();
+    probe.onload = probe.onerror = step;
+    probe.src = isMobile() ? layers[0].dataset.srcM : layers[0].dataset.srcD;
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(step); else setTimeout(step, 400);
+    setTimeout(ready, 2600);
+    gbtn.addEventListener('click', enter);
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' || e.key === 'Enter') enter(); });
+  }
+
+  /* ───────── 모션 (GSAP + ScrollTrigger + Lenis) ───────── */
+  function startIntro() { if (window.__introTl) window.__introTl.play(); }
+
+  function boot() {
+    if (!window.gsap || !window.ScrollTrigger || REDUCE) {
+      docEl.classList.remove('has-motion');
+      if (!window.gsap) console.warn('[dearbloom] GSAP 미로드 — 정적 레이아웃으로 표시합니다.');
+      return;
+    }
+    gsap.registerPlugin(ScrollTrigger);
+    gsap.defaults({ ease: 'power3.out', duration: .85 });
+
+    if (window.Lenis) {
+      var lenis = new Lenis({ lerp: .085, smoothWheel: true, wheelMultiplier: .92, anchors: true });
+      lenis.on('scroll', ScrollTrigger.update);
+      gsap.ticker.add(function (t) { lenis.raf(t * 1000); });
+      gsap.ticker.lagSmoothing(0);
+    } else { console.warn('[dearbloom] Lenis 미로드 — 네이티브 스크롤로 진행합니다.'); }
+
+    /* 텍스트 분할 */
+    function addParts(host, text, mode) {
+      (mode === 'chars' ? text.split('') : text.split(/(\s+)/)).forEach(function (p) {
+        if (!p) return;
+        if (!p.trim()) { host.appendChild(document.createTextNode(p)); return; }
+        var m = document.createElement('span'), w = document.createElement('span');
+        m.className = 'm-mask'; m.setAttribute('aria-hidden', 'true');
+        w.className = 'm-word'; w.textContent = p;
+        m.appendChild(w); host.appendChild(m);
+      });
+    }
+    function split(el, mode) {
+      if (el.dataset.split) return;
+      var full = (el.textContent || '').trim();
+      if (el.getAttribute('aria-hidden') !== 'true' && !el.hasAttribute('aria-label')) el.setAttribute('aria-label', full);
+      var kids = [].slice.call(el.childNodes);
+      el.textContent = '';
+      kids.forEach(function (n) {
+        if (n.nodeType === 3) addParts(el, n.nodeValue, mode);
+        else if (n.nodeType === 1) {
+          var c = n.cloneNode(false); c.setAttribute('aria-hidden', 'true');
+          addParts(c, n.textContent, mode); el.appendChild(c);
+        }
+      });
+      el.dataset.split = '1';
+    }
+    gsap.utils.toArray('[data-motion-text]').forEach(function (el) { split(el, el.dataset.motionText); });
+    function words(el) { var w = el.querySelectorAll('.m-word'); return w.length ? w : [el]; }
+
+    /* 히어로 인트로 — 게이트 종료와 무이음 연결 (Revelatio) */
+    var tl = gsap.timeline({ paused: true });
+    tl.fromTo('.nav', { autoAlpha: 0, y: -14 }, { autoAlpha: 1, y: 0, duration: 1, ease: 'expo.out' }, 0)
+      .add(function () { gsap.set('#hero [data-intro]', { autoAlpha: 1 }); }, 0)
+      .fromTo(words(document.querySelector('.hero-lead')),
+        { yPercent: 122, autoAlpha: 0, filter: 'blur(8px)' },
+        { yPercent: 0, autoAlpha: 1, filter: 'blur(0px)', duration: 1.05, ease: 'power4.out', stagger: .045 }, .10)
+      .fromTo(words(document.querySelector('.logotype')),
+        { yPercent: 126, autoAlpha: 0 },
+        { yPercent: 0, autoAlpha: 1, duration: 1.25, ease: 'expo.out', stagger: .04 }, .30)
+      .fromTo('.sw-rail', { autoAlpha: 0, x: 18 }, { autoAlpha: 1, x: 0, duration: .9 }, .85)
+      .fromTo('.hero-foot > *', { autoAlpha: 0, y: 22 }, { autoAlpha: 1, y: 0, duration: .95, stagger: .1 }, .95)
+      .fromTo('.scroll-hint', { autoAlpha: 0 }, { autoAlpha: 1, duration: .9 }, 1.2);
+    window.__introTl = tl;
+    if (!docEl.classList.contains('gating')) tl.play();
+
+    /* 스크롤 리빌 */
+    gsap.utils.toArray('[data-motion-text]').forEach(function (el) {
+      if (el.closest('#hero')) return;
+      gsap.set(el, { autoAlpha: 1 });
+      gsap.fromTo(words(el),
+        { yPercent: 116, autoAlpha: 0, filter: 'blur(8px)' },
+        { yPercent: 0, autoAlpha: 1, filter: 'blur(0px)', duration: 1, ease: 'power4.out', stagger: .04,
+          scrollTrigger: { trigger: el, start: 'top 88%', once: true } });
+    });
+    gsap.utils.toArray('[data-reveal]').forEach(function (el) {
+      if (el.closest('#hero')) return;
+      gsap.fromTo(el, { autoAlpha: 0, y: 28 },
+        { autoAlpha: 1, y: 0, duration: .95, ease: 'power4.out',
+          scrollTrigger: { trigger: el, start: 'top 90%', once: true } });
+    });
+
+    /* Deep Beauty scroll room — 사진이 방처럼 머무는 동안 정보가 지나간다 */
+    gsap.utils.toArray('[data-trust]').forEach(function (row) {
+      ScrollTrigger.create({
+        trigger: row, start: 'top 68%', end: 'bottom 42%',
+        onToggle: function (s) { row.classList.toggle('is-active', s.isActive); }
+      });
+    });
+    gsap.fromTo('#trust .media-bg', { scale: 1.14 }, {
+      scale: 1, ease: 'none',
+      scrollTrigger: { trigger: '#trust', start: 'top bottom', end: 'bottom top', scrub: 1.1 }
+    });
+
+    /* 색면 패럴랙스 */
+    ['#example', '.band', '#start'].forEach(function (sel) {
+      var sec = document.querySelector(sel); if (!sec) return;
+      gsap.fromTo(sec.querySelector('.media-bg'), { yPercent: -6, scale: 1.1 }, {
+        yPercent: 6, scale: 1.1, ease: 'none',
+        scrollTrigger: { trigger: sec, start: 'top bottom', end: 'bottom top', scrub: 1.1 }
+      });
+    });
+
+    /* Vero 레이어링 — 이름이 사진을 가로질러 미끄러진다
+       (CSS는 transform을 쓰지 않으므로 GSAP이 덮어써도 정렬이 무너지지 않는다) */
+    gsap.fromTo('[data-veil]', { x: -26 }, {
+      x: 26, ease: 'none',
+      scrollTrigger: { trigger: '#today', start: 'top bottom', end: 'bottom top', scrub: 1.2 }
+    });
+    gsap.fromTo('.frame', { clipPath: 'inset(14% 0% 0% 0%)' }, {
+      clipPath: 'inset(0% 0% 0% 0%)', ease: 'none',
+      scrollTrigger: { trigger: '.stage', start: 'top 92%', end: 'top 34%', scrub: 1 }
+    });
+
+    /* 히어로 미디어 얕은 패럴랙스 */
+    gsap.to('.hero-media', {
+      yPercent: 9, ease: 'none',
+      scrollTrigger: { trigger: '#hero', start: 'top top', end: 'bottom top', scrub: 1 }
+    });
+
+    /* 마그네틱 (포인터 있는 환경만) */
+    if (!window.matchMedia('(pointer: coarse)').matches) {
+      gsap.utils.toArray('[data-magnetic]').forEach(function (el) {
+        var xTo = gsap.quickTo(el, 'x', { duration: .45, ease: 'power3.out' });
+        var yTo = gsap.quickTo(el, 'y', { duration: .45, ease: 'power3.out' });
+        el.addEventListener('pointermove', function (e) {
+          var r = el.getBoundingClientRect();
+          xTo((e.clientX - r.left - r.width / 2) * .2);
+          yTo((e.clientY - r.top - r.height / 2) * .2);
+        });
+        el.addEventListener('pointerleave', function () { xTo(0); yTo(0); });
+      });
+    }
+
+    docEl.setAttribute('data-motion-ready', '1');
+    window.addEventListener('load', function () { ScrollTrigger.refresh(); });
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { ScrollTrigger.refresh(); });
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+
+  /* 게이트가 페일세이프로 사라진 경우에도 인트로가 반드시 재생되도록 */
+  setTimeout(function () { if (!docEl.classList.contains('gating')) startIntro(); }, 8200);
+
+  /* 뷰포트 폭 변화 시 히어로 소스 재평가 */
+  var wasMobile = isMobile();
+  window.addEventListener('resize', function () {
+    var now = isMobile();
+    if (now === wasMobile) return;
+    wasMobile = now;
+    layers.forEach(function (l) { delete l.dataset.loaded; });
+    layers.forEach(function (l) { if (l.classList.contains('is-on')) loadLayer(l); });
+  });
+})();
+</script>
+</body>
+</html>

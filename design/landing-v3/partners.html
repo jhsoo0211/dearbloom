@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>dearbloom — 함께하는 꽃집 (랜딩 v3)</title>
+<meta name="description" content="dearbloom은 마음에 어울리는 꽃과 그 꽃에 얽힌 이야기를 고르고, 마지막 한 걸음은 가까운 꽃집으로 이어드려요.">
+
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="preconnect" href="https://hangeul.pstatic.net" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://images.unsplash.com" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap">
+
+<style>
+/* ─────────────────────────────────────────────
+   dearbloom · landing v3 · partners.html
+   무드: 나이트 보태니컬 아카이브 (design-spec §1.4b)
+   테마: 기본 테마 고정 — 흰 튤립 · 다크 그린 (§1.4c, 전환 UI 없음)
+   워딩: §1.5d 개정 워딩(이야기·설화 톤) 기준으로 작성
+   ───────────────────────────────────────────── */
+
+/* 마루 부리 — 네이버 공식 (§1.3, 사용 굵기 300/400만 선언) */
+@font-face { font-family:'MaruBuri'; font-weight:300; font-display:swap;
+  src:url('https://hangeul.pstatic.net/hangeul_static/webfont/MaruBuri/MaruBuri-Light.woff2') format('woff2'); }
+@font-face { font-family:'MaruBuri'; font-weight:400; font-display:swap;
+  src:url('https://hangeul.pstatic.net/hangeul_static/webfont/MaruBuri/MaruBuri-Regular.woff2') format('woff2'); }
+
+:root{
+  /* §1.4 팔레트 */
+  --ivory:#F6F1E8;
+  --ink:#1F211E;
+  --stem:#263B2E;
+  --rose:#8A3448;
+  --lavender:#83779C;
+  --gold:#C8963E;
+
+  /* 파생(§1.4 허용: 6색의 틴트/셰이드·rgba) */
+  --night:#0B0C0A;
+  --forest:#1B2C21;
+  --panel:#141613;
+
+  --ivory-88:rgba(246,241,232,.88);
+  --ivory-72:rgba(246,241,232,.72);
+  --ivory-58:rgba(246,241,232,.58);
+  --hair:rgba(246,241,232,.15);
+  --hair-soft:rgba(246,241,232,.09);
+  --hair-strong:rgba(246,241,232,.30);
+
+  --font-serif:'MaruBuri','Noto Serif KR','Nanum Myeongjo','AppleMyungjo',Batang,serif;
+  --font-sans:'Pretendard',-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo',
+              'Malgun Gothic','Segoe UI',Roboto,sans-serif;
+  --font-display:'Instrument Serif','MaruBuri','Noto Serif KR',Georgia,serif;
+
+  --pad:22px;
+  --maxw:1180px;
+}
+
+*,*::before,*::after{ box-sizing:border-box; }
+
+html{ scroll-behavior:smooth; -webkit-text-size-adjust:100%; }
+
+body{
+  margin:0;
+  background:var(--night);
+  color:var(--ivory);
+  font-family:var(--font-sans);
+  font-size:16px;
+  line-height:1.75;
+  font-weight:400;
+  word-break:keep-all;
+  overflow-wrap:anywhere;
+  -webkit-font-smoothing:antialiased;
+}
+
+img,svg{ max-width:100%; }
+
+::selection{ background:rgba(200,150,62,.28); color:var(--ivory); }
+
+a{ color:inherit; }
+
+:focus-visible{ outline:2px solid var(--gold); outline-offset:3px; }
+
+h1,h2,h3{ font-family:var(--font-serif); font-weight:300; margin:0; line-height:1.32; }
+
+/* ── 공통 유닛 ────────────────────────────── */
+.wrap{ width:min(100% - (var(--pad) * 2), var(--maxw)); margin-inline:auto; }
+
+.eyebrow{
+  display:inline-block;
+  font-family:var(--font-sans);
+  font-size:12px; font-weight:600;
+  letter-spacing:.22em; text-transform:uppercase;
+  color:var(--gold);
+  line-height:1.6;
+}
+.eyebrow--quiet{ color:var(--ivory-58); }
+
+.lead{ font-size:16px; line-height:1.8; color:var(--ivory-72); }
+
+.hair{ height:1px; background:var(--hair); border:0; margin:0; }
+
+/* 필름 그레인 오버레이 (§1.4b / 2-C 탑 레이어) */
+.grain{
+  position:fixed; inset:0; z-index:60; pointer-events:none; opacity:.05;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23g)'/%3E%3C/svg%3E");
+  background-size:180px 180px;
+}
+
+/* ── 헤더 ─────────────────────────────────── */
+.site-head{
+  position:absolute; inset:0 0 auto 0; z-index:20;
+  padding-top:22px;
+}
+.site-head__row{
+  display:flex; align-items:center; justify-content:space-between; gap:16px;
+}
+.logo{
+  font-family:var(--font-display);
+  font-style:italic;
+  font-size:23px; line-height:1;
+  letter-spacing:.01em;
+  color:var(--ivory);
+  text-decoration:none;
+  padding:12px 2px;
+  display:inline-flex; align-items:center; min-height:44px;
+  transition:color .3s ease;
+}
+.logo:hover{ color:var(--gold); }
+
+/* ── 1. 인트로 (풀블리드 실사 + 스크림) ────── */
+.intro{
+  position:relative;
+  min-height:86svh;
+  display:flex; align-items:flex-end;
+  padding:132px 0 clamp(48px,9vw,88px);
+  overflow:hidden;
+  isolation:isolate;
+}
+/* 실사: image-assets #1 — Spruce / Unsplash. 로드 실패 시 아래 그라디언트 폴백만 남는다(깨진 아이콘 없음) */
+.intro__bg{
+  position:absolute; inset:0; z-index:-1;
+  background-color:var(--night);
+  background-image:
+    linear-gradient(180deg, rgba(11,12,10,.34) 0%, rgba(11,12,10,.62) 44%, rgba(11,12,10,.93) 82%, var(--night) 100%),
+    url("https://images.unsplash.com/photo-1692520883599-d543cfe6d43d?auto=format&fit=crop&w=2560&h=1440&q=80"),
+    radial-gradient(120% 88% at 72% 16%, #1B2C21 0%, rgba(27,44,33,0) 62%),
+    radial-gradient(96% 82% at 10% 92%, rgba(38,59,46,.92) 0%, rgba(38,59,46,0) 58%);
+  background-size:cover,cover,cover,cover;
+  background-position:center,center 42%,center,center;
+  background-repeat:no-repeat;
+}
+.intro__inner{ position:relative; }
+.intro h1{
+  font-size:clamp(29px,7.2vw,56px);
+  font-weight:300;
+  line-height:1.34;
+  margin:18px 0 0;
+  max-width:16ch;
+  letter-spacing:-.01em;
+}
+.intro .lead{
+  margin:22px 0 0;
+  max-width:46ch;
+  color:var(--ivory-88);
+}
+.intro__rule{
+  margin-top:clamp(34px,6vw,56px);
+  width:1px; height:52px;
+  background:linear-gradient(180deg, var(--hair-strong), rgba(246,241,232,0));
+}
+
+/* ── 섹션 공통 ────────────────────────────── */
+.section{ padding:clamp(72px,11vw,124px) 0; }
+.section__head{ max-width:52ch; }
+.section h2{
+  font-size:clamp(25px,5.2vw,40px);
+  margin:14px 0 0;
+}
+.section__head .lead{ margin:16px 0 0; max-width:44ch; }
+
+/* ── 2. 함께하는 꽃집 ─────────────────────── */
+.shops{
+  list-style:none; margin:clamp(38px,6vw,60px) 0 0; padding:0;
+  display:grid; gap:clamp(26px,4vw,32px);
+  grid-template-columns:1fr;
+}
+.shop{
+  position:relative;
+  display:flex; flex-direction:column;
+  background:var(--panel);
+  border:1px solid var(--hair-soft);
+  border-radius:2px;
+  overflow:hidden;
+}
+.shop__media{
+  position:relative;
+  aspect-ratio:16/10;
+  background-color:var(--forest);
+  background-size:cover,cover,cover;
+  background-position:center;
+  background-repeat:no-repeat;
+  overflow:hidden;
+}
+.shop__media::after{
+  content:"";
+  position:absolute; inset:0;
+  background:linear-gradient(180deg, rgba(11,12,10,.08) 0%, rgba(11,12,10,.55) 100%);
+}
+/* 실사 악센트 — 전부 image-assets 승인 목록 (가게 정면 사진 아님, 보태니컬 컷) */
+.shop--a .shop__media{
+  background-image:
+    url("https://images.unsplash.com/photo-1599056481506-c4975215aff4?auto=format&fit=crop&w=1920&q=80"),
+    radial-gradient(110% 92% at 68% 22%, rgba(38,59,46,.95) 0%, rgba(38,59,46,0) 64%),
+    linear-gradient(160deg, #1B2C21 0%, #0B0C0A 100%);
+}
+.shop--b .shop__media{
+  background-image:
+    url("https://images.unsplash.com/photo-1776633578019-0d3af1940e5b?auto=format&fit=crop&w=1080&h=1350&q=80"),
+    radial-gradient(96% 88% at 44% 30%, rgba(246,241,232,.16) 0%, rgba(246,241,232,0) 60%),
+    linear-gradient(170deg, #1B2C21 0%, #0B0C0A 100%);
+  background-position:center 38%;
+}
+.shop--c .shop__media{
+  background-image:
+    url("https://images.unsplash.com/photo-1590791211964-cb77c1e61a3d?auto=format&fit=crop&w=1920&q=80"),
+    radial-gradient(104% 90% at 26% 26%, rgba(38,59,46,.9) 0%, rgba(38,59,46,0) 62%),
+    linear-gradient(150deg, #1B2C21 0%, #0B0C0A 100%);
+}
+.shop__body{
+  display:flex; flex-direction:column; flex:1 1 auto;
+  padding:26px 22px 20px;
+}
+.shop__place{
+  font-size:12px; font-weight:600; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--gold);
+}
+.shop h3{
+  font-size:25px; font-weight:400;
+  margin:12px 0 0;
+}
+.shop__desc{
+  font-size:15px; line-height:1.78; color:var(--ivory-72);
+  margin:12px 0 0;
+}
+.chips{
+  list-style:none; display:flex; flex-wrap:wrap; gap:8px;
+  margin:20px 0 0; padding:0;
+}
+.chips li{
+  font-size:13px; line-height:1.5;
+  padding:6px 12px;
+  border:1px solid rgba(246,241,232,.22);
+  border-radius:999px;
+  color:rgba(246,241,232,.78);
+  white-space:nowrap;
+}
+.shop__go{
+  margin-top:auto;
+  padding-top:22px;
+}
+.golink{
+  display:inline-flex; align-items:center; gap:10px;
+  padding:12px 2px; /* 상하 12 + 행높이 21 = 45px 터치 타깃 */
+  font-size:15px; line-height:1.4; font-weight:500;
+  color:var(--ivory);
+  text-decoration:none;
+  border-bottom:1px solid var(--hair-strong);
+  transition:color .3s ease, border-color .3s ease, gap .3s ease;
+}
+.golink svg{ flex:none; }
+.golink:hover{ color:var(--gold); border-color:var(--gold); gap:14px; }
+.note{
+  margin:clamp(26px,4vw,34px) 0 0;
+  font-size:14px; line-height:1.7;
+  color:var(--ivory-58);
+}
+
+/* ── 3. 자리 잡은 이야기 ──────────────────── */
+.story{ border-top:1px solid var(--hair-soft); background:linear-gradient(180deg, rgba(27,44,33,.34) 0%, rgba(11,12,10,0) 62%); }
+.cols{
+  display:grid; gap:clamp(40px,6vw,64px);
+  grid-template-columns:1fr;
+  margin-top:clamp(38px,6vw,60px);
+}
+.col h3{
+  font-size:22px; font-weight:400;
+  padding-bottom:18px;
+  border-bottom:1px solid var(--hair);
+}
+.rows{ list-style:none; margin:0; padding:0; }
+.rows li{
+  display:grid; grid-template-columns:34px 1fr; gap:0 14px;
+  padding:20px 0;
+  border-bottom:1px solid var(--hair-soft);
+}
+.rows .no{
+  font-family:var(--font-display);
+  font-size:15px; letter-spacing:.06em;
+  color:var(--gold);
+  padding-top:3px;
+}
+.rows b{
+  font-family:var(--font-serif);
+  font-size:17px; font-weight:400; line-height:1.5;
+  display:block;
+}
+.rows p{
+  margin:8px 0 0;
+  font-size:15px; line-height:1.76; color:var(--ivory-72);
+}
+
+/* 입점 문의 패널 — image-assets #14 (Jens Riesenberg / Unsplash) + 강한 스크림 */
+.join{
+  position:relative;
+  padding:clamp(28px,5vw,38px) clamp(22px,4vw,32px) clamp(30px,5vw,38px);
+  border:1px solid var(--hair-soft);
+  border-radius:2px;
+  overflow:hidden;
+  isolation:isolate;
+}
+.join__bg{
+  position:absolute; inset:0; z-index:-1;
+  background-color:var(--panel);
+  background-image:
+    linear-gradient(180deg, rgba(11,12,10,.86) 0%, rgba(11,12,10,.93) 100%),
+    url("https://images.unsplash.com/photo-1690553543873-ccaf9e2a9d5b?auto=format&fit=crop&w=1920&q=80"),
+    linear-gradient(200deg, #1B2C21 0%, #0B0C0A 100%);
+  background-size:cover,cover,cover;
+  background-position:center;
+  background-repeat:no-repeat;
+}
+.join h3{ border-bottom:0; padding-bottom:0; }
+.join .lead{ margin:14px 0 0; font-size:15px; }
+.join .rows{ margin-top:20px; }
+.join .rows li:last-child{ border-bottom:0; }
+.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:10px;
+  min-height:52px; padding:14px 30px;
+  margin-top:26px;
+  background:var(--ivory); color:var(--ink);
+  font-family:var(--font-sans); font-size:15px; font-weight:600;
+  text-decoration:none;
+  border:1px solid var(--ivory);
+  border-radius:2px;
+  transition:background-color .3s ease, color .3s ease, border-color .3s ease;
+}
+.btn:hover{ background:transparent; color:var(--ivory); border-color:var(--ivory); }
+.join__after{
+  margin:16px 0 0;
+  font-size:14px; line-height:1.7; color:var(--ivory-58);
+}
+
+/* ── 4. 푸터 ──────────────────────────────── */
+.site-foot{
+  border-top:1px solid var(--hair);
+  padding:clamp(48px,7vw,72px) 0 clamp(44px,6vw,60px);
+  background:var(--night);
+}
+.foot__top{ display:flex; flex-direction:column; gap:18px; }
+.foot__logo{
+  font-family:var(--font-display); font-style:italic;
+  font-size:21px; color:var(--ivory);
+  text-decoration:none;
+  align-self:flex-start;
+  min-height:44px; display:inline-flex; align-items:center;
+  transition:color .3s ease;
+}
+.foot__logo:hover{ color:var(--gold); }
+.foot__say{
+  font-family:var(--font-serif); font-weight:300;
+  font-size:17px; line-height:1.8;
+  color:var(--ivory-88);
+  max-width:40ch; margin:0;
+}
+.foot__nav{
+  list-style:none; display:flex; flex-wrap:wrap; gap:6px 26px;
+  margin:30px 0 0; padding:0;
+}
+.foot__nav a{
+  display:inline-flex; align-items:center; min-height:44px;
+  font-size:14px; color:var(--ivory-72); text-decoration:none;
+  border-bottom:1px solid transparent;
+  transition:color .3s ease, border-color .3s ease;
+}
+.foot__nav a:hover{ color:var(--ivory); border-color:var(--hair-strong); }
+.foot__notes{
+  margin:26px 0 0; padding:22px 0 0;
+  border-top:1px solid var(--hair-soft);
+  display:flex; flex-direction:column; gap:8px;
+}
+.foot__notes p{ margin:0; font-size:14px; line-height:1.7; color:var(--ivory-58); }
+.credits{
+  margin:22px 0 0;
+  font-size:14px; line-height:1.8; color:var(--ivory-58);
+}
+.credits .eyebrow{ display:block; margin-bottom:6px; }
+
+/* ── 진입 페이드 (§2-A 모션 규칙: 페이드 인만) ── */
+[data-reveal]{
+  opacity:0;
+  transform:translateY(14px);
+  transition:opacity .8s ease, transform .8s ease;
+}
+[data-reveal].is-in{ opacity:1; transform:none; }
+
+/* ── 반응형 ───────────────────────────────── */
+@media (min-width:640px){
+  :root{ --pad:32px; }
+  .rows li{ grid-template-columns:40px 1fr; }
+}
+@media (min-width:900px){
+  .shops{ grid-template-columns:repeat(3,1fr); }
+  .shop__media{ aspect-ratio:4/3; }
+  .cols{ grid-template-columns:1.02fr .98fr; align-items:start; }
+  .foot__top{ flex-direction:row; align-items:flex-start; justify-content:space-between; gap:48px; }
+  .foot__say{ text-align:right; }
+}
+@media (min-width:1100px){
+  :root{ --pad:48px; }
+  .intro{ min-height:88svh; }
+}
+
+/* 모션 무효화 (§1.2 필수 블록) */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{
+    animation-duration:0.01ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:0.01ms !important;
+    scroll-behavior:auto !important;
+  }
+  [data-reveal]{ opacity:1; transform:none; }
+}
+</style>
+</head>
+
+<body>
+<div class="grain" aria-hidden="true"></div>
+
+<!-- ── 1. 인트로 — 브랜드 소개 ───────────────────────────────── -->
+<section class="intro">
+  <div class="intro__bg" aria-hidden="true"></div>
+
+  <header class="site-head">
+    <div class="wrap site-head__row">
+      <a class="logo" href="home.html">dearbloom</a>
+      <span class="eyebrow">Partners &amp; Story</span>
+    </div>
+  </header>
+
+  <div class="wrap intro__inner">
+    <span class="eyebrow eyebrow--quiet">Brand note</span>
+    <h1>꽃은 결국, 동네 꽃집에서 옵니다.</h1>
+    <p class="lead">
+      dearbloom은 어떤 마음에 어떤 꽃이 어울리는지, 그 꽃이 어떤 이야기를 품고 있는지를 골라 들려드려요.
+      꽃을 다듬고 물을 갈아주는 손은 언제나 동네에 있고요.
+      그래서 마지막 한 걸음은 가까운 꽃집으로 이어드립니다.
+    </p>
+    <div class="intro__rule" aria-hidden="true"></div>
+  </div>
+</section>
+
+<!-- ── 2. 함께하는 꽃집 ──────────────────────────────────────── -->
+<section class="section" id="florists" aria-labelledby="florists-title">
+  <div class="wrap">
+    <div class="section__head">
+      <span class="eyebrow">Partner florists</span>
+      <h2 id="florists-title">함께하는 꽃집</h2>
+      <p class="lead">추천이 끝나는 자리에서, 꽃을 다듬는 손으로 이어드려요. 가까운 곳부터 차례로 소개할게요.</p>
+    </div>
+
+    <ul class="shops">
+      <!-- 실서비스: 아래 3개 카드는 파트너 데이터로 렌더. 링크는 /go/[partner] 아웃링크(클릭 측정 후 리다이렉트) -->
+      <li class="shop shop--a" data-reveal>
+        <div class="shop__media" role="img" aria-label="어둠 속 초록 잎사귀 사진"></div>
+        <div class="shop__body">
+          <span class="shop__place">서울 서촌</span>
+          <h3>밤의 온실</h3>
+          <p class="shop__desc">해가 진 뒤에도 작은 불을 켜 두는, 온실 같은 가게예요.</p>
+          <ul class="chips">
+            <li>흰 튤립</li><li>프리지아</li><li>유칼립투스</li>
+          </ul>
+          <p class="shop__go">
+            <!-- 실서비스: href="/go/bam-onsil" (rel="sponsored nofollow", 클릭 측정 후 파트너 사이트로) -->
+            <a class="golink" href="#">주문하러 가기
+              <svg width="18" height="10" viewBox="0 0 18 10" fill="none" aria-hidden="true">
+                <path d="M0 5h16M12 1l4 4-4 4" stroke="currentColor" stroke-width="1.2"/>
+              </svg>
+            </a>
+          </p>
+        </div>
+      </li>
+
+      <li class="shop shop--b" data-reveal>
+        <div class="shop__media" role="img" aria-label="어둠 속에 홀로 핀 흰 튤립 사진"></div>
+        <div class="shop__body">
+          <span class="shop__place">부산 전포</span>
+          <h3>튤립과 편지</h3>
+          <p class="shop__desc">꽃을 고르면 편지지 한 장을 함께 넣어 보내드리는 곳이에요.</p>
+          <ul class="chips">
+            <li>흰 튤립</li><li>리시안셔스</li><li>스토크</li>
+          </ul>
+          <p class="shop__go">
+            <!-- 실서비스: href="/go/tulip-letter" (rel="sponsored nofollow", 클릭 측정 후 파트너 사이트로) -->
+            <a class="golink" href="#">주문하러 가기
+              <svg width="18" height="10" viewBox="0 0 18 10" fill="none" aria-hidden="true">
+                <path d="M0 5h16M12 1l4 4-4 4" stroke="currentColor" stroke-width="1.2"/>
+              </svg>
+            </a>
+          </p>
+        </div>
+      </li>
+
+      <li class="shop shop--c" data-reveal>
+        <div class="shop__media" role="img" aria-label="어두운 배경의 흰 꽃과 초록 잎 사진"></div>
+        <div class="shop__body">
+          <span class="shop__place">대전 소제동</span>
+          <h3>초저녁 식물상회</h3>
+          <p class="shop__desc">화병에 꽂을 한 송이부터 한 다발까지, 조용한 꽃만 모아둡니다.</p>
+          <ul class="chips">
+            <li>아네모네</li><li>헬레보어</li><li>유칼립투스</li>
+          </ul>
+          <p class="shop__go">
+            <!-- 실서비스: href="/go/chojeonyeok" (rel="sponsored nofollow", 클릭 측정 후 파트너 사이트로) -->
+            <a class="golink" href="#">주문하러 가기
+              <svg width="18" height="10" viewBox="0 0 18 10" fill="none" aria-hidden="true">
+                <path d="M0 5h16M12 1l4 4-4 4" stroke="currentColor" stroke-width="1.2"/>
+              </svg>
+            </a>
+          </p>
+        </div>
+      </li>
+    </ul>
+
+    <p class="note">구매 링크는 제휴 링크로 연결돼요.</p>
+  </div>
+</section>
+
+<!-- ── 3. 자리 잡은 이야기 ───────────────────────────────────── -->
+<section class="section story" id="story" aria-labelledby="story-title">
+  <div class="wrap">
+    <div class="section__head">
+      <span class="eyebrow">Our story</span>
+      <h2 id="story-title">자리 잡은 이야기</h2>
+      <p class="lead">우리가 맡은 몫과, 꽃집이 맡은 몫. 이 자리는 앞으로 더 채워질 예정이에요.</p>
+    </div>
+
+    <div class="cols">
+      <!-- 좌: 우리가 하는 일 -->
+      <div class="col" data-reveal>
+        <h3>우리가 하는 일</h3>
+        <ul class="rows">
+          <li>
+            <span class="no" aria-hidden="true">01</span>
+            <div>
+              <b>어울리는 꽃을 골라드려요</b>
+              <p>관계와 상황을 들려주시면, 그 자리에 맞는 꽃과 건넬 첫 문장을 함께 준비해 드려요.</p>
+            </div>
+          </li>
+          <li>
+            <span class="no" aria-hidden="true">02</span>
+            <div>
+              <b>이야기가 있는 꽃말</b>
+              <p>같은 꽃도 시대와 나라마다 다른 이야기를 품어요. 그 갈래까지 들려드려요.</p>
+            </div>
+          </li>
+          <li>
+            <span class="no" aria-hidden="true">03</span>
+            <div>
+              <b>반려동물 안전 확인</b>
+              <p>고양이·강아지에게 위험한 꽃은 미리 걸러드려요.</p>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <!-- 우: 입점 문의 -->
+      <div class="col join" data-reveal>
+        <div class="join__bg" aria-hidden="true"></div>
+        <h3>함께하고 싶은 꽃집이라면</h3>
+        <p class="lead">가게 이름과 자주 다루는 꽃, 그리고 한 줄만 들려주세요. 나머지는 함께 맞춰가요.</p>
+        <ul class="rows">
+          <li>
+            <span class="no" aria-hidden="true">01</span>
+            <div>
+              <b>소개되는 자리</b>
+              <p>가게 이름과 지역, 자주 다루는 꽃을 이 페이지에 소개해요.</p>
+            </div>
+          </li>
+          <li>
+            <span class="no" aria-hidden="true">02</span>
+            <div>
+              <b>이어지는 길</b>
+              <p>추천이 끝난 자리에서 손님이 바로 가게로 찾아갈 수 있게 연결해요.</p>
+            </div>
+          </li>
+          <li>
+            <span class="no" aria-hidden="true">03</span>
+            <div>
+              <b>함께 맞춰가는 것</b>
+              <p>소개되는 방식과 조건은 이야기 나누며 정해요.</p>
+            </div>
+          </li>
+        </ul>
+        <!-- 실서비스: 입점 문의 폼(/partners/apply)으로 교체 예정. 지금은 mailto 더미 -->
+        <a class="btn" href="mailto:hello@dearbloom.example?subject=%ED%95%A8%EA%BB%98%ED%95%98%EB%8A%94%20%EA%BD%83%EC%A7%91%20%EB%AC%B8%EC%9D%98">함께하기</a>
+        <p class="join__after">받은 이야기는 순서대로 읽고, 한 곳씩 찾아뵐게요.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── 4. 푸터 ───────────────────────────────────────────────── -->
+<footer class="site-foot">
+  <div class="wrap">
+    <div class="foot__top">
+      <a class="foot__logo" href="home.html">dearbloom</a>
+      <p class="foot__say">꽃말은 시대와 나라를 건너며 조금씩 다른 이야기가 돼요. dearbloom은 그 갈래를 함께 들려드려요.</p>
+    </div>
+
+    <ul class="foot__nav">
+      <li><a href="home.html">홈으로</a></li>
+      <li><a href="#">꽃말 도감</a></li>
+      <li><a href="#">화해의 꽃</a></li>
+      <li><a href="#">팀 부케(준비 중)</a></li>
+    </ul>
+
+    <div class="foot__notes">
+      <p>소개된 꽃집은 예시입니다.</p>
+      <p>구매 링크는 제휴 링크로 연결돼요.</p>
+    </div>
+
+    <p class="credits">
+      <span class="eyebrow eyebrow--quiet">Image credits</span>
+      Photo: Spruce / Unsplash · Waseem Khan / Unsplash · Bernd Dittrich / Unsplash · Christina / Unsplash · Jens Riesenberg / Unsplash
+    </p>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var els = document.querySelectorAll('[data-reveal]');
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var show = function (el) { el.classList.add('is-in'); };
+  if (reduce || !('IntersectionObserver' in window)) {
+    Array.prototype.forEach.call(els, show);
+    return;
+  }
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (!e.isIntersecting) return;
+      show(e.target);
+      io.unobserve(e.target);
+    });
+  }, { rootMargin: '0px 0px -8% 0px', threshold: 0.06 });
+  Array.prototype.forEach.call(els, function (el, i) {
+    el.style.transitionDelay = (i % 3) * 90 + 'ms';
+    io.observe(el);
+  });
+})();
+</script>
+</body>
+</html>

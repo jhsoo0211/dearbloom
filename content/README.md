@@ -7,18 +7,20 @@ DB는 이 CSV에서 시드(upsert)될 뿐, 반대로 DB를 직접 고치지 않�
 
 | 파일 | 내용 | 현재 행 수 |
 |---|---|---|
-| `flowers.csv` | 꽃 기본 정보 | 9 |
-| `meanings.csv` | 꽃말(출처 필수) | 59 |
-| `stories.csv` | 꽃에 얽힌 일화(창작 외 출처 필수) | 61 |
-| `rules.csv` | 상황 → 꽃 추천/회피 규칙 | 6 |
+| `flowers.csv` | 꽃 기본 정보 | 17 |
+| `meanings.csv` | 꽃말(출처 필수) | 86 |
+| `stories.csv` | 꽃에 얽힌 일화(창작 외 출처 필수) | 89 |
+| `rules.csv` | 상황 → 꽃 추천/회피 규칙 | 7 |
 | `templates.csv` | 메시지 템플릿 | 3 |
 | `quotes.csv` | 인용문 | 3 |
-| `pet_safety.csv` | 반려동물 안전성(꽃 × cat/dog 전수) | 18 |
+| `pet_safety.csv` | 반려동물 안전성(꽃 × cat/dog 전수) | 34 |
 
 `rules.csv` 는 5종(`rose-red` `tulip-white` `freesia` `lily-asiatic` `gerbera`)만 다룬다.
-2026-08-14에 들어온 4종(`anemone` `hellebore` `hyacinth` `peony`)은 **이야기·도감용으로 먼저
-존재**하며, 추천 규칙은 편집 판단이 끝난 뒤에 붙인다. 규칙이 없는 꽃은 추천 결과에 오르지
-않을 뿐 교차 검증에는 걸리지 않는다(반려동물 판정만 전수로 필요하다).
+2026-08-14에 들어온 4종(`anemone` `hellebore` `hyacinth` `peony`)과 2026-08-15에 들어온 8종
+(`hydrangea` `lavender` `sunflower` `carnation` `lisianthus` `ranunculus` `lily-of-the-valley`
+`chrysanthemum`)은 **이야기·도감용으로 먼저 존재**하며, 추천 규칙은 편집 판단이 끝난 뒤에 붙인다.
+규칙이 없는 꽃은 추천 결과에 오르지 않을 뿐 교차 검증에는 걸리지 않는다(반려동물 판정만 전수로
+필요하다).
 
 ## 편집 규칙
 
@@ -33,8 +35,13 @@ DB는 이 CSV에서 시드(upsert)될 뿐, 반대로 DB를 직접 고치지 않�
   `meanings.editorial_note`, `stories.editorial_note`, `rules.note` 에 `seed-sample:` 접두사를 붙인다.
   `templates.csv` / `quotes.csv` / `pet_safety.csv` 에는 메모 컬럼이 없으므로,
   **현재 저장된 전 행이 샘플**이라는 사실을 이 문서로 대신 기록한다.
-- **실자료 조사로 들어온 행은 `seed-v2:` 접두사를 쓴다.** 현재 `meanings.csv` 의 뒤쪽 39행이
-  여기 해당한다(2026-08-15 조사). 접두사로 "검토 전 샘플"과 "출처를 직접 열어 본 행"을 구분한다.
+- **실자료 조사로 들어온 행은 조사 회차별 접두사를 쓴다.** 접두사로 "검토 전 샘플"과 "출처를 직접
+  열어 본 행"을 구분하고, 어느 조사에서 들어온 행인지도 함께 남긴다.
+  - `seed-v2:` — `meanings.csv` 39행 (2026-08-15 꽃말 조사, `docs/meanings-research.md`)
+  - `seed-v3:` — 신규 꽃 8종 확장 (2026-08-15, `docs/catalog-expansion-research.md`).
+    `flowers.csv` 8행 + 색상 정합으로 갱신한 `rose-red`·`tulip-white` 2행,
+    `meanings.csv` 27행, `stories.csv` 28행이 여기 해당한다.
+    (`pet_safety.csv` 는 메모 컬럼이 없어 16행이 접두사 없이 들어가 있다.)
 
 ## 절대 하지 말 것
 
@@ -64,11 +71,15 @@ npm run seed:apply    # 실제 upsert (Supabase 환경변수 필요)
   이라는 뜻이다(문화권 해석·유래 등). 자리표시자를 넣지 않는다.
 - `flowers.colors` 에 없는 색의 꽃말도 실을 수 있다(자료가 먼저 앞서갈 수 있다).
   다만 색 선택 UI 는 `flowers.colors` 를 기준으로 그리므로, 그런 행은 `editorial_note` 에
-  그 사실을 남긴다. 현재 `tulip-white` 의 `red`·`yellow`·`variegated`, `rose-red` 의 `yellow` 가 여기 해당한다.
+  그 사실을 남긴다. **2026-08-15 (seed-v3) 에 어긋난 행 4건을 해소했다** — `tulip-white` 의
+  `colors` 에 `cream|yellow|red|variegated|pink|purple` 을, `rose-red` 에 `yellow|white` 를 더했다.
+  현재 어긋나는 행은 없다.
 - **출처가 확실치 않은 공공 자료는 단어만 참조하고 문장은 직접 쓴다.** 국립원예특작과학원
   꽃말사전 유래 행은 `source_id` 를 `nihhs-*` 로 통일해 두었다(공공누리 유형 미확정 —
   근거와 판단은 `docs/meanings-research.md` §2).
-- 조사 경위·열람 URL·제외 판단은 **`docs/meanings-research.md`** 가 단일 원본이다.
+- 조사 경위·열람 URL·제외 판단의 단일 원본은 회차별로 나뉜다:
+  **`docs/meanings-research.md`**(seed-v2, 기존 9종) ·
+  **`docs/catalog-expansion-research.md`**(seed-v3, 신규 8종 + 색상 정합 + 독성 등급 근거).
 
 ### `stories.csv` — 꽃에 얽힌 일화
 
@@ -81,6 +92,8 @@ npm run seed:apply    # 실제 upsert (Supabase 환경변수 필요)
 밝히고 `editorial_note` 에도 남긴다. `culture_region` 은 `turkey`, `netherlands`, `korea`,
 `uk`, `western`, `greece-rome` 처럼 소문자 slug 로 적고, `flower_id` 는 반드시
 `flowers.csv` 의 `id` 중 하나여야 한다(교차 검증이 막는다).
+조사 경위·열람 URL·제외 판단은 **`docs/story-research.md`**(기존 9종)와
+**`docs/catalog-expansion-research.md`**(seed-v3, 신규 8종 + 농사로 작약 설화 2편)에 남긴다.
 
 #### `story_type` — 이야기의 갈래, 그리고 출처 면제
 
@@ -163,5 +176,7 @@ design-spec §1.5f. 네 값만 쓴다.
 어휘를 벗어나면 그 꽃은 페르소나 점수를 영영 못 받는다. 한국어 라벨 ↔ slug 대응은
 `src/lib/engine/normalize.ts` 의 `TRAIT_LABELS` 가 단일 원본이다.
 
-`flower_id` 는 `flowers.csv` 의 `id` 를 그대로 참조한다. 현재 9종: `rose-red`, `tulip-white`,
-`freesia`, `lily-asiatic`, `gerbera`, `anemone`, `hellebore`, `hyacinth`, `peony`.
+`flower_id` 는 `flowers.csv` 의 `id` 를 그대로 참조한다. 현재 17종: `rose-red`, `tulip-white`,
+`freesia`, `lily-asiatic`, `gerbera`, `anemone`, `hellebore`, `hyacinth`, `peony`,
+`hydrangea`, `lavender`, `sunflower`, `carnation`, `lisianthus`, `ranunculus`,
+`lily-of-the-valley`, `chrysanthemum`.

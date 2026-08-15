@@ -397,13 +397,14 @@ export default function LandingPage({ data }: { data: LandingData }) {
                 <p className="db-overline" data-db-reveal>
                   No.&nbsp;01 <span className="db-ko">오늘의 꽃</span>
                 </p>
+                {/* §1.5d — 스펙 언어(카드 안만 바뀌고…) 금지. 테마 이름도 여기서는 부르지 않는다
+                    (카드가 이미 말해 준다). 리드는 세 문장 리듬: 오늘의 꽃 → 화면 분위기 → 넘기기 안내. */}
                 <h2 className="db-today-title" id="db-today-title" data-db-split>
-                  오늘 아카이브가 꺼내 온 한 송이, 그리고 나머지 이야기들.
+                  오늘 꺼내 온 한 송이, 그리고 이어지는 이야기들
                 </h2>
                 <p className="db-today-lede" data-db-reveal>
-                  {data.todayLabel} 오늘의 꽃은 {withParticle(today.name, 'copula')}. 화면의 색도 이
-                  꽃을 따라 {data.categoryLabel} 쪽으로 맞춰 두었어요. 옆으로 밀면 다른 꽃의 이야기가
-                  이어집니다 — 카드 안만 바뀌고, 화면 전체는 그대로예요.
+                  {data.todayLabel}, 오늘의 꽃은 {withParticle(today.name, 'copula')}. 화면의 빛깔도
+                  이 꽃의 분위기를 닮아 있어요. 카드를 옆으로 넘기면 다른 꽃들의 이야기가 이어져요.
                 </p>
               </div>
 

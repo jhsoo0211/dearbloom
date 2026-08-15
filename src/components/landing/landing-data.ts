@@ -40,7 +40,18 @@ export const CATEGORY_THEMES: Record<ThemeCategory, CategoryTheme> = {
   dusk: { category: 'dusk', slug: 'hellebore', label: '딥 라벤더', scheme: 'dark' },
 };
 
-/** 명시 배정 1순위 (§1.4c v3.2 "현 9종 배정"). */
+/**
+ * 명시 배정 1순위 (§1.4c v3.2 "현 9종 배정" + seed-v4 신규 14종).
+ *
+ * 배정 기준은 폴백과 같다 — **대표색(`colors[0]`)**. 폴백에 맡겨도 같은 값이 나오는 꽃까지
+ * 여기 적어 두는 이유는, 흰색 계열 세 종(`jasmine` `babys-breath` `magnolia`)을 폴백의
+ * `forest` 가 아니라 `ivory` 로 **일부러 옮겼기** 때문이다. `ivory` 는 유일한 라이트 테마인데
+ * 배정이 2종뿐이라 오늘의 꽃 로테이션에서 사실상 안 나왔다(조사 문서 §5). 크림·화이트가
+ * 그대로 어울리는 세 꽃을 옮겨 2 → 5 로 채운다.
+ *
+ * 분홍(`cherry-blossom` `cosmos`)은 폴백 표의 `pink → wine` 과 같은 값이지만, 기존 17종에
+ * 대표색이 분홍인 꽃이 없어 처음 쓰이는 경로라 여기 명시해 둔다.
+ */
 const CATEGORY_BY_FLOWER: Record<string, ThemeCategory> = {
   'tulip-white': 'forest',
   'lily-asiatic': 'ivory',
@@ -51,6 +62,24 @@ const CATEGORY_BY_FLOWER: Record<string, ThemeCategory> = {
   anemone: 'wine',
   hellebore: 'dusk',
   hyacinth: 'dusk',
+  // seed-v4 — 노랑·주황 대표색
+  narcissus: 'gold',
+  marigold: 'gold',
+  // seed-v4 — 파랑·보라 대표색
+  'forget-me-not': 'dusk',
+  iris: 'dusk',
+  violet: 'dusk',
+  pansy: 'dusk',
+  // seed-v4 — 빨강·분홍 대표색
+  camellia: 'wine',
+  'corn-poppy': 'wine',
+  poinsettia: 'wine',
+  'cherry-blossom': 'wine',
+  cosmos: 'wine',
+  // seed-v4 — 흰색 대표색. 폴백(forest) 대신 ivory 로 옮긴 세 종
+  jasmine: 'ivory',
+  'babys-breath': 'ivory',
+  magnolia: 'ivory',
 };
 
 /** 미배정 신규 꽃의 폴백 — 대표색(colors[0]) 규칙. */

@@ -243,6 +243,9 @@ export function toxicPartLabel(part: string): string {
 const REGION_PHRASES: Record<string, string> = {
   'near-east': '근동',
   'south-africa': '남아프리카',
+  'north-america': '북아메리카',
+  'southeast-asia': '동남아시아',
+  'central-asia': '중앙아시아',
 };
 
 const REGION_WORDS: Record<string, string> = {
@@ -257,21 +260,37 @@ const REGION_WORDS: Record<string, string> = {
   netherlands: '네덜란드',
   france: '프랑스',
   uk: '영국',
+  england: '잉글랜드',
+  italy: '이탈리아',
+  belgium: '벨기에',
   germany: '독일',
   russia: '러시아',
   usa: '미국',
+  canada: '캐나다',
+  americas: '아메리카',
+  mexico: '멕시코',
   bermuda: '버뮤다',
   ukraine: '우크라이나',
   portugal: '포르투갈',
   egypt: '이집트',
   israel: '이스라엘',
+  armenia: '아르메니아',
   iran: '이란',
   persia: '페르시아',
   bulgaria: '불가리아',
   africa: '아프리카',
   china: '중국',
+  taiwan: '대만',
   japan: '일본',
   korea: '한국',
+  india: '인도',
+  philippines: '필리핀',
+  indonesia: '인도네시아',
+  // 나라가 아닌 값도 데이터에 들어온다 — 꽃말이 어디서 온 말인지를 가리키는 자리다.
+  commonwealth: '영연방',
+  aztec: '아스텍',
+  victorian: '빅토리아 영국',
+  etymology: '어원',
 };
 
 /** 자리표 접두사 — slug 에는 나올 수 없는 글자를 쓴다. */
@@ -320,6 +339,7 @@ const ERA_WORDS: Record<string, string> = {
   medieval: '중세',
   victorian: '빅토리아 시대',
   ottoman: '오스만 시대',
+  edo: '에도 시대',
   traditional: '전통 시대',
   modern: '오늘날',
   tang: '당나라',

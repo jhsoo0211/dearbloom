@@ -11,10 +11,18 @@
  * 접근성 네 가지는 직접 챙긴다: `aria-modal`, 포커스 트랩(Tab 순환), ESC·배경 탭 닫기,
  * body 스크롤 잠금. 등장 모션은 CSS 애니메이션이라 `prefers-reduced-motion` 전역
  * 규칙(globals.css)이 알아서 0 으로 만든다.
+ *
+ * ── 본문 우선 (§1.5i 2026-08-15 사용자 16차) ──────────────────────────
+ * 열자마자 보이는 첫 화면이 **이야기**여야 한다. 예전에는 본문 뒤에 꼬리표 칩이 두 줄로
+ * 붙어 있었고 문화권·시대가 갈래·신뢰와 같은 무게였는데, 그러면 짧은 이야기에서는
+ * 분류표가 화면의 절반을 차지한다. 지금은 본문이 끝난 뒤 헤어라인 하나를 긋고
+ * **각주 블록**(작은 한 줄 + 출처)으로 접는다 — 찾으면 있고, 먼저 읽히지는 않는다.
+ * ⚠ 메타를 본문 위로 다시 올리지 마라.
  */
 
 import { useEffect, useRef, type KeyboardEvent } from 'react';
 
+import { metaNotes } from './meta';
 import styles from './stories.module.css';
 import type { ArchiveStory } from './types';
 
@@ -24,7 +32,8 @@ function IconClose() {
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.8"
+      /* §1.6b 아이콘 버튼 — 스트로크 1.6(레인 화살표와 같은 굵기) */
+      strokeWidth="1.6"
       strokeLinecap="round"
       aria-hidden="true"
     >
@@ -96,8 +105,8 @@ export default function StorySheet({
     }
   }
 
-  /** 문화권·시대는 한 칸에 묶는다 — 둘 다 없으면 칸 자체를 세우지 않는다. */
-  const place = [story.regionLabel, story.eraLabel].filter((part) => Boolean(part)).join(' · ');
+  /** 본문 **아래** 각주 줄 — 문화권 · 시대 · 갈래 · 신뢰(§1.5i 16차). 카드와 같은 순서다. */
+  const notes = metaNotes(story);
 
   return (
     <div className={styles.sheetRoot}>
@@ -129,50 +138,58 @@ export default function StorySheet({
         </div>
 
         <div className={styles.sheetBody} ref={bodyRef}>
-          <p className={styles.sheetFlower}>{story.flowerNameKo}</p>
+          {/*
+            §1.5i 상세 순서(2026-08-15 사용자 16차):
+              꽃 이름·결 칩 → 제목 → hook(티저) → 전문 → **각주 블록**(문화권·시대·갈래·신뢰
+              → "이야기의 갈래 —" 출처)
+            열자마자 눈에 오는 것이 이야기여야 한다 — 메타를 본문 위로 올리지 마라.
+          */}
+          <div className={styles.sheetTop}>
+            <p className={styles.sheetFlower}>{story.flowerNameKo}</p>
+            {story.moodLabels.map((label) => (
+              <span className={`${styles.tag} ${styles.tagMood}`} key={label}>
+                {label}
+              </span>
+            ))}
+          </div>
+
           <h2 className={styles.sheetTitle} id="story-sheet-title" tabIndex={-1} ref={titleRef}>
             {story.title}
           </h2>
 
-          {/* §1.5i 상세 순서: hook(티저) → 전문 → 문화권·시대 → 갈래 라벨 → 출처 각주 */}
           {story.hook ? <p className={styles.sheetHook}>{story.hook}</p> : null}
-          <p className={styles.sheetText}>{story.body}</p>
-
-          <p className={styles.sheetTags}>
-            {place ? <span className={styles.tag}>{place}</span> : null}
-            <span className={story.isOriginal ? `${styles.tag} ${styles.tagOriginal}` : styles.tag}>
-              {story.typeLabel}
-            </span>
-            <span className={styles.tag}>{story.confidenceLabel}</span>
+          <p className={styles.sheetText} data-testid="sheet-text">
+            {story.body}
           </p>
 
-          {story.moodLabels.length > 0 ? (
-            <p className={styles.sheetTags}>
-              {story.moodLabels.map((label) => (
-                <span className={`${styles.tag} ${styles.tagMood}`} key={label}>
-                  {label}
+          <div className={styles.sheetNote} data-testid="sheet-note">
+            <p className={styles.noteLine}>
+              {notes.map((note, index) => (
+                <span key={note.key}>
+                  {index > 0 ? <span aria-hidden="true"> · </span> : null}
+                  <span className={note.accent ? styles.noteOn : undefined}>{note.text}</span>
                 </span>
               ))}
             </p>
-          ) : null}
 
-          {story.sourceTitle ? (
-            <p className={styles.sourceNote}>
-              이야기의 갈래 —{' '}
-              {story.sourceUrl ? (
-                <a
-                  className={styles.sourceLink}
-                  href={story.sourceUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {story.sourceTitle}
-                </a>
-              ) : (
-                story.sourceTitle
-              )}
-            </p>
-          ) : null}
+            {story.sourceTitle ? (
+              <p className={styles.sourceNote}>
+                이야기의 갈래 —{' '}
+                {story.sourceUrl ? (
+                  <a
+                    className={styles.sourceLink}
+                    href={story.sourceUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {story.sourceTitle}
+                  </a>
+                ) : (
+                  story.sourceTitle
+                )}
+              </p>
+            ) : null}
+          </div>
         </div>
 
         <div className={styles.sheetNav}>

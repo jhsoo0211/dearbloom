@@ -37,6 +37,16 @@
  *      ⚠ 접힌 이야기도 **상세 시트의 이전/다음으로는 전부 넘겨볼 수 있다** — 순환 목록은
  *        부모가 전체로 들고 있다. 여기서 자르는 것은 "한눈에 보이는 카드" 뿐이다.
  *
+ * ── 카드 한 장의 위계 (§1.5i 2026-08-15 사용자 16차) ──────────────────
+ * 위에서 아래로 **꽃 이름·결 칩 → 제목 → hook → 각주 줄 → "이야기 펼쳐 보기"**.
+ *
+ * 예전에는 "케냐 · 현대" 같은 문화권·시대 꼬리표가 제목과 같은 무게의 칩으로 붙어 있었다.
+ * 그러면 이야기를 읽으러 온 사람이 분류표부터 읽게 된다 — 아카이브의 값은 분류가 아니라
+ * 이야기 자체다. 그래서 지역·시대·갈래·신뢰는 전부 **본문 아래 작은 한 줄**(`.cardNote`)로
+ * 내려보내고, 상단에는 꽃 이름과 결 칩만 남겼다(그 둘은 "무엇을 고르는 중인가" 라
+ * 위계상 이야기보다 앞이어도 된다 — 스펙이 상단에 허용한 것도 그 둘뿐이다).
+ * ⚠ 카드 상단에 지역·시대 칩을 다시 세우지 마라.
+ *
  * reduced-motion 이면 JS 스크롤도 즉시 이동한다(CSS 의 scroll-behavior 만으로는
  * `scrollTo({behavior:'smooth'})` 를 막지 못한다). 카드 등장 애니메이션은 CSS 라
  * globals.css 의 전역 규칙이 0 으로 만든다 — 지연 렌더 자체는 그대로 남는다.
@@ -52,6 +62,7 @@ import {
   type PointerEvent,
 } from 'react';
 
+import { metaNotes } from './meta';
 import styles from './stories.module.css';
 import type { ArchiveLane, ArchiveStory } from './types';
 
@@ -403,9 +414,7 @@ export default function StoryLane({ lane, stories, jumped, onOpen, onMount }: St
 
         {live
           ? shown.map((story) => {
-              const place = [story.regionLabel, story.eraLabel]
-                .filter((part) => Boolean(part))
-                .join(' · ');
+              const notes = metaNotes(story);
               return (
                 <li className={styles.slide} key={story.id}>
                   <button
@@ -414,29 +423,30 @@ export default function StoryLane({ lane, stories, jumped, onOpen, onMount }: St
                     data-testid="story-card"
                     onClick={() => onOpen(story.id)}
                   >
-                    <span className={styles.cardFlower}>{story.flowerNameKo}</span>
+                    {/* 상단은 꽃 이름 + 결 칩까지만 — 지역·시대 칩 금지(§1.5i 16차). */}
+                    <span className={styles.cardTop}>
+                      <span className={styles.cardFlower}>{story.flowerNameKo}</span>
+                      {story.moodLabels.map((label) => (
+                        <span className={`${styles.tag} ${styles.tagMood}`} key={label}>
+                          {label}
+                        </span>
+                      ))}
+                    </span>
+
+                    {/* 카드의 주인공 — 제목과 hook 이 시각적 중심이다. */}
                     <span className={styles.cardTitle}>{story.title}</span>
                     {story.hook ? <span className={styles.cardHook}>{story.hook}</span> : null}
 
-                    {story.moodLabels.length > 0 ? (
-                      <span className={styles.cardMoods}>
-                        {story.moodLabels.map((label) => (
-                          <span className={`${styles.tag} ${styles.tagMood}`} key={label}>
-                            {label}
+                    {/* 각주 줄 — 문화권 · 시대 · 갈래 · 신뢰. 이야기 아래에만 온다. */}
+                    <span className={styles.cardNote} data-testid="story-card-note">
+                      {notes.map((note, index) => (
+                        <span key={note.key}>
+                          {index > 0 ? <span aria-hidden="true"> · </span> : null}
+                          <span className={note.accent ? styles.noteOn : undefined}>
+                            {note.text}
                           </span>
-                        ))}
-                      </span>
-                    ) : null}
-
-                    <span className={styles.cardTags}>
-                      {place ? <span className={styles.tag}>{place}</span> : null}
-                      <span
-                        className={
-                          story.isOriginal ? `${styles.tag} ${styles.tagOriginal}` : styles.tag
-                        }
-                      >
-                        {story.typeLabel}
-                      </span>
+                        </span>
+                      ))}
                     </span>
 
                     <span className={styles.cardMore} aria-hidden="true">

@@ -395,6 +395,10 @@ export default function ResultView({ payload, onRestart }: ResultViewProps) {
   }
 
   const currentTone = payload.tones[tone];
+  // 복사는 화면에 보이는 그대로 — 첫 마디가 있으면 함께 담는다.
+  const toneCopyText = currentTone.headline
+    ? `${currentTone.headline}\n\n${currentTone.body ?? ''}`
+    : (currentTone.body ?? '');
   const hasCueBand = Boolean(payload.episodeText) || payload.storyCues.length > 0;
   const featured = option.stories.featured;
 
@@ -876,10 +880,23 @@ export default function ResultView({ payload, onRestart }: ResultViewProps) {
                 tabIndex={0}
               >
                 <p className={styles.toneHint}>{currentTone.hint}</p>
+                {/* 이 톤이 방금 쓰인 문장일 때만 세운다 — 예문과 구별되게(§1.5j). */}
+                {currentTone.source === 'llm' ? (
+                  <p className={styles.trustBadge} style={{ marginTop: 12 }}>
+                    당신의 이야기를 담아 썼어요
+                  </p>
+                ) : null}
                 <div className={styles.msg}>
                   <h3 className="sr-only">{currentTone.label} 톤 멘트</h3>
                   {currentTone.body ? (
-                    <p>{currentTone.body}</p>
+                    <>
+                      {currentTone.headline ? (
+                        <p>
+                          <b>{currentTone.headline}</b>
+                        </p>
+                      ) : null}
+                      <p>{currentTone.body}</p>
+                    </>
                   ) : (
                     <p className={styles.msgEmpty}>{currentTone.emptyNote}</p>
                   )}
@@ -888,7 +905,7 @@ export default function ResultView({ payload, onRestart }: ResultViewProps) {
                   <button
                     type="button"
                     className={styles.copy}
-                    onClick={() => copy(currentTone.body as string, `tone-${tone}`)}
+                    onClick={() => copy(toneCopyText, `tone-${tone}`)}
                   >
                     <IconCopy />
                     <span>{copied === `tone-${tone}` ? '복사했어요' : '복사'}</span>

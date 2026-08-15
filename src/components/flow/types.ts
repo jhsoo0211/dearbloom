@@ -166,8 +166,15 @@ export interface ToneView {
   key: string;
   label: string;
   hint: string;
-  /** 카탈로그 템플릿 문장. 아직 없는 톤이면 비어 있다. */
+  /** 멘트 본문. 아직 없는 톤이면 비어 있다. */
   body?: string;
+  /** 말문을 여는 한 마디. LLM 이 쓴 멘트에만 있다(템플릿에는 없는 필드다). */
+  headline?: string;
+  /**
+   * 이 톤의 문장이 어디서 왔는지. 없으면 문장 자체가 없다는 뜻이다.
+   * 3안이 섞일 수 있어(예: LLM 은 3톤만 쓰고 유쾌 톤은 템플릿) 톤마다 따로 둔다.
+   */
+  source?: 'llm' | 'template';
   /** 템플릿을 못 찾았을 때 보여 줄 안내. */
   emptyNote?: string;
 }
@@ -188,7 +195,15 @@ export interface ResultPayload {
   /** 사과 상황에서 유쾌 톤을 껐다는 각주. 끄지 않았으면 없다. */
   toneOffNote?: string;
   quote: QuoteView;
-  /** 멘트가 아직 LLM 이 아니라 준비된 예문이라는 고지. */
+  /**
+   * 멘트가 어디서 왔는지 한 덩이로 본 값.
+   *   `llm`      — 한 톤이라도 이번에 새로 쓴 문장이 있다
+   *   `template` — 전부 미리 준비해 둔 예문이다
+   *   `empty`    — 보여 줄 문장이 한 톤도 없다
+   * 화면 라벨은 톤별 `ToneView.source` 를 보고 세운다. 이 값은 고지 문구·집계용이다.
+   */
+  messageSource: 'llm' | 'template' | 'empty';
+  /** 멘트가 어떻게 만들어졌는지 알리는 각주. */
   messageNote: string;
   /**
    * §1.5j 자유 서술에서 찾아낸 단서 칩(한국어 라벨). 못 찾았으면 비어 있다.

@@ -32,6 +32,10 @@ import type {
   StoryRow,
   Tone,
 } from '@/lib/engine';
+import { RESPONSE_TONE_COUNT } from '@/lib/llm/contracts';
+import type { GenerateRequest } from '@/lib/llm/contracts';
+import { generateMessages } from '@/lib/llm/provider';
+import { isBlockedForGeneration } from '@/lib/llm/safety';
 import {
   AVAILABILITY_LABELS,
   CONFIDENCE_LABELS,
@@ -190,7 +194,7 @@ function toColorChips(result: RecoResult): ResultColorChip[] {
   });
 }
 
-/** 멘트 3~4톤. LLM 은 아직 붙지 않아 카탈로그 템플릿에서 상황·톤이 맞는 문장을 보여 준다. */
+/** 멘트 3~4톤의 밑바닥 — 카탈로그 템플릿에서 상황·톤이 맞는 문장을 고른다. */
 function buildTones(catalog: Catalog, intent: Intent, relationship: Relationship): ToneView[] {
   // 사과 자리에서 유쾌 톤은 내린다(§1.5).
   const tones: Tone[] = TONE_ORDER.filter((tone) => !(intent === 'apology' && tone === 'playful'));
@@ -203,9 +207,104 @@ function buildTones(catalog: Catalog, intent: Intent, relationship: Relationship
       rows[0];
 
     const view: ToneView = { key: tone, label: TONE_LABELS[tone].label, hint: TONE_LABELS[tone].hint };
-    if (hit) view.body = hit.templateText;
-    else view.emptyNote = '이 톤의 예문은 아직 모으는 중이에요. 다른 톤을 먼저 봐주세요.';
+    if (hit) {
+      view.body = hit.templateText;
+      view.source = 'template';
+    } else {
+      view.emptyNote = '이 톤의 예문은 아직 모으는 중이에요. 다른 톤을 먼저 봐주세요.';
+    }
     return view;
+  });
+}
+
+/**
+ * LLM 에 넘길 꽃 정보 — **출처 id 가 있는 꽃말만** 싣는다(계약의 `meaning_source_id` 는 필수다).
+ * 제안한 색의 꽃말을 먼저 보고, 없으면 그 꽃에서 가장 널리 전해지는 한 줄로 내려간다.
+ */
+function flowerBriefFor(
+  catalog: Catalog,
+  result: RecoResult,
+): GenerateRequest['flower'] | undefined {
+  const flower = catalog.flowers.find((f) => f.id === result.flower.id);
+  if (!flower) return undefined;
+
+  const rows = catalog.meanings.filter((m) => m.flowerId === flower.id && m.sourceId !== '');
+  const suggested = result.colorOptions?.find((option) => option.isSuggested);
+
+  const pick =
+    (suggested ? rows.find((m) => m.color === suggested.color) : undefined) ??
+    rows.find((m) => m.confidenceLevel === 'repeated') ??
+    rows[0];
+
+  if (!pick) return undefined;
+
+  return {
+    id: flower.id,
+    name_ko: flower.nameKo,
+    meaning_ko: pick.meaningKo,
+    meaning_source_id: pick.sourceId,
+  };
+}
+
+/** 상황이 요구하는 금지선 — 프롬프트에 그대로 실린다(§1.5). */
+function generationRules(intent: Intent): string[] {
+  if (intent !== 'apology') return [];
+  return [
+    '사과는 잘못을 인정하고, 되풀이하지 않겠다는 말까지 담는다.',
+    '농담·가벼운 말투를 쓰지 않는다.',
+    '용서를 재촉하거나 상대의 반응을 요구하지 않는다.',
+  ];
+}
+
+/**
+ * 멘트 조립 — LLM 을 한 번 부르고, 못 받으면 템플릿 그대로 둔다.
+ *
+ * 계약(`contracts.ts`)이 3톤 1회 호출로 고정돼 있어 요청은 앞 3톤(담백·다정·진지)까지다.
+ * 사과가 아닐 때 화면에 함께 서는 유쾌 톤은 템플릿을 유지한다 — 그래서 톤마다
+ * `source` 를 따로 들고 다닌다.
+ *
+ * ⚠ `memoryContext` 는 요청 본문에만 들어간다. 로그·에러·반환값 어디에도 싣지 않는다(§1.5j).
+ */
+async function buildToneViews(
+  catalog: Catalog,
+  intent: Intent,
+  relationship: Relationship,
+  pick: RecoResult,
+  memoryContext: string,
+): Promise<ToneView[]> {
+  const views = buildTones(catalog, intent, relationship);
+
+  // 심각한 상황은 생성 호출 **전에** 차단한다(기획안 v2 후퇴 금지선).
+  if (isBlockedForGeneration([memoryContext])) return views;
+
+  const flower = flowerBriefFor(catalog, pick);
+  if (!flower) return views;
+
+  const tones = views.slice(0, RESPONSE_TONE_COUNT).map((view) => view.key as Tone);
+  if (tones.length < RESPONSE_TONE_COUNT) return views;
+
+  const request: GenerateRequest = { relationship, intent, flower, tones };
+  const rules = generationRules(intent);
+  if (rules.length > 0) request.rules = rules;
+  if (memoryContext !== '') request.memory_context = memoryContext;
+
+  let generated;
+  try {
+    generated = await generateMessages(request);
+  } catch {
+    // 어댑터가 값으로 실패를 돌려주지만, 예상 못 한 예외로도 결과 화면이 깨지지 않게 한다.
+    console.error('[recommend] 멘트 생성에 실패했습니다. (내용은 남기지 않습니다)');
+    return views;
+  }
+  if (!generated) return views;
+
+  const byTone = new Map(generated.tones.map((item) => [item.tone, item]));
+  return views.map((view) => {
+    const hit = byTone.get(view.key as Tone);
+    if (!hit) return view;
+    const next: ToneView = { ...view, body: hit.message, headline: hit.headline, source: 'llm' };
+    delete next.emptyNote;
+    return next;
   });
 }
 
@@ -414,14 +513,33 @@ export async function submitRecommendation(
     ...(whenChip ? [whenChip] : []),
   ];
 
+  // ⚠ 자유 서술 원문은 여기서 요청 본문으로만 흘러간다(로그·DB 금지 — §1.5j).
+  const memoryContext = [recipientNote, episode].filter((text) => text !== '').join('\n');
+  const tones = await buildToneViews(catalog, intent, relationship, picks[0], memoryContext);
+
+  const hasLlm = tones.some((tone) => tone.source === 'llm');
+  const hasBody = tones.some((tone) => tone.body !== undefined);
+  const messageSource: ResultPayload['messageSource'] = hasLlm
+    ? 'llm'
+    : hasBody
+      ? 'template'
+      : 'empty';
+
+  const MESSAGE_NOTES: Record<ResultPayload['messageSource'], string> = {
+    llm: '멘트는 들려주신 이야기를 담아 방금 쓴 문장이에요. 그대로 보내도, 고쳐 써도 좋아요.',
+    template:
+      '지금 보이는 멘트는 미리 준비해 둔 예문이에요. 상황에 맞춰 직접 써 드리는 기능은 곧 붙습니다.',
+    empty: '이 상황의 멘트는 아직 모으는 중이에요. 곧 들려드릴게요.',
+  };
+
   const payload: ResultPayload = {
     contextChips,
     isApology: intent === 'apology',
     options,
-    tones: buildTones(catalog, intent, relationship),
+    tones,
     quote: pickQuote(catalog),
-    messageNote:
-      '지금 보이는 멘트는 미리 준비해 둔 예문이에요. 상황에 맞춰 직접 써 드리는 기능은 곧 붙습니다.',
+    messageSource,
+    messageNote: MESSAGE_NOTES[messageSource],
     storyCues: cueChips(inferred),
     storyMoodFilters: STORY_MOOD_FILTERS,
   };

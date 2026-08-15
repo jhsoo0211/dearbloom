@@ -1,0 +1,1089 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   /flowers · /flowers/[slug] — 꽃 도감(검색 · 상세)
+   무드: 나이트 보태니컬 아카이브(§1.4b)
+
+   규칙
+     · 색·폰트는 `src/app/globals.css` 가 세운 변수만 쓴다(--bg / --fg / --hair /
+       --accent / --cta-bg / --font-serif …). 여기서 팔레트를 다시 정의하지 않는다.
+     · **테마는 기본(흰 튤립·다크 그린) 고정.** 꽃마다 `data-flower` 를 갈아 끼우지 않는다
+       — §1.4c v3.3 이 전역 테마를 진입 시 1회로 못 박았고, 31종을 늘어놓는 화면에서
+       색이 종마다 흔들리면 읽기가 어려워진다(/stories 와 같은 판단).
+       카테고리는 **점·라인 색**(`--cat-tone`)으로만 드러낸다.
+     · 리셋은 `:where()` 로 감싸 **명시도 0** 으로 둔다. 그러지 않으면 단일 클래스 규칙이
+       리셋에 져서 여백이 조용히 무너진다(landing.css 가 실제로 겪은 함정).
+     · 본문 색은 --fg / --fg-70 / --fg-50(6.8:1) 안에서만 고른다(§1.6 4.5:1).
+     · 사진이 아니라 **크림 판면 도판**을 얹는 화면이라 §1.5g(사진 위 가독성)의 국소 스크림은
+       쓰지 않는다. 대신 도판 위에는 아예 글자를 올리지 않는다
+       (docs/illustration-assets.md 사용 규칙 3 — 밝은 바탕에서 아이보리 타이포가 죽는다).
+   ═════════════════════════════════════════════════════════════════════ */
+
+.page {
+  --pad: 22px;
+  --maxw: 1120px;
+  /* §1.6b 공통 상태 — 전 컨트롤 전환 180ms(reduced-motion 은 globals.css 가 0 으로 만든다) */
+  --dur: 180ms;
+
+  /* 표면 틴트 — stories.module.css 와 같은 규칙(테마 변수에서 파생) */
+  --surface: color-mix(in srgb, var(--fg) 5%, transparent);
+  --surface-2: color-mix(in srgb, var(--fg) 9%, transparent);
+
+  /* ── §1.6b 버튼·칩 통합 규격 토큰 ────────────────────────────────────
+     화면 안의 모든 컨트롤이 이 세 값만 본다. 하나를 고치면 검색창·지우기·CTA 가
+     함께 움직인다 — "같은 의미의 컨트롤이 화면마다 다른 모양이면 실패" 를 막는 자리다. */
+  --ctrl-hover: color-mix(in srgb, var(--fg) 8%, transparent);
+  /**
+   * 선택 상태의 **채움**. 규격표는 "액센트 배경 + 대비 텍스트" 지만 기본 테마의
+   * `--accent` 는 Pollen Gold 이고 §1.4 는 **골드 배경 위 텍스트를 금지**한다.
+   * 두 규칙을 동시에 지키는 값이 테마의 솔리드 짝인 `--cta-bg`/`--cta-fg` 다
+   * (stories.module.css 와 같은 판단 — 되돌리지 마라).
+   */
+  --ctrl-on: var(--cta-bg);
+  --ctrl-on-fg: var(--cta-fg);
+
+  /* 카테고리 색면. 요소마다 인라인 style 로 덮어쓴다(기본값은 forest). */
+  --cat-tone: #1b2c21;
+
+  position: relative;
+  isolation: isolate;
+  min-height: 100svh;
+  background: var(--bg);
+  color: var(--fg);
+  font-size: 16px;
+  line-height: 1.75;
+}
+
+:where(.page) *,
+:where(.page) *::before,
+:where(.page) *::after {
+  box-sizing: border-box;
+}
+
+:where(.page) :where(h1, h2, h3) {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-weight: 300;
+  line-height: 1.32;
+}
+:where(.page) :where(p) {
+  margin: 0;
+}
+:where(.page) :where(ul, ol) {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+:where(.page) :where(button) {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+:where(.page) :where(a) {
+  color: inherit;
+}
+:where(.page) :where(img, svg) {
+  display: block;
+  max-width: 100%;
+}
+
+/**
+ * §1.6b 공통 상태 — focus-visible 은 **전 컨트롤이 똑같이** 2px 링 + 2px 오프셋이다.
+ * globals.css 의 전역 규칙은 3px 오프셋이라, 여기서 컨트롤만 규격값으로 덮는다.
+ */
+.clear:focus-visible,
+.card:focus-visible,
+.btn:focus-visible,
+.back:focus-visible,
+.storySum:focus-visible,
+.petSum:focus-visible,
+.sourceLink:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* 필름 그레인 (§1.4b) */
+.grain {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23g)'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+}
+
+/* ── 공통 유닛 ───────────────────────────────────────────────────────── */
+.wrap {
+  width: min(100% - (var(--pad) * 2), var(--maxw));
+  margin-inline: auto;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.eyebrow {
+  display: inline-block;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--accent);
+  line-height: 1.6;
+}
+
+.lead {
+  font-size: 16px;
+  line-height: 1.8;
+  color: var(--fg-70);
+}
+
+/**
+ * 카테고리 점 — 색면(`--cat-tone`)을 그대로 찍는다.
+ * 어두운 색(딥와인·딥라벤더)도 형태가 남게 헤어라인을 두른다(/stories 레인 점과 같은 처리).
+ */
+.dot {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border-radius: 9999px;
+  background: var(--cat-tone);
+  border: 1px solid var(--hair-2);
+}
+
+/* ── 헤더 ────────────────────────────────────────────────────────────── */
+.siteHead {
+  position: relative;
+  z-index: 30;
+  padding-top: 18px;
+}
+.siteHeadRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.logo {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 6px 2px;
+  font-family: var(--font-logo);
+  font-style: italic;
+  font-size: 23px;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  color: var(--fg);
+  text-decoration: none;
+  transition: color var(--dur) var(--ease);
+}
+.logo:hover {
+  color: var(--accent);
+}
+
+/* ── 인트로 ──────────────────────────────────────────────────────────── */
+.intro {
+  position: relative;
+  padding: clamp(28px, 6vw, 56px) 0 clamp(22px, 3.4vw, 34px);
+}
+.introBg {
+  position: absolute;
+  inset: -120px 0 auto 0;
+  height: 520px;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(70% 60% at 16% 0%, color-mix(in srgb, var(--cat-tone) 66%, transparent) 0%, transparent 72%),
+    radial-gradient(58% 52% at 92% 8%, color-mix(in srgb, var(--accent) 12%, transparent) 0%, transparent 70%);
+}
+.title {
+  margin-top: 14px;
+  font-size: clamp(32px, 7vw, 58px);
+  line-height: 1.22;
+  letter-spacing: -0.02em;
+  color: var(--fg);
+}
+.sub {
+  margin-top: 16px;
+  max-width: 46ch;
+}
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 26px;
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--hair);
+}
+.stat {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.statNum {
+  font-family: var(--font-serif);
+  font-size: 26px;
+  font-weight: 400;
+  line-height: 1;
+  color: var(--accent);
+}
+.statLabel {
+  font-size: 13.5px;
+  color: var(--fg-50);
+}
+
+/* ═══ /flowers — 검색 ═════════════════════════════════════════════════ */
+.board {
+  padding-bottom: clamp(40px, 7vw, 78px);
+}
+
+/**
+ * 검색창 — §1.6b 규격의 pill 을 입력 컨트롤에 맞춰 옮긴 것.
+ *   · h 52px(주 CTA 와 같은 높이) · pill · 1px 보더 · 전환 180ms
+ *   · **자동 포커스하지 않는다.** 들어오자마자 키보드가 올라오면 목록이 화면에서 사라진다.
+ */
+.searchBar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 52px;
+  padding: 0 6px 0 16px;
+  border-radius: 9999px;
+  border: 1px solid var(--hair-2);
+  background: var(--surface);
+  transition:
+    border-color var(--dur) var(--ease),
+    background-color var(--dur) var(--ease);
+}
+/**
+ * 포커스 링은 **입력칸이 아니라 pill 전체**에 두른다.
+ * 입력칸에 걸면 반경 0 인 사각 링이 pill 안쪽에 그려져 두 모양이 겹쳐 보인다 —
+ * §1.6b 의 "2px 링 + 2px 오프셋" 은 그대로 지키되 링의 주인만 바깥 상자로 옮긴 것이다.
+ */
+.searchBar:focus-within {
+  border-color: var(--accent-line);
+  background: var(--surface-2);
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.searchInput:focus-visible {
+  outline: none;
+}
+.searchIcon {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  color: var(--fg-50);
+}
+.searchInput {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  background: none;
+  color: var(--fg);
+  font: inherit;
+  font-size: 16px; /* 16px 미만이면 iOS 가 포커스 때 화면을 확대한다 */
+  line-height: 1;
+}
+.searchInput::placeholder {
+  color: var(--fg-50);
+}
+/* 브라우저 기본 지우기 버튼은 숨긴다 — 44px 규격의 우리 버튼을 쓴다(§1.6b). */
+.searchInput::-webkit-search-cancel-button,
+.searchInput::-webkit-search-decoration {
+  appearance: none;
+}
+
+/* §1.6b 아이콘 버튼 — 원형 44×44 · 1px 보더 · 아이콘 스트로크 1.6 */
+.clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 9999px;
+  border: 1px solid var(--hair);
+  color: var(--fg-70);
+  transition:
+    border-color var(--dur) var(--ease),
+    background-color var(--dur) var(--ease),
+    color var(--dur) var(--ease);
+}
+.clear:hover {
+  border-color: var(--hair-2);
+  background: var(--ctrl-hover);
+  color: var(--fg);
+}
+.clear svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+}
+
+.status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 12px;
+  margin-top: 14px;
+  font-size: 13.5px;
+  color: var(--fg-50);
+}
+.status b {
+  font-family: var(--font-serif);
+  font-size: 17px;
+  font-weight: 400;
+  color: var(--fg);
+}
+
+/* ── 결과·그룹 목록 ──────────────────────────────────────────────────── */
+.results {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-top: 16px;
+}
+@media (min-width: 720px) {
+  .results {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (min-width: 1040px) {
+  .results {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.groups {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(26px, 4vw, 40px);
+  margin-top: 20px;
+}
+.groupHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 10px;
+  padding-left: 11px;
+  border-left: 1px solid var(--hair);
+}
+.groupHead .dot {
+  align-self: center;
+}
+.groupName {
+  font-family: var(--font-serif);
+  font-size: clamp(19px, 3.4vw, 23px);
+  font-weight: 400;
+  line-height: 1.3;
+  letter-spacing: -0.015em;
+  color: var(--fg);
+}
+.groupHint {
+  font-size: 13px;
+  color: var(--fg-50);
+}
+.groupCount {
+  margin-left: auto;
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--fg-50);
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 216px), 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+/* 카드 — 검색 결과와 그룹 그리드가 같은 상자를 쓴다(밀도만 다르다). */
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 7px;
+  height: 100%;
+  padding: 18px 18px 16px;
+  border: 1px solid var(--hair);
+  border-radius: 16px;
+  background: var(--surface);
+  text-align: left;
+  text-decoration: none;
+  transition:
+    border-color var(--dur) var(--ease),
+    background-color var(--dur) var(--ease),
+    transform var(--dur) var(--ease);
+}
+.card:hover,
+.card:focus-visible {
+  border-color: var(--accent-line);
+  background: var(--surface-2);
+  transform: translateY(-2px);
+}
+.cardTop {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.cardCat {
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--fg-50);
+}
+.cardName {
+  font-family: var(--font-serif);
+  font-size: 22px;
+  font-weight: 400;
+  line-height: 1.35;
+  letter-spacing: -0.015em;
+  color: var(--fg);
+}
+.cardLatin {
+  font-size: 12px;
+  font-style: italic;
+  letter-spacing: 0.02em;
+  line-height: 1.5;
+  color: var(--fg-50);
+}
+.cardMeaning {
+  font-family: var(--font-serif);
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--fg-70);
+}
+.cardCount {
+  margin-top: auto;
+  padding-top: 4px;
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+}
+
+/* 결과 없음 — 빈손으로 돌려보내지 않는다(아래에 전체 목록이 이어진다). */
+.empty {
+  margin-top: 18px;
+  padding: 26px 22px;
+  border: 1px dashed var(--hair-2);
+  border-radius: 16px;
+}
+.emptyTitle {
+  font-family: var(--font-serif);
+  font-size: 20px;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--fg);
+}
+.emptyLead {
+  margin-top: 8px;
+  font-size: 14.5px;
+  line-height: 1.7;
+  color: var(--fg-70);
+}
+.fallbackHead {
+  margin-top: 28px;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  color: var(--fg-50);
+}
+
+/* ═══ /flowers/[slug] — 상세 ═════════════════════════════════════════ */
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 0 2px;
+  font-size: 13.5px;
+  color: var(--fg-50);
+  text-decoration: none;
+  transition: color var(--dur) var(--ease);
+}
+.back:hover {
+  color: var(--fg);
+}
+.back svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.hero {
+  position: relative;
+  padding: 10px 0 clamp(30px, 5vw, 52px);
+}
+.heroGrid {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(22px, 3.6vw, 34px);
+}
+@media (min-width: 880px) {
+  .heroGrid {
+    flex-direction: row;
+    align-items: center;
+    gap: 44px;
+  }
+  .frame {
+    flex: 0 0 clamp(300px, 38%, 400px);
+  }
+  .heroText {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+/**
+ * 액자(파스파르투) — docs/illustration-assets.md 사용 규칙 1.
+ *
+ * 도판 배경을 누끼로 날리지 않는다. 19세기 판면의 종이 질감과 인쇄 학명이 사라지면
+ * 그냥 클립아트가 된다 — **종이가 곧 액자다.** 잉크 위에 아이보리 매트를 두르고
+ * 그 안쪽에 골드 헤어라인을 넣은 뒤 바깥 그림자로 띄운다.
+ */
+.frame {
+  width: min(100%, 420px);
+  margin-inline: auto;
+}
+/**
+ * 아이보리 매트(파스파르투)는 **도판만** 감싼다.
+ * ⚠ 캡션을 이 안에 넣지 마라 — 크림 바탕에 아이보리 글씨가 되어 읽히지 않는다.
+ *   캡션은 매트 바깥, 페이지 바탕 위에 둔다(§1.6 본문 대비 4.5:1).
+ */
+.matte {
+  padding: 10px;
+  border-radius: 4px;
+  background: var(--ivory-3);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+.plate {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 3 / 4;
+  /* 매트 안쪽 경계의 골드 헤어라인 */
+  border: 1px solid var(--gold);
+  /* 판면 색이 제각각인 8개 판본을 하나로 수렴시키는 크림 백플레이트(사용 규칙 2 예외 2종) */
+  background: var(--ivory-2);
+}
+.plateImg {
+  width: 100%;
+  height: 100%;
+  /* 세로·가로 판면이 섞여 있어 자르지 않고 담는다(포인세티아 1종만 가로 판면). */
+  object-fit: contain;
+  /* 사용 규칙 2 — 전 애셋 공통 톤 통일 필터 */
+  filter: sepia(0.12) saturate(0.92) contrast(1.04) brightness(0.98);
+}
+/* 아이보리 5% multiply 오버레이 — 종이 흰색의 편차를 마저 눌러 준다(사용 규칙 2). */
+.plate::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: var(--ivory);
+  mix-blend-mode: multiply;
+  opacity: 0.06;
+}
+/**
+ * 도판이 없거나 못 불러왔을 때의 자리 — 카테고리 색면 그라디언트.
+ * 위키미디어 핫링크는 429 로 끊길 수 있어(문서 배포 규칙 2) **이 화면은 이미지가 없어도
+ * 성립해야 한다.** 그래서 폴백은 "깨진 그림" 이 아니라 그 꽃의 색으로 채운 면이다.
+ */
+.plateFallback {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(158deg, var(--cat-tone) 0%, var(--ink-900) 52%, var(--ink-950) 100%);
+}
+.plateCredit {
+  margin-top: 10px;
+  font-size: 11.5px;
+  line-height: 1.6;
+  letter-spacing: 0.01em;
+  color: var(--fg-50);
+}
+
+.heroCat {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fg-50);
+}
+.heroName {
+  margin-top: 12px;
+  /* §1.5g — 꽃 이름은 마루 부리 400 이상. 도판 위가 아니라 판면 밖이라 스크림은 없다. */
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: clamp(38px, 9vw, 68px);
+  line-height: 1.18;
+  letter-spacing: -0.025em;
+  color: var(--fg);
+}
+.heroLatin {
+  margin-top: 8px;
+  font-size: 13px;
+  font-style: italic;
+  letter-spacing: 0.04em;
+  color: var(--fg-50);
+}
+.heroMeaning {
+  margin-top: 20px;
+  padding-left: 14px;
+  border-left: 1px solid var(--accent-line);
+  font-family: var(--font-serif);
+  font-size: clamp(19px, 3.6vw, 25px);
+  font-weight: 400;
+  line-height: 1.6;
+  letter-spacing: -0.01em;
+  color: var(--fg);
+}
+
+/* ── 섹션 공통 ───────────────────────────────────────────────────────── */
+.section {
+  padding: clamp(30px, 5vw, 52px) 0;
+  border-top: 1px solid var(--hair);
+}
+.sectionHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 12px;
+}
+.sectionTitle {
+  font-size: clamp(23px, 4.4vw, 32px);
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+  color: var(--fg);
+}
+.sectionCount {
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--fg-50);
+}
+.sectionLead {
+  margin-top: 10px;
+  max-width: 52ch;
+  font-size: 14.5px;
+  line-height: 1.8;
+  color: var(--fg-50);
+}
+
+/* ── ② 꽃말 전체 ─────────────────────────────────────────────────────── */
+.meaningGroups {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  margin-top: 22px;
+}
+.meaningHead {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--hair);
+}
+.swatch {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  border: 1px solid var(--hair-2);
+}
+/* 흰·크림처럼 판면과 붙는 색은 안쪽에 잉크 링을 한 겹 넣어 형태를 남긴다. */
+.swatchRing {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 28%, transparent);
+}
+.meaningColor {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--fg-70);
+}
+.meaningCount {
+  margin-left: auto;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--fg-50);
+}
+.meaningList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 14px;
+}
+.meaningText {
+  font-family: var(--font-serif);
+  font-size: 17px;
+  font-weight: 400;
+  line-height: 1.65;
+  color: var(--fg);
+}
+/* 메타는 언제나 본문 **뒤**의 작은 한 줄이다(§1.5i 16차). 위로 올리지 마라. */
+.meaningNote {
+  margin-top: 5px;
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--fg-50);
+}
+.meaningCaution {
+  margin-top: 6px;
+  padding-left: 11px;
+  border-left: 1px solid var(--accent-line);
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--fg-70);
+}
+.sourceLink {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ── ③ 이야기 전체 ───────────────────────────────────────────────────── */
+.stories {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 22px;
+}
+.story {
+  border: 1px solid var(--hair);
+  border-radius: 16px;
+  background: var(--surface);
+  transition: border-color var(--dur) var(--ease);
+}
+.story[open] {
+  border-color: var(--accent-line);
+  background: var(--surface-2);
+}
+/**
+ * 여는 손잡이. `<details>` 를 쓰는 이유는 **JS 없이도 이야기가 열리기 때문**이다
+ * (§1.5i 의 전면 시트는 결과 화면의 몫이고, 도감은 인라인 확장으로 충분하다).
+ * 기본 삼각형 마커는 지우고 44px 타깃과 회전 셰브런을 직접 세운다.
+ */
+.storySum {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-height: 44px;
+  padding: 16px 18px;
+  cursor: pointer;
+  list-style: none;
+}
+.storySum::-webkit-details-marker {
+  display: none;
+}
+.storySum:hover {
+  background: var(--ctrl-hover);
+  border-radius: 15px;
+}
+.storyChev {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-top: 4px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  color: var(--fg-50);
+  transition: transform var(--dur) var(--ease);
+}
+.story[open] .storyChev {
+  transform: rotate(90deg);
+}
+.storySumText {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+}
+.storyTitle {
+  display: block;
+  font-family: var(--font-serif);
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 1.45;
+  letter-spacing: -0.01em;
+  color: var(--fg);
+}
+/* hook 은 이야기를 대신 말하는 문장이라 제목 **바로 아래** 온다(메타보다 앞). */
+.storyHook {
+  display: block;
+  margin-top: 6px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--accent);
+}
+.storyMoods {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+/* 결 꼬리표 — 읽는 표시라 §1.6b 44px 규격 대상이 아니다(누르는 칩이 아니다). */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 2px 10px;
+  border-radius: 9999px;
+  border: 1px solid var(--hair-2);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--fg-70);
+}
+.storyBody {
+  padding: 0 18px 18px;
+}
+.storyText {
+  font-size: 15.5px;
+  line-height: 1.95;
+  color: var(--fg-70);
+  white-space: pre-line;
+}
+/* 각주 블록 — 본문이 끝난 **뒤에만** 온다(§1.5i 16차). 헤어라인으로 이야기와 갈라 둔다. */
+.storyNote {
+  margin-top: 20px;
+  padding-top: 14px;
+  border-top: 1px solid var(--hair);
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--fg-50);
+}
+/* 창작 라벨만 액센트로 세운다 — 각주로 내려가도 "지어 본 이야기"는 흐려지면 안 된다(§1.5f). */
+.noteAccent {
+  color: var(--accent);
+}
+.storySource {
+  margin-top: 10px;
+  padding-left: 11px;
+  border-left: 1px solid var(--accent-line);
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--fg-50);
+}
+
+/* ── ④ 이런 날 건네보세요 ────────────────────────────────────────────── */
+.occasions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 20px;
+}
+.occasion {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 18px;
+  border: 1px solid var(--hair);
+  border-radius: 14px;
+  background: var(--surface);
+  font-family: var(--font-serif);
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--fg);
+}
+.occasionMark {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  margin-top: 11px;
+  border-radius: 9999px;
+  background: var(--accent);
+}
+
+/* ── ⑤ 참고(작게) ────────────────────────────────────────────────────── */
+.notes {
+  padding: clamp(26px, 4vw, 40px) 0;
+  border-top: 1px solid var(--hair);
+}
+.notesTitle {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--fg-50);
+}
+.noteGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-top: 14px;
+}
+@media (min-width: 720px) {
+  .noteGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+.noteCard {
+  padding: 14px 16px;
+  border: 1px solid var(--hair);
+  border-radius: 14px;
+  background: var(--surface);
+}
+.noteLabel {
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: var(--fg-50);
+}
+.noteValue {
+  margin-top: 6px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--fg-70);
+}
+/* 반려동물 배지 — §1.5h 위계 강등. 소형 배지 1곳 + 접힌 상세가 전부다. */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 3px 11px;
+  border-radius: 9999px;
+  border: 1px solid var(--hair-2);
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--fg-70);
+}
+.badgeWarn {
+  border-color: var(--accent-line);
+  color: var(--accent);
+}
+.petSum {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-size: 12.5px;
+  color: var(--fg-50);
+  cursor: pointer;
+  list-style: none;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.petSum::-webkit-details-marker {
+  display: none;
+}
+.petLines {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-bottom: 6px;
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--fg-50);
+}
+
+/* ── 하단 CTA ────────────────────────────────────────────────────────── */
+.cta {
+  position: relative;
+  padding: clamp(46px, 8vw, 88px) 0;
+  border-top: 1px solid var(--hair);
+  background: radial-gradient(
+    78% 100% at 50% 100%,
+    color-mix(in srgb, var(--cat-tone) 58%, transparent) 0%,
+    transparent 74%
+  );
+  text-align: center;
+}
+.ctaTitle {
+  margin-top: 14px;
+  font-size: clamp(26px, 4.6vw, 40px);
+  line-height: 1.3;
+  letter-spacing: -0.015em;
+  color: var(--fg);
+}
+.ctaLead {
+  margin: 14px auto 0;
+  max-width: 44ch;
+}
+/* §1.6b 주 CTA — pill · h 52~56px · 다크는 Ivory 배경 + Ink 텍스트 · hover 글로우 */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 52px;
+  margin-top: 26px;
+  padding: 0 28px;
+  border-radius: 9999px;
+  background: var(--cta-bg);
+  color: var(--cta-fg);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1;
+  text-decoration: none;
+  transition:
+    transform 0.35s var(--ease),
+    box-shadow 0.35s var(--ease);
+}
+.btn:hover,
+.btn:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 34px var(--cta-glow);
+}
+
+/* ── 푸터 ────────────────────────────────────────────────────────────── */
+.siteFoot {
+  padding: clamp(34px, 5vw, 54px) 0 clamp(40px, 6vw, 62px);
+  border-top: 1px solid var(--hair);
+  font-size: 13.5px;
+  color: var(--fg-50);
+}
+.footSay {
+  max-width: 52ch;
+  line-height: 1.8;
+  color: var(--fg-70);
+}
+.footNav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 18px;
+  margin-top: 18px;
+}
+.footNav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  text-decoration: none;
+  color: var(--fg-50);
+  transition: color var(--dur) var(--ease);
+}
+.footNav a:hover {
+  color: var(--fg);
+}
+.footPlate {
+  margin-top: 14px;
+  font-size: 11.5px;
+  line-height: 1.7;
+  color: var(--fg-50);
+}

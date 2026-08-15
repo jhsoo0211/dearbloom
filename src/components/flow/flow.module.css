@@ -8,13 +8,27 @@
    표면·크롬은 color-mix 로 --fg / --bg 에서 파생시켜 테마가 바뀌어도 따라가게 했다.
 
    플로우 화면은 §1.4c v3.3 대로 진입 시 정해진 기본 테마(흰 튤립·다크 그린)를 쓴다.
+
+   ── 레이아웃 두 벌 ─────────────────────────────────────────────────
+   · ~767px  : 확정 시안 그대로의 모바일 한 칼럼(고정 상단바·고정 하단 버튼).
+   · 768px↑  : **웹사이트 전용 레이아웃**. 폰 프레임을 버리고 랜딩 v3 언어
+               (다크 그린 배경·그레인·오버라인+헤어라인·세리프 대형 제목)로
+               질문은 820px 중앙 칼럼, 결과는 1120px 2단(좌 스티키/우 스크롤).
+   그래서 이 파일의 본문은 전부 모바일 기준이고, 데스크톱 규칙은 **파일 맨 끝**
+   한 곳에 모아 둔다(뒤에 와야 같은 명시도의 기본 규칙을 덮는다).
+
+   버튼·칩은 §1.6b 통합 규격을 따른다 — 칩 h44·선택은 "액센트 채움" 한 가지
+   표현만(체크·점·밑줄 병용 금지)·전환 180ms·focus 링 2px/오프셋 2px.
+   여기서 "액센트 채움"은 --cta-bg 다. --accent(Pollen Gold)는 §1.4 가
+   **배경으로 쓰는 것을 금지**해서(그 위 텍스트 대비 미달) 채움에 못 쓴다.
    ═════════════════════════════════════════════════════════════════════ */
 
 .flow {
   --gut: 20px;
   --bar-h: 58px;
   --foot-h: 128px;
-  --dur: 220ms;
+  /* §1.6b 공통 상태 — 전 컨트롤 180ms */
+  --dur: 180ms;
 
   /* 표면 틴트 — 시안의 rgba(246,241,232,.045) 와 같은 값을 테마 변수에서 파생 */
   --surface: color-mix(in srgb, var(--fg) 5%, transparent);
@@ -47,6 +61,12 @@
   display: block;
   max-width: 100%;
 }
+/* §1.6b 공통 상태 — 포커스 링은 전 컨트롤 동일(2px 링 + 2px 오프셋).
+   globals.css 의 기본 링(오프셋 3px)보다 명시도가 높아 여기서 통일된다. */
+.flow :where(a, button, summary, input, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
 
 /* ── 폰 프레임 ──────────────────────────────────────────────────────── */
 .phone {
@@ -65,35 +85,6 @@
 }
 .phoneResult {
   padding-bottom: calc(28px + env(safe-area-inset-bottom));
-}
-
-@media (min-width: 768px) {
-  .frame {
-    padding: 26px 0;
-    background: var(--bg-2);
-  }
-  .phone {
-    border-radius: 40px;
-    min-height: calc(100svh - 52px);
-    box-shadow:
-      0 0 0 1px var(--hair),
-      0 2.8px 2.2px rgba(0, 0, 0, 0.05),
-      0 6.7px 5.3px rgba(0, 0, 0, 0.07),
-      0 12.5px 10px rgba(0, 0, 0, 0.09),
-      0 22.3px 17.9px rgba(0, 0, 0, 0.11),
-      0 41.8px 33.4px rgba(0, 0, 0, 0.15),
-      0 100px 80px rgba(0, 0, 0, 0.36);
-  }
-  .appbar {
-    top: 26px;
-    width: 430px;
-    border-radius: 40px 40px 0 0;
-  }
-  .footbar {
-    bottom: 26px;
-    width: 430px;
-    border-radius: 0 0 40px 40px;
-  }
 }
 
 .grain {
@@ -127,20 +118,24 @@
   backdrop-filter: blur(18px) saturate(130%);
   border-bottom: 1px solid var(--hair);
 }
+/* §1.6b 아이콘 버튼 — 원형 44×44 · 1px 보더 · 아이콘 스트로크 1.6 */
 .iconBtn {
   flex: none;
   display: grid;
   place-items: center;
   width: 44px;
   height: 44px;
-  border-radius: 14px;
+  border-radius: 9999px;
+  border: 1px solid var(--hair);
   color: var(--fg-70);
   transition:
     background-color var(--dur) var(--ease),
+    border-color var(--dur) var(--ease),
     color var(--dur) var(--ease);
 }
 .iconBtn:hover {
   background: var(--surface-2);
+  border-color: var(--hair-2);
   color: var(--fg);
 }
 .iconBtn svg {
@@ -159,6 +154,10 @@
 }
 .wm:hover {
   opacity: 0.8;
+}
+/* 워드마크는 데스크톱 헤더에서만 — 모바일 상단바는 시안 그대로 둔다 */
+.wmDesk {
+  display: none;
 }
 .spacer {
   flex: 1;
@@ -382,6 +381,9 @@
   color: var(--fg-50);
   margin-bottom: 14px;
 }
+/* ── §1.6b 칩(필터·선택) — 이 파일의 모든 칩이 쓰는 단 하나의 규격 ──────
+   h44 고정 · 기본은 투명 배경 + 전경 72% · 선택은 액센트 채움 하나뿐.
+   (선택 표현을 하나로 줄이려고 예전의 체크 아이콘·점 아웃라인은 걷어냈다.) */
 .chips {
   display: flex;
   flex-wrap: wrap;
@@ -390,12 +392,12 @@
 .chip {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  min-height: 44px;
-  padding: 0 15px;
+  gap: 9px;
+  height: 44px;
+  padding: 0 16px;
   border-radius: 9999px;
   border: 1px solid var(--hair);
-  background: var(--surface);
+  background: transparent;
   font-size: 14px;
   font-weight: 500;
   color: var(--fg-70);
@@ -403,7 +405,7 @@
     background-color var(--dur) var(--ease),
     border-color var(--dur) var(--ease),
     color var(--dur) var(--ease),
-    transform 180ms var(--ease);
+    transform var(--dur) var(--ease);
 }
 .chip:hover {
   background: var(--surface-2);
@@ -413,18 +415,11 @@
 .chip:active {
   transform: scale(0.97);
 }
-.chipOn {
-  color: var(--fg);
-  border-color: var(--accent-line);
-  background: var(--surface-2);
-}
-.chipOn .chipMark {
-  color: var(--accent);
-}
-.chipMark {
-  color: transparent;
-  width: 15px;
-  height: 15px;
+.chipOn,
+.chipOn:hover {
+  color: var(--cta-fg);
+  border-color: var(--cta-bg);
+  background: var(--cta-bg);
 }
 .chipDot {
   width: 18px;
@@ -437,9 +432,11 @@
     inset 0 -3px 7px rgba(31, 33, 30, 0.24),
     0 0 0 1px var(--hair-2);
 }
+/* 채움 위에서는 색점 테두리를 대비색으로 — 흰 스와치가 배경에 묻히지 않게 */
 .chipOn .chipDot {
-  outline: 2px solid var(--accent-line);
-  outline-offset: 2px;
+  box-shadow:
+    inset 0 -3px 7px rgba(31, 33, 30, 0.24),
+    0 0 0 1px color-mix(in srgb, var(--cta-fg) 42%, transparent);
 }
 
 .field {
@@ -570,32 +567,38 @@
   height: 19px;
   flex: none;
 }
+/* §1.6b 주 CTA — pill h54 · 채움 · hover 글로우+scale 1.02 · active .98 */
 .btnPrimary {
   background: var(--cta-bg);
   color: var(--cta-fg);
 }
-.btnPrimary:hover {
-  box-shadow: 0 12px 30px -10px var(--cta-glow);
+.btnPrimary:hover:not(:disabled) {
+  box-shadow: 0 14px 34px -12px var(--cta-glow);
+  transform: scale(1.02);
 }
-.btnPrimary:active {
-  transform: scale(0.975);
+.btnPrimary:active:not(:disabled) {
+  transform: scale(0.98);
 }
 .btnPrimary:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
+  opacity: 0.4;
+  cursor: default;
   transform: none;
 }
+/* §1.6b 보조 버튼 — pill h48 고스트 · hover 배경 rgba(전경 8%) */
 .btnGhost {
   background: transparent;
   color: var(--fg);
   border: 1px solid var(--ghost-line);
   font-size: 14px;
   font-weight: 500;
-  min-height: 50px;
+  min-height: 48px;
 }
 .btnGhost:hover {
   border-color: var(--fg);
-  background: var(--surface);
+  background: var(--surface-2);
+}
+.btnGhost:active {
+  transform: scale(0.98);
 }
 .btnPair {
   display: grid;
@@ -817,17 +820,24 @@
   font-weight: 600;
 }
 
-/* ── 세그먼트 3안 ───────────────────────────────────────────────────── */
+/* ── §1.6b 세그먼트 — 3안 선택과 멘트 톤이 **같은 컨트롤**을 쓴다 ─────
+   pill 트랙(배경 rgba 8%) 안에서 채움 썸이 움직이고, 선택은 대비 텍스트. */
 .seg {
   position: relative;
   display: grid;
   grid-auto-flow: column;
   grid-auto-columns: 1fr;
-  margin: 22px var(--gut) 0;
   padding: 4px;
   border-radius: 9999px;
-  background: var(--surface);
+  background: var(--surface-2);
   border: 1px solid var(--hair);
+}
+/* 3안 세그먼트만 화면 좌우 거터를 함께 쓴다(톤 세그먼트는 섹션 안에 있다) */
+.segTop {
+  margin: 22px var(--gut) 0;
+}
+.segTones {
+  margin-top: 16px;
 }
 .segThumb {
   position: absolute;
@@ -838,7 +848,7 @@
   border-radius: 9999px;
   background: var(--cta-bg);
   transform: translateX(calc(var(--i, 0) * 100%));
-  transition: transform 260ms var(--ease);
+  transition: transform var(--dur) var(--ease);
 }
 .seg button {
   position: relative;
@@ -954,6 +964,10 @@
   flex: none;
   width: 14px;
   height: 14px;
+}
+/* 꽃말 아래에 붙는 신뢰 라벨의 간격 — 데스크톱 좌단에서 이 값을 조인다 */
+.trustTop {
+  margin-top: 16px;
 }
 .reasons {
   margin-top: 18px;
@@ -1100,31 +1114,31 @@
   color: var(--fg-50);
   margin-bottom: 14px;
 }
+/* 결과의 색 칩 = 질문 화면의 색 칩과 같은 컨트롤이다(§1.6b — 같은 의미면 같은 모양).
+   예전에는 84px 타일이었는데, 두 화면이 다르게 생긴 것 자체가 규격 위반이었다. */
 .swatches {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(76px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 .sw {
-  display: flex;
-  flex-direction: column;
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: 10px;
-  min-height: 84px;
-  padding: 12px 6px;
-  border-radius: 16px;
+  gap: 9px;
+  height: 44px;
+  padding: 0 16px;
+  border-radius: 9999px;
   border: 1px solid var(--hair);
-  background: var(--surface);
-  font-size: 13.5px;
-  font-weight: 600;
+  background: transparent;
+  font-size: 14px;
+  font-weight: 500;
   letter-spacing: 0.01em;
   color: var(--fg-70);
   transition:
     background-color var(--dur) var(--ease),
     border-color var(--dur) var(--ease),
     color var(--dur) var(--ease),
-    transform 180ms var(--ease);
+    transform var(--dur) var(--ease);
 }
 .sw:hover {
   background: var(--surface-2);
@@ -1135,8 +1149,8 @@
   transform: scale(0.97);
 }
 .swDot {
-  width: 26px;
-  height: 26px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   box-shadow: inset 0 -3px 7px rgba(31, 33, 30, 0.24);
 }
@@ -1145,14 +1159,16 @@
     inset 0 -3px 7px rgba(31, 33, 30, 0.24),
     0 0 0 1px var(--hair-2);
 }
-.sw[aria-checked='true'] {
-  color: var(--fg);
-  border-color: var(--accent-line);
-  background: var(--surface-2);
+.sw[aria-checked='true'],
+.sw[aria-checked='true']:hover {
+  color: var(--cta-fg);
+  border-color: var(--cta-bg);
+  background: var(--cta-bg);
 }
 .sw[aria-checked='true'] .swDot {
-  outline: 2px solid var(--accent-line);
-  outline-offset: 3px;
+  box-shadow:
+    inset 0 -3px 7px rgba(31, 33, 30, 0.24),
+    0 0 0 1px color-mix(in srgb, var(--cta-fg) 42%, transparent);
 }
 .pickOut {
   margin-top: 20px;
@@ -1199,12 +1215,32 @@
   line-height: 1.9;
   color: var(--fg-70);
 }
-.storyMeta {
+/* §1.5i 16차 — 문화권·갈래·신뢰 라벨은 **본문 아래 각주 줄**이다.
+   칩으로 카드 위쪽에 세우면 이야기보다 메타가 먼저 읽혀서 금지됐다. */
+.storyFoot {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--hair);
+  font-size: 12.5px;
+  line-height: 1.75;
+  color: var(--fg-50);
+}
+.storyFoot .sep {
+  padding: 0 6px;
+  opacity: 0.6;
+}
+/* 창작 이야기 라벨만 각주 안에서도 눈에 띄게 — §1.5f 의 유일한 금지선 */
+.storyFootOriginal {
+  color: var(--accent);
+  font-weight: 600;
+}
+.storyMoods {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
   margin-top: 14px;
 }
+/* 라벨 칩 — 컨트롤이 아니라 표시용이다(§1.6b 규격 대상 아님) */
 .tagline {
   display: inline-flex;
   align-items: center;
@@ -1214,10 +1250,6 @@
   border: 1px solid var(--hair);
   font-size: 12px;
   color: var(--fg-50);
-}
-.tagOriginal {
-  border-color: var(--accent-line);
-  color: var(--accent);
 }
 .loreSrc {
   margin-top: 14px;
@@ -1341,43 +1373,9 @@
   color: var(--fg-70);
 }
 
-/* ── 멘트 ───────────────────────────────────────────────────────────── */
-.tones {
-  display: flex;
-  gap: 4px;
-  border-bottom: 1px solid var(--hair);
-}
-.tones button {
-  position: relative;
-  padding: 12px 14px;
-  min-height: 46px;
-  min-width: 56px;
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--fg-50);
-  transition: color var(--dur) var(--ease);
-}
-.tones button::after {
-  content: '';
-  position: absolute;
-  left: 6px;
-  right: 6px;
-  bottom: -1px;
-  height: 1px;
-  background: var(--accent);
-  transform: scaleX(0);
-  transform-origin: left;
-  transition: transform 240ms var(--ease);
-}
-.tones button:hover {
-  color: var(--fg-70);
-}
-.tones button[aria-selected='true'] {
-  color: var(--fg);
-}
-.tones button[aria-selected='true']::after {
-  transform: scaleX(1);
-}
+/* ── 멘트 ───────────────────────────────────────────────────────────
+   톤 탭은 §1.6b 대로 3안 세그먼트와 같은 컨트롤(.seg .segTones)을 쓴다.
+   예전의 언더라인 탭은 같은 의미(하나 고르기)에 다른 모양이라 걷어냈다. */
 .tonePanel {
   padding-top: 20px;
   animation: rise 300ms var(--ease) both;
@@ -1610,25 +1608,29 @@
 .moodChip {
   display: inline-flex;
   align-items: center;
-  min-height: 44px;
-  padding: 0 14px;
+  height: 44px;
+  padding: 0 16px;
   border-radius: 9999px;
   border: 1px solid var(--hair);
-  background: var(--surface);
-  font-size: 13.5px;
+  background: transparent;
+  font-size: 14px;
+  font-weight: 500;
   color: var(--fg-70);
   transition:
+    background-color var(--dur) var(--ease),
     border-color var(--dur) var(--ease),
     color var(--dur) var(--ease);
 }
 .moodChip:hover {
+  background: var(--surface-2);
   border-color: var(--hair-2);
   color: var(--fg);
 }
-.moodChipOn {
-  border-color: var(--accent-line);
-  color: var(--accent);
-  font-weight: 600;
+.moodChipOn,
+.moodChipOn:hover {
+  border-color: var(--cta-bg);
+  background: var(--cta-bg);
+  color: var(--cta-fg);
 }
 .storyItemMoods {
   display: flex;
@@ -1736,12 +1738,17 @@
   width: 44px;
   height: 44px;
   margin-left: auto;
-  margin-right: -10px;
   border-radius: 9999px;
+  border: 1px solid var(--hair);
   color: var(--fg-70);
+  transition:
+    background-color var(--dur) var(--ease),
+    border-color var(--dur) var(--ease),
+    color var(--dur) var(--ease);
 }
 .sheetClose:hover {
-  background: var(--surface);
+  background: var(--surface-2);
+  border-color: var(--hair-2);
   color: var(--fg);
 }
 .sheetClose svg {
@@ -1771,20 +1778,377 @@
   padding: 12px var(--gut) 16px;
   border-top: 1px solid var(--hair);
 }
+/* §1.6b 보조 버튼 규격 — pill h48 고스트 */
 .sheetNavBtn {
   flex: 1;
   min-height: 48px;
-  border-radius: 12px;
+  border-radius: 9999px;
   border: 1px solid var(--ghost-line);
   font-size: 14px;
   font-weight: 500;
   color: var(--fg);
-  transition: background-color var(--dur) var(--ease);
+  transition:
+    background-color var(--dur) var(--ease),
+    border-color var(--dur) var(--ease);
 }
 .sheetNavBtn:hover:not(:disabled) {
-  background: var(--surface);
+  background: var(--surface-2);
+  border-color: var(--fg);
 }
 .sheetNavBtn:disabled {
-  opacity: 0.45;
+  opacity: 0.4;
   cursor: default;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   웹사이트 레이아웃 (768px↑) — 폰 프레임을 버린다
+
+   여기부터는 "앱 화면을 데스크톱 가운데 띄운 것"이 아니라 **웹사이트의 한
+   페이지**다. 랜딩 v3 와 같은 문법을 쓴다 — 다크 그린 배경 + 그레인,
+   오버라인 + 헤어라인, 세리프 대형 제목, 아끼지 않는 여백.
+
+     · 질문 : 820px 중앙 칼럼 · 관계/마음/예산은 2열 카드 그리드 ·
+              고정 하단 바 대신 콘텐츠 흐름 안의 버튼
+     · 결과 : 1120px 2단 — 좌(스티키) 꽃·이름·꽃말·색 칩 / 우(스크롤) 설화→
+              나라별→이유·상황예시→멘트→참고 (§1.5i 위계 그대로)
+
+   규칙이 이 블록에 몰려 있는 이유는 순서 때문이다 — 같은 명시도라면 뒤에 온
+   쪽이 이긴다. 위쪽 본문(모바일)을 건드리지 않고 덮어쓰려면 파일 끝이어야 한다.
+   ═════════════════════════════════════════════════════════════════════ */
+
+@media (min-width: 768px) {
+  .flow {
+    --gut: 30px;
+    --bar-h: 66px;
+    --col-q: 820px;
+    --col-r: 1120px;
+    font-size: 16px;
+  }
+
+  /* 페이지 바탕 — 랜딩과 같은 다크 그린 워시(그레인은 .grain 이 전 화면 공통) */
+  .frame {
+    min-height: 100svh;
+    padding: 0;
+    background:
+      radial-gradient(118% 66% at 50% -6%, color-mix(in srgb, var(--bg-3) 62%, transparent), transparent 58%),
+      radial-gradient(88% 58% at 4% 102%, color-mix(in srgb, var(--stem) 34%, transparent), transparent 62%),
+      var(--bg);
+  }
+
+  /* 폰 프레임 해체. overflow 를 열어 두는 건 장식이 아니라 필수다 —
+     overflow:hidden 인 조상이 있으면 결과 좌단의 position:sticky 가 죽는다. */
+  .phone {
+    max-width: none;
+    min-height: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+    overflow: visible;
+  }
+
+  /* ── 상단바 = 사이트 헤더 ─────────────────────────────────────────── */
+  .appbar {
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-width: none;
+    transform: none;
+    height: var(--bar-h);
+    padding: 0 clamp(24px, 4vw, 48px);
+    gap: 18px;
+    border-radius: 0;
+  }
+  .wmDesk {
+    display: block;
+    padding: 6px 2px 4px;
+  }
+  .progress {
+    max-width: 520px;
+    margin-inline: auto;
+  }
+
+  /* ── 질문 — 820px 중앙 칼럼 ──────────────────────────────────────── */
+  .qmain {
+    width: 100%;
+    max-width: calc(var(--col-q) + var(--gut) * 2);
+    margin-inline: auto;
+  }
+  .phoneQuestion {
+    padding-top: calc(var(--bar-h) + 54px);
+    padding-bottom: 0;
+  }
+  .qhead {
+    padding-top: 0;
+  }
+  .qhead .overline {
+    margin-bottom: 26px;
+  }
+  .qhead h1 {
+    font-size: clamp(36px, 3.4vw, 46px);
+    line-height: 1.32;
+  }
+  .lede {
+    margin-top: 16px;
+    font-size: 16px;
+    max-width: 60ch;
+  }
+
+  /* 관계·마음·예산 = 2열 카드 그리드(모바일의 헤어라인 리스트 대신) */
+  .rels {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    margin-top: 40px;
+  }
+  .rel,
+  .rels .rel:last-of-type {
+    min-height: 100px;
+    padding: 20px 22px;
+    border: 1px solid var(--hair);
+    border-radius: 20px;
+  }
+  .rel:hover {
+    border-color: var(--hair-2);
+  }
+  .relOn,
+  .relOn:hover {
+    background: var(--surface-2);
+    border-color: var(--accent-line);
+  }
+  /* 카드에서는 좌측 액센트 바를 쓰지 않는다(보더·체크로 충분) */
+  .relOn::before {
+    display: none;
+  }
+
+  .group {
+    margin-top: 40px;
+  }
+  .groupNote {
+    margin-bottom: 16px;
+  }
+  .fieldArea {
+    min-height: 96px;
+  }
+  .summary {
+    margin-top: 36px;
+  }
+  .summary dt {
+    width: 118px;
+    font-size: 13px;
+  }
+  .summary dd {
+    font-size: 15px;
+  }
+  .qnote {
+    margin-top: 34px;
+  }
+
+  /* 고정 footer 해제 — 데스크톱은 콘텐츠 하단에 버튼이 놓인다 */
+  .footbar {
+    position: static;
+    left: auto;
+    bottom: auto;
+    transform: none;
+    width: 100%;
+    max-width: calc(var(--col-q) + var(--gut) * 2);
+    margin: 0 auto;
+    padding: 40px var(--gut) 120px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    background: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    border-top: 0;
+    border-radius: 0;
+  }
+  .footbar .btn {
+    width: auto;
+    min-width: 268px;
+  }
+  .footbar .micro {
+    margin-top: 0;
+    text-align: left;
+  }
+
+  /* ── 결과 — 1120px 칼럼 ──────────────────────────────────────────── */
+  .rmain {
+    width: 100%;
+    max-width: calc(var(--col-r) + var(--gut) * 2);
+    margin-inline: auto;
+    padding-inline: var(--gut);
+  }
+  .phoneResult {
+    padding-top: calc(var(--bar-h) + 32px);
+    padding-bottom: 40px;
+  }
+  /* 칼럼이 좌우 여백을 갖게 됐으니 섹션의 거터는 0 으로 접는다 */
+  .two :where(.sect, .optHead, .optDetail, .ctx, .qhead) {
+    padding-left: 0;
+    padding-right: 0;
+  }
+  .two :where(.apology, .cueBand, .segTop, .summary, .error, .rels) {
+    margin-left: 0;
+    margin-right: 0;
+  }
+  .sect {
+    margin-top: clamp(40px, 4.4vw, 60px);
+  }
+
+  /* 3D 무대 — 카드로 세운다(모바일은 화면 폭 전체를 쓰는 풀블리드) */
+  .viewer {
+    height: min(38svh, 340px);
+    min-height: 250px;
+    border: 1px solid var(--hair);
+    border-radius: 22px;
+  }
+  .viewerTopscrim {
+    height: 92px;
+  }
+  .viewerHead {
+    top: 18px;
+  }
+  .ctx {
+    padding-top: 20px;
+  }
+
+  .foot {
+    margin-top: clamp(56px, 6vw, 88px);
+    padding: 34px 0 56px;
+  }
+
+  /* 공유 버튼은 칼럼 폭만큼 늘어나면 안 된다.
+     단 반폭 짝 버튼에는 min-width 를 물려주면 안 된다 — 트랙(210px)보다 넓어져 겹친다. */
+  .share .btn {
+    width: auto;
+    min-width: 280px;
+  }
+  .share .btnPair {
+    grid-template-columns: repeat(2, minmax(0, 210px));
+    margin-top: 12px;
+  }
+  .share .btnPair .btn {
+    width: 100%;
+    min-width: 0;
+  }
+
+  /* 이야기 상세는 바텀 시트 대신 가운데 다이얼로그 */
+  .sheetRoot {
+    align-items: center;
+    padding: 28px;
+  }
+  .sheet {
+    max-width: 720px;
+    max-height: 84svh;
+    border: 1px solid var(--hair);
+    border-radius: 24px;
+    padding-bottom: 0;
+  }
+  .sheetGrip {
+    display: none;
+  }
+  .sheetHead {
+    padding-top: 16px;
+  }
+  .sheetBody {
+    padding-bottom: 28px;
+  }
+}
+
+/* ── 결과 2단 (1024px↑) ─────────────────────────────────────────────
+   좌단은 그리드 아이템이라 우단 높이만큼 늘어난다. 그 안의 .colAInner 가
+   sticky 라서 우단을 아무리 스크롤해도 꽃·꽃말·색 칩이 화면에 남는다.
+   좌단이 뷰포트보다 길어질 수 있어(짧은 화면·사과 배너·단서 밴드) max-height
+   와 자체 스크롤을 준다 — 색 칩이 잘려 못 고르는 상황을 막는 안전장치다. */
+@media (min-width: 1024px) {
+  .two {
+    display: grid;
+    grid-template-columns: minmax(0, 424px) minmax(0, 1fr);
+    column-gap: 0;
+  }
+  /* 좌단 칸 자체는 우단 높이만큼 늘어난다(그리드 기본 align-self: stretch).
+     이 늘어난 높이가 안쪽 sticky 가 따라다닐 수 있는 거리다 — 여기서 높이를
+     내용에 맞추면(align-self: start) 스티키가 한 뼘도 못 움직인다. */
+  .colA {
+    position: relative;
+    min-width: 0;
+  }
+  .colAInner {
+    position: sticky;
+    top: calc(var(--bar-h) + 20px);
+    max-height: calc(100svh - var(--bar-h) - 36px);
+    overflow-y: auto;
+    padding-bottom: 2px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--hair-2) transparent;
+  }
+  .colB {
+    margin-left: clamp(32px, 3.6vw, 56px);
+    padding-left: clamp(32px, 3.6vw, 56px);
+    padding-bottom: 32px;
+    border-left: 1px solid var(--hair);
+  }
+  .colB > :first-child {
+    margin-top: 0;
+  }
+
+  /* 좌단은 **세로 예산**이 빠듯하다 — 뷰어·이름·꽃말·색 칩이 한 화면에 다 들어와야
+     스티키가 제 값을 한다(칩이 잘리면 못 고른다). 그래서 여기서만 리듬을 조인다.
+     그래도 넘치는 낮은 화면(≈800px 이하)에서는 좌단이 자체 스크롤한다. */
+  .colAInner .viewer {
+    height: min(30svh, 264px);
+    min-height: 210px;
+  }
+  .colAInner .ctx {
+    gap: 5px;
+    padding-top: 16px;
+  }
+  .colAInner .ctx li {
+    min-height: 28px;
+    padding: 3px 10px;
+    font-size: 12px;
+  }
+  .colAInner .segTop {
+    margin-top: 16px;
+  }
+  .optHead {
+    margin-top: 14px;
+  }
+  .optNo {
+    margin-bottom: 10px;
+  }
+  .flName {
+    font-size: 36px;
+  }
+  .flSci {
+    margin-top: 6px;
+  }
+  .flMean {
+    margin-top: 13px;
+    font-size: 21px;
+  }
+  .trustTop {
+    margin-top: 12px;
+  }
+  .two .sect {
+    margin-top: 18px;
+  }
+  .two .sect > .overline {
+    margin-bottom: 12px;
+  }
+  .pickLede {
+    margin-bottom: 10px;
+    font-size: 13px;
+  }
+  .pickOut {
+    margin-top: 10px;
+  }
+  .colB .sect,
+  .colB .optDetail {
+    margin-top: clamp(44px, 4.4vw, 64px);
+  }
+  .colB .sect > .overline {
+    margin-bottom: 16px;
+  }
 }

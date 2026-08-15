@@ -124,7 +124,12 @@ function ChoiceList({
   );
 }
 
-/** 여러 개 고르는 칩. 버튼 + aria-pressed 로 토글 상태를 읽어 준다. */
+/**
+ * 여러 개 고르는 칩. 버튼 + aria-pressed 로 토글 상태를 읽어 준다.
+ *
+ * 선택 표현은 §1.6b 대로 **채움 하나뿐**이다 — 예전엔 채움과 체크 아이콘을
+ * 겹쳐 썼는데, 한 화면에 선택 표현이 둘이면 규격 위반이다.
+ */
 function ToggleChips({
   options,
   values,
@@ -146,9 +151,6 @@ function ToggleChips({
             aria-pressed={on}
             onClick={() => onToggle(option.value)}
           >
-            <span className={styles.chipMark} aria-hidden="true">
-              <IconCheck />
-            </span>
             {option.label}
           </button>
         );
@@ -271,7 +273,7 @@ export default function Wizard({ options, defaultDateISO, action, onResult }: Wi
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              strokeWidth="1.8"
+              strokeWidth="1.6"
               strokeLinecap="round"
               strokeLinejoin="round"
               aria-hidden="true"
@@ -290,7 +292,7 @@ export default function Wizard({ options, defaultDateISO, action, onResult }: Wi
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              strokeWidth="1.8"
+              strokeWidth="1.6"
               strokeLinecap="round"
               strokeLinejoin="round"
               aria-hidden="true"
@@ -299,6 +301,11 @@ export default function Wizard({ options, defaultDateISO, action, onResult }: Wi
             </svg>
           </button>
         )}
+
+        {/* 데스크톱에서는 상단바가 사이트 헤더가 된다 — 로고가 있어야 페이지로 읽힌다 */}
+        <Link className={`${styles.wm} ${styles.wmDesk}`} href="/">
+          dearbloom
+        </Link>
 
         <div className={styles.progress}>
           <span
@@ -322,7 +329,7 @@ export default function Wizard({ options, defaultDateISO, action, onResult }: Wi
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
-            strokeWidth="1.8"
+            strokeWidth="1.6"
             strokeLinecap="round"
             aria-hidden="true"
           >
@@ -332,7 +339,7 @@ export default function Wizard({ options, defaultDateISO, action, onResult }: Wi
       </header>
 
       <div className={`${styles.phone} ${styles.phoneQuestion}`}>
-        <main>
+        <main className={styles.qmain}>
           <div className={styles.qhead}>
             <p className={styles.overline}>
               {head.overline} <span className={styles.ko}>{TOTAL_STEPS}문항 중 {step}번째</span>
@@ -402,9 +409,6 @@ export default function Wizard({ options, defaultDateISO, action, onResult }: Wi
                     aria-pressed={fragranceSensitive}
                     onClick={() => setFragranceSensitive(!fragranceSensitive)}
                   >
-                    <span className={styles.chipMark} aria-hidden="true">
-                      <IconCheck />
-                    </span>
                     향에 민감해요
                   </button>
                 </div>

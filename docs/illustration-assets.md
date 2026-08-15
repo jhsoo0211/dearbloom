@@ -1,4 +1,4 @@
-# dearbloom 세밀화 애셋 — 퍼블릭 도메인 보태니컬 도판 31종
+# dearbloom 세밀화 애셋 — 퍼블릭 도메인 보태니컬 도판 32종
 
 > 이야기(설화·일화) 250편에 개별 이미지를 붙이는 대신, **꽃 단위 빈티지 보태니컬 도판**을 카드·시트·레인 헤더에 얹는다.
 > 원문 기획 §2.3-11 "BHL·Rawpixel 퍼블릭 도메인 세밀화" 방침의 실행 목록이며, 실사 승인 목록인 `docs/image-assets.md`와 **별개로 병행 운용**한다.
@@ -10,13 +10,13 @@
 
 | 항목 | 내용 |
 |---|---|
-| 조사일 | 2026-08-15 |
-| 대상 | `content/flowers.csv` 31종 전수 |
-| 확보 | **31/31** (완료 기준 26종 초과 달성) |
-| 호스팅 출처 | Wikimedia Commons 30종 · plantillustrations.org 1종(gerbera) |
-| 검증 | 31종 전부 ① 파일 페이지 열람 ② 라이선스 템플릿 원문 확인 ③ 도판 실물 육안 확인(종·배경톤·판면 상태) ④ 직접 URL `HTTP 200` + `image/*` 응답 실측 |
-| 종 정확도 | 종 일치 **21종** · 같은 속 다른 종 **9종** · 속 일치·종 미확정 **1종**(벚꽃) |
-| 배경톤 | 크림·아이보리 고전 판면 **29종** · 순백 누끼 1종(ranunculus) · 우키요에 담청 1종(cherry-blossom) |
+| 조사일 | 2026-08-15 (같은 날 `daisy` 1종 확장 — 31 → 32) |
+| 대상 | `content/flowers.csv` 32종 전수(초기 31종 + seed-v5 `daisy`) |
+| 확보 | **32/32** (완료 기준 26종 초과 달성) |
+| 호스팅 출처 | Wikimedia Commons 31종 · plantillustrations.org 1종(gerbera → Internet Archive 대안 채택) |
+| 검증 | 32종 전부 ① 파일 페이지 열람 ② 라이선스 템플릿 원문 확인 ③ 도판 실물 육안 확인(종·배경톤·판면 상태) ④ 직접 URL `HTTP 200` + `image/*` 응답 실측 |
+| 종 정확도 | 종 일치 **22종** · 같은 속 다른 종 **9종** · 속 일치·종 미확정 **1종**(벚꽃) |
+| 배경톤 | 크림·아이보리 고전 판면 **30종** · 순백 누끼 1종(ranunculus) · 우키요에 담청 1종(cherry-blossom) |
 
 ---
 
@@ -46,28 +46,28 @@
 
 ## 배포 규칙 (프로덕션 필수)
 
-1. **자체 호스팅이 정답이다 — 2026-08-15 적용 완료(31/31).** 31종은 전부 PD/CC0라 재배포에 제약이 없다. 아래 표의 URL은 **취득용 주소이자 출처 증빙**이지, 프로덕션 `<img src>`가 아니다.
+1. **자체 호스팅이 정답이다 — 2026-08-15 적용 완료(32/32).** 32종은 전부 PD/CC0라 재배포에 제약이 없다. 아래 표의 URL은 **취득용 주소이자 출처 증빙**이지, 프로덕션 `<img src>`가 아니다.
 
    | 항목 | 현재 상태 |
    |---|---|
-   | 화면이 부르는 주소 | `/plates/{flower_id}.jpg` — 우리 `public/plates/` 사본. 런타임에 위키미디어·Internet Archive를 **부르지 않는다**(gerbera 포함 31종 전부) |
+   | 화면이 부르는 주소 | `/plates/{flower_id}.jpg` — 우리 `public/plates/` 사본. 런타임에 위키미디어·Internet Archive를 **부르지 않는다**(gerbera 포함 32종 전부) |
    | 단일 원본 | `src/lib/plates/index.ts` — 저장 경로(`src`)와 취득 주소(`remoteSrc`)를 함께 들고 있는 **유일한** 도판 상수. 컴포넌트 폴더에 사본을 다시 만들지 않는다 |
    | 다시 받는 법 | `node scripts/fetch-plates.mjs` (`--force` 재다운로드, `--reencode` 재다운로드 없이 다시 정규화). 설명적 User-Agent + 요청 간 500ms + 실패 1회 재시도. 저장 위치는 모듈의 `src`가 정한다 |
    | 정규화 파이프라인 | **입력 바이트 → `sharp` → `.jpg` 저장.** 폭 최대 **1100px**(`withoutEnlargement` — 작은 원본은 늘리지 않는다) · 알파는 흰 배경으로 flatten · JPEG 품질 82(mozjpeg). 원본 바이트는 보관하지 않는다 — 재현성은 `remoteSrc`가 담보한다 |
    | 폭을 1100px로 정한 근거 | 도판이 가장 크게 서는 자리(도감 상세 히어로 액자)의 실표시 폭이 ~550px 이하라 **레티나 2배 = 1100px면 충분하다.** 8 MB 예산에 맞추는 방법이 둘(폭 축소 / 품질 인하)이었는데, q82를 지키고 폭을 줄이는 쪽을 택했다 — 1280px 유지 시 q72까지 내려야 하고 그건 히어로 크기에서 손실이 눈에 띈다 |
-   | 확장자 | **31종 전부 `.jpg`로 통일**(2026-08-15 적용). 이름만 바꾼 게 아니라 `sharp`가 실제로 JPEG로 **다시 인코딩**하므로 파일 바이트 자체가 JPEG다 — 정적 서버의 `Content-Type: image/jpeg`가 사실과 맞는다 |
-   | 용량 | 합계 **7.19 MB** · 31종 평균 238 KB · 최대 354 KB(carnation). 정규화 전 38.8 MB에서 **81% 감소**. 폭은 전부 ≤1100px 한 벌 — 화면이 폭을 갈아 끼우지 않는다 |
+   | 확장자 | **32종 전부 `.jpg`로 통일**(2026-08-15 적용). 이름만 바꾼 게 아니라 `sharp`가 실제로 JPEG로 **다시 인코딩**하므로 파일 바이트 자체가 JPEG다 — 정적 서버의 `Content-Type: image/jpeg`가 사실과 맞는다 |
+   | 용량 | 합계 **7.38 MB** · 32종 평균 231 KB · 최대 354 KB(carnation). (daisy 196 KB 추가분 포함) 정규화 전 38.8 MB에서 **81% 감소**. 폭은 전부 ≤1100px 한 벌 — 화면이 폭을 갈아 끼우지 않는다 |
    | ~~남은 과제: PNG 7종~~ | **해소.** anemone·hellebore·hydrangea·ranunculus·cherry-blossom·iris·pansy 7종이 장당 2.5~4.2 MB(전체의 2/3)를 먹던 문제는 위 정규화로 사라졌다 — 7종 합계 26.3 MB → 1.7 MB. 인코더 의존성 `sharp`는 `devDependencies`이자 `scripts/fetch-plates.mjs` 전용이다(런타임·`src/lib`는 건드리지 않는다) |
    | 불변식 | `tests/components/plates.test.ts`가 지킨다 — 전 도판 `.jpg` + 실파일 각 1MB 이하. 원본 확장자 그대로 받아 두던 시절로 조용히 돌아가는 것을 막는 그물이다 |
 
    다운로드가 실패한 꽃이 생기면 그 종만 `src`를 `remoteSrc` 값으로 되돌려 **원격 폴백**으로 둔다(그때는 `plateSrc()`의 폭 치환이 다시 의미를 갖는다). 나머지 30종은 로컬 사본을 그대로 쓴다.
 2. **부득이 핫링크한다면 원본이 아니라 표준 썸네일 폭만 쓴다.** 위키미디어가 사전 생성해 두는 폭은 `20 / 40 / 60 / 120 / 250 / 330 / 500 / 960 / 1280 / 1920 / 3840` px다. 비표준 폭(예: 1100px)을 요청하면 거절된다.
-3. 아래 표의 `직접 URL`은 전부 **1280px 표준 썸네일**로 통일해 실측했다(31종 전원 `HTTP 200`). 카드용으로 충분하고, 레인 헤더·히어로가 필요하면 URL의 `1280px-`를 `1920px-`로 바꾼다 — 단 **원본 가로폭이 1920 미만인 5종**(rose-red 1479 · tulip-white 1580 · freesia 1395 · lavender 1378 · ranunculus 1891)은 확대되지 않으므로 1280이 상한이다.
+3. 아래 표의 `직접 URL`은 전부 **1280px 표준 썸네일**로 통일해 실측했다(32종 전원 `HTTP 200`). 카드용으로 충분하고, 레인 헤더·히어로가 필요하면 URL의 `1280px-`를 `1920px-`로 바꾼다 — 단 **원본 가로폭이 1920 미만인 5종**(rose-red 1479 · tulip-white 1580 · freesia 1395 · lavender 1378 · ranunculus 1891)은 확대되지 않으므로 1280이 상한이다.
 4. gerbera 1종만 Commons 밖(plantillustrations.org)이다. 이 호스트는 안정성을 신뢰할 수 없으니 **반드시 자체 호스팅**한다.
 
 ---
 
-## 채택 도판 31종
+## 채택 도판 32종
 
 `직접 URL`은 위키미디어 표준 1280px 썸네일(gerbera만 원 사이트 풀사이즈). `해상도`는 **원본** 픽셀이다.
 
@@ -104,6 +104,7 @@
 | `magnolia` | *Magnolia kobus* | 종 일치 | `https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Magnolia_kobus_138-8428.jpg/1280px-Magnolia_kobus_138-8428.jpg` | https://commons.wikimedia.org/wiki/File:Magnolia_kobus_138-8428.jpg | Matilda Smith 원화 / John Nugent Fitch 석판, *Curtis's Botanical Magazine* v.138 [ser.4 v.8] **t.8428** (1912) | `PD-Art` (`PD-old-70`) + `CC-PD-Mark` | 2204×3517 | **CSV 기준종(한라산 자생 *M. kobus*)과 정확히 일치**한다. 중국 원산 백목련(*M. denudata*)이 아니다 — 카탈로그가 애써 구분한 지점을 이미지도 지킨다. 크림 바탕에 흰 꽃이라 다크 배경에서 특히 잘 뜬다 |
 | `pansy` | *Viola tricolor* Linn. var. *grandiflora* | **같은 속·다른 종** (카탈로그는 *V.* × *wittrockiana*) | `https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/WitteHeinrichFlora1868-069-Viola_tricolor.png/1280px-WitteHeinrichFlora1868-069-Viola_tricolor.png` | https://commons.wikimedia.org/wiki/File:WitteHeinrichFlora1868-069-Viola_tricolor.png | A.J. Wendel / Witte *Flora* Pl.69 (1868) | `PD-old-70` | 3218×4627 | ***V. tricolor* var. *grandiflora*는 현대 팬지(*V.* × *wittrockiana*)의 직계 모종**이다. 자·황·적갈 9송이 대군락 구도라 정보량이 가장 많은 판 |
 | `poinsettia` | *Euphorbia pulcherrima* | 종 일치 | `https://upload.wikimedia.org/wikipedia/commons/thumb/0/01/Curtis%27s_botanical_magazine_%28Plate_3493%29_%288043241073%29.jpg/1280px-Curtis%27s_botanical_magazine_%28Plate_3493%29_%288043241073%29.jpg` | https://commons.wikimedia.org/wiki/File:Curtis%27s_botanical_magazine_(Plate_3493)_(8043241073).jpg | *Curtis's Botanical Magazine* v.63 **Pl.3493** (1836) — Royal Botanic Gardens Kew / BHL | `PD-US`(1931년 이전 간행), **`CC BY 2.0` 병기** | 2077×**1696** | ⚠ **세트에서 유일한 가로 판면**이다. 세로 카드 그리드에 넣으려면 별도 처리 필요(1:1 크롭 또는 가로 전용 슬롯). 붉은 포엽이 화면을 채워, CSV가 강조한 "포엽은 꽃잎이 아니다"를 시각적으로 보여주기 좋음 |
+| `daisy` | *Bellis perennis* | 종 일치 | `https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/Wayside_and_woodland_blossoms_%28Pl._1%29_%288746620415%29.jpg/1280px-Wayside_and_woodland_blossoms_%28Pl._1%29_%288746620415%29.jpg` | https://commons.wikimedia.org/wiki/File:Wayside_and_woodland_blossoms_(Pl._1)_(8746620415).jpg | Edward Step, *Wayside and Woodland Blossoms* **Pl.1** (1895) — BHL | `PD-scan` + `PD-old-70-1923` — **CC 상자 없음**(이 세트에서 가장 깨끗한 라이선스 면). 저자 Edward Step(1855–1931) 사후 70년 경과 | 2080×3022 | 2026-08-15 확장(seed-v5 신규 꽃). 판면 캡션에 `Daisy. / Bellis perennis. / — COMPOSITÆ. —` 가 직접 찍혀 있어 **종 동정이 문자로 확인**된다. `corn-poppy`와 **같은 책·같은 해·같은 기관**이라 크레딧 줄이 합쳐지고 화풍도 어긋나지 않는다. 주걱형 잎 로제트가 뿌리째 드러나고 봉오리·반개·만개 세 단계를 한 판에 보여 주는 야생 데이지 구도 |
 
 ---
 
@@ -193,10 +194,10 @@ Commons 파일 페이지가 `PD-old-70`을 걸었지만 **작가 Eugène-Jules E
 
 | 호스트 | 종수 |
 |---|---|
-| Wikimedia Commons | 30 |
+| Wikimedia Commons | 31 |
 | plantillustrations.org | 1 (`gerbera`) |
 
-**원 작품 기준** — 31종이 14개 판본에서 왔고, 상위 4개 판본이 21종(68%)을 덮는다. 이 4개를 우선 쓰면 세트 일관성이 자연스럽게 확보된다.
+**원 작품 기준** — 32종이 14개 판본에서 왔고, 상위 4개 판본이 21종(68%)을 덮는다. 이 4개를 우선 쓰면 세트 일관성이 자연스럽게 확보된다.
 
 | 작품 (화가, 연도) | 종수 | 해당 flower_id |
 |---|---|---|
@@ -207,7 +208,7 @@ Commons 파일 페이지가 `PD-old-70`을 걸었지만 **작가 Eugène-Jules E
 | *The Botanical Register* (S. Edwards, 1815) | 1 | camellia |
 | *Flora Conspicua* (W. Clark / R. Morris, 1826) | 1 | chrysanthemum |
 | *American Medicinal Plants* (Millspaugh, 1887) | 1 | sunflower |
-| *Wayside and Woodland Blossoms* (Edward Step, 1895) | 1 | corn-poppy |
+| *Wayside and Woodland Blossoms* (Edward Step, 1895) | **2** | corn-poppy, daisy |
 | *Flore médicale des Antilles* (Descourtilz, 1828) | 1 | jasmine |
 | *Gottorfer Codex* (Holtzbecker, 1649–59) | 1 | tulip-white |
 | Rijksmuseum 소장 수채 (Jan Augustini, 1762) | 1 | hyacinth |

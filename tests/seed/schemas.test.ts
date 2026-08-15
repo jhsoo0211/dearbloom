@@ -86,23 +86,23 @@ describe('content/*.csv 실제 데이터', () => {
     expect(issues.map(formatIssue)).toEqual([]);
   });
 
-  it('기대한 행 수를 갖는다 (flowers 31, pet_safety 62)', () => {
+  it('기대한 행 수를 갖는다 (flowers 32, pet_safety 64)', () => {
     const { dataset } = loadDataset();
-    expect(dataset.flowers).toHaveLength(31);
+    expect(dataset.flowers).toHaveLength(32);
     // 불변식: pet_safety 는 꽃 수 × cat·dog. 꽃이 늘면 여기도 같이 늘어야 한다.
     expect(dataset.pet_safety).toHaveLength(dataset.flowers.length * 2);
     expect(dataset.meanings.length).toBeGreaterThanOrEqual(20);
     expect(dataset.stories.length).toBeGreaterThanOrEqual(55);
     expect(dataset.rules.length).toBeGreaterThanOrEqual(6);
     expect(dataset.templates).toHaveLength(3);
-    // 편집팀 자작 3행 + §1.5k 문학 발췌 43행.
-    expect(dataset.quotes).toHaveLength(46);
+    // 편집팀 자작 3행 + §1.5k 문학 발췌 74행(한국·동아시아 43행 + 외국 문학 확장 31행).
+    expect(dataset.quotes).toHaveLength(77);
   });
 
-  it('문학 발췌 43행은 전부 꽃·갈래·퍼블릭 도메인 근거를 갖는다 (§1.5k)', () => {
+  it('문학 발췌 74행은 전부 꽃·갈래·퍼블릭 도메인 근거를 갖는다 (§1.5k)', () => {
     const { dataset } = loadDataset();
     const literature = dataset.quotes.filter((row) => row.value.excerpt_type !== undefined);
-    expect(literature).toHaveLength(43);
+    expect(literature).toHaveLength(74);
 
     for (const row of literature) {
       // 꽃이 없으면 결과 화면의 문학 블록이 이 행을 영영 못 찾는다.
@@ -114,11 +114,11 @@ describe('content/*.csv 실제 데이터', () => {
       expect(row.value.pd_basis).toBeDefined();
     }
 
-    // 31종 중 26종 커버. 나머지 5종은 근대에 명명돼 고전 문학에 등장하지 않는다
-    // (freesia · gerbera · babys-breath · poinsettia · ranunculus) — 블록을 생략하는 쪽이 맞다.
+    // 32종 중 28종 커버. 나머지는 근대에 명명돼 고전 문학에 등장하지 않는다
+    // (freesia · gerbera · babys-breath · poinsettia) — 블록을 생략하는 쪽이 맞다.
     const covered = new Set(literature.map((row) => row.value.flower_id));
-    expect(covered.size).toBe(26);
-    for (const id of ['freesia', 'gerbera', 'babys-breath', 'poinsettia', 'ranunculus']) {
+    expect(covered.size).toBe(28);
+    for (const id of ['freesia', 'gerbera', 'babys-breath', 'poinsettia']) {
       expect(covered.has(id)).toBe(false);
     }
   });
@@ -145,7 +145,7 @@ describe('content/*.csv 실제 데이터', () => {
     }
   });
 
-  it('31종 모두 이야기를 최소 한 편씩 갖는다', () => {
+  it('32종 모두 이야기를 최소 한 편씩 갖는다', () => {
     const { dataset } = loadDataset();
     const withStories = new Set(dataset.stories.map((row) => row.value.flower_id));
     for (const flower of dataset.flowers) {
@@ -842,6 +842,6 @@ describe('BOM 처리', () => {
     const fromFile = readCsv(filePath);
     const withBom = parseCsv(`﻿${raw}`);
     expect(withBom).toEqual(fromFile);
-    expect(withBom).toHaveLength(62);
+    expect(withBom).toHaveLength(64);
   });
 });

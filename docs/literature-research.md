@@ -998,3 +998,135 @@ quote_id,text_ko,author,source_title,source_url,license,era,tags,reviewed_at
 
 **저작권 근거**
 [한국저작권위원회 — 저작재산권의 보호기간](https://www.copyright.or.kr/information-materials/common-sense/basic-knowledge/index.do?jspName=08) · [공유마당 — 만료저작물](https://gongu.copyright.or.kr/gongu/main/contents.do?menuNo=200091) · [퍼블릭 도메인(한국어 위키백과)](https://ko.wikipedia.org/wiki/%ED%8D%BC%EB%B8%94%EB%A6%AD_%EB%8F%84%EB%A9%94%EC%9D%B8) · [KJV 저작권 상태](https://workingfortheword.com/episodes-chirho/166-the-kjv-is-still-restricted-by-copyright)
+
+---
+---
+
+# 2회차 — 외국 문학 확장 31행 (2026-08-15)
+
+> 사용자 요청 "한국 시·소설만이 아니라 외국의 시·문학작품도"에 따른 2차 적재분. **1회차(§1~§9)와 달리 이 회차는 조사·검증·적재를 한 worker가 모두 수행했고, 아래 31행은 이미 `content/quotes.csv` 에 실려 있다.** 1회차 43행 + 이번 31행 = 문학 발췌 74행(전체 quotes 77행).
+
+## 10. 요약
+
+| 항목 | 결과 |
+|---|---|
+| 신규 적재 | **31행** (전부 원문 발췌, 소개문 0) |
+| 언어 | 영어 8 · 프랑스어 4 · 라틴어 4 · 한문(중국) 3 · 독일어 3 · 이탈리아어 2 · 고대 그리스어 2 · 일본어 2 · 스페인어 1 · 러시아어 1 · 페르시아어 1 — **비영어 23행(74%)** |
+| 새로 문학이 생긴 꽃 | **`daisy`(3행) · `ranunculus`(1행)** → 커버 26종 → **28종 / 32종** |
+| 남은 미커버 4종 | `freesia` · `gerbera` · `babys-breath` · `poinsettia` (§6 권고 유지 — 근대 명명이라 고전 문학에 없음) |
+| 유형 | poem 27 · classic 2(베르길리우스 『아이네이스』, 사아디 『골레스탄』) · play 1(『파우스트』) · novel 1(『동백꽃 여인』) |
+| 라이선스 | pd 31 / 전 행 `translator=dearbloom`(자체 번역) |
+| 시대 폭 | BC 6세기(사포) ~ 1913년(타고르) |
+| 검증 | **31행 전부 원문 직접 대조**(§11 방법) · 죽은/빈 페이지 4건 적발 → 해당 후보 제외 |
+
+### 하이라이트 3편
+
+1. **`q-lit-rose-saadi`** — 사아디 『골레스탄』(1258) 서문. 벗이 옷자락에 장미를 담아 오자 사아디가 **"장미는 닷새 엿새면 그만이지만 이 장미정원은 언제나 향기로우리니(گل همین پنج روز و شش باشد / وین گلستان همیشه خوش باشد)"** 하며 책을 대신 건네는 장면. 시드는 꽃 대신 시들지 않는 것을 주는 이야기라, 꽃에 말을 얹어 보내는 이 서비스의 논리가 13세기 페르시아어로 이미 적혀 있다. `ورقی`(잎 한 장)가 꽃잎과 책장을 함께 부르는 말인 것까지 그대로 살아 있다.
+2. **`q-lit-rose-desbordes`** — 데보르드발모르 〈사아디의 장미〉(1860). **위 사아디 장면을 여성 화자가 다시 쓴 시**로, 장미를 너무 많이 담아 매듭이 터지고 다 날아가 버린 뒤 **"내게서 그 향기로운 기억을 맡아 보세요"**로 끝난다. 600년을 건너 같은 장면이 이어지는 한 쌍이라, 상세 시트에서 나란히 놓으면 계보가 화면에서 닫힌다.
+3. **`q-lit-daisy-chaucer`** — 초서 『선한 여인들의 전설』 서시(1386년경)의 **"The ‘dayesye’ or elles the ‘ye of day’"**. daisy = day's eye 라는 어원 풀이가 **600년 전 시 안에 이미 각주처럼 박혀 있다.** 새로 들어온 `daisy` 의 첫 문학 발췌로 이보다 나은 자리는 없다.
+
+---
+
+## 11. 검증 방법 — 이번 회차에 바꾼 것
+
+1회차 §2-5는 확인 강도를 `직접열람 / 검색확인` 으로 나눴다. 이번에는 **전 항목을 원문 파일 수준에서 대조**했다.
+
+- **MediaWiki `action=raw` 로 위키문헌 원문(wikitext)을 직접 받아 대조했다.** 표시용 HTML이 아니라 교정자가 스캔을 보고 친 원본 문자열이라, 대소문자·구두점·옛 철자가 그대로 남아 있다. 스캔 전사본은 `Page:`(`Pagina:`/`Seite:`/`Σελίδα:`) 네임스페이스까지 내려가 해당 쪽을 직접 확인했다.
+- **라틴어는 The Latin Library, 영어 구텐베르크 본은 원문 파일을 그대로 받아 대조**했다.
+- 🚨 **WebFetch 요약 모델을 원문 대조에 쓰면 안 된다 — 이번에 두 가지 실패를 확인했다.**
+  1. **틀린 전제를 그대로 확인해 준다.** 릴케 〈Blaue Hortensie〉의 마지막 연을 `"Aber plötzlich…"로 시작하는 3행을 인용해 달라`고 물었더니 그 전제를 받아 내용을 설명했다. **1907년 인젤 초판 원문은 `Doch plötzlich` 이고, 검색으로 재확인한 결과 `Aber plötzlich` 판본은 유통되지도 않는다.** 요약 모델의 "확인했다"는 답이 곧 대조가 아니다.
+  2. **시 전문 인용을 거부한다.** 괴테 〈Das Veilchen〉·랭보 〈Ophélie〉·릴케에서 "저작권/가사 재현" 가이드를 이유로 인용을 거절했다(PD 원문인데도). 죽은 링크가 아니라 **도구가 막는 것**이므로, 이걸 "출처 확인 실패"로 오판하면 멀쩡한 후보를 버리게 된다.
+- **URL 접속 검증**: 적재한 31개 source_url 전부 실제로 응답을 받아 본문을 확인했다. 아래 4건은 **페이지는 존재하나 본문이 비어 있어**(스텁·전사 미완) 후보 자체를 뺐다 — §13.
+
+---
+
+## 12. 판본·표기 함정 9건 (전부 caveat 또는 pd_basis 에 반영)
+
+| # | 대상 | 함정 | 처리 |
+|---|---|---|---|
+| 1 | 릴케 〈Blaue Hortensie〉 | 요약 모델이 잘못된 첫 낱말(`Aber plötzlich`)을 확인해 줌 | 인젤 1907 초판 원문 `Doch plötzlich` 채택. 존재하지 않는 이본을 caveat에 적지 않았다 |
+| 2 | 마블 〈The Mower against Gardens〉 | 1681 초판은 **`The Tulip, white, did for complexion seek;`** (쉼표 2개) / 현대판은 쉼표 없이 `The tulip white…` | 초판 표기 채택 + 차이를 caveat에 명시 |
+| 3 | 번스 〈To a Mountain Daisy〉 | 통용 표기는 `Wee, modest, crimson-tippèd flow’r` / 구텐베르크 #1279 는 **`Wee, modest crimson-tipped flow’r`**(modest 뒤 쉼표 없음, 악상 없음) | 기존 번스 행(`q-lit-rose-burns`)과 **같은 출처 파일**을 써서 표기 기준을 통일 |
+| 4 | 아리오스토 『광란의 오를란도』 | it.wikisource 의 1532년 판(1913 영인)은 **긴 s** 활자 — `La verginella e ſimile alla roſa` 그대로 실으면 화면에서 읽히지 않는다 | 철자를 정리한 **1928년 라테르차 판** 채택. 교정자 산토레 데베네데티도 **1948년 사망 → 한국 기준 만료**라 판본 저작권 문제 없음(§2-4 디킨슨 선례와 반대 방향의 판정) |
+| 5 | 황정견 〈王充道送水仙花五十枝〉 | zh.wikisource 본문은 품질 50% 미교정 + 제목이 `五十支`/`五十枝` 로 갈림. 둘째 구가 **`水上盈盈`(『광군방보』 1708) vs `水上輕盈`(현대 통용본)** 으로 다름 | 기존 소식 동백 행과 같은 **『광군방보』 권052** 를 출처로 통일하고, 통용본 표기 차이를 caveat에 남김 |
+| 6 | 이청조 〈醉花陰〉 | `銷魂`/`消魂`, `簾卷`/`簾捲` 이본. 위키문헌 본문에 이본 표기 틀이 달려 있음 | 위키문헌 본문 표기 채택 + 이본을 caveat에 명시 |
+| 7 | 괴테 〈Das Veilchen〉 / 롱사르 〈À Cassandre〉 | 초간 옛 철자(`unbekandt`·`iunge` / `avoit desclose`·`ceste vesprée`) | 초간 표기 그대로 싣고 현대 표기를 caveat에 병기(블레이크 선례) |
+| 8 | 사포 단편 | 와튼(1895) **94번** = 현대 편집본의 105 계열. 편집본마다 번호가 다름 | 출처 편집본 번호만 적고 **현대 번호를 단정하지 않음**("오늘날 편집본은 번호를 달리 매겨요") |
+| 9 | 베르길리우스 『목가』 2편 | `caltha`(금잔화)는 사전 통설이나, 같은 행의 **`vaccinia` 는 히아신스/월귤 등으로 갈림** | caltha만 marigold로 확정하고, vaccinia는 번역에서 그냥 '꽃'으로 두고 사유를 caveat에 남김. 밀턴 「리시다스」 선례대로 **인접 두 행을 개양귀비·마리골드 두 행으로 나눠** 쓰고 그 사실을 pd_basis에 적음 |
+
+### 하위트 연도 미확정
+
+메리 하위트 〈Buttercups and Daisies〉는 1830년대 작으로 알려졌으나 **초출 연도를 1차 자료로 확정하지 못해** `era` 를 `19c` 로 두고, 인용은 1904년 앤솔러지 수록본으로 명시했다. 몰년(1888)만으로 PD 판정은 확정된다.
+
+---
+
+## 13. 제외·보류 — 7건
+
+| 후보 | flower_id | 사유 |
+|---|---|---|
+| 호메로스 『일리아스』 8권 306~308행(고개 숙인 개양귀비 비유) | corn-poppy | **el.wikisource `Ιλιάς/Θ` 가 594바이트 스텁**(본문 없음). 그리스어 원문을 1차 자료로 대조할 경로를 못 찾아 제외 |
+| 호메로스 찬가 〈데메테르에게〉(수선화 덫) | narcissus | **`Ομηρικοί Ύμνοι/II. Εις Δημήτραν` 478바이트 스텁**. 동일 사유 |
+| 세이 쇼나곤 『마쿠라노소시』 「草の花は」(나데시코) | carnation | ja.wikisource 목록 페이지에 단락 링크는 있으나 **하위 단락 페이지 본문을 받지 못함**(요청 오류). 대신 같은 꽃을 『만엽집』 야카모치 노래로 채움 |
+| 요사 부손 「牡丹散て…」 | peony | **ja.wikisource 에 부손 구집이 없다.** 원문 대조 불가 → 브리프의 "원문 확인 없이 싣지 마라" 적용 |
+| 하피즈 가잘(장미·튤립) | rose-red / tulip-white | 페르시아어 원문 후보는 있으나 **자체 번역의 신뢰도를 담보하지 못함.** 페르시아어권은 사아디 1행으로 대표시키고 보류 |
+| 독일 민요 〈Vergißmeinnicht〉 | forget-me-not | de.wikisource 수록본이 **『Erotische Volkslieder aus Deutschland』(1910) 소재 외설 민요** — PD이지만 선물 서비스 톤과 맞지 않아 제외. **물망초는 여전히 1행뿐** |
+| freesia · gerbera · babys-breath · poinsettia | — | §6 권고 유지. 이번 회차에서도 PD 후보 0건 |
+
+---
+
+## 14. 적재된 31행 인덱스
+
+| # | quote_id | flower_id | 작가 | 언어 | era | 출처 판본 |
+|---|---|---|---|---|---|---|
+| 1 | q-lit-daisy-chaucer | daisy | 제프리 초서 | 중세 영어 | 1386년경 | Skeat 편 전집 3권(F본) |
+| 2 | q-lit-daisy-burns | daisy | 로버트 번스 | 스코트어 | 1786 | 구텐베르크 #1279 |
+| 3 | q-lit-daisy-goethe | daisy | 괴테 | 독일어 | 1808 | 『파우스트』 1부 코타 초판 207~208쪽 |
+| 4 | q-lit-ranunculus-howitt | ranunculus | 메리 하위트 | 영어 | 19c | 1904년 Burt 편 앤솔러지 51~52쪽 |
+| 5 | q-lit-rose-ronsard | rose-red | 피에르 드 롱사르 | 프랑스어 | 1553 | 1923년 가르니에 판(바가네 교정) |
+| 6 | q-lit-rose-ariosto | rose-red | 아리오스토 | 이탈리아어 | 1532 | 1928년 라테르차 판(데베네데티) |
+| 7 | q-lit-rose-sorjuana | rose-red | 소르 후아나 | 스페인어 | 17c | es.wikisource(무스캔) |
+| 8 | q-lit-rose-desbordes | rose-red | 데보르드발모르 | 프랑스어 | 1860 | 『Poésies inédites』(1860) 15쪽 |
+| 9 | q-lit-rose-saadi | rose-red | 사아디 | 페르시아어 | 1258 | ganjoor.net 『골레스탄』 서문 |
+| 10 | q-lit-violet-goethe | violet | 괴테 | 독일어 | 1775 | 『Iris』 2권 3호 182~183쪽 |
+| 11 | q-lit-violet-leopardi | violet | 레오파르디 | 이탈리아어 | 1835 | 1835년 나폴리 스타리타 판 117쪽 |
+| 12 | q-lit-tulip-marvell | tulip-white | 앤드루 마블 | 영어 | 1681 | 『Miscellaneous Poems』 40쪽 |
+| 13 | q-lit-lily-vergil | lily-asiatic | 베르길리우스 | 라틴어 | BC 19년경 | The Latin Library 『아이네이스』 6권 |
+| 14 | q-lit-lily-rimbaud | lily-asiatic | 랭보 | 프랑스어 | 1870 | 1895년 바니에 판 62쪽 |
+| 15 | q-lit-hydrangea-rilke | hydrangea | 릴케 | 독일어 | 1907 | 인젤 1907 초판 57쪽 |
+| 16 | q-lit-hyacinth-sappho | hyacinth | 사포 | 고대 그리스어 | BC 6c | Wharton(1895) 단편 94 |
+| 17 | q-lit-hyacinth-shelley | hyacinth | 셸리 | 영어 | 1820 | Hutchinson(1914) 전집 |
+| 18 | q-lit-lotv-shelley | lily-of-the-valley | 셸리 | 영어 | 1820 | 위와 같은 시의 **바로 앞 연** |
+| 19 | q-lit-lotv-lermontov | lily-of-the-valley | 레르몬토프 | 러시아어 | 1837 | ru.wikisource(1989 전집 대조본) |
+| 20 | q-lit-anemone-bion | anemone | 비온 | 고대 그리스어 | BC 2~1c | Edmonds 『Greek Bucolic Poets』(1912) |
+| 21 | q-lit-hellebore-horace | hellebore | 호라티우스 | 라틴어 | BC 30년경 | The Latin Library 『풍자시』 2권 |
+| 22 | q-lit-carnation-yakamochi | carnation | 오토모노 야카모치 | 일본어 | 8c | 『만엽집』 8권 1496번(훈독) |
+| 23 | q-lit-cherry-komachi | cherry-blossom | 오노노 고마치 | 일본어 | 905년경 | 『고금와카집』 권2 113번(옛 가나) |
+| 24 | q-lit-chrysanthemum-liqingzhao | chrysanthemum | 이청조 | 한문 | 12c초 | zh.wikisource 『李清照詞全集』 계열 |
+| 25 | q-lit-magnolia-quyuan | magnolia | 굴원 | 한문 | BC 3c | zh.wikisource 『離騷』 |
+| 26 | q-lit-narcissus-huangtingjian | narcissus | 황정견 | 한문 | 12c초 | 『광군방보』(1708) 권052 |
+| 27 | q-lit-jasmine-tagore | jasmine | 타고르 | 영어(자역) | 1913 | 맥밀런 1913 초판 70쪽 |
+| 28 | q-lit-camellia-dumas | camellia | 뒤마 피스 | 프랑스어 | 1848 | 1852년 판 54쪽 |
+| 29 | q-lit-peony-keats | peony | 존 키츠 | 영어 | 1820 | 1820년 시집 141쪽(1909 영인) |
+| 30 | q-lit-poppy-vergil | corn-poppy | 베르길리우스 | 라틴어 | BC 39년경 | The Latin Library 『목가』 2편 45~48행 |
+| 31 | q-lit-marigold-vergil | marigold | 베르길리우스 | 라틴어 | BC 39년경 | 위와 같은 문단 49~50행 |
+
+---
+
+## 15. 조회 로직 주의 — §7 목록에 추가할 것
+
+**같은 작가가 한 화면에 두 번 뜨는 조합(작가 단위 dedupe 대상)**
+
+- **베르길리우스 3행** — ㉓ 아이네이스(백합) · ㉚㉛ 목가(개양귀비·마리골드). ㉚㉛은 **같은 문단의 인접 행**이라 밀턴 「리시다스」 2행과 같은 취급이 필요하다
+- **셸리 2행** — ⑰ 히아신스 · ⑱ 은방울꽃. **같은 시의 붙어 있는 두 연**이라 특히 중요
+- **괴테 2행** — ③ 파우스트(데이지) · ⑩ 제비꽃
+- **번스 2행** — 기존 `q-lit-rose-burns`(장미) + ② 데이지
+- **릴케 2행** — 기존 `q-lit-rose-rilke`(묘비명) + ⑮ 수국
+
+**같은 이야기가 겹치는 쌍(동시 노출 시 중복감)**
+
+| 쌍 | 관계 | 처리 |
+|---|---|---|
+| ⑨ 사아디 ↔ ⑧ 데보르드발모르 | **후자가 전자를 다시 쓴 시**. 둘 다 rose-red | 상세 시트에서 택1하거나, 계보를 드러낼 의도라면 **의도적으로 나란히** 배치 |
+| ⑳ 비온 ↔ 기존 `q-lit-anemone-ovid` | 같은 아도니스 설화의 **그리스 판본 / 로마 판본**. 꽃이 서로 바뀐다(피→장미 vs 피→아네모네) | 나란히 놓으면 대비가 살아난다 — caveat가 이미 그 사실을 담고 있다 |
+| ⑭ 랭보 오필리아 ↔ 기존 `q-lit-violet-hamlet`·`q-003` | 같은 인물(오필리아). flower_id는 각각 lily-asiatic / violet 이라 화면은 갈리지만 **꽃다발 조합 결과에서는 만날 수 있다** | 조합 결과 화면에서 인물 중복 체크 |
+| ㉔ 이청조 ↔ 기존 `q-lit-chrysanthemum-taoyuanming` | 이청조의 '동쪽 울타리'가 **도연명 구절 인용**. 둘 다 chrysanthemum | 택1 권장 |

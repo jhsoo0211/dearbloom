@@ -33,3 +33,11 @@ lily-of-the-valley,cat,true,life_threatening,flower|leaf|stem|root|berry|seed,fr
 lily-of-the-valley,dog,true,life_threatening,flower|leaf|stem|root|berry|seed,freesia|gerbera|sunflower|lisianthus,https://www.aspca.org/pet-care/animal-poison-control/toxic-and-non-toxic-plants/lily-valley,2026-08-15
 chrysanthemum,cat,true,mild_gi,flower|leaf|stem,freesia|gerbera|sunflower|lisianthus,https://www.aspca.org/pet-care/animal-poison-control/toxic-and-non-toxic-plants/chrysanthemum,2026-08-15
 chrysanthemum,dog,true,mild_gi,flower|leaf|stem,freesia|gerbera|sunflower|lisianthus,https://www.aspca.org/pet-care/animal-poison-control/toxic-and-non-toxic-plants/chrysanthemum,2026-08-15
+iris,cat,true,mild_gi,rhizome|stem|leaf|flower,freesia|gerbera,https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/iris,2026-08-15
+iris,dog,true,mild_gi,rhizome|stem|leaf|flower,freesia|gerbera,https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/iris,2026-08-15
+poppy,cat,true,mild_gi,sap|stem|leaf|seed,freesia|gerbera,https://plants.ces.ncsu.edu/plants/papaver-rhoeas/,2026-08-15
+poppy,dog,true,mild_gi,sap|stem|leaf|seed,freesia|gerbera,https://plants.ces.ncsu.edu/plants/papaver-rhoeas/,2026-08-15
+camellia,cat,false,none,,,https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/camellia,2026-08-15
+camellia,dog,false,none,,,https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/camellia,2026-08-15
+magnolia,cat,false,none,,,https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/magnolia-bush,2026-08-15
+magnolia,dog,false,none,,,https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/magnolia-bush,2026-08-15

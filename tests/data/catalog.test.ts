@@ -15,8 +15,8 @@ import type { Catalog } from '@/lib/data/types';
  * 행 수 같은 숫자는 "지금 이만큼 실려 있다"는 사실 확인이라 콘텐츠가 늘면 함께 고친다.
  */
 
-const EXPECTED_FLOWERS = 17;
-const EXPECTED_STORIES = 89;
+const EXPECTED_FLOWERS = 21;
+const EXPECTED_STORIES = 104;
 
 async function load(): Promise<Catalog> {
   return loadCatalog();
@@ -36,7 +36,7 @@ describe('loadCatalog', () => {
     expect(catalog.meanings.length).toBeGreaterThan(0);
     expect(catalog.templates.length).toBeGreaterThan(0);
     expect(catalog.quotes.length).toBeGreaterThan(0);
-    // 꽃 17종 × cat·dog = 34행 (교차 검증이 강제하는 커버리지)
+    // 꽃 21종 × cat·dog = 42행 (교차 검증이 강제하는 커버리지)
     expect(catalog.petSafety).toHaveLength(EXPECTED_FLOWERS * 2);
   });
 

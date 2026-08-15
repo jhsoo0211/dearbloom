@@ -7,18 +7,19 @@ DB는 이 CSV에서 시드(upsert)될 뿐, 반대로 DB를 직접 고치지 않�
 
 | 파일 | 내용 | 현재 행 수 |
 |---|---|---|
-| `flowers.csv` | 꽃 기본 정보 | 17 |
-| `meanings.csv` | 꽃말(출처 필수) | 86 |
-| `stories.csv` | 꽃에 얽힌 일화(창작 외 출처 필수) | 89 |
+| `flowers.csv` | 꽃 기본 정보 | 21 |
+| `meanings.csv` | 꽃말(출처 필수) | 100 |
+| `stories.csv` | 꽃에 얽힌 일화(창작 외 출처 필수) | 104 |
 | `rules.csv` | 상황 → 꽃 추천/회피 규칙 | 7 |
 | `templates.csv` | 메시지 템플릿 | 3 |
 | `quotes.csv` | 인용문 | 3 |
-| `pet_safety.csv` | 반려동물 안전성(꽃 × cat/dog 전수) | 34 |
+| `pet_safety.csv` | 반려동물 안전성(꽃 × cat/dog 전수) | 42 |
 
 `rules.csv` 는 5종(`rose-red` `tulip-white` `freesia` `lily-asiatic` `gerbera`)만 다룬다.
 2026-08-14에 들어온 4종(`anemone` `hellebore` `hyacinth` `peony`)과 2026-08-15에 들어온 8종
 (`hydrangea` `lavender` `sunflower` `carnation` `lisianthus` `ranunculus` `lily-of-the-valley`
-`chrysanthemum`)은 **이야기·도감용으로 먼저 존재**하며, 추천 규칙은 편집 판단이 끝난 뒤에 붙인다.
+`chrysanthemum`), 그리고 같은 날 주간 리서치로 들어온 4종(`iris` `poppy` `camellia` `magnolia`)은
+**이야기·도감용으로 먼저 존재**하며, 추천 규칙은 편집 판단이 끝난 뒤에 붙인다.
 규칙이 없는 꽃은 추천 결과에 오르지 않을 뿐 교차 검증에는 걸리지 않는다(반려동물 판정만 전수로
 필요하다).
 
@@ -42,6 +43,10 @@ DB는 이 CSV에서 시드(upsert)될 뿐, 반대로 DB를 직접 고치지 않�
     `flowers.csv` 8행 + 색상 정합으로 갱신한 `rose-red`·`tulip-white` 2행,
     `meanings.csv` 27행, `stories.csv` 28행이 여기 해당한다.
     (`pet_safety.csv` 는 메모 컬럼이 없어 16행이 접두사 없이 들어가 있다.)
+  - `weekly-research:` — 첫 주간 콘텐츠 리서치로 들어온 신규 꽃 4종
+    (2026-08-15, `docs/weekly-research-2026-08-15.md`). `flowers.csv` 4행,
+    `meanings.csv` 14행, `stories.csv` 15행이 여기 해당한다.
+    (`pet_safety.csv` 는 메모 컬럼이 없어 8행이 접두사 없이 들어가 있다.)
 
 ## 절대 하지 말 것
 
@@ -79,7 +84,9 @@ npm run seed:apply    # 실제 upsert (Supabase 환경변수 필요)
   근거와 판단은 `docs/meanings-research.md` §2).
 - 조사 경위·열람 URL·제외 판단의 단일 원본은 회차별로 나뉜다:
   **`docs/meanings-research.md`**(seed-v2, 기존 9종) ·
-  **`docs/catalog-expansion-research.md`**(seed-v3, 신규 8종 + 색상 정합 + 독성 등급 근거).
+  **`docs/catalog-expansion-research.md`**(seed-v3, 신규 8종 + 색상 정합 + 독성 등급 근거) ·
+  **`docs/weekly-research-2026-08-15.md`**(weekly-research, 신규 4종 — WebFetch 차단으로 인한
+  검증 방식 변경 사항 포함).
 
 ### `stories.csv` — 꽃에 얽힌 일화
 
@@ -93,7 +100,8 @@ npm run seed:apply    # 실제 upsert (Supabase 환경변수 필요)
 `uk`, `western`, `greece-rome` 처럼 소문자 slug 로 적고, `flower_id` 는 반드시
 `flowers.csv` 의 `id` 중 하나여야 한다(교차 검증이 막는다).
 조사 경위·열람 URL·제외 판단은 **`docs/story-research.md`**(기존 9종)와
-**`docs/catalog-expansion-research.md`**(seed-v3, 신규 8종 + 농사로 작약 설화 2편)에 남긴다.
+**`docs/catalog-expansion-research.md`**(seed-v3, 신규 8종 + 농사로 작약 설화 2편),
+**`docs/weekly-research-2026-08-15.md`**(weekly-research, 신규 4종)에 남긴다.
 
 #### `story_type` — 이야기의 갈래, 그리고 출처 면제
 
@@ -176,7 +184,7 @@ design-spec §1.5f. 네 값만 쓴다.
 어휘를 벗어나면 그 꽃은 페르소나 점수를 영영 못 받는다. 한국어 라벨 ↔ slug 대응은
 `src/lib/engine/normalize.ts` 의 `TRAIT_LABELS` 가 단일 원본이다.
 
-`flower_id` 는 `flowers.csv` 의 `id` 를 그대로 참조한다. 현재 17종: `rose-red`, `tulip-white`,
+`flower_id` 는 `flowers.csv` 의 `id` 를 그대로 참조한다. 현재 21종: `rose-red`, `tulip-white`,
 `freesia`, `lily-asiatic`, `gerbera`, `anemone`, `hellebore`, `hyacinth`, `peony`,
 `hydrangea`, `lavender`, `sunflower`, `carnation`, `lisianthus`, `ranunculus`,
-`lily-of-the-valley`, `chrysanthemum`.
+`lily-of-the-valley`, `chrysanthemum`, `iris`, `poppy`, `camellia`, `magnolia`.

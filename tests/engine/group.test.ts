@@ -152,9 +152,11 @@ describe('recommendGroupBouquet (단체 부케)', () => {
     expect(lily?.because).toEqual(['지수']);
     expect(lily?.reason).toContain('고양이');
 
-    expect(bouquet.caution).toContain('지수님의 반려묘');
+    expect(bouquet.caution).toContain('지수님과 사는 고양이를');
     expect(bouquet.caution).toContain('아시아틱 릴리');
-    expect(bouquet.caution).toContain('부케에서 뺐어요');
+    expect(bouquet.caution).toContain('다발에서 뺐어요');
+    // 괄호 조사(`아시아틱 릴리은(는)`)·`반려견를` 류가 화면 문자열로 새어 나가지 않는다.
+    expect(bouquet.caution).not.toMatch(/[은이을](\(|（)/);
   });
 
   it('mild_gi 꽃은 부케에 남기고 주의 문구만 붙인다', () => {

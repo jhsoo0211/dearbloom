@@ -183,6 +183,36 @@ function buildMeaningGroups(flower: CatalogFlower, meanings: CatalogMeaning[]): 
   return groups;
 }
 
+/**
+ * 출처 주소 → **사람이 읽는 이름**(접근성 리뷰 P1-9).
+ *
+ * 상세 한 장에 꽃말 출처 링크가 최대 13개까지 서는데, 예전에는 전부 `이야기의 갈래` 라는
+ * **같은 이름**이었다. 화면 낭독기로 링크 목록을 훑으면 같은 말이 열세 번 나오고 어디가
+ * 어디인지 알 수 없다 — 링크 이름은 목적지를 구별해야 한다.
+ *
+ * 아는 호스트만 제 이름으로 부르고, 모르는 곳은 도메인을 그대로 쓴다
+ * (모르는 곳을 "웹사이트" 라고 뭉뚱그리면 다시 구별할 수 없게 된다).
+ * 주소가 망가진 행은 문자열을 그대로 돌려준다 — 링크 이름이 비는 편이 가장 나쁘다.
+ */
+const SOURCE_LABELS: Record<string, string> = {
+  'en.wikipedia.org': 'Wikipedia',
+  'ko.wikipedia.org': '위키백과',
+  'ja.wikipedia.org': 'ウィキペディア',
+  'www.gutenberg.org': 'Project Gutenberg',
+  'archive.org': 'Internet Archive',
+  'www.nihhs.go.kr': '국립원예특작과학원',
+  'www.nongsaro.go.kr': '농사로',
+};
+
+export function sourceLabel(url: string): string {
+  try {
+    const host = new URL(url).hostname;
+    return SOURCE_LABELS[host] ?? host.replace(/^www\./, '');
+  } catch {
+    return url;
+  }
+}
+
 /** 꽃말 한 줄 + 각주(문화권 · 시대 · 신뢰). 메타는 언제나 본문 **뒤**다(§1.5i). */
 function toMeaningItem(row: CatalogMeaning, index: number) {
   const parts = [regionLabel(row.cultureRegion ?? ''), eraLabel(row.era)].filter(
@@ -195,13 +225,19 @@ function toMeaningItem(row: CatalogMeaning, index: number) {
     text: row.meaningKo,
     note: parts.join(' · '),
     ...(row.cautionNote ? { caution: row.cautionNote } : {}),
-    ...(row.sourceUrl ? { sourceUrl: row.sourceUrl } : {}),
+    ...(row.sourceUrl ? { sourceUrl: row.sourceUrl, sourceLabel: sourceLabel(row.sourceUrl) } : {}),
   };
 }
 
-/** stories.csv 한 행 → 각주 라벨을 붙이기 위한 `/stories` 와 **같은 모양**. */
+/**
+ * stories.csv 한 행 → 각주 라벨을 붙이기 위한 `/stories` 카드와 **같은 모양**.
+ *
+ * ⚠ `ArchiveStory` 는 이제 **카드가 그리는 것만** 담는다(전문·출처는 시트가 따로 가져간다 —
+ *   성능 리뷰 P1-7). 도감은 한 꽃의 이야기만 다뤄 그런 분리가 필요 없으므로, 전문과 출처는
+ *   아래 `toStory` 가 원본 행에서 **곧장** 읽는다. 이 함수는 각주 라벨을 만들기 위한
+ *   `metaNotes` 의 입력을 짓는 것이 전부다.
+ */
 function toArchiveShape(story: CatalogStory, flowerNameKo: string): ArchiveStory {
-  const isOriginal = story.storyType === 'original';
   const region = regionLabel(story.cultureRegion ?? '');
   const era = eraLabel(story.era);
 
@@ -210,8 +246,7 @@ function toArchiveShape(story: CatalogStory, flowerNameKo: string): ArchiveStory
     flowerId: story.flowerId,
     flowerNameKo,
     title: story.title,
-    body: story.storyKo,
-    isOriginal,
+    isOriginal: story.storyType === 'original',
     typeLabel: storyTypeLabel(story.storyType),
     confidenceLabel: storyConfidenceLabel(story.confidenceLevel, story.sourceKind),
     moods: story.moods,
@@ -221,26 +256,25 @@ function toArchiveShape(story: CatalogStory, flowerNameKo: string): ArchiveStory
   if (story.hook) shaped.hook = story.hook;
   if (region) shaped.regionLabel = region;
   if (era) shaped.eraLabel = era;
-  // 창작(original)만 출처가 면제다 — 나머지는 갈래를 각주로 밝힌다(§1.5d·§1.5f).
-  if (!isOriginal && story.sourceTitle) {
-    shaped.sourceTitle = story.sourceTitle;
-    if (story.sourceUrl) shaped.sourceUrl = story.sourceUrl;
-  }
 
   return shaped;
 }
 
 function toStory(story: CatalogStory, flowerNameKo: string, featured: boolean): FlowerStory {
   const shaped = toArchiveShape(story, flowerNameKo);
+  // 창작(original)만 출처가 면제다 — 나머지는 어디서 온 이야기인지 각주로 밝힌다(§1.5d·§1.5f).
+  // ⚠ 이 규칙은 `app/stories/actions.ts` 의 `loadStoryDetail` 과 **같아야 한다.**
+  const hasSource = !shaped.isOriginal && !!story.sourceTitle;
+
   return {
     id: shaped.id,
     title: shaped.title,
     ...(shaped.hook ? { hook: shaped.hook } : {}),
-    body: shaped.body,
+    body: story.storyKo,
     moodLabels: shaped.moodLabels,
     notes: metaNotes(shaped),
-    ...(shaped.sourceTitle ? { sourceTitle: shaped.sourceTitle } : {}),
-    ...(shaped.sourceUrl ? { sourceUrl: shaped.sourceUrl } : {}),
+    ...(hasSource ? { sourceTitle: story.sourceTitle } : {}),
+    ...(hasSource && story.sourceUrl ? { sourceUrl: story.sourceUrl } : {}),
     featured,
   };
 }
@@ -304,7 +338,7 @@ function buildPetNote(flower: CatalogFlower): PetNote {
  */
 function buildSeasonLine(flower: CatalogFlower): string {
   const months = flower.bloomMonths;
-  if (months.length === 0) return '피는 철이 따로 기록돼 있지 않아요';
+  if (months.length === 0) return '언제 피는지는 아직 적어 두지 못했어요';
   if (months.length >= 11) return '사철 만날 수 있어요';
   return `${months.join('·')}월에 주로 만나요`;
 }

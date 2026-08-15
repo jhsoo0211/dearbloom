@@ -77,7 +77,13 @@ export interface FlowerTheme {
   caveat?: string;
   /** 히어로 배경(풀스크린). */
   hero: FlowerThemeImage;
-  /** 오늘의 꽃 카드 사진. */
+  /**
+   * 오늘의 꽃 카드 사진.
+   *
+   * ⚠ 카드는 화면에서 **380px(좁은 화면 340px)** 로 뜬다 — `w=1920` 은 레티나 기준으로도
+   *   두 배 넘는 과발주였다(성능 리뷰 P1-4). 카드용 최대 폭은 **1080**(2배)으로 못 박는다.
+   *   더 작은 후보(640)는 `photos/unsplashSrcSet()` 이 srcset 으로 함께 내보낸다.
+   */
   card: FlowerThemeImage;
 }
 
@@ -115,7 +121,7 @@ export const FLOWER_THEMES: readonly FlowerTheme[] = [
     },
     card: {
       assetNo: 5,
-      src: 'https://images.unsplash.com/photo-1772724718360-58108ae57433?auto=format&fit=crop&w=1920&q=80',
+      src: 'https://images.unsplash.com/photo-1772724718360-58108ae57433?auto=format&fit=crop&w=1080&q=80',
       alt: '어둠 속에서 조명을 받은 흰 튤립 한 송이',
       credit: 'Photo: Liana S / Unsplash',
     },
@@ -182,7 +188,7 @@ export const FLOWER_THEMES: readonly FlowerTheme[] = [
     },
     card: {
       assetNo: 15,
-      src: 'https://images.unsplash.com/photo-1590791211964-cb77c1e61a3d?auto=format&fit=crop&w=1920&q=80',
+      src: 'https://images.unsplash.com/photo-1590791211964-cb77c1e61a3d?auto=format&fit=crop&w=1080&q=80',
       alt: '어두운 배경에 놓인 흰 꽃과 초록 잎',
       credit: 'Photo: Christina / Unsplash',
     },
@@ -217,7 +223,7 @@ export const FLOWER_THEMES: readonly FlowerTheme[] = [
     },
     card: {
       assetNo: 16,
-      src: 'https://images.unsplash.com/photo-1634771141792-12c6a8df9103?auto=format&fit=crop&w=1920&q=80',
+      src: 'https://images.unsplash.com/photo-1634771141792-12c6a8df9103?auto=format&fit=crop&w=1080&q=80',
       alt: '어둠 속 자줏빛이 도는 꽃 어레인지',
       credit: 'Photo: Margaret Jaszowska / Unsplash',
       // image-assets.md 16번 — 붉은 기 그레이딩 필수, 히어로에는 쓰지 않는다.

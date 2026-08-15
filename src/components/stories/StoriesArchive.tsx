@@ -3,9 +3,14 @@
 /**
  * 이야기 아카이브의 움직이는 부분 — 필터 바 · 꽃 고르기 시트 · 꽃별 가로 레인 · 상세 시트.
  *
- * 이야기는 전부(196편+) 서버가 한 번에 내려보낸다. 텍스트뿐이라 통째로 들고 있어도
- * 가벼워서, 필터를 누를 때마다 서버를 다시 다녀오지 않고 **클라이언트에서 거른다**
- * (아카이브의 값은 "이것저것 눌러 보는 재미" 라 반응이 즉각적이어야 한다).
+ * 이야기 **카드**는 전부(317편+) 서버가 한 번에 내려보낸다. 그래야 필터를 누를 때마다
+ * 서버를 다시 다녀오지 않고 **클라이언트에서 거를** 수 있다(아카이브의 값은 "이것저것
+ * 눌러 보는 재미" 라 반응이 즉각적이어야 한다).
+ *
+ * ⚠ 다만 카드가 들고 있는 것은 **제목·hook·라벨까지**다. 이야기 **전문**은 시트를 열 때
+ *   서버 액션으로 한 편만 가져온다(`app/stories/actions.ts`). 예전에는 전문까지 함께
+ *   실어 인라인 RSC payload 가 275KB 였고 파싱만으로 롱태스크가 107~124ms 였다 —
+ *   그중 실제로 읽히는 것은 열어 본 한 편뿐이었다(성능 리뷰 P1-7).
  *
  * ── 필터 바 (2026-08-15 사용자 17차 — "선택지가 너무 많다") ──────────
  *   · 검색 = **찾기**. 거르지 않는다 — 이미 아는 꽃·이야기로 곧장 건너뛰는 지름길이다.
@@ -243,6 +248,13 @@ export default function StoriesArchive({
 
   const openIndex = flat.findIndex((story) => story.id === openId);
   const openStory = openIndex === -1 ? null : flat[openIndex];
+  /**
+   * 열린 이야기의 꽃 도판 — **레인이 이미 들고 있는 것**을 그대로 넘긴다.
+   * 도판 표는 서버에만 있으므로(코드 리뷰 P1-7) 시트가 스스로 찾을 수 없고, 찾을 필요도 없다.
+   */
+  const openPlate = openStory
+    ? lanes.find((lane) => lane.flowerId === openStory.flowerId)?.plate
+    : undefined;
 
   function moveStory(delta: number) {
     if (openIndex === -1) return;
@@ -508,7 +520,7 @@ export default function StoriesArchive({
 
             <p className={styles.count} aria-live="polite" data-testid="story-count">
               <b>
-                {visible.length}개 꽃에서 {flat.length}편
+                꽃 {visible.length}종의 이야기 {flat.length}편
               </b>
               <span className={styles.countTail}>
                 {filterOn ? `전체 ${total}편 중에서 골랐어요` : '지금까지 모은 이야기예요'}
@@ -526,7 +538,7 @@ export default function StoriesArchive({
           {visible.length > 0 ? (
             <>
               <p className={styles.laneHint} aria-hidden="true">
-                카드를 좌우로 밀어 보세요 · 누르면 이야기가 펼쳐져요
+                옆으로 밀어 보세요 · 누르면 이야기가 펼쳐져요
               </p>
               <div className={styles.lanes}>
                 {visible.map(({ lane, stories }) => (
@@ -543,8 +555,8 @@ export default function StoriesArchive({
             </>
           ) : (
             <p className={styles.empty}>
-              고르신 조건에 맞는 이야기가 아직 없어요. 다른 계열·꽃말이나 결로 한 번 더 골라
-              보세요.
+              고르신 것과 맞는 이야기가 아직 없어요. 다른 빛깔이나 꽃말, 다른 결로 한 번 더 골라
+              보시겠어요?
             </p>
           )}
         </div>
@@ -562,6 +574,7 @@ export default function StoriesArchive({
       {openStory ? (
         <StorySheet
           story={openStory}
+          {...(openPlate ? { plate: openPlate } : {})}
           position={openIndex + 1}
           total={flat.length}
           onPrev={() => moveStory(-1)}

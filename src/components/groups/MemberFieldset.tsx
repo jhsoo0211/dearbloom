@@ -8,8 +8,9 @@
  * 보이는 모양만 CSS 로 칩처럼 만든다.
  */
 
-import { useId } from 'react';
+import { useId, type Ref } from 'react';
 
+import { withParticle } from '@/lib/text';
 import { COLOR_OPTIONS, PET_OPTIONS, TRAIT_OPTIONS } from './labels';
 import { IconRemove } from './icons';
 import styles from './groups.module.css';
@@ -27,6 +28,12 @@ interface MemberFieldsetProps {
   canRemove: boolean;
   onChange: (patch: MemberPatch) => void;
   onRemove: () => void;
+  /** 이 칸이 방금 폼을 막은 자리인가. 이름이 비었을 때만 켜진다. */
+  invalid?: boolean;
+  /** 무엇이 문제인지 적어 둔 문장의 id — 이름 칸이 그 문장을 자기 설명으로 들고 간다. */
+  errorId?: string;
+  /** 이름 칸을 바깥에서 포커스하기 위한 손잡이(제출이 막히면 그 칸으로 데려간다). */
+  nameRef?: Ref<HTMLInputElement>;
 }
 
 export function MemberFieldset({
@@ -35,6 +42,9 @@ export function MemberFieldset({
   canRemove,
   onChange,
   onRemove,
+  invalid = false,
+  errorId,
+  nameRef,
 }: MemberFieldsetProps) {
   const uid = useId();
   const nameId = `${uid}-name`;
@@ -54,12 +64,15 @@ export function MemberFieldset({
         </label>
         <input
           id={nameId}
+          ref={nameRef}
           className={styles.nameInput}
           type="text"
           value={member.name}
           placeholder="이름"
           autoComplete="off"
           maxLength={20}
+          aria-invalid={invalid || undefined}
+          aria-describedby={invalid && errorId ? errorId : undefined}
           onChange={(event) => onChange({ name: event.target.value })}
         />
         <button
@@ -96,7 +109,11 @@ export function MemberFieldset({
         </div>
       </div>
 
-      <div className={styles.field} role="group" aria-label={`${who}이(가) 좋아하는 색`}>
+      {/*
+        괄호 조사(`지수이(가)`)는 눈으로도 낭독으로도 문장이 아니다 — 이름이 데이터라
+        받침을 알 수 없다는 사정은 `withParticle` 한 번으로 끝난다(src/lib/text.ts).
+      */}
+      <div className={styles.field} role="group" aria-label={`${withParticle(who, 'subject')} 좋아하는 색`}>
         <span className={styles.fieldLabel}>좋아하는 색</span>
         <div className={styles.chipRow}>
           {COLOR_OPTIONS.map((option) => {

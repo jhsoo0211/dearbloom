@@ -152,13 +152,15 @@ describe('colorSuggestion (색상 추천)', () => {
 
     const withoutPref = buildColorSuggestion(lily, makeInput(), testMeanings);
     expect(withoutPref?.color).toBe('white'); // colors[0]
-    expect(withoutPref?.reason).toContain('대표색');
+    expect(withoutPref?.reason).toContain('그 꽃답게');
     expect(withoutPref?.reason).not.toContain('좋아하신다고');
+    // 괄호 조사(`흰색이(가) …을(를)`)가 화면 문자열로 새어 나가지 않는다.
+    expect(withoutPref?.reason).not.toMatch(/[은이을](\(|（)/);
 
     // 꽃이 갖지 않은 색을 선호해도 대표색으로 떨어진다.
     const unmatched = buildColorSuggestion(lily, makeInput({ colorPrefs: ['blue'] }), testMeanings);
     expect(unmatched?.color).toBe('white');
-    expect(unmatched?.reason).toContain('대표색');
+    expect(unmatched?.reason).toContain('그 꽃답게');
   });
 
   it('색을 가리지 않는 꽃말 행은 어떤 색에도 붙는다', () => {

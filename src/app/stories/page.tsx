@@ -18,7 +18,7 @@ import styles from '@/components/stories/stories.module.css';
 import { buildFlowerThemes, buildThemeChips } from '@/components/stories/themes';
 import type { ArchiveFilterChip, ArchiveLane, ArchiveStory } from '@/components/stories/types';
 import { loadCatalog } from '@/lib/data/catalog';
-import { plateCredits } from '@/lib/plates';
+import { plateCredits, plateViewFor } from '@/lib/plates';
 import type { CatalogFlower, CatalogStory } from '@/lib/data/types';
 
 /**
@@ -51,9 +51,16 @@ export const metadata: Metadata = {
 /** 필터의 `전체` 칸. 꽃 id·mood 어휘와 겹치지 않는 값이다(라벨 사전과 같은 키). */
 const ALL = 'all';
 
-/** stories.csv 한 행 + 꽃 이름 → 화면이 그대로 쓰는 카드. */
+/**
+ * stories.csv 한 행 + 꽃 이름 → 화면이 그대로 쓰는 **카드**.
+ *
+ * ⚠ 전문(`story_ko`)과 출처는 **여기서 싣지 않는다**(성능 리뷰 P1-7). 317편 전량을 첫
+ *   응답에 실으면 인라인 RSC payload 가 275KB 가 되고, 그것을 파싱하는 데만 롱태스크가
+ *   100ms 넘게 걸린다 — 그런데 전문은 시트를 연 한 편만 읽힌다. 그 한 편은 시트가
+ *   `app/stories/actions.ts` 의 `loadStoryDetail()` 로 그때 가져온다.
+ *   검색 색인(제목·hook)은 카드에 그대로 있으므로 **찾는 일은 지금과 똑같이 즉각**이다.
+ */
 function toArchiveStory(story: CatalogStory, flowerNameKo: string): ArchiveStory {
-  const isOriginal = story.storyType === 'original';
   const region = regionLabel(story.cultureRegion ?? '');
   const era = eraLabel(story.era);
 
@@ -62,8 +69,7 @@ function toArchiveStory(story: CatalogStory, flowerNameKo: string): ArchiveStory
     flowerId: story.flowerId,
     flowerNameKo,
     title: story.title,
-    body: story.storyKo,
-    isOriginal,
+    isOriginal: story.storyType === 'original',
     typeLabel: storyTypeLabel(story.storyType),
     confidenceLabel: storyConfidenceLabel(story.confidenceLevel, story.sourceKind),
     moods: story.moods,
@@ -73,11 +79,6 @@ function toArchiveStory(story: CatalogStory, flowerNameKo: string): ArchiveStory
   if (story.hook) card.hook = story.hook;
   if (region) card.regionLabel = region;
   if (era) card.eraLabel = era;
-  // 창작(original)만 출처가 면제다 — 나머지는 갈래를 각주로 밝힌다(§1.5d·§1.5f).
-  if (!isOriginal && story.sourceTitle) {
-    card.sourceTitle = story.sourceTitle;
-    if (story.sourceUrl) card.sourceUrl = story.sourceUrl;
-  }
 
   return card;
 }
@@ -106,9 +107,14 @@ function buildLanes(flowers: CatalogFlower[], stories: ArchiveStory[]): ArchiveL
     const own = buckets.get(flower.id);
     if (!own || own.length === 0) continue;
     const swatch = colorChoice(flower.colors[0] ?? '');
+    // 도판은 **서버에서 좁혀** 싣는다(코드 리뷰 P1-7). 폭을 여기서 정하는 이유이기도 하다 —
+    // 이 화면이 도판을 거는 자리는 레인 헤더 44px 과 시트 액자 ≤92px 뿐이라 썸네일 한 벌이면
+    // 충분하다(기본값 250 = 썸네일). 예전에는 44px 칸이 200KB 본판을 통째로 물었다.
+    const plate = plateViewFor(flower.id);
     lanes.push({
       flowerId: flower.id,
       flowerNameKo: flower.nameKo,
+      ...(plate ? { plate } : {}),
       // 꽃 계열(§1.4c v3.2) — 랜딩의 테마 배정과 **같은 함수**를 쓴다.
       // 화면마다 "이 꽃은 무슨 계열" 이 갈리면 같은 서비스가 두 가지 분류를 갖게 된다.
       category: categoryOf(flower),
@@ -269,8 +275,8 @@ export default async function StoriesPage() {
               <span className={styles.srOnly}>도판 출처</span>
             </h2>
             <p className={styles.creditsLead}>
-              레인과 이야기 카드의 세밀화는 19세기 전후의 식물 도감에서 왔어요. 모두 퍼블릭
-              도메인·CC0 도판이고, 판본을 아래에 밝혀 둘게요.
+              이 화면의 세밀화는 19세기 전후의 식물 도감에서 왔어요. 모두 퍼블릭 도메인·CC0
+              도판이고, 어느 판본에서 왔는지 아래에 적어 둘게요.
             </p>
             <ul className={styles.creditList}>
               {credits.map((credit) => (

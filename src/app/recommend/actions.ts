@@ -6,12 +6,15 @@
  * 설계 판단
  *  - **개인 입력을 URL 에 싣지 않는다.** 결과는 서버 액션의 반환값으로만 건너가고,
  *    화면은 같은 페이지에서 상태만 바꾼다. 새로고침하면 질문 처음으로 돌아간다(MVP).
- *  - **검증은 서버가 한다.** 화면이 보낸 값은 전부 문자열로 받고 `recommend()` 안의
- *    `normalizeInput`(zod)이 어휘를 검사한다. 어휘 밖 값이면 던지고, 여기서 잡아
- *    `{ ok:false }` 로 돌려준다 — 화면이 500 대신 문장을 보여 줄 수 있게.
+ *  - **모양 검사가 첫 줄이다.** 서버 액션은 공개 HTTP 엔드포인트라 `WizardSubmission`
+ *    타입 주석은 아무것도 지켜 주지 않는다(컴파일이 끝나면 사라진다). 그래서 함수 첫 줄이
+ *    zod `safeParse` 이고, 여기서 걸리면 예외 대신 `{ ok:false }` 문장으로 돌려준다.
+ *    어휘 검사는 그다음이다 — `recommend()` 안의 `normalizeInput`(zod)이 맡는다.
  *  - **꾸미기는 전부 여기서 끝낸다.** 클라이언트 컴포넌트는 라벨 사전도 엔진도
  *    import 하지 않는다(번들에 zod·node:fs 가 섞이지 않게).
  */
+
+import { z } from 'zod';
 
 import { loadCatalog } from '@/lib/data/catalog';
 import type { Catalog, CatalogFlower, CatalogMeaning, Quote } from '@/lib/data/types';
@@ -24,11 +27,16 @@ import {
   recommend,
 } from '@/lib/engine';
 import type { Intent, RecoInput, RecoResult, Relationship, StoryRow, Tone } from '@/lib/engine';
-import { INTENT_DETAIL_MAX_CHARS, RESPONSE_TONE_COUNT } from '@/lib/llm/contracts';
+import {
+  INTENT_DETAIL_MAX_CHARS,
+  MEMORY_CONTEXT_MAX_CHARS,
+  RESPONSE_TONE_COUNT,
+} from '@/lib/llm/contracts';
 import type { GenerateRequest } from '@/lib/llm/contracts';
 import { generateMessages } from '@/lib/llm/provider';
 import { isBlockedForGeneration } from '@/lib/llm/safety';
 import { needsDarkOverlay, photoFor, photoSrc } from '@/lib/photos';
+import { withParticle } from '@/lib/text';
 import {
   AVAILABILITY_LABELS,
   CARD_LINE_NOTES,
@@ -53,7 +61,6 @@ import {
   eraLabel,
   excerptTypeLabel,
   firstSentence,
-  flowerForm,
   flowerOccasions,
   orderLiterature,
   regionLabel,
@@ -156,7 +163,9 @@ function petBadge(flower: CatalogFlower, catalog: Catalog): PetBadge {
   const details = entries.map((entry) => {
     const species = SPECIES_LABELS[entry.species].label;
     const parts = entry.toxicParts.map(toxicPartLabel);
-    const partNote = parts.length > 0 ? ` (주의 부위: ${parts.join('·')})` : '';
+    // 괄호 안의 목록(`(주의 부위: 알뿌리·잎)`)은 눈으로도 낭독으로도 문장이 아니다.
+    const partNote =
+      parts.length > 0 ? ` ${withParticle(parts.join('·'), 'object')} 특히 조심해 주세요.` : '';
     return `${species} — ${SEVERITY_LABELS[entry.severity]}${partNote}`;
   });
 
@@ -174,7 +183,7 @@ function petBadge(flower: CatalogFlower, catalog: Catalog): PetBadge {
     label: toxic ? '반려동물 주의' : '반려동물 안전',
     summary: toxic
       ? `${toxicEntries.map((e) => SPECIES_LABELS[e.species].label).join('·')}에게 독성이 있어요`
-      : `${entries.map((e) => SPECIES_LABELS[e.species].label).join('·')} 비독성`,
+      : `${entries.map((e) => SPECIES_LABELS[e.species].label).join('·')}에게 알려진 독성이 없어요`,
     details,
     alternatives: toxic ? alternatives : [],
   };
@@ -523,7 +532,6 @@ function toOptionView(
     segmentLabel: labels.segment,
     segmentTag: labels.tag,
     headline: labels.headline,
-    form: flowerForm(flower.id),
     flowerId: flower.id,
     nameKo: flower.nameKo,
     scientificName: flower.scientificName,
@@ -606,6 +614,66 @@ function cueChips(cues: {
 }
 
 /* ------------------------------------------------------------------ *
+ * 들어오는 값의 모양 (경계 검증)
+ * ------------------------------------------------------------------ */
+
+/**
+ * slug 한 칸의 길이 상한. 우리 어휘 중 가장 긴 값(`just_because`)의 세 배쯤이라
+ * 어휘가 늘어도 걸리지 않고, 본문을 slug 칸에 밀어 넣는 요청은 막힌다.
+ */
+const SLUG_MAX_CHARS = 40;
+
+/** 칩 목록 한 줄의 개수 상한. 지금 가장 긴 목록(특징 칩 11종)의 두 배다. */
+const CHIP_LIST_MAX = 24;
+
+/**
+ * 자유 서술의 **절대** 상한. 화면 상한(200·400)과 별개로, 이보다 긴 본문은
+ * 잘라 쓰는 대신 요청째로 거절한다 — 잘라 봐야 우리가 쓸 수 있는 글이 아니고,
+ * 공개 엔드포인트에 메가바이트짜리 본문이 들어오는 길을 열어 둘 이유도 없다.
+ */
+const FREE_TEXT_HARD_MAX = 4_000;
+
+/** §1.5j 자유 서술 `그 사람은 어떤 사람인가요?` 의 서버측 상한(화면 maxLength 와 같은 값). */
+const RECIPIENT_NOTE_MAX_CHARS = 200;
+
+/** §1.5j 자유 서술 `함께한 기억이나 에피소드가 있나요?` 의 서버측 상한. */
+const EPISODE_MAX_CHARS = 400;
+
+/** 어휘 검사는 뒤(엔진·라벨 사전)가 한다 — 여기서는 "문자열이고, 터무니없이 길지 않다"까지다. */
+const slugField = z.string().max(SLUG_MAX_CHARS);
+
+/**
+ * 자유 서술 한 칸.
+ * 상한을 넘긴 글은 **거절이 아니라 자르기**다 — 사용자가 쓴 글이고, 화면이 이미 같은 값으로
+ * 막아 두었으니 여기 걸리는 것은 화면을 거치지 않은 요청뿐이다. 다만 절대 상한은 거절한다.
+ */
+function freeTextField(max: number) {
+  return z
+    .string()
+    .max(FREE_TEXT_HARD_MAX)
+    .transform((value) => value.trim().slice(0, max));
+}
+
+/**
+ * 화면이 보내는 답 한 벌의 **모양**.
+ *
+ * ⚠ 어휘(관계 6종·마음 8종·색 slug…)는 여기서 보지 않는다. 그 검사는 `recommend()` 안의
+ *   `normalizeInput` 한 곳에 있고, 두 곳에서 같은 어휘를 검사하면 반드시 한쪽이 늦게 늘어난다.
+ */
+const wizardSubmissionSchema = z.object({
+  relationship: slugField,
+  intent: slugField,
+  intentDetail: freeTextField(INTENT_DETAIL_MAX_CHARS),
+  recipientChips: z.array(slugField).max(CHIP_LIST_MAX),
+  colorPrefs: z.array(slugField).max(CHIP_LIST_MAX),
+  recipientNote: freeTextField(RECIPIENT_NOTE_MAX_CHARS),
+  episode: freeTextField(EPISODE_MAX_CHARS),
+  episodeHints: z.array(slugField).max(CHIP_LIST_MAX),
+  budgetKey: slugField,
+  dateISO: z.string().max(SLUG_MAX_CHARS).transform((value) => value.trim()),
+});
+
+/* ------------------------------------------------------------------ *
  * 서버 액션
  * ------------------------------------------------------------------ */
 
@@ -616,45 +684,60 @@ function cueChips(cues: {
 export async function submitRecommendation(
   submission: WizardSubmission,
 ): Promise<FlowResponse> {
+  const received = wizardSubmissionSchema.safeParse(submission);
+  if (!received.success) {
+    // ⚠ zod 의 issue 에는 받은 값(자유 서술 원문)이 섞인다 — 오류 객체를 찍지 않는다(§1.5j).
+    console.error('[recommend] 받은 값의 모양이 어긋납니다. (내용은 남기지 않습니다)');
+    return {
+      ok: false,
+      message: '이야기를 꺼내 오다 잠깐 길을 잃었어요. 조금 뒤에 다시 눌러 주세요.',
+    };
+  }
+  const answers = received.data;
+
   let catalog: Catalog;
   try {
     catalog = await loadCatalog();
   } catch (error) {
     console.error('[recommend] 콘텐츠를 읽지 못했습니다.', error);
-    return { ok: false, message: '꽃 이야기를 불러오지 못했어요. 잠시 뒤 다시 시도해 주세요.' };
+    return {
+      ok: false,
+      message: '이야기를 꺼내 오다 잠깐 길을 잃었어요. 조금 뒤에 다시 눌러 주세요.',
+    };
   }
 
-  const budget = budgetChoice(submission.budgetKey);
-  const dateISO = submission.dateISO.trim();
+  const budget = budgetChoice(answers.budgetKey);
+  const dateISO = answers.dateISO;
 
   /*
    * §1.5j — 자유 서술 2필드.
    * 원문은 이 함수 안에서만 살아 있다. 로그·에러 메시지에 절대 싣지 않고,
    * 화면으로 돌려보내는 것도 에피소드 한 덩이(클라이언트 상태)뿐이다.
+   * 길이는 위 스키마가 이미 잘라 두었다(200 · 400).
    */
-  const recipientNote = submission.recipientNote.trim();
-  const episode = submission.episode.trim();
+  const recipientNote = answers.recipientNote;
+  const episode = answers.episode;
   // 단서 추론은 **자유 글에만** 건다(§1.5l) — 상황 칩은 이미 어휘라 읽어 낼 것이 없다.
   const inferred = inferCuesFromTexts([recipientNote, episode]);
 
   // §1.5l 직접 쓴 마음 한 줄. 자유 서술과 같은 취급이라 길이만 잘라 넘기고 저장하지 않는다.
-  const intentDetail = submission.intentDetail.trim().slice(0, INTENT_DETAIL_MAX_CHARS);
-  const hints = episodeHintLabels(submission.episodeHints);
+  const intentDetail = answers.intentDetail;
+  const hints = episodeHintLabels(answers.episodeHints);
 
   /*
    * §1.5l — 특징 칩 한 줄을 엔진 입력의 제 자리로 나눈다.
    * 반려묘·반려견 칩이 pets 로 가야 반려동물 안전 제외(EX_PET_TOXIC)가 그대로 돈다.
    */
-  const chips = splitRecipientChips(submission.recipientChips);
+  const chips = splitRecipientChips(answers.recipientChips);
 
-  // 어휘 검사는 recommend() 안의 normalizeInput(zod)이 한다 — 여기서는 모양만 맞춘다.
-  // (단언은 "아직 검사 전"이라는 뜻일 뿐이고, 어휘 밖 값이면 바로 아래에서 throw 된다.)
+  // 어휘 검사는 recommend() 안의 normalizeInput(zod)이 한다 — 위 스키마는 모양까지다.
+  // (단언은 "아직 어휘 검사 전"이라는 뜻일 뿐이고, 어휘 밖 값이면 바로 아래에서 throw 된다.)
   const input: RecoInput = {
-    relationship: submission.relationship as Relationship,
-    intent: submission.intent as Intent,
+    relationship: answers.relationship as Relationship,
+    intent: answers.intent as Intent,
     // 직접 고른 칩이 먼저, 글에서 읽어 낸 단서가 뒤 — 겹치면 한 번만 남는다.
     recipientTraits: mergeUnique(chips.traits, inferred.recipientTraits),
-    colorPrefs: mergeUnique(submission.colorPrefs, inferred.colorPrefs),
+    colorPrefs: mergeUnique(answers.colorPrefs, inferred.colorPrefs),
     pets: chips.pets,
     fragranceSensitive: chips.fragranceSensitive,
     fragrancePreference: chips.fragrancePreference,
@@ -674,14 +757,14 @@ export async function submitRecommendation(
     // ⚠ 오류 객체를 그대로 찍지 않는다 — 검증 오류에는 받은 값(자유 서술 원문)이 섞일 수
     //   있고, §1.5j 의 금지선은 "원문은 로그 어디에도 남기지 않는다" 이다.
     console.error('[recommend] 입력을 해석하지 못했습니다. (내용은 남기지 않습니다)');
-    return { ok: false, message: '입력을 다시 확인해 주세요. 관계와 마음은 꼭 골라야 해요.' };
+    return { ok: false, message: '관계와 마음, 두 가지만 골라 주시면 바로 찾아드릴게요.' };
   }
 
   if (picks.length === 0) {
     return {
       ok: false,
       message:
-        '조건에 맞는 꽃을 찾지 못했어요. 예산을 조금 넓히거나 향·반려동물 조건을 다시 봐주세요.',
+        '말씀하신 자리에 딱 맞는 꽃을 아직 못 찾았어요. 값을 조금 넓히거나 향·반려동물 쪽을 하나만 풀어 주시겠어요?',
     };
   }
 
@@ -696,10 +779,13 @@ export async function submitRecommendation(
     .filter((option): option is FlowOptionView => option !== null);
 
   if (options.length === 0) {
-    return { ok: false, message: '추천한 꽃의 정보를 찾지 못했어요. 잠시 뒤 다시 시도해 주세요.' };
+    return {
+      ok: false,
+      message: '꽃은 골랐는데 그 꽃의 이야기를 꺼내 오지 못했어요. 조금 뒤에 다시 눌러 주세요.',
+    };
   }
 
-  const whenChip = dateChip(submission.dateISO);
+  const whenChip = dateChip(answers.dateISO);
   /*
    * §1.5l `직접 쓸게요` 의 맥락 칩 — **라벨 대신 사용자가 쓴 말**을 세운다.
    * `직접 쓸게요` 는 질문 화면에서는 선택지 이름이라 맞지만, 결과 화면의 맥락 칩은
@@ -714,14 +800,22 @@ export async function submitRecommendation(
     intentChip,
     // 특징 칩은 고른 라벨을 그대로 세운다 — 화면과 결과가 같은 말을 쓰게(§1.5l).
     ...chips.labels,
-    ...submission.colorPrefs.map((slug) => `${colorChoice(slug).label} 선호`),
+    ...answers.colorPrefs.map((slug) => `${colorChoice(slug).label} 선호`),
     ...hints,
     ...(budget ? [budget.label] : []),
     ...(whenChip ? [whenChip] : []),
   ];
 
-  // ⚠ 자유 서술 원문은 여기서 요청 본문으로만 흘러간다(로그·DB 금지 — §1.5j).
-  const memoryContext = [recipientNote, episode].filter((text) => text !== '').join('\n');
+  /*
+   * ⚠ 자유 서술 원문은 여기서 요청 본문으로만 흘러간다(로그·DB 금지 — §1.5j).
+   *
+   * 두 필드(200 · 400)와 줄바꿈 한 칸을 더하면 601 자라 계약 상한(600)을 딱 한 칸 넘긴다.
+   * 그 한 칸 때문에 가장 길게 적어 준 사람만 조용히 템플릿으로 떨어지지 않도록 여기서 자른다.
+   */
+  const memoryContext = [recipientNote, episode]
+    .filter((text) => text !== '')
+    .join('\n')
+    .slice(0, MEMORY_CONTEXT_MAX_CHARS);
   const tones = await buildToneViews(catalog, intent, relationship, picks[0], memoryContext, {
     intentDetail,
     recipientNotes: chips.messageNotes,
@@ -739,7 +833,7 @@ export async function submitRecommendation(
   const MESSAGE_NOTES: Record<ResultPayload['messageSource'], string> = {
     llm: '멘트는 들려주신 이야기를 담아 방금 쓴 문장이에요. 그대로 보내도, 고쳐 써도 좋아요.',
     template:
-      '지금 보이는 멘트는 미리 준비해 둔 예문이에요. 상황에 맞춰 직접 써 드리는 기능은 곧 붙습니다.',
+      '지금 보이는 멘트는 미리 적어 둔 예문이에요. 들려주신 이야기에 맞춰 직접 써 드릴 날도 곧 올 거예요.',
     empty: '이 상황의 멘트는 아직 모으는 중이에요. 곧 들려드릴게요.',
   };
 

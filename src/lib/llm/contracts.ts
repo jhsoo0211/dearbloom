@@ -20,6 +20,18 @@ const flowerBriefSchema = z.object({
 /** §1.5l `직접 쓸게요` 한 줄의 길이 상한. 화면·서버·계약이 같은 값을 쓴다. */
 export const INTENT_DETAIL_MAX_CHARS = 80;
 
+/**
+ * §1.5j 자유 서술 두 필드를 이어 붙인 `memory_context` 의 상한.
+ *
+ * 상한이 필요한 이유는 두 가지다. ① 이 값은 **사용자가 쓴 글**이라 화면이 막아 준 길이를
+ * 서버가 다시 믿을 수 없다(서버 액션은 공개 HTTP 엔드포인트다). ② 프롬프트에 그대로 실려
+ * 나가므로, 길이를 열어 두면 토큰 예산과 10초 응답 예산이 함께 무너진다.
+ *
+ * ⚠ 화면 상한(200 + 400)과 줄바꿈 한 칸을 더하면 601 이다. 그래서 호출부는 이어 붙인 뒤
+ *   이 값으로 한 번 더 자른다(`src/app/recommend/actions.ts`).
+ */
+export const MEMORY_CONTEXT_MAX_CHARS = 600;
+
 export const generateRequestSchema = z.object({
   relationship: relationshipSchema,
   intent: intentSchema,
@@ -29,7 +41,8 @@ export const generateRequestSchema = z.object({
    */
   intent_detail: z.string().max(INTENT_DETAIL_MAX_CHARS).optional(),
   flower: flowerBriefSchema,
-  memory_context: z.string().optional(),
+  /** 자유 서술 원문. 길이는 계약이 막는다 — 원문을 다루는 유일한 필드라 여기가 마지막 문이다. */
+  memory_context: z.string().max(MEMORY_CONTEXT_MAX_CHARS).optional(),
   /**
    * §1.5l 받는 분 특징 칩의 라벨(멘트 재료).
    * 반려동물·향 민감 칩은 여기 담지 않는다 — 절대 규칙 3 이 금지한 자리다.

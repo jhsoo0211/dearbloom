@@ -39,9 +39,27 @@
  *     위키미디어 PNG 판본 7종이 장당 2.5~4.3MB 로 전체 용량의 2/3 를 먹던 문제가
  *     이 한 단계로 사라진다(레인 헤더는 44px 썸네일에 그 파일을 통째로 물고 있었다).
  *
- * 순수 데이터·순수 함수만 둔다(React·fs 의존 금지) — 서버·클라이언트 양쪽에서 import 하고,
- * `scripts/fetch-plates.mjs`(node)도 같은 파일을 읽는다.
+ * ── 썸네일 한 벌 더 (성능 리뷰 P0-2, 2026-08-15) ─────────────────────
+ * 본판은 ≤1100px 인데 화면이 그것을 거는 자리는 **레인 헤더 44px · 시트 액자 ≤92px** 뿐이다.
+ * 32줄이 한 화면에 서면 44px 칸마다 200KB짜리 판면을 통째로 물어, 첫 화면에서만 1.4MB 를
+ * 내려받았다. 그래서 `public/plates/thumbs/{같은 이름}.jpg` 에 **160px 사본**을 함께 둔다
+ * (`scripts/fetch-plates.mjs` 가 본판을 쓸 때 같이 만든다). 고르는 일은 `plateSrc(plate, width)`
+ * 한 곳에서 끝난다 — 자체 호스팅으로 옮긴 뒤 `width` 는 아무 일도 하지 않는 인자였다.
+ *
+ * ── 표는 서버·스크립트 전용이다 (코드 리뷰 P1-7) ─────────────────────
+ * `remoteSrc`·`pageUrl` 은 **화면이 한 줄도 쓰지 않는다.** 그런데 클라이언트 컴포넌트가
+ * `plateFor()` 를 부르면 이 표가 통째로 브라우저 번들에 실린다(실제로 `/stories` 청크에
+ * 위키미디어 주소 32벌이 들어 있었다). 그래서 클라이언트로 건너가는 값은 `plateViewFor()`
+ * 가 만든 **`PlateView`(`./view.ts`)** 뿐이고, 그 값은 서버 컴포넌트가 props 로 내려보낸다.
+ * ⚠ 클라이언트 컴포넌트에서 이 모듈을 값으로 import 하지 마라(타입은 `./view` 에서 가져온다).
+ *
+ * 순수 데이터·순수 함수만 둔다(React·fs 의존 금지) — 서버 컴포넌트와
+ * `scripts/fetch-plates.mjs`(node)가 같은 파일을 읽는다.
  */
+
+import type { PlateView } from './view';
+
+export type { PlateView };
 
 export interface FlowerPlate {
   /** `content/flowers.csv` 의 id. */
@@ -549,17 +567,37 @@ export type PlateWidth = 250 | 500 | 1280;
 /** Internet Archive BookReader 는 `_w{폭}` 을 URL 에 직접 적는다. 표준 폭 목록이 따로 없다. */
 const IA_WIDTH: Record<PlateWidth, number> = { 250: 400, 500: 800, 1280: 1800 };
 
+/** 자체 호스팅 본판이 사는 자리. `public/plates/` 와 같은 말이다. */
+const LOCAL_DIR = '/plates/';
+/**
+ * 160px 썸네일이 사는 자리. 본판과 **파일 이름이 같다** — 두 경로를 따로 적으면
+ * 한쪽만 바뀌는 날 조용히 어긋난다(스크립트도 이 함수를 불러 저장 경로를 정한다).
+ */
+export const THUMB_DIR = '/plates/thumbs/';
+/** 썸네일로 갈아 끼우는 상한 폭. 이보다 크게 부르면 본판을 그대로 준다. */
+const THUMB_MAX = 250;
+
 /**
  * 그 폭의 이미지 주소.
  *
- * ⚠ 자체 호스팅으로 옮긴 뒤로 **31종 전부 로컬 사본 한 벌(≤1100px)뿐**이라, `/plates/…` 는
- *   폭을 갈아 끼울 자리가 없어 그대로 돌아간다(파일이 하나면 `width` 는 의도 표시일 뿐이다).
- *   폭 치환 분기는 원격 주소를 그대로 쓰는 경우를 위해 남겨 둔다 — 다운로드가 실패한 꽃은
- *   `src` 에 `remoteSrc` 를 남겨 두는 것이 폴백이고, 그때는 44px 썸네일에 1280px 원판을
- *   물리지 않는 것이 성능이자 예의다(위키미디어가 핫링크를 만류하는 이유이기도 하다).
+ * ── 자체 호스팅 사본(`/plates/…`) ────────────────────────────────────
+ * 파일이 **두 벌**이다: 본판(≤1100px)과 썸네일(160px). `width ≤ 250` 이면 썸네일을 준다.
+ * 지금 화면이 도판을 거는 자리는 둘뿐이고 둘 다 그 상한 아래다 —
+ *   · 레인 헤더 `.plateThumb` 44×44px  (32줄이 한 화면에 선다)
+ *   · 시트 액자 `.plateCard` clamp(72px, 19vw, 92px)
+ * 도감 상세 히어로만 본판을 그대로 쓴다(실표시 ~550px → 레티나 2배가 1100px 인 근거).
+ * ⚠ 예전에는 이 함수가 로컬 사본에 대해 **아무 일도 하지 않았다.** 그래서 44px 칸이
+ *   200KB 판면을 통째로 물었다(첫 화면 도판만 1.4MB). `width` 를 되돌려 놓지 마라.
+ *
+ * ── 원격 폴백 ────────────────────────────────────────────────────────
+ * 다운로드가 실패한 꽃은 `src` 에 `remoteSrc` 를 남겨 두는 것이 폴백이고, 그때는 폭을
+ * 갈아 끼워 44px 칸에 1280px 원판을 물리지 않는다(위키미디어가 핫링크를 만류하는 이유다).
  * 아는 두 패턴만 갈아 끼우고, 모르는 주소는 **그대로 돌려준다**(깨뜨리지 않는다).
  */
 export function plateSrc(plate: FlowerPlate, width: PlateWidth = 250): string {
+  if (plate.src.startsWith(LOCAL_DIR)) {
+    return width <= THUMB_MAX ? `${THUMB_DIR}${plate.src.slice(LOCAL_DIR.length)}` : plate.src;
+  }
   if (plate.src.includes('/1280px-')) return plate.src.replace('/1280px-', `/${width}px-`);
   if (plate.src.includes('_w1800.')) return plate.src.replace('_w1800.', `_w${IA_WIDTH[width]}.`);
   return plate.src;
@@ -592,6 +630,28 @@ export function plateCredit(plate: FlowerPlate): string {
  * 화면에 실제로 쓴 도판들의 크레딧 — 판본 단위로 합치고 가나다·알파벳 순으로 세운다.
  * 32줄이 아니라 판본 수(14개 안팎)만큼만 나온다 — 그게 "일괄 표기" 의 뜻이다.
  */
+/**
+ * 화면으로 내려보낼 **좁힌 한 벌**(코드 리뷰 P1-7).
+ *
+ * 표(`FlowerPlate`)에는 취득 주소·파일 페이지·작가·판본·연도·기관이 들어 있지만 액자가
+ * 쓰는 것은 주소 하나, 설명 하나, 각주 두 줄뿐이다. 서버 컴포넌트가 이 함수로 좁혀
+ * props 에 실으면 클라이언트 번들에서 표가 통째로 사라진다.
+ *
+ * @param width 그 자리의 표시 크기. 기본값 250 은 **썸네일**을 뜻한다
+ *              (레인 헤더 44px·시트 액자 ≤92px 둘 다 그 아래다).
+ */
+export function plateViewFor(flowerId: string, width: PlateWidth = 250): PlateView | undefined {
+  const plate = plateFor(flowerId);
+  if (!plate) return undefined;
+  return {
+    flowerId: plate.flowerId,
+    src: plateSrc(plate, width),
+    alt: plate.alt,
+    ...(plate.note ? { note: plate.note } : {}),
+    sourceLine: plateSourceLine(plate),
+  };
+}
+
 export function plateCredits(flowerIds: readonly string[]): string[] {
   const lines = new Set<string>();
   for (const id of flowerIds) {

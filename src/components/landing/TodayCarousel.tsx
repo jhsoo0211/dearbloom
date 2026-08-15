@@ -165,17 +165,63 @@ export default function TodayCarousel({ slides, globalSlug, onAdopt }: Props) {
     return () => window.removeEventListener('resize', onResize);
   }, [goTo, index]);
 
+  /* ── 티저 칸 높이 실측 (성능 리뷰 P1-9) ────────────────────────────
+     티저 펼침은 `max-height` 애니메이션이었다 — 매 프레임 레이아웃을 다시 잡는 종류다.
+     지금은 이름 블록을 티저 높이만큼 아래로 밀어 두고(`--db-teaser-h`), 펼칠 때 그
+     이동만 되돌린다(transform). 그러려면 **그 높이가 정확해야** 한다: 티저는 카드마다
+     1~3줄로 길이가 다르고, 카드 폭·폰트에 따라 줄 수도 바뀐다. CSS 만으로는 알 수 없다.
+
+     그래서 여기서 잰다. 순서가 중요하다 — **읽기를 전부 끝낸 뒤 쓴다**(읽기·쓰기를
+     번갈아 하면 카드 수만큼 레이아웃이 강제된다). 다시 재는 때는 세 가지뿐이다:
+     최초 마운트 · 리사이즈(줄 수가 바뀐다) · 웹폰트 로드 완료(글자 높이가 바뀐다). */
+  useEffect(() => {
+    const track = trackRef.current;
+    if (!track) return;
+
+    let frame = 0;
+    const sync = () => {
+      const cards = Array.from(track.querySelectorAll<HTMLElement>('.db-slide'));
+      const heights = cards.map(
+        (card) => card.querySelector<HTMLElement>('.db-card-teaser-in')?.offsetHeight ?? 0,
+      );
+      cards.forEach((card, i) => {
+        if (heights[i] > 0) card.style.setProperty('--db-teaser-h', `${heights[i]}px`);
+      });
+    };
+    const schedule = () => {
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(sync);
+    };
+
+    schedule();
+    if (document.fonts?.ready) void document.fonts.ready.then(schedule);
+    window.addEventListener('resize', schedule);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener('resize', schedule);
+    };
+  }, [slides]);
+
   const active = slides[index];
 
   return (
-    <div className="db-carousel">
+    /*
+      캐러셀의 역할(`group` + `aria-roledescription`)은 **바깥 div** 가 갖는다.
+      예전에는 `<ul>` 이 그것을 달고 있었는데, ARIA 역할은 암시 역할을 덮어쓰므로
+      `list` 가 사라지고 자식 `<li>` 32장이 통째로 "리스트 밖 listitem" 이 됐다
+      (axe serious ×32 · 접근성 리뷰 P1-4). 이제 `<ul>` 은 그냥 목록이다.
+    */
+    <div
+      className="db-carousel"
+      role="group"
+      aria-roledescription="캐러셀"
+      aria-label={`꽃 아카이브 ${slides.length}종 — 좌우로 밀거나 화살표 키로 넘겨보세요`}
+    >
       <ul
         className="db-track"
         ref={trackRef}
         tabIndex={0}
-        role="group"
-        aria-roledescription="캐러셀"
-        aria-label={`꽃 아카이브 ${slides.length}종 — 좌우로 밀거나 화살표 키로 넘겨보세요`}
+        aria-label={`꽃 카드 ${slides.length}장`}
         data-lenis-prevent
         onScroll={handleScroll}
         onKeyDown={onKeyDown}
@@ -224,10 +270,16 @@ export default function TodayCarousel({ slides, globalSlug, onAdopt }: Props) {
                     // eslint-disable-next-line @next/next/no-img-element -- Unsplash 원격 CDN. next/image 최적화 없이 승인 URL 을 그대로 쓴다(docs/image-assets.md).
                     <img
                       src={slide.image.src}
+                      /* 카드는 380px(좁은 화면 340px)로 뜬다 — `sizes` 가 없으면 브라우저가
+                         100vw 로 가정해 늘 최대 폭을 받는다(성능 리뷰 P1-5). */
+                      srcSet={slide.image.srcSet}
+                      sizes="(max-width: 640px) 88vw, (max-width: 1180px) 46vw, 380px"
                       alt={slide.image.alt}
                       width={1080}
                       height={1350}
-                      loading={i === 0 ? 'eager' : 'lazy'}
+                      /* 32장 전부 lazy 다. 0번만 eager 였는데 그 카드도 **폴드 밖**이라,
+                         첫 화면에 필요한 히어로보다 먼저 대역폭을 가져갔다(성능 리뷰 P1-6). */
+                      loading="lazy"
                       decoding="async"
                       style={
                         slide.image.grade
@@ -254,7 +306,10 @@ export default function TodayCarousel({ slides, globalSlug, onAdopt }: Props) {
                     <span className="db-card-reveal">
                       <span className="db-card-name">{slide.name}</span>
                       <span className="db-card-latin">{slide.latin}</span>
-                      <span className="db-card-teaser">{teaser}</span>
+                      <span className="db-card-teaser">
+                        {/* 안쪽 span 은 높이 실측용이다 — 아래 useEffect 주석 참고. */}
+                        <span className="db-card-teaser-in">{teaser}</span>
+                      </span>
                       <span className="db-card-go" aria-hidden="true">
                         도감에서 보기
                         <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -284,7 +339,9 @@ export default function TodayCarousel({ slides, globalSlug, onAdopt }: Props) {
 
                   {slide.storyHook ? (
                     <div className="db-card-story">
-                      <span className="db-lab">꽃에 얽힌 설화</span>
+                      {/* "설화"는 story_type 라벨 자리에만 쓴다 — 화면 용어는 "이야기"로
+                          통일한다(워딩 리뷰 확정). */}
+                      <span className="db-lab">꽃에 얽힌 이야기</span>
                       <p>
                         <span className="db-story-title">{slide.storyTitle}</span> — {slide.storyHook}
                       </p>

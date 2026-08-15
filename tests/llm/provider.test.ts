@@ -148,6 +148,49 @@ describe('generateMessages — 키가 없을 때', () => {
   });
 });
 
+describe('generateMessages — 계약 검사가 첫 줄이다', () => {
+  /**
+   * 타입 주석은 컴파일이 끝나면 사라진다. 이 함수에 들어오는 값의 뿌리에는 사용자가 쓴
+   * 글(자유 서술)이 있고, 계약을 벗어난 요청을 그대로 프롬프트에 실어 보내면
+   * 토큰 예산도 안전 규칙도 지켜 줄 사람이 없다 — 그래서 키가 있어도 부르지 않는다.
+   */
+  it('자유 서술이 상한을 넘으면 키가 있어도 부르지 않고 폴백한다', async () => {
+    process.env.GEMINI_API_KEY = 'test-gemini-key';
+    const fetchMock = mockFetch(() => okResponse(geminiBody(JSON.stringify(VALID_PAYLOAD))));
+
+    const tooLong: GenerateRequest = { ...REQUEST, memory_context: '가'.repeat(601) };
+
+    await expect(generateMessages(tooLong)).resolves.toBeNull();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('어휘 밖 값(관계·톤)도 같은 문에서 막힌다', async () => {
+    process.env.GEMINI_API_KEY = 'test-gemini-key';
+    const fetchMock = mockFetch(() => okResponse(geminiBody(JSON.stringify(VALID_PAYLOAD))));
+
+    const badRelationship = { ...REQUEST, relationship: 'nobody' } as unknown as GenerateRequest;
+    await expect(generateMessages(badRelationship)).resolves.toBeNull();
+
+    const badTone = { ...REQUEST, tones: ['whisper'] } as unknown as GenerateRequest;
+    await expect(generateMessages(badTone)).resolves.toBeNull();
+
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('출처 없는 꽃말은 계약이 막는다 (없는 근거로 문장을 짓지 않게)', async () => {
+    process.env.GEMINI_API_KEY = 'test-gemini-key';
+    const fetchMock = mockFetch(() => okResponse(geminiBody(JSON.stringify(VALID_PAYLOAD))));
+
+    const noSource = {
+      ...REQUEST,
+      flower: { ...REQUEST.flower, meaning_source_id: '' },
+    } as GenerateRequest;
+
+    await expect(generateMessages(noSource)).resolves.toBeNull();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
 describe('generateMessages — 정상 응답', () => {
   it('Gemini 응답을 계약대로 파싱한다', async () => {
     process.env.GEMINI_API_KEY = 'test-gemini-key';

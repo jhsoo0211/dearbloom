@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import * as engine from '@/lib/engine';
+import { loadCatalog } from '@/lib/data/catalog';
 import {
   COLOR_KEYWORDS,
   FLOWER_CUE_PREFIX,
@@ -14,7 +15,12 @@ import { RECIPIENT_TRAITS } from '@/lib/engine/normalize';
 /**
  * §1.5j 휴리스틱 테스트.
  * 사전(키워드 → slug)이 실제 어휘와 어긋나지 않는지, 그리고 "못 찾으면 침묵" 원칙이
- * 지켜지는지를 본다. 카탈로그 파일은 읽지 않는다(엔진은 순수 TS).
+ * 지켜지는지를 본다.
+ *
+ * ⚠ 꽃 사전 한 곳만 **카탈로그(content/flowers.csv)를 읽는다.** 엔진은 순수 TS 라 CSV 를
+ *   모르고, 그래서 `FLOWER_KEYWORDS` 는 카탈로그의 사본이다 — 사본과 원본이 어긋나는지는
+ *   원본을 읽어야만 알 수 있다. 예전에는 `toHaveLength(17)` 이라는 **스냅샷 숫자**로
+ *   대신했는데, 카탈로그가 32종으로 늘어난 뒤에도 그 단언은 그대로 초록이었다.
  */
 
 describe('inferCuesFromText — 성격', () => {
@@ -75,13 +81,21 @@ describe('inferCuesFromText — 꽃 이름', () => {
     ]);
   });
 
-  it('사전은 카탈로그 17종을 덮고, 모든 키워드가 그 꽃을 집어낸다', () => {
-    expect(Object.keys(FLOWER_KEYWORDS)).toHaveLength(17);
+  it('사전의 key 는 전부 flowers.csv 에 실존하고, 카탈로그 전종을 덮는다', async () => {
+    const catalog = await loadCatalog();
+    const catalogIds = catalog.flowers.map((flower) => flower.id).sort();
+
+    // 양방향 불변식 — 없는 꽃을 가리키는 key 도, 사전이 빠뜨린 꽃도 없어야 한다.
+    expect(Object.keys(FLOWER_KEYWORDS).sort()).toEqual(catalogIds);
+  });
+
+  it('모든 키워드가 그 꽃을 집어내고, 다른 꽃을 함께 끌고 오지 않는다', () => {
     for (const [slug, words] of Object.entries(FLOWER_KEYWORDS)) {
       for (const word of words) {
-        expect(inferCuesFromText(`${word} 기억이 있어요`).personalCues).toContain(
+        // 별칭이 다른 꽃의 이름을 품으면(`삼색제비꽃` → 팬지 + 제비꽃) 단서가 둘이 된다.
+        expect(inferCuesFromText(`${word} 기억이 있어요`).personalCues).toEqual([
           `${FLOWER_CUE_PREFIX}${slug}`,
-        );
+        ]);
       }
     }
   });

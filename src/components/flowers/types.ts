@@ -83,6 +83,14 @@ export interface MeaningItem {
   /** 편집 주의 문구가 있을 때만. */
   caution?: string;
   sourceUrl?: string;
+  /**
+   * 그 출처를 사람이 읽는 이름(`Wikipedia` · `국립원예특작과학원` …).
+   *
+   * 한 화면에 출처 링크가 열세 개까지 서기 때문에 **링크 이름이 목적지를 구별해야 한다**
+   * (예전에는 전부 `이야기의 갈래` 라는 같은 이름이었다 — 접근성 리뷰 P1-9).
+   * `sourceUrl` 이 있을 때만 함께 온다.
+   */
+  sourceLabel?: string;
 }
 
 /** 이야기 한 편 — 카드가 그대로 쓰는 모양(hook·본문 먼저, 메타는 각주). */

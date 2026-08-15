@@ -1415,6 +1415,31 @@
   color: var(--fg-70);
 }
 /**
+ * 전문을 기다리는 동안(그리고 못 가져왔을 때) 그 자리에 서는 한 줄.
+ *
+ * 본문이 올 자리를 `min-height` 로 미리 잡아 둔다 — 도착하는 순간 각주 블록이 크게
+ * 밀려 내려가면, 마침 각주를 읽으려던 사람의 눈이 따라가야 한다.
+ * 스피너를 돌리지 않는 이유는 아카이브의 톤이기도 하고, 대개 한 프레임 만에 끝나
+ * 깜빡임만 남기 때문이다.
+ */
+.sheetWait {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  min-height: 72px;
+  margin-top: 16px;
+  font-size: 15px;
+  line-height: 1.95;
+  color: var(--fg-50);
+}
+.sheetRetry {
+  font-size: 15px;
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+/**
  * 각주 블록 — 본문이 끝난 **뒤에만** 온다(§1.5i 16차).
  *
  * 헤어라인 하나로 이야기와 갈라 둔다. 선을 지우면 메타가 본문 마지막 문단처럼 이어 읽혀

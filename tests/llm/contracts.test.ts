@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { INTENT_DETAIL_MAX_CHARS, generateRequestSchema } from '@/lib/llm/contracts';
+import {
+  INTENT_DETAIL_MAX_CHARS,
+  MEMORY_CONTEXT_MAX_CHARS,
+  generateRequestSchema,
+} from '@/lib/llm/contracts';
 import type { GenerateRequest } from '@/lib/llm/contracts';
 import { buildUserPrompt } from '@/lib/llm/prompt';
 
@@ -72,6 +76,43 @@ describe('generateRequestSchema — §1.5l 확장', () => {
     expect(() =>
       generateRequestSchema.parse(baseRequest({ recipient_traits: new Array(13).fill('칩') })),
     ).toThrow();
+  });
+});
+
+describe('generateRequestSchema — 자유 서술의 상한', () => {
+  /**
+   * `memory_context` 는 이 계약에서 **사용자가 쓴 글을 그대로 나르는 유일한 필드**다.
+   * 상한이 없으면 프롬프트 길이도, 10초 응답 예산도 지켜 줄 사람이 없다.
+   */
+  it('상한(600자)까지는 통과하고, 한 글자만 넘어도 막는다', () => {
+    expect(
+      generateRequestSchema.parse(
+        baseRequest({ memory_context: '가'.repeat(MEMORY_CONTEXT_MAX_CHARS) }),
+      ).memory_context,
+    ).toHaveLength(MEMORY_CONTEXT_MAX_CHARS);
+
+    expect(() =>
+      generateRequestSchema.parse(
+        baseRequest({ memory_context: '가'.repeat(MEMORY_CONTEXT_MAX_CHARS + 1) }),
+      ),
+    ).toThrow();
+  });
+
+  it('화면 상한 두 개(200 · 400)를 이어 붙인 길이를 담을 수 있다', () => {
+    // 호출부는 두 자유 서술을 줄바꿈으로 잇는다 — 200 + 1 + 400 = 601 이라 그대로면 계약을
+    // 넘긴다. 그래서 호출부가 이 값으로 한 번 더 자르고, 잘린 결과는 반드시 통과해야 한다.
+    const joined = ['가'.repeat(200), '나'.repeat(400)].join('\n');
+    expect(joined.length).toBe(601);
+
+    expect(
+      generateRequestSchema.safeParse(
+        baseRequest({ memory_context: joined.slice(0, MEMORY_CONTEXT_MAX_CHARS) }),
+      ).success,
+    ).toBe(true);
+  });
+
+  it('자유 서술을 아예 적지 않은 요청도 그대로 통과한다', () => {
+    expect(generateRequestSchema.parse(baseRequest()).memory_context).toBeUndefined();
   });
 });
 

@@ -63,7 +63,6 @@ import {
   type PointerEvent,
 } from 'react';
 
-import { plateFor } from '@/lib/plates';
 import PlateFrame from './PlateFrame';
 import { metaNotes } from './meta';
 import styles from './stories.module.css';
@@ -131,8 +130,28 @@ export default function StoryLane({ lane, stories, jumped, onOpen, onMount }: St
   const live = seen || jumped;
   const shown = expanded ? stories : stories.slice(0, LANE_CAP);
   const hidden = stories.length - shown.length;
-  /** 이 꽃의 세밀화. 아직 도판이 없는 꽃이면 헤더는 그대로 이름만 세운다. */
-  const plate = plateFor(lane.flowerId);
+  /**
+   * 이 꽃의 세밀화 — **서버가 좁혀 실어 준 한 벌**이다(도판 표를 여기서 뒤지지 않는다).
+   * 아직 도판이 없는 꽃이면 헤더는 그대로 이름만 세운다.
+   */
+  const plate = lane.plate;
+
+  /**
+   * 레인 노드를 잡는 자리. 관측(IntersectionObserver)과 부모의 건너뛰기가 **같은 노드**를 본다.
+   *
+   * ⚠ 인라인 화살표로 두면 렌더마다 새 함수라 React 가 매 커밋에 `null → node` 로 두 번
+   *   부른다(그때마다 부모 Map 에서 지웠다 다시 넣는다). `useCallback` 으로 묶어 두면
+   *   `lane.flowerId` 나 `onMount` 가 바뀔 때만 다시 붙는다.
+   * ⚠ **아무것도 반환하지 마라.** React 19 는 ref 콜백의 반환값을 정리 함수로 보기 때문에,
+   *   화살표를 한 줄로 줄여 값을 흘리면 언마운트 때 `null` 로 다시 불리지 않는다.
+   */
+  const attachRoot = useCallback(
+    (node: HTMLElement | null) => {
+      rootRef.current = node;
+      onMount(lane.flowerId, node);
+    },
+    [lane.flowerId, onMount],
+  );
 
   const drag = useRef({ active: false, startX: 0, startLeft: 0, moved: 0 });
   const ticking = useRef(false);
@@ -337,17 +356,21 @@ export default function StoryLane({ lane, stories, jumped, onOpen, onMount }: St
   }
 
   return (
+    /*
+      ⚠ `role="region"` 이 아니라 `role="group"` 이다(접근성 리뷰 P1-6).
+      region 은 **랜드마크**라, 이름이 붙은 채로 32줄이 서면 화면 낭독기의 랜드마크 목록이
+      레인 이름 32개로 가득 찬다 — 페이지의 큰 뼈대(검색·결과)를 그 안에서 찾을 수 없게 된다.
+      레인은 "관련된 것들의 묶음" 이지 페이지의 구획이 아니므로 group 이 맞는 말이다.
+      랜드마크 자격은 필터·결과 영역(`.board`)과 검색만 갖는다.
+    */
     <section
       className={styles.lane}
-      role="region"
+      role="group"
       tabIndex={-1}
       aria-label={`${lane.flowerNameKo} 이야기 ${stories.length}편`}
       data-jumped={jumped ? 'true' : undefined}
       data-flower-lane={lane.flowerId}
-      ref={(node) => {
-        rootRef.current = node;
-        onMount(lane.flowerId, node);
-      }}
+      ref={attachRoot}
     >
       <header className={styles.laneHead}>
         {/*
@@ -404,7 +427,7 @@ export default function StoryLane({ lane, stories, jumped, onOpen, onMount }: St
         tabIndex={0}
         data-live={live ? 'true' : undefined}
         aria-busy={live ? undefined : true}
-        aria-label={`${lane.flowerNameKo} 이야기 카드 — 좌우 화살표 키로 넘겨보세요`}
+        aria-label={`${lane.flowerNameKo} 이야기 — 좌우 화살표 키로 넘겨보세요`}
         onScroll={onScroll}
         onKeyDown={onKeyDown}
         onFocus={live ? undefined : () => setSeen(true)}
@@ -489,7 +512,7 @@ export default function StoryLane({ lane, stories, jumped, onOpen, onMount }: St
                 편 더 보기
               </span>
               <span className={styles.moreHint} aria-hidden="true">
-                {lane.flowerNameKo} 이야기를 이 줄에서 전부 펼쳐요
+                숨겨 둔 이야기까지 여기서 다 보여드릴게요
               </span>
             </button>
           </li>

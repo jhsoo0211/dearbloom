@@ -54,7 +54,8 @@ export default function GroupsPage() {
               <h2>Image credits</h2>
               <p>Photos: Unsplash — dariana</p>
               <p>
-                Unsplash License · 상업적 사용 가능 · 출처 표기는 dearbloom 자체 운용 원칙입니다.
+                Unsplash License로 쓰고 있어요. 표기 의무는 없지만, 찍어 준 분의 이름은
+                dearbloom이 늘 함께 적어 둬요.
               </p>
             </div>
           </footer>

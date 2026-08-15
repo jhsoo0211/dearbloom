@@ -325,7 +325,7 @@ export const SPECIES_LABELS: Record<Species, { label: string; desc: string }> = 
 /** 멘트 톤 4종. 화면 순서도 이 배열 순서다(§1.5 는 담백·다정·진지 3종을 보여 준다). */
 export const TONE_LABELS: Record<Tone, { label: string; hint: string }> = {
   plain: { label: '담백', hint: '짧고 정확하게, 부담 없이' },
-  romantic: { label: '다정', hint: '상대의 마음을 먼저 헤아릴 때' },
+  romantic: { label: '다정', hint: '그 사람의 마음을 먼저 헤아릴 때' },
   sincere: { label: '진지', hint: '신뢰가 걸린 일일 때' },
   playful: { label: '유쾌', hint: '가볍게 웃으며 건네고 싶을 때' },
 };

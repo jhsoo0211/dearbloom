@@ -151,7 +151,9 @@ export default function FlowerSearch({ flowers, groups }: FlowerSearchProps) {
           ) : (
             <>
               <b>{flowers.length}</b>
-              <span>가지 꽃이 갈래별로 놓여 있어요</span>
+              {/* 묶음의 이름은 **꽃 계열**이다(용어 확정) — `갈래` 는 이 화면에서 이미
+                  해석의 갈래·이야기의 출처로도 쓰여 무엇을 가리키는지 흐려진다. */}
+              <span>가지 꽃을 꽃 계열로 묶어 두었어요</span>
             </>
           )}
         </p>
@@ -166,7 +168,9 @@ export default function FlowerSearch({ flowers, groups }: FlowerSearchProps) {
 
         {empty && (
           <div className={styles.empty}>
-            <p className={styles.emptyTitle}>아직 없는 꽃이에요 — 매주 새 꽃이 들어와요</p>
+            {/* ⚠ "매주" 같은 **주기 약속**을 쓰지 마라 — 지킬 수 있는 말이 아니고,
+                지키지 못하는 순간 도감 전체의 신뢰가 깎인다. */}
+            <p className={styles.emptyTitle}>아직 없는 꽃이에요 — 새 꽃이 계속 들어오고 있어요</p>
             <p className={styles.emptyLead}>
               그동안 아래에서 다른 꽃을 둘러보시겠어요? 이름의 일부만 적어도 찾아드려요.
             </p>
@@ -176,7 +180,7 @@ export default function FlowerSearch({ flowers, groups }: FlowerSearchProps) {
         {/* 검색 중이 아니거나 결과가 없을 때는 전체 목록이 그대로 이어진다. */}
         {(!searching || empty) && (
           <>
-            {empty && <p className={styles.fallbackHead}>갈래별로 놓인 꽃 전부</p>}
+            {empty && <p className={styles.fallbackHead}>꽃 계열로 묶어 둔 꽃 전부</p>}
             <GroupList groups={groups} />
           </>
         )}

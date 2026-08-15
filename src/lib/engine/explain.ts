@@ -1,3 +1,4 @@
+import { withParticle } from '../text';
 import { monthFromISO } from './normalize';
 import type { ScoredFlower } from './score';
 import type {
@@ -16,18 +17,18 @@ import type {
 /** RuleId → 사용자에게 보여 줄 한국어 설명. */
 export const REASON_TEXTS: Record<RuleId, string> = {
   EX_PET_TOXIC: '반려동물에게 심각한 독성이 있어 후보에서 제외했어요.',
-  EX_BUDGET: '설정하신 예산 범위를 벗어나 제외했어요.',
+  EX_BUDGET: '말씀하신 값보다 조금 위라 이번엔 접어 두었어요.',
   EX_DISLIKED: '제외하고 싶다고 하신 꽃이라 후보에서 뺐어요.',
   EX_FRAGRANCE: '향에 민감하다고 하셔서 향이 강한 꽃은 제외했어요.',
   SC_INTENT: '전하려는 마음에 잘 맞는 꽃이에요.',
   SC_RELATIONSHIP: '두 분의 관계에 어울리는 선택이에요.',
   SC_SEASON: '지금이 제철이라 상태 좋은 꽃을 구하기 쉬워요.',
-  SC_AESTHETIC: '좋아하신다고 하신 색·분위기와 잘 어울려요.',
+  SC_AESTHETIC: '좋아하신다는 색과 분위기에 잘 맞아요.',
   SC_PERSONA: '상대의 분위기와 꽃의 인상이 잘 맞아요.',
   SC_FRAGRANCE: '향기를 좋아한다고 하셔서, 향이 살아 있는 꽃으로 골랐어요.',
 };
 
-const FALLBACK_REASON = '추천 규칙에 부합하는 선택이에요.';
+const FALLBACK_REASON = '이 자리에 두루 잘 어울리는 꽃이에요.';
 
 /** 규칙 식별자의 설명 문장. 사전에 없는 id는 기본 문장으로 대체한다. */
 export function reasonText(ruleId: RuleId): string {
@@ -123,7 +124,9 @@ export function buildColorSuggestion(
     color: picked.color,
     reason: picked.fromPrefs
       ? `좋아하신다고 하신 ${label} 계열을 이 꽃도 가지고 있어 그 색으로 골랐어요.`
-      : `${label}이(가) ${flower.nameKo}을(를) 가장 잘 보여 주는 대표색이라 이 색으로 제안해요.`,
+      : // 대표색(colors[0]) 갈래. 조사는 `src/lib/text.ts` 가 받침으로 갈라 준다 —
+        // 예전에는 `흰색이(가) 흰 튤립을(를) …` 처럼 괄호가 화면에 그대로 나갔다.
+        `${withParticle(label, 'subject')} ${withParticle(flower.nameKo, 'object')} 가장 그 꽃답게 보여 주는 색이라 이 색으로 골랐어요.`,
   };
 
   const meaning = findMeaning(meanings, flower.id, picked.color);

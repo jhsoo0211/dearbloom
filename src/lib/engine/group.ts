@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { withParticle } from '../text';
 import { diversify } from './diversity';
 import { exclude } from './exclude';
 import { buildResults } from './explain';
@@ -31,8 +32,13 @@ export const MAX_BOUQUET_FLOWERS = 3;
 /** 멤버가 관계를 밝히지 않았을 때 쓰는 기본 관계(팀·모임 맥락). */
 const DEFAULT_RELATIONSHIP: Relationship = 'friend';
 
-/** 반려동물 사유 문장에 쓰는 표기. */
-const PET_KO: Record<Species, string> = { cat: '반려묘', dog: '반려견' };
+/**
+ * 반려동물 사유 문장에 쓰는 표기.
+ *
+ * `exclude.ts` 의 `SPECIES_KO` 와 **같은 말**을 쓴다. 예전에는 여기만 `반려묘·반려견` 이라
+ * 같은 고양이가 화면마다 다른 이름으로 불렸고, `반려견를` 처럼 조사까지 어긋났다.
+ */
+const PET_KO: Record<Species, string> = { cat: '고양이', dog: '강아지' };
 
 /** 그 멤버 한 사람 때문에 생긴 제외인지(예산은 그룹 공통이라 제외). */
 const MEMBER_SPECIFIC_RULES: ReadonlySet<RuleId> = new Set<RuleId>([
@@ -92,7 +98,8 @@ const budgetSchema = z.object({
  * recipientTraits/dateISO 등 세부 어휘 검증은 멤버별 normalizeInput 이 다시 한다.
  */
 export const groupMemberSchema = z.object({
-  name: z.string().min(1, { message: '멤버 이름은 비워 둘 수 없습니다.' }),
+  // zod 메시지도 화면에 그대로 나간다(`/groups` 폼 오류) — 규격서가 아니라 말로 적는다.
+  name: z.string().min(1, { message: '부르실 이름 한 줄만 적어 주세요.' }),
   relationship: relationshipSchema.optional(),
   recipientTraits: z.array(z.string()).default([]),
   colorPrefs: z.array(z.string()).default([]),
@@ -137,7 +144,7 @@ function round4(n: number): number {
 }
 
 function distinctNote(nameKo: string): string {
-  return `다른 분과 꽃이 겹치지 않도록 ${nameKo}(으)로 바꿔 배정했어요.`;
+  return `다른 분과 꽃이 겹치지 않도록 ${withParticle(nameKo, 'to')} 바꿔 골랐어요.`;
 }
 
 /**
@@ -217,13 +224,18 @@ function petBlocksFor(flowers: FlowerData[], ctx: MemberContext): PetBlock[] {
   return blocks;
 }
 
-/** "지수님의 반려묘를 생각해 아시아틱 릴리은(는) 부케에서 뺐어요." 형태의 한 문장. */
+/**
+ * "지수님과 사는 고양이를 생각해 아시아틱 백합 외 2종은 이 다발에서 뺐어요." 형태의 한 문장.
+ *
+ * 세는 단위는 **종**이다(`외 3건` 은 서류를 세는 말이라 꽃을 세지 못한다).
+ * 조사는 `src/lib/text.ts` 가 받침으로 갈라 준다 — 꽃 이름이 데이터에서 오기 때문이다.
+ */
 function buildBouquetCaution(blocks: PetBlock[]): string | undefined {
   if (blocks.length === 0) return undefined;
   const first = blocks[0];
   const rest = blocks.length - 1;
-  const flowerPart = rest > 0 ? `${first.flower.nameKo} 외 ${rest}건` : first.flower.nameKo;
-  return `${first.memberName}님의 ${PET_KO[first.species]}를 생각해 ${flowerPart}은(는) 부케에서 뺐어요.`;
+  const flowerPart = rest > 0 ? `${first.flower.nameKo} 외 ${rest}종` : first.flower.nameKo;
+  return `${first.memberName}님과 사는 ${withParticle(PET_KO[first.species], 'object')} 생각해 ${withParticle(flowerPart, 'topic')} 이 다발에서 뺐어요.`;
 }
 
 /** 멤버 전원의 적합도 평균. matched 는 누구에게든 걸린 규칙의 합집합이다. */

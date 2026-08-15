@@ -102,7 +102,7 @@ export function emptyMember(key: string): MemberDraft {
 
 /**
  * §1.5c 시나리오 — "프로젝트를 함께 끝낸 팀원 4명에게 · 고마움".
- * 빈 폼 앞에서 멈추지 않도록 "예시로 채우기" 버튼이 이 값을 그대로 심는다.
+ * 빈 폼 앞에서 멈추지 않도록 "예시로 먼저 보기" 버튼이 이 값을 그대로 심는다.
  */
 export const PRESET_INTENT: Intent = 'gratitude';
 

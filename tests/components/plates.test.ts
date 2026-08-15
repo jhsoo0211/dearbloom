@@ -9,11 +9,13 @@ import { STORY_CATEGORIES, storyCategoryLabel } from '@/components/stories/categ
 import { loadCatalog } from '@/lib/data/catalog';
 import {
   FLOWER_PLATES,
+  THUMB_DIR,
   plateCredit,
   plateCredits,
   plateFor,
   plateSourceLine,
   plateSrc,
+  plateViewFor,
 } from '@/lib/plates';
 
 /**
@@ -93,14 +95,55 @@ describe('FLOWER_PLATES', () => {
     }
   });
 
-  it('plateSrc — 로컬 사본은 그대로, 원격 폴백은 폭만 갈아 끼운다', () => {
+  /**
+   * 썸네일 그물 — 성능 리뷰 P0-2 의 재발 방지선.
+   *
+   * 화면이 도판을 거는 자리는 레인 헤더 44px 과 시트 액자 ≤92px 뿐인데, 예전에는 그 칸이
+   * 200KB 짜리 본판을 통째로 물었다(첫 화면 도판만 1.4MB). 이제 `plateSrc(plate, ≤250)`
+   * 이 `/plates/thumbs/…` 를 가리키므로 **그 파일이 실제로 있어야** 한다 —
+   * 모듈만 고치고 `node scripts/fetch-plates.mjs` 를 잊으면 32칸이 전부 404 가 된다.
+   */
+  it('썸네일이 32종 전부 있고, 본판보다 확실히 가볍다', () => {
+    /** 썸네일 한 장의 상한. 160px q82 라면 실제로는 4~13KB 사이에 든다. */
+    const MAX_THUMB_BYTES = 40 * 1024;
+    let totalThumb = 0;
+
+    for (const plate of Object.values(FLOWER_PLATES)) {
+      const thumb = plateSrc(plate, 250);
+      expect(thumb.startsWith(THUMB_DIR), `${plate.flowerId} — 250px 이 본판을 가리킨다`).toBe(true);
+      // 파일 이름은 본판과 같다(경로만 다르다) — 짝을 잃으면 어느 그림인지 알 수 없다.
+      expect(thumb).toBe(`${THUMB_DIR}${plate.flowerId}.jpg`);
+
+      const file = join(PUBLIC_DIR, thumb.replace(/^\//, ''));
+      expect(existsSync(file), `${plate.flowerId} — public${thumb} 가 없다`).toBe(true);
+
+      const size = statSync(file).size;
+      expect(size, `${plate.flowerId} — 썸네일이 비었다`).toBeGreaterThan(0);
+      expect(
+        size,
+        `${plate.flowerId} — 썸네일이 ${(size / 1024).toFixed(0)}KB 다(본판을 그대로 복사했나?)`,
+      ).toBeLessThanOrEqual(MAX_THUMB_BYTES);
+
+      const full = statSync(join(PUBLIC_DIR, plate.src.replace(/^\//, ''))).size;
+      expect(size, `${plate.flowerId} — 썸네일이 본판보다 작지 않다`).toBeLessThan(full);
+      totalThumb += size;
+    }
+
+    // 레인 32줄이 첫 화면에서 무는 무게. 예전에는 도판 7장만으로 1.4MB 였다.
+    expect(totalThumb).toBeLessThan(512 * 1024);
+  });
+
+  it('plateSrc — 좁은 자리는 썸네일로, 큰 자리는 본판으로 간다', () => {
     const commons = plateFor('tulip-white');
     const archive = plateFor('gerbera');
     if (!commons || !archive) throw new Error('도판 상수가 비었다');
 
-    // 자체 호스팅 사본은 폭 변형이 없다(파일이 한 벌뿐이다).
-    expect(plateSrc(commons, 250)).toBe(commons.src);
+    // 자체 호스팅 사본은 두 벌이다 — 44px·92px 자리(≤250)는 썸네일, 그 위는 본판.
+    expect(plateSrc(commons, 250)).toBe('/plates/thumbs/tulip-white.jpg');
+    expect(plateSrc(commons, 500)).toBe(commons.src);
     expect(plateSrc(commons, 1280)).toBe(commons.src);
+    // 기본값이 곧 썸네일이다(부르는 쪽이 잊어도 44px 칸에 본판이 걸리지 않게).
+    expect(plateSrc(commons)).toBe(plateSrc(commons, 250));
 
     // 다운로드가 실패해 원격 주소를 그대로 쓰는 폴백 상태에서는 폭이 살아 있어야 한다.
     const remoteCommons = { ...commons, src: commons.remoteSrc };
@@ -112,6 +155,40 @@ describe('FLOWER_PLATES', () => {
     expect(plateSrc(remoteArchive, 250)).toContain('_w400.');
     expect(plateSrc(remoteArchive, 500)).toContain('_w800.');
     expect(plateSrc(remoteArchive, 1280)).toBe(archive.remoteSrc);
+  });
+
+  /**
+   * 클라이언트로 건너가는 모양의 그물 — 코드 리뷰 P1-7.
+   *
+   * `/stories` 청크에 `upload.wikimedia.org/...` 문자열 32벌이 실려 있었다. 레인·시트가
+   * `plateFor()` 를 클라이언트에서 불러 표 전체를 끌고 갔기 때문이다. 화면은 그 주소를
+   * 한 줄도 쓰지 않는다 — 그래서 건너가는 값은 `plateViewFor()` 가 좁힌 한 벌뿐이어야 한다.
+   */
+  it('plateViewFor — 화면이 받는 값에 취득 주소·파일 페이지가 없다', () => {
+    for (const plate of Object.values(FLOWER_PLATES)) {
+      const view = plateViewFor(plate.flowerId);
+      if (!view) throw new Error(`${plate.flowerId} 의 뷰가 비었다`);
+
+      // 키는 딱 다섯(있을 때만 붙는 note 포함) — 늘리려면 왜 화면에 필요한지부터 말해야 한다.
+      const allowed = new Set(['flowerId', 'src', 'alt', 'note', 'sourceLine']);
+      for (const key of Object.keys(view)) expect(allowed.has(key), `${key} 가 새어 나갔다`).toBe(true);
+
+      const serialized = JSON.stringify(view);
+      expect(serialized).not.toContain('upload.wikimedia.org');
+      expect(serialized).not.toContain('commons.wikimedia.org');
+      expect(serialized).not.toContain(plate.remoteSrc);
+      expect(serialized).not.toContain(plate.pageUrl);
+
+      // 좁혔어도 화면이 필요로 하는 것은 다 있다.
+      expect(view.src).toBe(plateSrc(plate, 250));
+      expect(view.alt).toBe(plate.alt);
+      expect(view.sourceLine).toBe(plateSourceLine(plate));
+      expect(view.note).toBe(plate.note);
+    }
+
+    expect(plateViewFor('없는-꽃')).toBeUndefined();
+    // 큰 자리(도감 히어로)를 부르면 본판이 온다.
+    expect(plateViewFor('tulip-white', 1280)?.src).toBe('/plates/tulip-white.jpg');
   });
 
   it('Advisor 확정 두 건이 그대로 반영돼 있다', () => {

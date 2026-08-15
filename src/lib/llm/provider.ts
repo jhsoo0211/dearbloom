@@ -20,7 +20,7 @@
  *    (오류 메시지에 우리가 보낸 프롬프트가 되돌아오는 API 가 흔하다.)
  */
 
-import { generateResponseSchema } from './contracts';
+import { generateRequestSchema, generateResponseSchema } from './contracts';
 import type { GenerateRequest, GenerateResponse } from './contracts';
 import { buildGeminiSchema, buildJsonSchema, buildSystemPrompt, buildUserPrompt } from './prompt';
 
@@ -441,9 +441,22 @@ async function runProvider(
  * 3톤 멘트를 한 번에 만들어 온다.
  *
  * `null` 이 돌아오는 경우는 전부 "템플릿 폴백" 이다:
- *   키가 없음 / 타임아웃 / 체인의 모든 프로바이더가 실패(HTTP 오류·네트워크·파싱)
+ *   계약 위반 / 키가 없음 / 타임아웃 / 체인의 모든 프로바이더가 실패(HTTP 오류·네트워크·파싱)
+ *
+ * **첫 줄이 계약 검사다.** 타입 주석은 컴파일이 끝나면 사라지고, 이 함수에 들어오는 값의
+ * 뿌리에는 사용자가 쓴 글(자유 서술)이 있다. 길이·어휘가 계약을 벗어난 요청을 그대로
+ * 프롬프트에 실어 보내면 토큰 예산도 안전 규칙도 지켜 줄 사람이 없다 — 여기서 막고
+ * 준비된 예문으로 떨어뜨린다.
  */
 export async function generateMessages(req: GenerateRequest): Promise<GenerateResponse | null> {
+  const validated = generateRequestSchema.safeParse(req);
+  if (!validated.success) {
+    // ⚠ 오류 객체를 찍지 않는다 — zod 의 issue 에는 받은 값(자유 서술 원문)이 섞인다(§1.5j).
+    console.error('[llm] 생성 요청이 계약을 벗어났습니다. (내용은 남기지 않습니다)');
+    return null;
+  }
+  const request = validated.data;
+
   const providers = resolveProviders();
   if (providers.length === 0) return null;
 
@@ -455,7 +468,7 @@ export async function generateMessages(req: GenerateRequest): Promise<GenerateRe
       const provider = providers[index];
       if (controller.signal.aborted) break;
 
-      const parsed = await runProvider(provider, req, controller.signal);
+      const parsed = await runProvider(provider, request, controller.signal);
       if (parsed) return parsed;
 
       // 예산이 끝났으면 다음 프로바이더도 부를 시간이 없다.

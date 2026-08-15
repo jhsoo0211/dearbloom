@@ -45,7 +45,7 @@ function AssignmentRow({ item }: { item: MemberAssignment }) {
           <>
             <h3 className={styles.aName}>고를 수 있는 꽃이 없었어요</h3>
             <p className={styles.aWhy}>
-              조건이 서로 부딪혀 남는 꽃이 없었어요. 색이나 향 조건을 하나만 풀어 주세요.
+              골라 주신 것들이 서로 부딪혀서 남는 꽃이 없었어요. 색이나 향 하나만 풀어 주시겠어요?
             </p>
           </>
         ) : (
@@ -54,7 +54,7 @@ function AssignmentRow({ item }: { item: MemberAssignment }) {
             {flower.meaningKo ? <p className={styles.aMean}>“{flower.meaningKo}”</p> : null}
             {flower.colorReason ? <p className={styles.aWhy}>{flower.colorReason}</p> : null}
             {item.memo.length > 0 ? (
-              <ul className={styles.memo} aria-label={`${item.name}에게 입력한 조건`}>
+              <ul className={styles.memo} aria-label={`${item.name}에 대해 들려주신 이야기`}>
                 {item.memo.map((chip) => (
                   <li key={chip}>{chip}</li>
                 ))}
@@ -118,13 +118,13 @@ export function BouquetPanel({ view }: { view: GroupPlanView }) {
         </ul>
       ) : (
         <p className={styles.note}>
-          전원에게 안전한 꽃이 남지 않았어요. 아래 목록에서 조건을 하나만 풀어 주세요.
+          함께 받는 분 모두에게 안전한 꽃이 남지 않았어요. 아래에서 하나만 풀어 주시겠어요?
         </p>
       )}
 
       {/* 교집합 안전 검사 — 이 화면이 존재하는 이유 (§1.5c) */}
       {caution ? (
-        <aside className={styles.safety} aria-label="교집합 안전 검사 결과">
+        <aside className={styles.safety} aria-label="모두에게 안전한지 살펴본 결과">
           <span className={styles.safetyIcon} aria-hidden="true">
             <IconShield />
           </span>
@@ -146,7 +146,7 @@ export function BouquetPanel({ view }: { view: GroupPlanView }) {
                 <p className={styles.exName}>{item.nameKo}</p>
                 <p className={styles.exReason}>{item.reason}</p>
                 {item.because.length > 0 ? (
-                  <p className={styles.exBecause}>{item.because.join(' · ')}님의 조건이에요</p>
+                  <p className={styles.exBecause}>{item.because.join(' · ')}님을 생각해서예요</p>
                 ) : null}
               </li>
             ))}

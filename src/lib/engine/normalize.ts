@@ -63,7 +63,10 @@ function toTraitSlug(value: string): string {
 
 const isoDateSchema = z
   .string()
-  .refine((s) => !Number.isNaN(Date.parse(s)), { message: '해석할 수 없는 날짜 형식입니다.' });
+  // zod 메시지도 화면으로 새어 나갈 수 있는 문자열이라 해요체로 적는다(엔진 메시지 통일).
+  .refine((s) => !Number.isNaN(Date.parse(s)), {
+    message: '날짜를 읽지 못했어요. 2026-08-15 처럼 적어 주세요.',
+  });
 
 const budgetSchema = z.object({
   min: z.number().nonnegative().optional(),

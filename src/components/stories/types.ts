@@ -7,11 +7,22 @@
  *
  * 어휘의 원본은 `src/lib/engine/types.ts`(StoryMood·StoryType)이고, 한국어 표기는
  * 서버에서 `src/components/flow/labels.ts` 가 붙여 이 모양으로 내려보낸다.
+ *
+ * ── 카드와 상세를 가른다 (성능 리뷰 P1-7, 2026-08-15) ────────────────
+ * 예전에는 이야기 **전문**까지 한 덩이(`body`)로 묶어 317편 전량을 첫 응답에 실었다.
+ * 인라인 RSC payload 만 275KB 였고, 그것을 파싱하느라 롱태스크가 107~124ms 씩 걸렸다 —
+ * 그런데 전문은 **시트를 연 한 편**만 읽힌다. 그래서 모양을 둘로 가른다:
+ *   · `ArchiveStory` — 카드가 그리는 것(제목·hook·꽃 이름·결·각주 라벨). 처음에 전량 내려간다.
+ *   · `StoryDetail`  — 전문과 출처. 시트를 열 때 서버 액션(`app/stories/actions.ts`)이 한 편만 준다.
+ * 검색 색인은 제목·hook 이라 카드 쪽에 그대로 남는다(본문은 원래 색인에 없었다).
+ * ⚠ `body` 를 `ArchiveStory` 로 되돌리지 마라 — 그 한 줄이 첫 화면을 다시 무겁게 만든다.
  */
 
-/** 아카이브 카드 한 장 = stories.csv 한 행 + 꽃 이름. */
+import type { PlateView } from '@/lib/plates/view';
+
+/** 아카이브 카드 한 장 = stories.csv 한 행 + 꽃 이름. **전문은 여기 없다.** */
 export interface ArchiveStory {
-  /** stories.csv 의 story_id. */
+  /** stories.csv 의 story_id. 상세를 부를 때의 열쇠이기도 하다. */
   id: string;
   flowerId: string;
   /** flowers.csv 의 name_ko — 카드의 오버라인이자 꽃 필터의 표기다. */
@@ -19,8 +30,6 @@ export interface ArchiveStory {
   title: string;
   /** 티저 한 줄. 카드에서 이야기를 대신 말하는 문장이다. */
   hook?: string;
-  /** 전문(story_ko). 상세 시트에서만 펼친다(§1.5i). */
-  body: string;
   /** §1.5f — 창작 이야기는 라벨을 눈에 띄게 세운다(사실처럼 보이지 않게). */
   isOriginal: boolean;
   /** story_type 한국어 라벨. `original` 이면 "dearbloom이 지어 본 이야기예요". */
@@ -31,14 +40,27 @@ export interface ArchiveStory {
   regionLabel?: string;
   /** 시대(한국어). 사전에 없는 값은 서버가 감춘다(영문 slug 노출 금지). */
   eraLabel?: string;
-  /** `이야기의 갈래 — …` 각주에 쓰는 원문 제목. 창작 이야기는 출처가 면제라 없을 수 있다. */
-  sourceTitle?: string;
-  /** 원문 링크. 상세 시트에서 새 탭으로 건너간다. */
-  sourceUrl?: string;
   /** 이야기의 결(moods). 필터 비교용 문자열로만 쓴다(클라이언트가 엔진을 import 하지 않게). */
   moods: string[];
   /** moods 를 한국어로 옮긴 칩 라벨. moods 와 같은 순서다. */
   moodLabels: string[];
+}
+
+/**
+ * 시트를 열 때만 가져오는 부분 — **전문과 출처**.
+ *
+ * 서버 액션 `loadStoryDetail(storyId)` 이 돌려주는 모양이다. 없는 id 를 물으면 `null` 이고,
+ * 화면은 그때 폴백 문구를 세운다(빈 시트를 보여 주지 않는다).
+ */
+export interface StoryDetail {
+  /** 물어본 story_id 그대로 — 늦게 도착한 응답을 지금 열린 이야기와 맞춰 보는 데 쓴다. */
+  id: string;
+  /** 전문(story_ko). 상세 시트에서만 펼친다(§1.5i). */
+  body: string;
+  /** 출처 각주에 쓰는 원문 제목. 창작 이야기는 출처가 면제라 없을 수 있다. */
+  sourceTitle?: string;
+  /** 원문 링크. 상세 시트에서 새 탭으로 건너간다. */
+  sourceUrl?: string;
 }
 
 /**
@@ -78,6 +100,15 @@ export interface ArchiveLane {
    * 질의도 같은 함수를 지나 `includes` 한 번으로 만난다("튤" · "rosa" · "baby's breath").
    */
   searchKey: string;
+  /**
+   * 그 꽃의 세밀화 — **서버가 좁혀 실어 보낸 한 벌**(`@/lib/plates` 의 `plateViewFor`).
+   *
+   * 예전에는 레인·시트가 `plateFor()` 를 클라이언트에서 불렀는데, 그러면 도판 표 전체가
+   * (취득 주소 `remoteSrc` 와 파일 페이지 `pageUrl` 까지) 브라우저 번들에 실린다 —
+   * 실제로 `/stories` 청크에 위키미디어 주소 32벌이 들어 있었다(코드 리뷰 P1-7).
+   * 액자에 필요한 것만 서버에서 골라 여기 담는다. 도판이 없는 꽃이면 없다.
+   */
+  plate?: PlateView;
   /** 이 꽃의 이야기. stories.csv 순서 그대로다. */
   stories: ArchiveStory[];
 }

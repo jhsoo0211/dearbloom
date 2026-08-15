@@ -334,6 +334,60 @@ export function photoSrc(photo: FlowerPhoto, width: PhotoWidth = 1080): string {
   return `${photo.src}?auto=format&fit=crop&w=${width}&q=80`;
 }
 
+/**
+ * `srcset` 한 줄 — 같은 컷의 여러 폭을 브라우저에게 고르게 한다.
+ *
+ * 왜 필요한가: `photoSrc()` 하나만 쓰면 **모든 기기가 같은 폭을 받는다.** 380px 카드에
+ * 1080 을 내려보내는 것은 데스크톱 레티나에서는 맞고 폰에서는 네 배 낭비다.
+ *
+ * ⚠ **`sizes` 를 함께 주지 않으면 소용이 없다.** `sizes` 가 없으면 브라우저는 폭을
+ *   `100vw` 로 가정해 언제나 가장 큰 후보를 고른다. 화면별 권장값은 이렇다:
+ *     · 랜딩 카드 (`.db-slide` = min(86%, 380px), 640 이하에서는 min(88%, 340px))
+ *         `(max-width: 640px) 88vw, (max-width: 1180px) 46vw, 380px`
+ *     · 랜딩 히어로 (풀블리드) → `100vw`
+ *     · 도감 상세 히어로 (셸 폭) → `(max-width: 900px) 100vw, 900px`
+ *
+ * 폭 목록은 `photoSrc()` 를 그대로 통과시키므로 CDN 캐시 키가 갈라지지 않는다.
+ */
+export function photoSrcSet(
+  photo: FlowerPhoto,
+  widths: readonly PhotoWidth[] = [640, 1080],
+): string {
+  return widths.map((width) => `${photoSrc(photo, width)} ${width}w`).join(', ');
+}
+
+/**
+ * 이미 파라미터가 붙어 있는 Unsplash 주소의 `srcset`.
+ *
+ * `FLOWER_PHOTOS` 는 파라미터 없는 원본만 갖지만(위 머리말), `src/lib/theme/flowers.ts` 의
+ * 장면컷은 크롭비(`h`)까지 손으로 맞춘 **완성된 주소**라 폭만 갈아 끼워야 한다.
+ * 그래서 `w` 를 바꾸고 `h` 가 있으면 **같은 비율로 함께 줄인다** — 크롭이 달라지면
+ * 후보들끼리 다른 그림이 되어 브라우저가 폭을 바꿀 때 화면이 튄다.
+ *
+ * 아는 호스트가 아니면 원본 한 벌만 돌려준다(깨뜨리지 않는다).
+ */
+export function unsplashSrcSet(src: string, widths: readonly number[]): string {
+  if (!src.startsWith('https://images.unsplash.com/')) return src;
+  const [base, query = ''] = src.split('?');
+  const source = new URLSearchParams(query);
+  const originalWidth = Number(source.get('w'));
+  const originalHeight = Number(source.get('h'));
+
+  return widths
+    .map((width) => {
+      const params = new URLSearchParams(source);
+      if (originalWidth > 0 && originalHeight > 0) {
+        params.set('h', String(Math.round((originalHeight * width) / originalWidth)));
+      }
+      params.set('w', String(width));
+      if (!params.has('auto')) params.set('auto', 'format');
+      if (!params.has('fit')) params.set('fit', 'crop');
+      if (!params.has('q')) params.set('q', '80');
+      return `${base}?${params.toString()} ${width}w`;
+    })
+    .join(', ');
+}
+
 /** 그 꽃의 대표 실사. 아직 컷이 없는 꽃이면 undefined — 화면은 사진 없이도 성립해야 한다. */
 export function photoFor(flowerId: string): FlowerPhoto | undefined {
   return FLOWER_PHOTOS[flowerId];

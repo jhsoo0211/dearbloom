@@ -16,15 +16,30 @@ import { useEffect, useRef, useState, type RefObject } from 'react';
 /** idle = 부팅 중 · ready = 모션 가동 · off = 모션 없음(리듀스드 모션·로드 실패) */
 export type MotionState = 'idle' | 'ready' | 'off';
 
-/** 텍스트를 어절 단위 마스크로 쪼갠다. 접근성은 aria-label 로 원문을 남겨 지킨다. */
+/**
+ * 텍스트를 어절 단위 마스크로 쪼갠다.
+ *
+ * 접근성: 쪼갠 조각은 전부 `aria-hidden` 이고, 원문은 **`.sr-only` span 한 줄**로 남긴다.
+ *
+ * ⚠ 예전에는 원문을 `aria-label` 로 걸었다. 그런데 이 함수가 잡는 대상 중에는 `<p>` 가
+ *   있고, `paragraph` 롤은 **이름을 가질 수 없는 롤**이라 그 속성이 금지 속성이 된다
+ *   (axe `aria-prohibited-attr`, serious). 스크린리더가 문단을 통째로 건너뛰거나 라벨을
+ *   무시하는 실패로 이어진다. sr-only 텍스트는 롤을 가리지 않고 같은 일을 한다.
+ *   JSX 가 이미 `aria-label` 을 준 요소(히어로 h1 — 헤딩은 이름을 가질 수 있다)는 건드리지 않는다.
+ */
 function splitWords(el: HTMLElement) {
   if (el.dataset.dbSplit === '1') return;
   const full = (el.textContent ?? '').trim();
   if (!full) return;
-  if (el.getAttribute('aria-hidden') !== 'true' && !el.hasAttribute('aria-label')) {
-    el.setAttribute('aria-label', full);
-  }
+  const needsSpokenCopy =
+    el.getAttribute('aria-hidden') !== 'true' && !el.hasAttribute('aria-label');
   el.textContent = '';
+  if (needsSpokenCopy) {
+    const spoken = document.createElement('span');
+    spoken.className = 'sr-only';
+    spoken.textContent = full;
+    el.appendChild(spoken);
+  }
   full.split(/(\s+)/).forEach((part) => {
     if (!part) return;
     if (!part.trim()) {

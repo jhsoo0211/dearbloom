@@ -1,10 +1,16 @@
 /**
- * 세밀화 도판 31종을 `public/plates/` 에 **JPEG 한 규격으로** 놓는다 — 자체 호스팅 자산 관리.
+ * 세밀화 도판 32종을 `public/plates/` 에 **JPEG 한 규격으로** 놓는다 — 자체 호스팅 자산 관리.
  *
- * 파이프라인은 세 칸이다: **입력 바이트 확보 → sharp 정규화 → `.jpg` 저장.**
+ * 파이프라인은 네 칸이다: **입력 바이트 확보 → sharp 정규화 → `.jpg` 저장 → 썸네일 저장.**
  *   ① 입력   원격(`remoteSrc`) 또는 이미 있는 로컬 파일(옛 확장자 포함) 중 하나.
- *   ② 정규화 폭 최대 1280px(업스케일 금지) · 알파는 흰 배경으로 flatten · JPEG q82(mozjpeg).
+ *   ② 정규화 폭 최대 1100px(업스케일 금지) · 알파는 흰 배경으로 flatten · JPEG q82(mozjpeg).
  *   ③ 저장   `src` 가 가리키는 자리에 `.jpg` 로 쓴다. 같은 이름의 옛 확장자 파일은 지운다.
+ *   ④ 썸네일 같은 바이트를 160px 로 한 번 더 줄여 `public/plates/thumbs/` 에 같은 이름으로.
+ *
+ * ⚠ 썸네일이 **본판보다 중요하다.** 화면이 도판을 거는 자리는 레인 헤더 44px 과 시트 액자
+ *   ≤92px 뿐이라, 실제로 32번 내려받히는 파일은 썸네일 쪽이다(본판은 도감 상세 히어로에서
+ *   한 장씩만 쓰인다). 썸네일이 없으면 `plateSrc()` 가 가리키는 주소가 404 가 되므로,
+ *   본판만 있고 썸네일이 없는 상태는 **기본 실행에서도 자동으로 메꾼다.**
  *
  * 사용:
  *   node scripts/fetch-plates.mjs              # 없는 것만 채운다(로컬에 원본이 있으면 그걸 정규화)
@@ -26,8 +32,9 @@
  *   무손실 PNG 를 들고 있을 이유가 없다 — 종이 질감 스캔은 JPEG 가 훨씬 싸다.
  *
  * 목록의 원본은 `src/lib/plates/index.ts` 한 곳이다(도판 상수는 두 벌을 만들지 않는다).
- *   · 받을 주소 = `remoteSrc`
- *   · 저장 경로 = `src`(`/plates/…` → `public/plates/…`)
+ *   · 받을 주소     = `remoteSrc`
+ *   · 저장 경로     = `src`(`/plates/…` → `public/plates/…`)
+ *   · 썸네일 저장   = `plateSrc(plate, 250)`(같은 모듈이 정한다 — 경로를 여기 다시 적지 않는다)
  *   즉 이 스크립트는 **모듈이 가리키는 자리에 그대로 파일을 놓는다** — 경로를 두 번 적지 않는다.
  *   `src` 가 아직 원격 주소인 꽃(다운로드 실패 폴백)은 건너뛰고 그 사실을 알린다.
  *
@@ -51,7 +58,7 @@ import { fileURLToPath } from 'node:url';
 
 import sharp from 'sharp';
 
-import { FLOWER_PLATES } from '../src/lib/plates/index.ts';
+import { FLOWER_PLATES, plateSrc } from '../src/lib/plates/index.ts';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -69,6 +76,12 @@ const RETRY_DELAY = 2000;
  * 이하라, 레티나 2배(=1100px)면 충분하다. 품질(q82)을 깎는 대신 폭을 줄이는 쪽을 택했다.
  */
 const MAX_WIDTH = 1100;
+/**
+ * 썸네일 폭. 화면이 도판을 거는 자리는 레인 헤더 44px 과 시트 액자 ≤92px 뿐이라,
+ * 160px 이면 좁은 화면(3배 DPR, 액자 74px)과 넓은 화면(2배 DPR, 액자 92px) 양쪽을 덮는다.
+ * 액자에는 매트·세피아 필터가 겹쳐 있어 남는 배율의 차이는 눈에 오지 않는다.
+ */
+const THUMB_WIDTH = 160;
 /** JPEG 품질. 82 는 종이 질감 스캔에서 눈에 띄는 손실 없이 크기가 확 떨어지는 자리다. */
 const JPEG_QUALITY = 82;
 /** 알파를 걷어낼 때 깔 색 — 도판 판면은 전부 흰 종이다. */
@@ -154,6 +167,32 @@ async function normalize(bytes) {
   return { data, before, after: info };
 }
 
+/**
+ * 정규화가 끝난 본판 바이트에서 **160px 썸네일**을 만든다.
+ *
+ * 원본이 아니라 본판을 입력으로 쓰는 이유: 회전(EXIF)·flatten 이 이미 픽셀에 구워져 있어
+ * 같은 그림임이 보장되고, 한 번 더 디코딩할 원본을 들고 있을 필요도 없다.
+ */
+async function makeThumb(bytes) {
+  const { data, info } = await sharp(bytes)
+    .resize({ width: THUMB_WIDTH, withoutEnlargement: true })
+    .jpeg({ quality: JPEG_QUALITY, mozjpeg: true })
+    .toBuffer({ resolveWithObject: true });
+  return { data, info };
+}
+
+/**
+ * 썸네일 한 장을 그 자리에 놓는다. 저장 경로는 **모듈이 정한다**(`plateSrc(plate, 250)`) —
+ * 여기서 `thumbs/` 를 문자열로 다시 적으면 한쪽만 바뀌는 날 화면이 404 를 문다.
+ */
+async function writeThumb(plate, bytes) {
+  const target = join(ROOT, 'public', plateSrc(plate, 250).replace(/^\//, ''));
+  const { data, info } = await makeThumb(bytes);
+  await mkdir(dirname(target), { recursive: true });
+  await writeFile(target, data);
+  return { bytes: data.byteLength, width: info.width, height: info.height };
+}
+
 async function main() {
   const plates = Object.values(FLOWER_PLATES);
   const failures = [];
@@ -161,10 +200,13 @@ async function main() {
   let written = 0;
   let skipped = 0;
   let total = 0;
+  let thumbs = 0;
+  let thumbTotal = 0;
 
   const mode = force ? ' (--force: 전부 다시 받음)' : reencode ? ' (--reencode: 전부 다시 정규화)' : '';
   console.log(
-    `[plates] ${plates.length}종 — 저장 위치 public/plates · 정규화 ≤${MAX_WIDTH}px JPEG q${JPEG_QUALITY}${mode}`,
+    `[plates] ${plates.length}종 — 저장 위치 public/plates · 정규화 ≤${MAX_WIDTH}px JPEG q${JPEG_QUALITY}` +
+      ` · 썸네일 ${THUMB_WIDTH}px → public/plates/thumbs${mode}`,
   );
 
   for (const [index, plate] of plates.entries()) {
@@ -184,11 +226,30 @@ async function main() {
 
     const already = await existingSize(target);
     const legacy = await legacySibling(target);
+    const thumbTarget = join(ROOT, 'public', plateSrc(plate, 250).replace(/^\//, ''));
 
     if (already > 0 && !force && !reencode) {
       skipped++;
       total += already;
-      console.log(`${mark} [있음]   ${plate.flowerId} — ${human(already)}`);
+
+      // 본판은 그대로 두더라도 **썸네일이 없으면 채운다** — 없으면 화면이 404 를 문다.
+      const thumbSize = await existingSize(thumbTarget);
+      if (thumbSize > 0) {
+        thumbTotal += thumbSize;
+        console.log(`${mark} [있음]   ${plate.flowerId} — ${human(already)} + 썸 ${human(thumbSize)}`);
+      } else {
+        try {
+          const made = await writeThumb(plate, await readFile(target));
+          thumbs++;
+          thumbTotal += made.bytes;
+          console.log(
+            `${mark} [썸네일] ${plate.flowerId} — ${human(already)} → 썸 ${made.width}×${made.height} ${human(made.bytes)}`,
+          );
+        } catch (error) {
+          failures.push(`${plate.flowerId} — 썸네일 실패: ${error.message}`);
+          console.log(`${mark} [실패]   ${plate.flowerId} — 썸네일 실패: ${error.message}`);
+        }
+      }
       continue;
     }
 
@@ -240,9 +301,22 @@ async function main() {
 
         written++;
         total += data.byteLength;
+
+        // 썸네일은 **본판을 쓸 때마다** 같이 만든다(두 파일이 다른 그림이 될 틈을 주지 않는다).
+        let thumbNote = '';
+        try {
+          const made = await writeThumb(plate, data);
+          thumbs++;
+          thumbTotal += made.bytes;
+          thumbNote = ` · 썸 ${made.width}×${made.height} ${human(made.bytes)}`;
+        } catch (error) {
+          failures.push(`${plate.flowerId} — 썸네일 실패: ${error.message}`);
+          thumbNote = ` · 썸네일 실패: ${error.message}`;
+        }
+
         console.log(
           `${mark} [정규화] ${plate.flowerId} — ${before.format} ${before.width}×${before.height} ${human(raw.byteLength)}` +
-            ` → jpg ${after.width}×${after.height} ${human(data.byteLength)} (${origin})`,
+            ` → jpg ${after.width}×${after.height} ${human(data.byteLength)} (${origin})${thumbNote}`,
         );
       }
     }
@@ -253,6 +327,10 @@ async function main() {
   console.log('');
   console.log(
     `[plates] 정규화 ${written} · 그대로 둠 ${skipped} · 실패 ${failures.length} — 합계 ${written + skipped}/${plates.length}, ${human(total)}`,
+  );
+  console.log(
+    `[plates] 썸네일 ${THUMB_WIDTH}px 새로 만듦 ${thumbs} — 합계 ${human(thumbTotal)}` +
+      ` (레인 32줄이 첫 화면에서 무는 무게가 이 값이다)`,
   );
   for (const line of warnings) console.log(`[주의] ${line}`);
   if (failures.length > 0) {

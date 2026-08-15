@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import type { CSSProperties } from 'react';
+import { cache, type CSSProperties } from 'react';
 
 import FlowerPlate from '@/components/flowers/FlowerPlate';
 import { CATEGORY_TONE } from '@/components/flowers/category';
@@ -28,6 +28,21 @@ import { loadCatalog } from '@/lib/data/catalog';
 
 export const revalidate = 3600;
 
+/**
+ * 한 요청 안에서 뷰모델을 **한 번만** 조립한다(코드 리뷰 P1-12).
+ *
+ * Next 는 `generateMetadata()` 와 페이지 본체를 각각 부르는데, 둘 다 같은 slug 의 상세가
+ * 필요하다. 예전에는 그래서 `buildFlowerDetail()` 이 페이지마다 두 번 돌았다 —
+ * 꽃말 173행을 훑고 이야기 순서를 `pickStories` 로 다시 짜는 일까지 그대로 두 번이다.
+ * 카탈로그 자체는 로더가 프로세스 단위로 캐시하지만, **조립은 캐시되지 않았다.**
+ *
+ * `cache()` 는 요청 단위라 SSG 32종을 만드는 동안에도 꽃마다 한 번씩만 돈다.
+ */
+const detailFor = cache(async (slug: string) => {
+  const catalog = await loadCatalog();
+  return buildFlowerDetail(catalog, slug);
+});
+
 export async function generateStaticParams() {
   const catalog = await loadCatalog();
   return flowerSlugs(catalog).map((slug) => ({ slug }));
@@ -35,8 +50,7 @@ export async function generateStaticParams() {
 
 export async function generateMetadata(props: PageProps<'/flowers/[slug]'>): Promise<Metadata> {
   const { slug } = await props.params;
-  const catalog = await loadCatalog();
-  const flower = buildFlowerDetail(catalog, slug);
+  const flower = await detailFor(slug);
   if (!flower) return { title: '찾을 수 없는 꽃 — dearbloom' };
 
   return {
@@ -47,8 +61,7 @@ export async function generateMetadata(props: PageProps<'/flowers/[slug]'>): Pro
 
 export default async function FlowerDetailPage(props: PageProps<'/flowers/[slug]'>) {
   const { slug } = await props.params;
-  const catalog = await loadCatalog();
-  const flower = buildFlowerDetail(catalog, slug);
+  const flower = await detailFor(slug);
   if (!flower) notFound();
 
   // 카테고리 색면은 CSS 변수 하나로만 흐른다(§1.4c v3.3 — 전역 테마는 건드리지 않는다).
@@ -202,13 +215,26 @@ export default async function FlowerDetailPage(props: PageProps<'/flowers/[slug]
                             {item.sourceUrl && (
                               <>
                                 {' · '}
+                                {/*
+                                  링크 이름은 **목적지를 구별해야 한다**(접근성 리뷰 P1-9).
+                                  이 자리에는 꽃말마다 출처가 붙어 한 화면에 최대 13개가 서는데,
+                                  예전에는 전부 `이야기의 갈래` 라는 같은 이름이었다 —
+                                  링크 목록을 훑으면 같은 말이 열세 번 나오고 어디가 어디인지
+                                  알 수 없다. 출처 이름을 앞에 세우고, 어느 꽃말의 출처인지는
+                                  낭독기에만 들리게 뒤에 붙인다.
+                                  ⚠ 새 탭으로 열리는 링크는 **그 사실을 미리 알린다**(P1-6) —
+                                  화면 낭독기 사용자는 창이 바뀐 뒤에야 알아채면 돌아올 길을 잃는다.
+                                */}
                                 <a
                                   className={styles.sourceLink}
                                   href={item.sourceUrl}
                                   target="_blank"
                                   rel="noreferrer"
                                 >
-                                  이야기의 갈래
+                                  출처 {item.sourceLabel}
+                                  <span className={styles.srOnly}>
+                                    {` — “${item.text}” 꽃말의 출처 (새 창)`}
+                                  </span>
                                 </a>
                               </>
                             )}
@@ -233,9 +259,14 @@ export default async function FlowerDetailPage(props: PageProps<'/flowers/[slug]
               </h2>
               <span className={styles.sectionCount}>{flower.stories.length}편</span>
             </div>
+            {/*
+              ⚠ 이 자리에서 `갈래` 라는 말은 쓰지 않는다(2026-08-15 확정 — 낱말 과부하).
+              같은 화면에서 `갈래` 가 꽃 계열·해석의 갈래·이야기의 출처 세 가지를 가리키고
+              있었다. story_type 은 자연어로 풀어서 말한다.
+            */}
             <p className={styles.sectionLead}>
-              누르면 전문이 이어서 펼쳐져요. 문화권·시대·갈래는 이야기가 끝난 자리에 작게
-              적어 두었어요.
+              누르면 전문이 이어서 펼쳐져요. 문화권과 시대, 어떤 기록에서 온 이야기인지는
+              이야기가 끝난 자리에 작게 적어 두었어요.
             </p>
 
             {flower.stories.length === 0 ? (
@@ -274,7 +305,7 @@ export default async function FlowerDetailPage(props: PageProps<'/flowers/[slug]
                       </p>
                       {story.sourceTitle && (
                         <p className={styles.storySource}>
-                          이야기의 갈래 —{' '}
+                          이 이야기가 실린 기록 —{' '}
                           {story.sourceUrl ? (
                             <a
                               className={styles.sourceLink}
@@ -283,6 +314,7 @@ export default async function FlowerDetailPage(props: PageProps<'/flowers/[slug]
                               rel="noreferrer"
                             >
                               {story.sourceTitle}
+                              <span className={styles.srOnly}> (새 창)</span>
                             </a>
                           ) : (
                             story.sourceTitle
@@ -345,6 +377,7 @@ export default async function FlowerDetailPage(props: PageProps<'/flowers/[slug]
                           rel="noreferrer"
                         >
                           안전 정보의 출처
+                          <span className={styles.srOnly}> (새 창)</span>
                         </a>
                       )}
                     </div>

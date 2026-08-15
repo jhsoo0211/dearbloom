@@ -1,10 +1,21 @@
 /**
- * 랜딩 뷰모델 — 카탈로그(실데이터) + 테마 상수 → 화면이 그대로 쓰는 모양.
+ * 랜딩 뷰모델 — **화면이 그대로 쓰는 모양과, 그 모양을 만드는 상수들.**
  *
  * design-spec §1.4c v3.2·v3.3 / §1.5d(워딩) / §1.5g(사진 위 이름) / §1.5h(반려동물 강등·상황 예시)
  *
- * 서버에서 한 번 계산해 클라이언트 컴포넌트에 props 로 내려보낸다.
- * **여기에는 fs·React 의존이 없다** — 순수 데이터 가공만 둔다.
+ * ── 이 파일과 `landing-build.ts` 의 경계 (2026-08-15 · 코드 리뷰 P0-1) ──────────────
+ * 여기는 **클라이언트 번들에 들어가도 되는 것만** 둔다: 타입, 카테고리 표, 섹션 사진 주소,
+ * 조사 붙이기 같은 순수 문자열 함수. `LandingPage` 가 `'use client'` 라 이 파일의 **값**
+ * 임포트는 전부 브라우저로 따라 들어간다.
+ *
+ * 카탈로그를 읽어 뷰모델을 만드는 계산(`buildLandingData`)은 `landing-build.ts` 로 갈랐다.
+ * 그 전에는 한 파일이었고, 그래서 엔진 배럴(`@/lib/engine` → zod·추천 로직 전부)과
+ * 사진 상수 32종이 랜딩 전용 청크에 통째로 실렸다(실측: `/` 청크 310KB, first-load 762KB
+ * vs 다른 라우트 450~500KB). **여기에 값 import 를 추가할 때는 그 값이 브라우저에
+ * 실려도 되는지 먼저 확인하라.** 엔진·카탈로그·fs 는 `landing-build.ts` 쪽이다.
+ *
+ * ⚠ 이 파일은 `components/flowers`·`components/stories`·`app/stories` 도 함께 쓴다
+ *   (`categoryOf` · `ThemeCategory` · `CATEGORY_THEMES`). 이름을 옮기지 마라.
  *
  * 테마 구조(§1.4c v3.2): 색감을 소유하는 것은 꽃이 아니라 **카테고리 5종**이다.
  * 다만 실제 CSS 변수 세트는 `globals.css` 의 `[data-flower="tulip|lily|freesia|anemone|hellebore"]`
@@ -12,10 +23,9 @@
  * 그래서 카테고리 → slug 매핑이 필요하다(아래 CATEGORY_THEMES).
  */
 
-import type { Catalog, CatalogFlower, CatalogStory } from '@/lib/data/types';
-import { pickStories, todayFlower, type TodayBasis } from '@/lib/engine';
-import { canLeadHero, needsDarkOverlay, photoFor, photoSrc } from '@/lib/photos';
-import { FLOWER_THEMES, getFlowerTheme, type FlowerThemeSlug } from '@/lib/theme/flowers';
+import type { CatalogFlower } from '@/lib/data/types';
+import type { TodayBasis } from '@/lib/engine/today';
+import type { FlowerThemeSlug } from '@/lib/theme/flowers';
 
 /* ------------------------------------------------------------------ *
  * 카테고리 (§1.4c v3.2)
@@ -115,94 +125,16 @@ export function categoryOf(flower: CatalogFlower): ThemeCategory {
 }
 
 /* ------------------------------------------------------------------ *
- * 문구 — §1.5d 이야기 톤 / §1.5h 상황 예시
- * ------------------------------------------------------------------ */
-
-/** confidence_level → 화면 라벨(§1.5d 워딩 개정표). */
-const CONFIDENCE_LABEL: Record<'repeated' | 'varies' | 'single_source', string> = {
-  repeated: '오래, 두루 전해지는 꽃말',
-  varies: '시대마다 조금씩 다르게 전해져요',
-  single_source: '드물게 전해지는 이야기예요',
-};
-
-/**
- * "이런 날 건네보세요" (§1.5h 표).
- *
- * 표에 있는 5종은 스펙 문구 그대로다. 나머지 4종(장미·거베라·히아신스·작약)은 표에 없어
- * rules.csv 의 intent 태그와 meanings/stories 의 결에 맞춰 새로 썼다.
- * ⚠ 기술부채: §1.5h 가 예고한 대로 flowers.csv `occasions` 컬럼으로 이관해야 한다.
- */
-const OCCASIONS: Record<string, string[]> = {
-  'tulip-white': ['다툰 다음 날 아침에', '새 출발을 앞둔 사람에게', '오래 미룬 사과를 전할 때'],
-  'lily-asiatic': ['새로 시작하는 자리에(결혼·개업)', '오래 존경한 분께'],
-  freesia: ['첫 출근을 축하할 때', '고마운 친구에게 가볍게'],
-  anemone: ['오래 기다린 마음을 전할 때', '먼저 떠난 이를 기억하는 날에'],
-  hellebore: ['위로가 필요한 겨울에', '말없이 곁을 지키고 싶을 때'],
-  'rose-red': ['오래 미뤄 둔 고백을 할 때', '처음 만난 날을 함께 세는 자리에'],
-  gerbera: ['새 자리로 옮기는 동료에게', '기운을 북돋아 주고 싶은 날에'],
-  hyacinth: ['봄이 왔다고 먼저 알리고 싶을 때', '조용히 애도를 건네는 자리에'],
-  peony: ['귀한 자리를 크게 축하할 때', '수줍은 마음을 대신 전할 때'],
-  // 카탈로그 확장분(seed-v3). 위와 같은 기준으로 새로 쓴 문구 — 편집 검수 대상.
-  hydrangea: ['비 오는 날 안부를 물을 때', '오래 함께한 가족에게'],
-  lavender: ['잠 못 드는 사람에게', '잠깐 쉬어 가라고 말하고 싶을 때'],
-  sunflower: ['기운이 필요한 사람에게', '멀리서 응원을 보낼 때'],
-  carnation: ['부모님께 감사를 전할 때', '가르쳐 준 분께 인사드릴 때'],
-  lisianthus: ['흰 튤립을 구하기 어려운 계절에', '차분한 축하가 필요한 자리에'],
-  ranunculus: ['봄맞이 인사를 건넬 때', '화사한 축하가 필요한 날에'],
-  'lily-of-the-valley': ['5월의 첫날, 행운을 빌어 줄 때', '오래 기다린 소식을 축하할 때'],
-  chrysanthemum: ['고인을 기억하는 자리에', '어른께 절기 인사를 드릴 때'],
-  // 카탈로그 확장분(seed-v5). 꽃말 '순수한 마음'·'같은 마음이에요 — 당신 뜻에 함께합니다' 에서 왔다.
-  daisy: ['괜찮냐고 묻고 싶은 날에', '같은 편이라고 말해주고 싶을 때'],
-};
-
-/** toxic_parts → 한국어. 각주 한 줄을 데이터에서 만들기 위한 표. */
-const PART_LABEL: Record<string, string> = {
-  bulb: '알뿌리',
-  stem: '줄기',
-  leaf: '잎',
-  flower: '꽃',
-  pollen: '꽃가루',
-  vase_water: '화병 물',
-  root: '뿌리',
-  sap: '수액',
-  seed: '씨',
-  bark: '껍질',
-};
-
-/**
- * 반려동물 각주 — **위험한 꽃일 때만 한 줄**(§1.5h: 안전 꽃엔 표기 없음).
- * 문구는 완곡하게 돌리지 않는다(§1.5h: 안전은 직설 유지).
- */
-function petCaveatFor(flower: CatalogFlower): string | undefined {
-  const toxic = flower.petSafety.filter((entry) => entry.toxic);
-  if (toxic.length === 0) return undefined;
-
-  const lethal = toxic.find((entry) => entry.severity === 'life_threatening');
-  if (lethal) {
-    const animal = lethal.species === 'cat' ? '반려묘' : '반려견';
-    return `${animal}가 있는 집이라면 피해주세요. 적은 양도 위험한 꽃이에요.`;
-  }
-
-  const serious = toxic.some((entry) => entry.severity === 'serious');
-  const parts = [...new Set(toxic.flatMap((entry) => entry.toxicParts))]
-    .map((part) => PART_LABEL[part] ?? part)
-    .slice(0, 3)
-    .join('·');
-
-  if (serious) {
-    return `고양이·강아지에게 독성이 강한 꽃이에요. 반려동물이 있다면 피해주세요.`;
-  }
-  return parts
-    ? `반려동물이 있다면 ${parts}은 조심해 주세요.`
-    : '반려동물이 있다면 삼키지 않게 조심해 주세요.';
-}
-
-/* ------------------------------------------------------------------ *
- * 뷰모델
+ * 뷰모델 — 서버가 만들고(`landing-build.ts`) 화면이 그대로 읽는 모양
  * ------------------------------------------------------------------ */
 
 export interface SlideImage {
   src: string;
+  /**
+   * 같은 컷의 여러 폭(`photos/photoSrcSet` · `unsplashSrcSet`).
+   * ⚠ 화면에서 `sizes` 를 함께 주지 않으면 브라우저가 100vw 로 가정해 늘 최대 폭을 받는다.
+   */
+  srcSet?: string;
   alt: string;
   credit: string;
   /** 팔레트 밖 색을 눌러야 하는 컷의 CSS filter. */
@@ -227,7 +159,7 @@ export interface SlideView {
   /** 꽃말에 붙는 설명 한 줄(테마 상수가 있을 때만). */
   note?: string;
   sourceLabel: string;
-  /** 설화 티저 — pickStories 로 고른 실데이터. */
+  /** 이야기 티저 — pickStories 로 고른 실데이터. */
   storyTitle?: string;
   storyHook?: string;
   /** "이런 날 건네보세요" (§1.5h). */
@@ -242,6 +174,8 @@ export interface SlideView {
 
 export interface HeroImage extends SlideImage {
   srcMobile?: string;
+  /** 모바일 소스(`<source media="(max-width:720px)">`)의 폭 후보들. */
+  srcSetMobile?: string;
 }
 
 export interface LandingData {
@@ -266,118 +200,43 @@ export interface LandingData {
 /**
  * 챕터 색면 사진 — docs/image-assets.md 승인 목록에서만.
  * 꽃별이 아니라 "장면"이라 테마와 무관하게 고정이다.
+ *
+ * ⚠ 이 넷은 `<img>` 가 아니라 `.db-media-bg` 의 **배경 이미지**다. 그래서 srcset 을 쓸 수
+ *   없어 폭을 둘로 나눠 두고 CSS 가 고른다(landing.css `--db-bg-sm` / `--db-bg-lg`).
+ *   예전에는 전부 `w=1920` 한 벌이었다 — 폰에서도 1920 을 받았다(성능 리뷰 P1-4).
+ *   풀블리드 색면이라 카드용 폭(640/1080)까지 내리지는 않는다: 스크림 아래 텍스처지만
+ *   화면 전체를 덮으므로 데스크톱은 1600, 720px 이하는 1080 이 하한이다.
  */
 export const SECTION_IMAGES = {
   /** #6 그린 보태니컬 — 신뢰 3요소 scroll room */
   trust: {
-    src: 'https://images.unsplash.com/photo-1599056481506-c4975215aff4?auto=format&fit=crop&w=1920&q=80',
+    src: 'https://images.unsplash.com/photo-1599056481506-c4975215aff4?auto=format&fit=crop&w=1600&q=80',
+    srcMobile:
+      'https://images.unsplash.com/photo-1599056481506-c4975215aff4?auto=format&fit=crop&w=1080&q=80',
     credit: 'Photo: Waseem Khan / Unsplash',
   },
   /** #14 모노톤 실루엣 — 구분면 밴드 */
   band: {
-    src: 'https://images.unsplash.com/photo-1690553543873-ccaf9e2a9d5b?auto=format&fit=crop&w=1920&q=80',
+    src: 'https://images.unsplash.com/photo-1690553543873-ccaf9e2a9d5b?auto=format&fit=crop&w=1600&q=80',
+    srcMobile:
+      'https://images.unsplash.com/photo-1690553543873-ccaf9e2a9d5b?auto=format&fit=crop&w=1080&q=80',
     credit: 'Photo: Jens Riesenberg / Unsplash',
   },
   /** #7 매크로 질감 — 추천 예시 */
   example: {
-    src: 'https://images.unsplash.com/photo-1778779213344-f6108acf3e01?auto=format&fit=crop&w=1920&q=80',
+    src: 'https://images.unsplash.com/photo-1778779213344-f6108acf3e01?auto=format&fit=crop&w=1600&q=80',
+    srcMobile:
+      'https://images.unsplash.com/photo-1778779213344-f6108acf3e01?auto=format&fit=crop&w=1080&q=80',
     credit: 'Photo: Julia Vivcharyk / Unsplash',
   },
   /** #12 흰 튤립 다발 — 피날레 */
   finale: {
     src: 'https://images.unsplash.com/photo-1676927116782-658e14df1dc5?auto=format&fit=crop&w=1600&q=80',
+    srcMobile:
+      'https://images.unsplash.com/photo-1676927116782-658e14df1dc5?auto=format&fit=crop&w=1080&q=80',
     credit: 'Photo: dariana / Unsplash',
   },
 } as const;
-
-/** 카탈로그 꽃 id → 테마 상수(있을 때만). 사진·시안 꽃말의 출처다. */
-function themeForFlower(flowerId: string) {
-  return FLOWER_THEMES.find((theme) => theme.catalogFlowerId === flowerId);
-}
-
-/**
- * 배경이 밝은 컷을 다크 팔레트로 끌어내리는 그레이딩(§1.4 팔레트 · §1.5g).
- *
- * 스크림만 올려도 글자는 읽히지만, 검정 배경 컷 27장 사이에 흰 배경 카드가 끼면 **그리드
- * 자체가 튄다**(docs/image-assets.md §통합할 때 주의할 것 4). 그래서 스크림 강화(카드 CSS)와
- * 이 필터를 함께 건다 — 색은 죽이지 않고 밝기만 내리는 값이라 라벤더 보라·안개꽃 흰빛은 남는다.
- */
-const BRIGHT_GRADE = 'brightness(.74) saturate(.94) contrast(1.04)';
-
-/**
- * 카드 사진 한 장.
- *
- * 순서에 뜻이 있다: **테마 상수 컷이 먼저**다(§1.4c 5종은 편집 검수를 통과한 "장면"이고
- * 그레이딩 값까지 손으로 맞춰 뒀다). 나머지는 `@/lib/photos` 의 대표 실사가 채운다 —
- * 카탈로그 32종 전원에 컷이 있으므로 **"사진이 없어 그라디언트로 남는 카드"는 이제 없다.**
- */
-function slideImage(flowerId: string): SlideImage | undefined {
-  const theme = themeForFlower(flowerId);
-  if (theme) {
-    return {
-      src: theme.card.src,
-      alt: theme.card.alt,
-      credit: theme.card.credit,
-      grade: theme.card.grade,
-    };
-  }
-
-  const photo = photoFor(flowerId);
-  if (!photo) return undefined;
-
-  const bright = needsDarkOverlay(photo);
-  return {
-    src: photoSrc(photo, 1080),
-    alt: photo.alt,
-    credit: photo.credit,
-    ...(bright ? { grade: BRIGHT_GRADE, bright: true } : {}),
-  };
-}
-
-/** 대표 꽃말 — 대표색과 같은 색의 행을 먼저 보고, 없으면 첫 행. */
-function meaningFor(flower: CatalogFlower, catalog: Catalog) {
-  const mine = catalog.meanings.filter((row) => row.flowerId === flower.id);
-  if (mine.length === 0) return undefined;
-  const primaryColor = flower.colors[0];
-  return mine.find((row) => row.color === primaryColor) ?? mine[0];
-}
-
-/**
- * 설화 티저 — pickStories 실데이터.
- * 랜딩에는 사용자 상황이 없으므로 상황을 가리지 않는 `just_because` 로 고른다.
- */
-function storyFor(flowerId: string, stories: CatalogStory[]) {
-  return pickStories(flowerId, 'just_because', stories, 1).featured ?? undefined;
-}
-
-function toSlide(flower: CatalogFlower, catalog: Catalog, isToday: boolean): SlideView {
-  const theme = themeForFlower(flower.id);
-  const category = categoryOf(flower);
-  const categoryTheme = CATEGORY_THEMES[category];
-  const meaningRow = meaningFor(flower, catalog);
-  const story = storyFor(flower.id, catalog.stories);
-
-  return {
-    flowerId: flower.id,
-    name: theme?.nameKo ?? flower.nameKo,
-    latin: theme?.latin ?? flower.scientificName,
-    category,
-    themeSlug: categoryTheme.slug,
-    categoryLabel: categoryTheme.label,
-    meaning: theme?.meaning ?? meaningRow?.meaningKo ?? '아직 갈래를 고르는 중이에요',
-    note: theme?.note,
-    sourceLabel:
-      theme?.sourceLabel ??
-      (meaningRow ? CONFIDENCE_LABEL[meaningRow.confidenceLevel] : '아직 갈래를 고르는 중이에요'),
-    storyTitle: story?.title,
-    storyHook: story?.hook,
-    occasions: OCCASIONS[flower.id] ?? [],
-    // 테마 상수의 각주가 있으면 그것을(편집 검수를 거친 문장), 없으면 데이터에서 만든다.
-    petCaveat: theme?.caveat ?? petCaveatFor(flower),
-    image: slideImage(flower.id),
-    isToday,
-  };
-}
 
 /**
  * 한국어 조사 — 받침 유무로 갈린다.
@@ -391,87 +250,4 @@ export function withParticle(word: string, kind: 'topic' | 'subject' | 'copula')
   if (kind === 'topic') return `${word}${hasFinal ? '은' : '는'}`;
   if (kind === 'subject') return `${word}${hasFinal ? '이' : '가'}`;
   return `${word}${hasFinal ? '이에요' : '예요'}`;
-}
-
-/** KST 기준 오늘 날짜(YYYY-MM-DD). 서버 시간대와 무관하게 서울 달력을 쓴다. */
-export function seoulTodayISO(now: Date = new Date()): string {
-  return new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Seoul',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(now);
-}
-
-/**
- * 랜딩 한 페이지 분량의 뷰모델.
- *
- * 전역 테마는 **오늘의 꽃 카테고리로 진입 시 1회** 결정된다(§1.4c v3.3).
- * 슬라이드 탐색은 카드 국소 색감만 바꾸고 이 값을 건드리지 않는다.
- */
-export function buildLandingData(catalog: Catalog, todayISO: string): LandingData {
-  const picked = todayFlower(todayISO, catalog.flowers);
-  const todayCatalogFlower =
-    catalog.flowers.find((flower) => flower.id === picked.flower.id) ?? catalog.flowers[0];
-
-  const today = toSlide(todayCatalogFlower, catalog, true);
-  const rest = catalog.flowers
-    .filter((flower) => flower.id !== todayCatalogFlower.id)
-    .map((flower) => toSlide(flower, catalog, false));
-  const slides = [today, ...rest];
-
-  const categoryTheme = CATEGORY_THEMES[today.category];
-  const heroTheme = getFlowerTheme(categoryTheme.slug);
-
-  /**
-   * 히어로 = **오늘의 꽃 본인의 실사**(#5 화면 일치).
-   *
-   * 예전에는 카테고리 대표 테마의 "장면컷"을 걸었다. 오늘의 꽃에 사진이 없는 경우가 많아
-   * "그 꽃 아닌 사진"과 "그 꽃 이름"을 나란히 세우는 절충이었는데, 32종 전수 확보로
-   * 그 근거가 사라졌다(docs/image-assets.md §꽃별 대표 실사 32종). 색감 테마는 그대로
-   * 카테고리가 소유한다 — 바뀐 것은 **사진이 가리키는 대상**뿐이다.
-   *
-   * ⚠ 예외 하나: **rose-red 가 오늘의 꽃이면 카테고리 대표 컷을 유지한다.** 첫 화면을
-   *   빨간 장미가 덮으면 서비스 톤이 "야간 식물 아카이브"에서 로맨스로 넘어간다
-   *   (문서 §사용 규칙 3 · Advisor 확정). 장미 실사는 카드·도감에서만 나온다.
-   */
-  const heroPhoto = canLeadHero(today.flowerId) ? photoFor(today.flowerId) : undefined;
-  const hero: HeroImage = heroPhoto
-    ? {
-        src: photoSrc(heroPhoto, 2560),
-        // 모바일은 4:5 별도 크롭 대신 같은 컷의 좁은 폭을 쓴다(히어로는 object-fit: cover 다).
-        srcMobile: photoSrc(heroPhoto, 1080),
-        alt: heroPhoto.alt,
-        credit: heroPhoto.credit,
-        // 밝은 컷 4종은 히어로에서도 같은 그레이딩으로 눌러야 다크 팔레트가 유지된다.
-        ...(needsDarkOverlay(heroPhoto) ? { grade: BRIGHT_GRADE } : {}),
-      }
-    : {
-        src: heroTheme.hero.src,
-        srcMobile: heroTheme.hero.srcMobile,
-        alt: heroTheme.hero.alt,
-        credit: heroTheme.hero.credit,
-        grade: heroTheme.hero.grade,
-      };
-
-  const credits = [
-    ...new Set([
-      hero.credit,
-      ...slides.map((slide) => slide.image?.credit).filter((credit): credit is string => !!credit),
-      ...Object.values(SECTION_IMAGES).map((image) => image.credit),
-    ]),
-  ];
-
-  return {
-    todayISO,
-    todayLabel: todayISO.replaceAll('-', '.'),
-    basis: picked.basis,
-    category: today.category,
-    themeSlug: categoryTheme.slug,
-    categoryLabel: categoryTheme.label,
-    hero,
-    today,
-    slides,
-    credits,
-  };
 }

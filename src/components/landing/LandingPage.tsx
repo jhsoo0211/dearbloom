@@ -108,6 +108,30 @@ function gateServerSnapshot(): boolean {
   return false;
 }
 
+/* ── 모션 선호 (접근성 리뷰 P0-1) ────────────────────────────────────
+   게이트는 **CSS 가** 띄운다 — `@media (prefers-reduced-motion: no-preference)` 안에서만
+   `display: grid` 다. 그래서 "게이트가 지금 떠 있는가"를 JS 쪽에서도 알아야 뒤 본문을
+   `inert` 로 잠글 수 있다(모션을 끈 사용자에게 잠그면 게이트 없는 화면이 통째로 죽는다).
+
+   상태(useState + 이펙트) 대신 **외부 저장소 구독**으로 읽는다: 미디어 쿼리는 React 밖의
+   값이고, 이렇게 하면 렌더 중에 곧바로 파생값을 쓸 수 있어 이펙트에서 setState 하는
+   캐스케이드 렌더가 없다. 서버 스냅샷은 `false` — 게이트가 있는 쪽이 서버 HTML 과 같다. */
+const REDUCE_QUERY = '(prefers-reduced-motion: reduce)';
+
+function subscribeReduceMotion(onChange: () => void): () => void {
+  const query = window.matchMedia(REDUCE_QUERY);
+  query.addEventListener('change', onChange);
+  return () => query.removeEventListener('change', onChange);
+}
+
+function reduceMotionSnapshot(): boolean {
+  return window.matchMedia(REDUCE_QUERY).matches;
+}
+
+function reduceMotionServerSnapshot(): boolean {
+  return false;
+}
+
 function markGateEntered() {
   gateMemo = true;
   try {
@@ -118,9 +142,24 @@ function markGateEntered() {
   for (const listener of gateListeners) listener();
 }
 
+/**
+ * 색면 배경 한 장의 스타일.
+ *
+ * `background-image` 를 여기서 직접 쓰지 않고 **변수 두 개**만 넘긴다 — 배경 이미지는
+ * `srcset` 이 없어서 폭을 CSS 가 골라야 하기 때문이다(landing.css `.db-media-bg`).
+ * 폰이 1920 짜리 색면을 받던 것을 끊는 자리다(성능 리뷰 P1-4).
+ */
+function mediaBg(image: { src: string; srcMobile: string }): React.CSSProperties {
+  return {
+    '--db-bg-lg': `url("${image.src}")`,
+    '--db-bg-sm': `url("${image.srcMobile}")`,
+  } as React.CSSProperties;
+}
+
 export default function LandingPage({ data }: { data: LandingData }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const progressRef = useRef<HTMLSpanElement>(null);
+  const gateRef = useRef<HTMLDivElement>(null);
   const gateButtonRef = useRef<HTMLButtonElement>(null);
 
   /** 전역 테마 — 진입 시 오늘의 꽃 카테고리. 명시적 액션으로만 바뀐다(§1.4c v3.3). */
@@ -128,6 +167,19 @@ export default function LandingPage({ data }: { data: LandingData }) {
   /** 이 세션에서 이미 들어왔는가(#21). 서버·하이드레이션에서는 늘 false 다 — 위 주석 참고. */
   const entered = useSyncExternalStore(subscribeGate, gateSnapshot, gateServerSnapshot);
   const [gateReady, setGateReady] = useState(false);
+  const reduceMotion = useSyncExternalStore(
+    subscribeReduceMotion,
+    reduceMotionSnapshot,
+    reduceMotionServerSnapshot,
+  );
+  /**
+   * 게이트가 **실제로 떠 있는가**(접근성 리뷰 P0-1).
+   *
+   * `!entered` 만으로는 모자란다 — 모션을 끈 사용자에게는 CSS 가 게이트를 아예 띄우지
+   * 않으므로, 그때 본문을 `inert` 로 잠그면 **게이트 없는 화면이 통째로 죽는다.**
+   * 두 조건이 함께여야 "지금 화면에 게이트가 있다"가 된다.
+   */
+  const gateOpen = !entered && !reduceMotion;
   /** 게이트 로딩 바. 첫 프레임부터 조금 차 있는 편이 "멈춘 화면"으로 보이지 않는다. */
   const [gateProgress, setGateProgress] = useState(0.12);
 
@@ -149,18 +201,39 @@ export default function LandingPage({ data }: { data: LandingData }) {
     };
   }, [globalSlug]);
 
-  /* ── 스크롤 진행 바 · 내비 축소 ──────────────────────────────────── */
+  /* ── 스크롤 진행 바 · 내비 축소 ────────────────────────────────────
+     ⚠ `scrollHeight` 를 **매 프레임 읽지 않는다**(성능 리뷰 P1-8). 그 속성은 읽는 순간
+       브라우저가 밀린 스타일·레이아웃을 강제로 계산하게 만들어(forced reflow), 스크롤
+       한 번에 수백 번 레이아웃이 돌았다. 문서 높이는 스크롤로 바뀌지 않으므로 **캐시하고
+       바뀔 만한 때만 다시 잰다** — 리사이즈, 로드 완료, 그리고 실제 크기 변화(ResizeObserver:
+       이미지가 늦게 들어오거나 게이트가 걷히며 높이가 변하는 경우를 잡는다). */
   useEffect(() => {
-    const onScroll = () => {
-      const height = document.documentElement.scrollHeight - window.innerHeight;
-      const ratio = height > 0 ? Math.min(1, window.scrollY / height) : 0;
+    let scrollable = 0;
+
+    const measure = () => {
+      scrollable = document.documentElement.scrollHeight - window.innerHeight;
+      draw();
+    };
+    const draw = () => {
+      const ratio = scrollable > 0 ? Math.min(1, window.scrollY / scrollable) : 0;
       if (progressRef.current) progressRef.current.style.transform = `scaleX(${ratio})`;
       document.body.classList.toggle('db-nav-compact', window.scrollY > 80);
     };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    onScroll();
+
+    window.addEventListener('scroll', draw, { passive: true });
+    window.addEventListener('resize', measure);
+    window.addEventListener('load', measure);
+
+    const observer =
+      typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => measure());
+    observer?.observe(document.documentElement);
+
+    measure();
     return () => {
-      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('scroll', draw);
+      window.removeEventListener('resize', measure);
+      window.removeEventListener('load', measure);
+      observer?.disconnect();
       document.body.classList.remove('db-nav-compact');
     };
   }, []);
@@ -173,8 +246,7 @@ export default function LandingPage({ data }: { data: LandingData }) {
   useEffect(() => {
     /* #21 — 이미 지난 세션이면 게이트 자체가 없다. 그러니 **잠금도 타이머도 걸지 않는다.**
        (여기서 일찍 물러나지 않으면 게이트 없는 화면에서 body 스크롤만 잠긴다.) */
-    if (entered) return;
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (!gateOpen) return;
 
     // 게이트가 떠 있는 동안 뒤 페이지가 밀리지 않게 잠근다(CSS 로는 조상에 닿지 못한다).
     const previousOverflow = document.body.style.overflow;
@@ -187,12 +259,19 @@ export default function LandingPage({ data }: { data: LandingData }) {
       if (done >= 2) setGateReady(true);
     };
 
+    /* 히어로가 실제로 받아 오는 그 파일을 기다린다.
+       ⚠ `src` 만 넣으면 안 된다 — 화면의 `<img>` 는 `srcset`/`sizes` 로 폭을 고르므로,
+         프로브가 기본 주소(가장 큰 폭)를 따로 받아 **같은 사진을 두 벌** 내려받는다
+         (실측으로 확인: 모바일에서 w=1440 195KB + w=640 33KB). `HTMLImageElement` 는
+         프로브에서도 srcset 을 그대로 해석하므로 같은 후보를 골라 캐시를 공유한다. */
+    const onMobile = window.matchMedia('(max-width:720px)').matches;
     const probe = new Image();
     probe.onload = step;
     probe.onerror = step;
-    probe.src = window.matchMedia('(max-width:720px)').matches
-      ? (data.hero.srcMobile ?? data.hero.src)
-      : data.hero.src;
+    probe.sizes = '100vw';
+    const probeSet = onMobile ? data.hero.srcSetMobile : data.hero.srcSet;
+    if (probeSet) probe.srcset = probeSet;
+    probe.src = onMobile ? (data.hero.srcMobile ?? data.hero.src) : data.hero.src;
 
     if (document.fonts?.ready) void document.fonts.ready.then(step);
     else window.setTimeout(step, 400);
@@ -210,13 +289,69 @@ export default function LandingPage({ data }: { data: LandingData }) {
       document.removeEventListener('keydown', onKey);
       document.body.style.overflow = previousOverflow;
     };
-    /* `entered` 가 deps 에 있는 것이 잠금 해제의 전부다 — 들어가는 순간 위 정리 함수가
+    /* `gateOpen` 이 deps 에 있는 것이 잠금 해제의 전부다 — 들어가는 순간 위 정리 함수가
        돌아 원래 overflow 로 되돌리고, 다시 실행된 이펙트는 첫 줄에서 물러난다. */
-  }, [entered, data.hero.src, data.hero.srcMobile, enter]);
+  }, [gateOpen, data.hero.src, data.hero.srcMobile, data.hero.srcSet, data.hero.srcSetMobile, enter]);
+
+  /* ── 게이트 포커스 (접근성 리뷰 P0-1) ──────────────────────────────
+     `aria-modal` 은 **약속**일 뿐이고, 포커스를 실제로 가두는 것은 코드다.
+     ① 뜨는 즉시 대화상자 자체에 포커스를 옮긴다 — "들어가기"는 준비되기 전(0.5s 페이드)
+        까지 눌리지 않는 상태라, 그 전에 Tab 을 눌러도 트랩이 걸려 있어야 한다.
+     ② 준비되면 버튼으로 옮긴다(Enter 한 번으로 들어갈 수 있는 자리).
+     ③ 뒤 본문은 `inert` 라 Tab 이 애초에 그쪽으로 가지 않는다(아래 nav/main/footer). */
+  useEffect(() => {
+    if (!gateOpen) return;
+    gateRef.current?.focus({ preventScroll: true });
+  }, [gateOpen]);
 
   useEffect(() => {
-    if (gateReady && !entered) gateButtonRef.current?.focus({ preventScroll: true });
-  }, [gateReady, entered]);
+    if (gateReady && gateOpen) gateButtonRef.current?.focus({ preventScroll: true });
+  }, [gateReady, gateOpen]);
+
+  /**
+   * 게이트 안의 키보드 — Esc 는 들어가기, Tab 은 게이트 안에서 순환.
+   *
+   * Esc 는 `document` 리스너(위 이펙트)도 듣고 있다. 두 곳이 겹쳐도 `markGateEntered()` 는
+   * 같은 값을 다시 쓰는 멱등 연산이라 안전하고, 포커스가 게이트 밖(첫 프레임의 body)에
+   * 있을 때와 안에 있을 때를 각각 책임진다.
+   */
+  const onGateKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLDivElement>) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        enter();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+
+      const gate = gateRef.current;
+      if (!gate) return;
+      const focusables = Array.from(
+        gate.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      );
+      if (focusables.length === 0) {
+        event.preventDefault();
+        gate.focus({ preventScroll: true });
+        return;
+      }
+
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      const active = document.activeElement;
+      if (event.shiftKey) {
+        if (active === first || active === gate) {
+          event.preventDefault();
+          last.focus();
+        }
+      } else if (active === last || active === gate) {
+        event.preventDefault();
+        first.focus();
+      }
+    },
+    [enter],
+  );
 
   const adopt = useCallback((slide: SlideView) => setGlobalSlug(slide.themeSlug), []);
 
@@ -243,9 +378,50 @@ export default function LandingPage({ data }: { data: LandingData }) {
       */}
       <script dangerouslySetInnerHTML={{ __html: GATE_BOOT }} />
 
+      {/*
+        히어로 프리로드 (성능 리뷰 P1-6).
+
+        첫 화면을 덮는 것은 히어로 사진 한 장인데, 정작 프리로드가 걸려 있던 것은 **폴드 밖
+        카드 0번**이었다(그쪽 `eager` 는 아래 TodayCarousel 에서 `lazy` 로 내렸다).
+        여기서는 실제로 그려지는 두 벌을 그대로 예약한다 — `<picture>` 의 갈림(720px)과
+        같은 `media`, 같은 `imageSrcSet`/`imageSizes` 를 써야 브라우저가 **다시 고르지 않고**
+        이미 받아 둔 후보를 쓴다. 값이 어긋나면 같은 사진을 두 번 받는다.
+
+        React 19 는 트리 어디에 있든 `<link>` 를 `<head>` 로 끌어올린다(float) — 클라이언트
+        컴포넌트지만 서버 렌더 HTML 의 head 에 그대로 실린다.
+      */}
+      {hero.srcMobile ? (
+        <link
+          rel="preload"
+          as="image"
+          href={hero.srcMobile}
+          imageSrcSet={hero.srcSetMobile}
+          imageSizes="100vw"
+          media="(max-width: 720px)"
+          fetchPriority="high"
+        />
+      ) : null}
+      <link
+        rel="preload"
+        as="image"
+        href={hero.src}
+        imageSrcSet={hero.srcSet}
+        imageSizes="100vw"
+        media={hero.srcMobile ? '(min-width: 721px)' : undefined}
+        fetchPriority="high"
+      />
+
       <div className={pageClass} data-flower={globalSlug} ref={rootRef}>
         {/* ═══ 로딩 게이트 ═══ */}
-        <div className="db-gate" role="dialog" aria-modal="true" aria-labelledby="db-gate-title">
+        <div
+          className="db-gate"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="db-gate-title"
+          ref={gateRef}
+          tabIndex={-1}
+          onKeyDown={onGateKeyDown}
+        >
           <div className="db-gate-in">
             <p className="db-gate-over">Night Botanical Archive</p>
             <p className="db-gate-logo" id="db-gate-title">
@@ -270,8 +446,15 @@ export default function LandingPage({ data }: { data: LandingData }) {
           <span ref={progressRef} />
         </div>
 
-        {/* ═══ 내비 ═══ */}
-        <nav className="db-nav db-glass" aria-label="주요 메뉴" data-db-intro>
+        {/* ═══ 내비 ═══
+            `inert` 는 게이트가 떠 있는 동안만 붙는다 — 대화상자 뒤의 것은 Tab 으로도
+            스크린리더로도 닿지 않아야 한다(접근성 리뷰 P0-1). */}
+        <nav
+          className="db-nav db-glass"
+          aria-label="주요 메뉴"
+          data-db-intro
+          inert={gateOpen || undefined}
+        >
           <a className="db-brand" href="#db-hero" aria-label="dearbloom 홈">
             <svg className="db-mark" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
               <g fill="currentColor">
@@ -300,6 +483,9 @@ export default function LandingPage({ data }: { data: LandingData }) {
             <li>
               <Link href="/flowers" prefetch={false}>도감</Link>
             </li>
+            <li>
+              <Link href="/letter" prefetch={false}>편지</Link>
+            </li>
             {/*
               #20 — `여러 명에게`(/groups)는 내비에서 내렸다. 첫 화면에 진입이 둘이면
               "추천 시작"과 나란히 놓인 그 항목이 별개 서비스처럼 읽혔다. 페이지는
@@ -316,17 +502,25 @@ export default function LandingPage({ data }: { data: LandingData }) {
           </Link>
         </nav>
 
-        <main id="db-main">
+        <main id="db-main" inert={gateOpen || undefined}>
           {/* ═══════════════ 히어로 ═══════════════ */}
           <section className="db-hero" id="db-hero" aria-labelledby="db-hero-h1">
             <div className="db-hero-media" aria-hidden="true">
               <picture>
                 {hero.srcMobile ? (
-                  <source media="(max-width:720px)" srcSet={hero.srcMobile} />
+                  <source
+                    media="(max-width:720px)"
+                    srcSet={hero.srcSetMobile ?? hero.srcMobile}
+                    sizes="100vw"
+                  />
                 ) : null}
-                {/* Unsplash 승인 URL(docs/image-assets.md)을 그대로 쓴다 — next/image 리모트 최적화는 도입하지 않았다. */}
+                {/* Unsplash 승인 URL(docs/image-assets.md)을 그대로 쓴다 — next/image 리모트 최적화는 도입하지 않았다.
+                    폭은 `srcSet`(1080·1600·2560) + `sizes="100vw"` 로 브라우저가 고른다 —
+                    예전에는 화면 폭과 무관하게 2560 한 벌이었다(성능 리뷰 P1-5). */}
                 <img
                   src={hero.src}
+                  srcSet={hero.srcSet}
+                  sizes="100vw"
                   alt=""
                   fetchPriority="high"
                   decoding="async"
@@ -408,17 +602,30 @@ export default function LandingPage({ data }: { data: LandingData }) {
                 </p>
               </div>
 
+              {/*
+                캐러셀 건너뛰기 (접근성 리뷰 P1-5). 카드 한 장에 링크 하나 + 버튼 하나라
+                32장이면 **탭 정지점이 64개**다 — 키보드 사용자가 다음 이야기로 가려면
+                예순 번을 눌러야 했다. 평소에는 숨어 있다가 포커스가 오면 나타난다.
+              */}
+              <a className="db-skip db-skip-inline" href="#db-trust">
+                꽃 카드 {data.slides.length}장 건너뛰기
+              </a>
+
               <TodayCarousel slides={data.slides} globalSlug={globalSlug} onAdopt={adopt} />
             </div>
           </section>
 
           {/* ═══════════════ 챕터 02 · 신뢰 3요소 (§1.5h 개편) ═══════════════ */}
-          <section className="db-chapter db-room" id="db-trust" aria-labelledby="db-trust-title">
+          {/* `tabIndex={-1}` 은 위 "건너뛰기" 링크의 착지점이다 — 없으면 앵커만 이동하고
+              포커스는 캐러셀에 남아 다음 Tab 이 다시 카드로 돌아간다. */}
+          <section
+            className="db-chapter db-room"
+            id="db-trust"
+            aria-labelledby="db-trust-title"
+            tabIndex={-1}
+          >
             <div className="db-room-media" aria-hidden="true">
-              <div
-                className="db-media-bg"
-                style={{ backgroundImage: `url("${SECTION_IMAGES.trust.src}"), var(--frame-fallback)` }}
-              />
+              <div className="db-media-bg" style={mediaBg(SECTION_IMAGES.trust)} />
               <div className="db-media-scrim" />
             </div>
 
@@ -476,10 +683,7 @@ export default function LandingPage({ data }: { data: LandingData }) {
 
           {/* ═══ 구분면 밴드 ═══ */}
           <section className="db-chapter db-band" aria-hidden="true">
-            <div
-              className="db-media-bg"
-              style={{ backgroundImage: `url("${SECTION_IMAGES.band.src}"), var(--frame-fallback)` }}
-            />
+            <div className="db-media-bg" style={mediaBg(SECTION_IMAGES.band)} />
             <div className="db-media-scrim db-is-band" />
             <div className="db-band-in">
               <p className="db-lab">Night Botanical Archive</p>
@@ -494,13 +698,7 @@ export default function LandingPage({ data }: { data: LandingData }) {
             id="db-example"
             aria-labelledby="db-example-title"
           >
-            <div
-              className="db-media-bg"
-              aria-hidden="true"
-              style={{
-                backgroundImage: `url("${SECTION_IMAGES.example.src}"), var(--frame-fallback)`,
-              }}
-            />
+            <div className="db-media-bg" aria-hidden="true" style={mediaBg(SECTION_IMAGES.example)} />
             <div className="db-media-scrim" aria-hidden="true" />
 
             <div className="db-shell">
@@ -554,13 +752,7 @@ export default function LandingPage({ data }: { data: LandingData }) {
 
           {/* ═══════════════ 챕터 04 · 피날레 ═══════════════ */}
           <section className="db-chapter db-finale" id="db-start" aria-labelledby="db-start-title">
-            <div
-              className="db-media-bg"
-              aria-hidden="true"
-              style={{
-                backgroundImage: `url("${SECTION_IMAGES.finale.src}"), var(--frame-fallback)`,
-              }}
-            />
+            <div className="db-media-bg" aria-hidden="true" style={mediaBg(SECTION_IMAGES.finale)} />
             <div className="db-media-scrim" aria-hidden="true" />
 
             <div className="db-shell">
@@ -595,7 +787,7 @@ export default function LandingPage({ data }: { data: LandingData }) {
         </main>
 
         {/* ═══════════════ 푸터 ═══════════════ */}
-        <footer className="db-footer">
+        <footer className="db-footer" inert={gateOpen || undefined}>
           <div className="db-shell">
             <div className="db-footer-top">
               <p className="db-disc">
@@ -631,7 +823,8 @@ export default function LandingPage({ data }: { data: LandingData }) {
                 </summary>
                 <p>{data.credits.join(' · ')}</p>
                 <p className="db-lic">
-                  Unsplash License · 상업적 사용 가능 · 출처 표기는 dearbloom 자체 운용 원칙입니다.
+                  Unsplash License로 쓰고 있어요. 표기 의무는 없지만, 찍어 준 분의 이름은
+                  dearbloom이 늘 함께 적어 둬요.
                 </p>
               </details>
             </div>

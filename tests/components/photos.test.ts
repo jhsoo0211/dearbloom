@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { buildFlowerDetail } from '@/components/flowers/data';
-import { buildLandingData } from '@/components/landing/landing-data';
+import { buildLandingData } from '@/components/landing/landing-build';
 import { loadCatalog } from '@/lib/data/catalog';
 import {
   FLOWER_PHOTOS,

@@ -10,7 +10,7 @@
  * 문구 출처: design-spec §1.5c(모드 카피·인원 제한·안전 각주) · §1.5d(개정 워딩).
  */
 
-import { useId, useRef, useState, useTransition } from 'react';
+import { useEffect, useId, useRef, useState, useTransition } from 'react';
 
 import { planGroup } from '@/app/groups/actions';
 import { IconArrowRight, IconPlus } from './icons';
@@ -35,7 +35,7 @@ const MODE_LEADS = [
   '여러 명에게 각자 다른 꽃을 주고 싶어요',
   '팀·모임에 함께 줄 꽃 한 다발',
 ] as const;
-const MODE_OVERLINES = ['한 사람씩 배정했어요', '한 다발에 담은 구성'] as const;
+const MODE_OVERLINES = ['한 사람씩 따로 골랐어요', '한 다발에 담은 구성'] as const;
 const MODE_CTA_NOTES = [
   '받는 사람마다 카드가 따로 만들어져요',
   '한 다발에 카드 한 장이 담겨요',
@@ -51,12 +51,31 @@ export function GroupPlanner() {
   const [mode, setMode] = useState<0 | 1>(0);
   const [view, setView] = useState<GroupPlanView | null>(null);
   const [error, setError] = useState<string | null>(null);
+  /** 제출을 막은 첫 칸의 자리. 그 칸만 `aria-invalid` 를 달고 오류 문장을 자기 설명으로 든다. */
+  const [invalidIndex, setInvalidIndex] = useState<number | null>(null);
   const [pending, startTransition] = useTransition();
 
   const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const nameRefs = useRef<Array<HTMLInputElement | null>>([]);
+  const resultHeadRef = useRef<HTMLParagraphElement>(null);
   const atLimit = members.length >= MAX_MEMBERS;
+  const errorId = `${uid}-error`;
+
+  /*
+   * 결과가 생기면 결과 머리말로 포커스를 옮긴다.
+   *
+   * 결과는 폼보다 **아래에** 생긴다 — 눌러 놓고 기다린 사람의 포커스는 버튼에 그대로 남아
+   * 있어서, 화면을 못 보는 사람에게는 아무 일도 일어나지 않은 것과 같았다. 머리말은 이
+   * 영역의 이름(`aria-labelledby`)이기도 해서, 여기로 옮기면 "무엇이 생겼는지"가 함께 읽힌다.
+   */
+  useEffect(() => {
+    if (view === null) return;
+    resultHeadRef.current?.focus();
+  }, [view]);
 
   function patchMember(key: string, patch: MemberPatch) {
+    // 이름을 고치기 시작하면 "여기가 문제였다"는 표시는 물러난다.
+    if (patch.name !== undefined) setInvalidIndex(null);
     setMembers((prev) =>
       prev.map((member) => (member.key === key ? { ...member, ...patch } : member)),
     );
@@ -68,6 +87,8 @@ export function GroupPlanner() {
   }
 
   function removeMember(key: string) {
+    // 한 칸을 빼면 뒤 칸들의 자리가 하나씩 당겨진다 — "몇 번째가 문제였다"는 표시는 그대로 두면 거짓말이 된다.
+    setInvalidIndex(null);
     setMembers((prev) => (prev.length <= 1 ? prev : prev.filter((member) => member.key !== key)));
   }
 
@@ -77,35 +98,51 @@ export function GroupPlanner() {
     setMembers(PRESET_MEMBERS.map((member) => ({ ...member, key: nextKey() })));
     setView(null);
     setError(null);
+    setInvalidIndex(null);
   }
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const cleaned = members.map((member) => ({ ...member, name: member.name.trim() }));
-    if (cleaned.some((member) => member.name === '')) {
+    // 문제를 말만 하고 그 자리로 데려가지 않으면, 명단이 길수록 어디가 빈 칸인지 찾을 수 없다.
+    const firstEmpty = cleaned.findIndex((member) => member.name === '');
+    if (firstEmpty !== -1) {
       setError('이름이 비어 있는 칸이 있어요. 부르는 이름만 적어 주셔도 돼요.');
+      setInvalidIndex(firstEmpty);
+      nameRefs.current[firstEmpty]?.focus();
       return;
     }
 
     setError(null);
+    setInvalidIndex(null);
     startTransition(async () => {
-      const state = await planGroup({
-        intent,
-        members: cleaned.map((member) => ({
-          name: member.name,
-          recipientTraits: member.traits,
-          colorPrefs: member.colors,
-          pets: member.pets,
-          fragranceSensitive: member.fragranceSensitive,
-        })),
-      });
+      /*
+       * 서버 액션도 네트워크 너머다 — 끊기면 이 promise 는 **거절**된다.
+       * 잡지 않으면 트랜지션 안에서 조용히 새고(콘솔의 unhandled rejection), 화면은
+       * `고르는 중…` 에 머문 채 아무 말도 하지 않는다.
+       */
+      try {
+        const state = await planGroup({
+          intent,
+          members: cleaned.map((member) => ({
+            name: member.name,
+            recipientTraits: member.traits,
+            colorPrefs: member.colors,
+            pets: member.pets,
+            fragranceSensitive: member.fragranceSensitive,
+          })),
+        });
 
-      if (state.ok) {
-        setView(state.view);
-      } else {
+        if (state.ok) {
+          setView(state.view);
+        } else {
+          setView(null);
+          setError(state.message);
+        }
+      } catch {
         setView(null);
-        setError(state.message);
+        setError('꽃을 골라 오다 잠깐 길이 끊겼어요. 조금 뒤에 다시 눌러 주세요.');
       }
     });
   }
@@ -182,6 +219,11 @@ export function GroupPlanner() {
                   member={member}
                   index={index}
                   canRemove={members.length > 1}
+                  invalid={invalidIndex === index}
+                  errorId={errorId}
+                  nameRef={(node) => {
+                    nameRefs.current[index] = node;
+                  }}
                   onChange={(patch) => patchMember(member.key, patch)}
                   onRemove={() => removeMember(member.key)}
                 />
@@ -192,7 +234,7 @@ export function GroupPlanner() {
           <div className={styles.rosterFoot}>
             <p className={styles.limit}>최대 {MAX_MEMBERS}명까지</p>
             <button type="button" className={styles.ghostBtn} onClick={applyPreset}>
-              예시로 채우기
+              예시로 먼저 보기
             </button>
             <button
               type="button"
@@ -211,13 +253,13 @@ export function GroupPlanner() {
               {pending ? null : <IconArrowRight />}
             </button>
             {error ? (
-              <p className={styles.error} role="alert">
+              <p className={styles.error} id={errorId} role="alert">
                 {error}
               </p>
             ) : null}
             <p className={styles.formNote} role="status">
               {view
-                ? `${view.memberCount}명에게 각각 배정하고, 한 다발 구성도 함께 만들었어요.`
+                ? `${view.memberCount}분께 각각 어울리는 꽃을 고르고, 한 다발로 묶은 모습도 함께 그려 봤어요.`
                 : '이름만 적어도 골라드려요. 나머지는 비워 두셔도 괜찮아요.'}
             </p>
           </div>
@@ -226,7 +268,8 @@ export function GroupPlanner() {
 
       {/* ── 결과 ────────────────────────────────────────────────── */}
       <section className={styles.sect} aria-labelledby={`${uid}-result`}>
-        <p className={styles.overline} id={`${uid}-result`}>
+        {/* tabIndex={-1} — 결과가 생기면 포커스가 여기로 온다(마우스로는 눌리지 않는다). */}
+        <p className={styles.overline} id={`${uid}-result`} tabIndex={-1} ref={resultHeadRef}>
           No.&nbsp;02 <span className={styles.ko}>{MODE_OVERLINES[mode]}</span>
         </p>
 
@@ -271,8 +314,8 @@ export function GroupPlanner() {
               <div className={styles.empty}>
                 <p className={styles.emptyTitle}>{MODE_LEADS[index]}</p>
                 <p className={styles.emptyText}>
-                  받는 사람을 적고 <b>꽃 고르기</b>를 눌러 주세요. 처음이라면 <b>예시로 채우기</b>로
-                  네 명짜리 예시를 그대로 볼 수 있어요.
+                  받는 사람을 적고 <b>꽃 고르기</b>를 눌러 주세요. 처음이라면{' '}
+                  <b>예시로 먼저 보기</b>로 네 명짜리 예시를 그대로 볼 수 있어요.
                 </p>
               </div>
             ) : index === 0 ? (
@@ -284,13 +327,21 @@ export function GroupPlanner() {
         ))}
       </section>
 
-      {/* ── CTA (더미) ──────────────────────────────────────────── */}
+      {/*
+        ── CTA (아직 열지 않은 길) ─────────────────────────────────
+        `href="#"` 링크는 눌러도 아무 데도 가지 않으면서 **갈 수 있는 것처럼 보인다** —
+        키보드로 오는 사람에게는 특히 그렇다(포커스를 받고, 눌리고, 페이지 맨 위로 튄다).
+        그래서 링크가 아니라 잠긴 버튼으로 세우고, 왜 잠겼는지 바로 아래에 적어 둔다.
+      */}
       <section className={styles.sect} aria-label="카드에 담기">
-        <a className={`${styles.btn} ${styles.btnPrimary}`} href="#">
+        <button type="button" className={`${styles.btn} ${styles.btnPrimary}`} disabled>
           카드에 담기
           <IconArrowRight />
-        </a>
+        </button>
         <p className={styles.ctaNote}>{MODE_CTA_NOTES[mode]}</p>
+        <p className={styles.ctaNote}>
+          카드로 만드는 일은 아직 준비하고 있어요. 다 되면 이 자리에서 열어 드릴게요.
+        </p>
       </section>
     </>
   );

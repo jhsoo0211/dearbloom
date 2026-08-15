@@ -12,7 +12,11 @@
  *
  * ⚠ 2026-08-15(#14) 결과 화면이 3D 뷰어를 **실사로 교체**하면서 화면에서는 쓰이지 않는다.
  * 롤백 후보인 `FlowerViewer`·`flowerScene`·`FlowerFallback` 이 이 어휘를 쓰고 있어
- * 타입과 `labels.ts` 의 매핑은 그대로 둔다(되돌릴 때 다시 필요하다).
+ * 타입과 `labels.ts` 의 매핑(`flowerForm()`)은 그대로 둔다 — 되돌릴 때 다시 필요하다.
+ *
+ * 다만 **결과 payload 에서는 뺐다**(`FlowOptionView.form`). 3안마다 계산해서 클라이언트까지
+ * 실어 보냈지만 읽는 코드가 한 곳도 없었다. 되돌릴 때는 이 타입이 여기 있으니 필드만
+ * 다시 세우면 된다.
  */
 export type FlowerForm = 'rose' | 'tulip' | 'spike';
 
@@ -87,7 +91,7 @@ export interface WizardSubmission {
   recipientChips: string[];
   colorPrefs: string[];
   /**
-   * §1.5j `상대방은 어떤 사람인가요?` 자유 서술(선택).
+   * §1.5j `그 사람은 어떤 사람인가요?` 자유 서술(선택, 200자).
    * ⚠ 이 값과 `episode` 는 추천·멘트에만 쓰고 로그·DB 어디에도 남기지 않는다.
    */
   recipientNote: string;
@@ -157,7 +161,7 @@ export interface PetBadge {
   toxic: boolean;
   /** `반려동물 안전` / `반려동물 주의`. */
   label: string;
-  /** 배지 옆 한 줄(예: `고양이·강아지 비독성`). */
+  /** 배지 옆 한 줄(예: `고양이·강아지에게 알려진 독성이 없어요`). */
   summary: string;
   /** 접었다 펴는 상세 문장들. */
   details: string[];
@@ -203,7 +207,6 @@ export interface FlowOptionView {
   segmentTag: string;
   /** 오버라인 뒤 한국어: `1안 — 가장 안전한 선택 (안심)`. */
   headline: string;
-  form: FlowerForm;
   flowerId: string;
   /** #14 대표 실사. 32종 전원이 갖고 있지만, 없어도 화면은 성립해야 한다(폴백 색면). */
   photo?: FlowerPhotoView;

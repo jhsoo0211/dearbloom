@@ -5,7 +5,7 @@
  *
  * 위계는 §1.5i 가 확정한 5단이다(위 → 아래):
  *   ① 꽃(대표 실사) + 이름 + 꽃말 (+ 색 다시 고르기)
- *   ② 꽃에 얽힌 설화 + 나라별 꽃말   ← 멘트보다 위. "정보"보다 "이야기"가 먼저다
+ *   ② 꽃에 얽힌 이야기 + 나라별 꽃말 ← 멘트보다 위. "정보"보다 "이야기"가 먼저다
  *   ③ 추천 이유 · 이런 날 건네보세요
  *   ④ 멘트 3톤 + 함께 담을 한 줄 + 문학 속의 이 꽃
  *   ⑤ 최하단 참고(작게) — 반려동물 배지 · 계절 · 향 · 관리 · 가격 1줄 · 제휴 고지
@@ -285,6 +285,22 @@ export default function ResultView({ payload, onRestart }: ResultViewProps) {
   /** §1.5k 문학 — 펼침 상태와 지금 보고 있는 발췌의 자리(0 = 대표). */
   const [litOpen, setLitOpen] = useState(false);
   const [litIndex, setLitIndex] = useState(0);
+  /**
+   * 실사를 실제로 받아 온 안의 자리들 — 처음에는 눈에 보이는 1안뿐이다.
+   *
+   * 3안이 전부 폭 1600 실사라, 셋을 한꺼번에 받으면 **보이지도 않는 두 장**이 첫 화면의
+   * 대역폭을 나눠 갖는다(실측 175KB). 그래서 나머지는 그 탭에 손이 닿는 순간(hover ·
+   * 포커스 · 누름 · 활성)에 받는다.
+   *
+   * ⚠ `<img>` 자체는 처음부터 셋 다 세워 둔다 — 크로스페이드는 "이미 opacity:0 으로 서 있던
+   *   칸이 1 로 바뀔 때" 만 도는데, 활성화 시점에 요소를 새로 만들면 시작값이 곧 1 이라
+   *   페이드가 아예 일어나지 않는다. 여기서 미루는 것은 요소가 아니라 `src` 하나다.
+   */
+  const [warmed, setWarmed] = useState<readonly number[]>(() => [0]);
+
+  function warmPhoto(index: number) {
+    setWarmed((current) => (current.includes(index) ? current : [...current, index]));
+  }
 
   const option = payload.options[active];
   const chip = option.colors[colorIndex[active]];
@@ -363,6 +379,7 @@ export default function ResultView({ payload, onRestart }: ResultViewProps) {
 
   /** 다른 안으로 갈아탈 때 이야기·문학 상태는 초기화한다 — 꽃이 바뀌면 읽을 것도 다르다. */
   function selectOption(next: number) {
+    warmPhoto(next);
     setActive(next);
     setStoriesOpen(false);
     setMoodFilter(MOOD_ALL);
@@ -458,7 +475,7 @@ export default function ResultView({ payload, onRestart }: ResultViewProps) {
 
           {/*
             데스크톱(1024px↑)은 2단이다 — 좌단은 꽃·이름·꽃말·색 칩을 sticky 로 붙들고,
-            우단만 스크롤한다(설화 → 나라별 → 이유 → 멘트 → 참고). 모바일에서는 이
+            우단만 스크롤한다(이야기 → 나라별 → 이유 → 멘트 → 참고). 모바일에서는 이
             래퍼들이 그냥 블록이라 **DOM 순서 = 지금까지의 한 칼럼 순서** 그대로다.
             좌/우를 나눈 자리가 하필 탭 패널 한가운데라, 패널을 둘로 나누고 탭의
             aria-controls 가 두 id 를 함께 가리키게 했다(둘 다 이 탭이 바꾸는 영역이다).
@@ -470,9 +487,13 @@ export default function ResultView({ payload, onRestart }: ResultViewProps) {
                 {/*
                   ═══ ① 꽃 — 주인공. 대표 실사 한 컷(#14) ═══
 
-                  3안을 **전부 겹쳐 두고** 활성 안만 띄운다(3D 뷰어가 한 씬 안에서 활성 꽃을
-                  바꾸던 것과 같은 문법이다). 탭을 눌렀을 때 사진이 새로 로드되며 깜빡이지
-                  않고, 크로스페이드로 넘어간다.
+                  3안의 `<img>` 를 **전부 겹쳐 두고** 활성 안만 띄운다(3D 뷰어가 한 씬 안에서
+                  활성 꽃을 바꾸던 것과 같은 문법이다). 요소가 처음부터 셋 다 서 있어야
+                  크로스페이드가 성립한다 — opacity 0 으로 이미 있던 칸이 1 로 바뀌는 것이
+                  전환이고, 그 순간에 요소를 만들면 시작값이 곧 1 이라 전환이 없다.
+
+                  다만 **받아 오는 시점은 미룬다**(`warmed`) — 겹쳐 두는 것과 세 장을 한꺼번에
+                  내려받는 것은 다른 일이다.
                 */}
                 <figure className={styles.shotFig}>
                   <div className={styles.shotStage}>
@@ -488,7 +509,7 @@ export default function ResultView({ payload, onRestart }: ResultViewProps) {
                           ]
                             .filter(Boolean)
                             .join(' ')}
-                          src={item.photo.src}
+                          src={warmed.includes(index) ? item.photo.src : undefined}
                           alt={index === active ? item.photo.alt : ''}
                           aria-hidden={index === active ? undefined : true}
                           fetchPriority={index === 0 ? 'high' : 'low'}
@@ -538,7 +559,7 @@ export default function ResultView({ payload, onRestart }: ResultViewProps) {
                   ) : null}
                 </figure>
 
-                <ul className={styles.ctx} aria-label="입력한 조건">
+                <ul className={styles.ctx} aria-label="들려주신 이야기">
                   {payload.contextChips.map((chipText) => (
                     <li
                       key={chipText}
@@ -612,6 +633,14 @@ export default function ResultView({ payload, onRestart }: ResultViewProps) {
                       aria-selected={index === active}
                       tabIndex={index === active ? 0 : -1}
                       onClick={() => selectOption(index)}
+                      /*
+                       * 누르기 전에 사진을 미리 받아 둔다 — 눌린 뒤에 받기 시작하면
+                       * 크로스페이드가 빈 칸에서 시작한다. 셋 다 활성화보다 먼저 오는
+                       * 신호다(마우스는 hover, 키보드는 포커스, 터치는 누름).
+                       */
+                      onMouseEnter={() => warmPhoto(index)}
+                      onFocus={() => warmPhoto(index)}
+                      onPointerDown={() => warmPhoto(index)}
                       onKeyDown={(e) => {
                         if (e.key === 'ArrowRight') {
                           e.preventDefault();
@@ -652,8 +681,8 @@ export default function ResultView({ payload, onRestart }: ResultViewProps) {
                       ) : (
                         <p className={styles.flMeanEmpty}>
                           {chip
-                            ? `${chip.label} 꽃말은 아직 출처를 찾는 중이에요.`
-                            : '이 꽃의 꽃말은 아직 모으는 중이에요. 출처를 찾는 대로 들려드릴게요.'}
+                            ? '이 색의 꽃말은 아직 갈래를 고르는 중이에요.'
+                            : '이 꽃의 꽃말은 아직 모으는 중이에요. 갈래가 잡히면 바로 들려드릴게요.'}
                         </p>
                       )}
                       {confidence ? (
@@ -744,10 +773,10 @@ export default function ResultView({ payload, onRestart }: ResultViewProps) {
               tabIndex={-1}
             >
 
-              {/* ═══ ② 꽃에 얽힌 설화 — 멘트보다 위(§1.5i) ═══ */}
+              {/* ═══ ② 꽃에 얽힌 이야기 — 멘트보다 위(§1.5i) ═══ */}
               <section className={styles.sect} aria-labelledby="story-h">
                 <p className={styles.overline} id="story-h">
-                  Lore <span className={styles.ko}>꽃에 얽힌 설화</span>
+                  Lore <span className={styles.ko}>꽃에 얽힌 이야기</span>
                 </p>
 
                 {featured ? (
@@ -869,7 +898,7 @@ export default function ResultView({ payload, onRestart }: ResultViewProps) {
                   </>
                 ) : null}
 
-                {/* ═══ 나라별 꽃말 — 설화와 같은 블록에 붙인다(§1.5i) ═══ */}
+                {/* ═══ 나라별 꽃말 — 이야기와 같은 블록에 붙인다(§1.5i) ═══ */}
                 {option.cultureMeanings.length > 0 ? (
                   <>
                     <h3 className={styles.loreH}>나라별 꽃말</h3>
@@ -904,7 +933,7 @@ export default function ResultView({ payload, onRestart }: ResultViewProps) {
                   {option.reasons.length > 0 ? (
                     option.reasons.map((reason) => <li key={reason}>{reason}</li>)
                   ) : (
-                    <li>고르신 조건에서 크게 어긋나는 데가 없는 꽃이에요.</li>
+                    <li>들려주신 이야기와 어디 하나 부딪히지 않는 꽃이에요.</li>
                   )}
                 </ul>
 
@@ -1139,7 +1168,7 @@ export default function ResultView({ payload, onRestart }: ResultViewProps) {
                               className={styles.litNavBtn}
                               onClick={() => moveLit(-1)}
                             >
-                              이전 발췌
+                              앞 구절
                             </button>
                             <p className={styles.litCount}>
                               {litIndex + 1} / {literature.length}
@@ -1149,7 +1178,7 @@ export default function ResultView({ payload, onRestart }: ResultViewProps) {
                               className={styles.litNavBtn}
                               onClick={() => moveLit(1)}
                             >
-                              다음 발췌
+                              다음 구절
                             </button>
                           </div>
                         ) : null}
@@ -1241,7 +1270,7 @@ export default function ResultView({ payload, onRestart }: ResultViewProps) {
                         </span>
                       ))}
                     </span>
-                    <span className="sr-only">가격대 3구간 중 {option.priceBand}구간.</span>
+                    <span className="sr-only">가격대는 셋 중 {option.priceBand}번째예요.</span>
                     <span>
                       {option.priceLabel}
                       {option.priceNote ? (
@@ -1294,11 +1323,10 @@ export default function ResultView({ payload, onRestart }: ResultViewProps) {
               들려드려요.
             </p>
             <div className={styles.credits}>
-              <h2>About this view</h2>
+              <h2>이 화면에 대하여</h2>
               <p>
-                맨 위 사진은 그 꽃의 대표 실사예요 — 작가 표기는 사진 아래 ‘출처’에 접어 두었고,
-                Unsplash 라이선스로 씁니다. 꽃말·이야기·안전 정보는 출처를 확인한 콘텐츠에서
-                가져옵니다.
+                맨 위 사진은 그 꽃을 담은 한 컷이에요. 찍은 분의 이름은 사진 아래 ‘출처’에 적어
+                두었어요. 꽃말과 이야기, 안전한지 아닌지는 갈래를 확인한 자료에서 가져와요.
               </p>
             </div>
           </footer>

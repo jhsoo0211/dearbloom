@@ -21,7 +21,7 @@ import { submitRecommendation } from './actions';
 export const metadata: Metadata = {
   title: 'dearbloom — 45초 만에 추천받기',
   description:
-    '관계와 마음, 상대의 분위기만 알려주세요. 어울리는 꽃과 꽃말, 그 꽃에 얽힌 이야기까지 골라드려요.',
+    '관계와 마음, 받는 분의 분위기만 알려주세요. 어울리는 꽃과 꽃말, 그 꽃에 얽힌 이야기까지 골라드려요.',
 };
 
 /** 기본 날짜 = 내일(한국 시간). 'YYYY-MM-DD' 는 en-CA 포맷과 같다. */

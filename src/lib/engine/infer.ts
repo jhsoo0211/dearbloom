@@ -56,14 +56,19 @@ export const COLOR_KEYWORDS = {
 } as const satisfies Record<string, readonly string[]>;
 
 /**
- * 꽃 이름 키워드 → flowers.csv 의 id. 카탈로그 17종의 한국어명을 **부분 일치**로 잡는다
+ * 꽃 이름 키워드 → flowers.csv 의 id. 카탈로그 **32종 전수**의 한국어명을 **부분 일치**로 잡는다
  * (`흰 튤립` 은 '튤립' 으로, `아시아틱 백합` 은 '백합' 으로 걸린다).
  *
  * 배열 첫 값이 화면에 쓰는 짧은 이름이다(`튤립의 기억` 같은 단서 칩).
  *
  * ⚠ 기술부채: 카탈로그(content/flowers.csv)와 이 표가 따로 논다. 엔진은 순수 TS 라
- * CSV 를 읽지 않기 때문인데, 꽃이 늘면 여기도 한 줄 늘려야 한다
- * (`tests/engine/infer.test.ts` 가 개수를 지킨다).
+ * CSV 를 읽지 않기 때문인데, 꽃이 늘면 여기도 한 줄 늘려야 한다.
+ * `tests/engine/infer.test.ts` 가 **개수가 아니라 불변식**으로 지킨다 —
+ * "모든 key 가 flowers.csv 에 실존" + "카탈로그 전종을 덮는다"(예전에는 17 이라는
+ * 스냅샷 숫자를 박아 두어, 꽃이 15종 늘어난 뒤에도 테스트는 초록이었다).
+ *
+ * ⚠ 별칭을 늘릴 때는 **다른 꽃의 이름을 품지 않는지** 본다. 예를 들어 팬지의 별칭
+ *   `삼색제비꽃` 은 '제비꽃'(violet)까지 함께 걸어 단서 두 개를 만든다 — 그래서 뺐다.
  */
 export const FLOWER_KEYWORDS = {
   'rose-red': ['장미'],
@@ -83,6 +88,21 @@ export const FLOWER_KEYWORDS = {
   ranunculus: ['라넌큘러스'],
   'lily-of-the-valley': ['은방울꽃', '은방울'],
   chrysanthemum: ['국화'],
+  narcissus: ['수선화', '나르시스'],
+  'forget-me-not': ['물망초'],
+  'cherry-blossom': ['벚꽃', '벚나무', '사쿠라'],
+  camellia: ['동백', '카멜리아'],
+  violet: ['제비꽃', '오랑캐꽃'],
+  iris: ['아이리스', '붓꽃'],
+  marigold: ['마리골드', '메리골드'],
+  'corn-poppy': ['개양귀비', '꽃양귀비', '양귀비'],
+  jasmine: ['재스민', '자스민', '쟈스민'],
+  'babys-breath': ['안개꽃', '안개초'],
+  cosmos: ['코스모스', '살사리꽃'],
+  magnolia: ['목련', '매그놀리아'],
+  pansy: ['팬지'],
+  poinsettia: ['포인세티아', '포인세차'],
+  daisy: ['데이지'],
 } as const satisfies Record<string, readonly string[]>;
 
 /** `personalCues` 에 담는 꽃 단서의 접두사. */

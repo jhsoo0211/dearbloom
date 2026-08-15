@@ -12,13 +12,17 @@
  * 클라이언트로는 문자열로 굳은 뷰 모델만 내보내 엔진(zod)이 브라우저 번들에 끌려가지 않게 한다.
  */
 
-import { ZodError } from 'zod';
+import { z, ZodError } from 'zod';
 
 import { loadCatalog } from '@/lib/data/catalog';
 import {
+  MAX_GROUP_MEMBERS,
+  intentSchema,
   reasonText,
+  recipientTraitSchema,
   recommendGroupBouquet,
   recommendGroupIndividual,
+  speciesSchema,
   type GroupIndividualResult,
   type GroupInput,
   type RecoResult,
@@ -82,8 +86,52 @@ function toMessage(error: unknown): string {
     return error.issues[0]?.message ?? '입력을 다시 확인해 주세요.';
   }
   if (error instanceof Error) return error.message;
-  return '추천을 만들지 못했어요. 잠시 뒤 다시 시도해 주세요.';
+  return '이야기를 꺼내 오다 잠깐 길을 잃었어요. 조금 뒤에 다시 눌러 주세요.';
 }
+
+/* ------------------------------------------------------------------ *
+ * 들어오는 값의 모양 (경계 검증)
+ * ------------------------------------------------------------------ */
+
+/** 이름 한 칸의 상한(화면 `maxLength` 와 같은 값). 넘겨받으면 자른다. */
+const MEMBER_NAME_MAX_CHARS = 20;
+
+/** 이름 칸에 본문을 밀어 넣는 요청은 자르지 않고 거절한다. */
+const NAME_HARD_MAX = 200;
+
+/** 색 칩 한 사람 몫의 개수 상한. 지금 고를 수 있는 색(7종)의 두 배쯤이다. */
+const COLOR_PREFS_MAX = 14;
+
+const SLUG_MAX_CHARS = 40;
+
+/**
+ * 화면이 보내는 명단 한 벌의 **모양**.
+ *
+ * 서버 액션은 공개 HTTP 엔드포인트다 — `GroupPlanRequest` 타입 주석은 컴파일이 끝나면
+ * 사라지고, 아래 `request.members.map(...)` 은 members 가 배열이 아니면 그 자리에서 터진다
+ * (화면은 문장 대신 500 을 본다). 그래서 첫 줄에서 모양을 먼저 본다.
+ *
+ * 어휘(마음 8종·분위기 5종·반려동물 2종)는 **여기서 본다.** 엔진 쪽 `groupInputSchema` 는
+ * 라벨도 받아 주는 느슨한 문이라, 화면이 slug 만 보낸다는 이 화면의 약속은 여기서 지킨다.
+ */
+const groupPlanRequestSchema = z.object({
+  intent: intentSchema,
+  members: z
+    .array(
+      z.object({
+        name: z
+          .string()
+          .max(NAME_HARD_MAX)
+          .transform((value) => value.trim().slice(0, MEMBER_NAME_MAX_CHARS)),
+        recipientTraits: z.array(recipientTraitSchema).max(COLOR_PREFS_MAX),
+        colorPrefs: z.array(z.string().max(SLUG_MAX_CHARS)).max(COLOR_PREFS_MAX),
+        pets: z.array(speciesSchema).max(COLOR_PREFS_MAX),
+        fragranceSensitive: z.boolean(),
+      }),
+    )
+    .min(1)
+    .max(MAX_GROUP_MEMBERS),
+});
 
 /**
  * 멤버 명단 하나로 두 가지 답을 만든다.
@@ -91,15 +139,26 @@ function toMessage(error: unknown): string {
  *   · 단체 부케 — 전원에게 안전한 꽃만 남긴 한 다발(최대 3종) + 뺀 이유
  */
 export async function planGroup(request: GroupPlanRequest): Promise<GroupPlanState> {
-  const members: GroupPlanMember[] = request.members.map((member) => ({
-    name: member.name.trim(),
+  const received = groupPlanRequestSchema.safeParse(request);
+  if (!received.success) {
+    // ⚠ zod 의 issue 에는 받은 값(이름)이 섞인다 — 오류 객체를 그대로 찍지 않는다.
+    console.error('[groups] 받은 값의 모양이 어긋납니다. (내용은 남기지 않습니다)');
+    return {
+      ok: false,
+      message: '이야기를 꺼내 오다 잠깐 길을 잃었어요. 조금 뒤에 다시 눌러 주세요.',
+    };
+  }
+
+  // 이름은 스키마가 이미 다듬었다(trim · 20자).
+  const members: GroupPlanMember[] = received.data.members.map((member) => ({
+    name: member.name,
     recipientTraits: member.recipientTraits,
     colorPrefs: member.colorPrefs,
     pets: member.pets,
     fragranceSensitive: member.fragranceSensitive,
   }));
 
-  const input: GroupInput = { intent: request.intent, members };
+  const input: GroupInput = { intent: received.data.intent, members };
 
   try {
     const catalog = await loadCatalog();
@@ -107,7 +166,7 @@ export async function planGroup(request: GroupPlanRequest): Promise<GroupPlanSta
     const bouquet = recommendGroupBouquet(input, catalog);
 
     const view: GroupPlanView = {
-      intentLabel: intentLabel(request.intent),
+      intentLabel: intentLabel(received.data.intent),
       memberCount: members.length,
       individual: individual.map((result, index) => toAssignment(result, members[index])),
       bouquet: {

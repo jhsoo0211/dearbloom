@@ -31,6 +31,33 @@
   margin-inline: auto;
 }
 
+/* ── §1.6b 컨트롤 토큰 ───────────────────────────────────────────────
+   버튼·칩·세그먼트·아이콘 버튼이 공유하는 값. 전부 팔레트 변수에서 파생한다.
+   `[data-flower]` 를 함께 잡는 이유: 카드 국소 테마(`.db-slide`)가 --fg/--accent 를
+   갈아 끼우므로, 파생 토큰도 그 자리에서 다시 계산되어야 한다(조상에서 한 번 계산해
+   물려주면 슬라이드마다 색이 어긋난다). */
+.db-page,
+.db-page [data-flower] {
+  --ctrl-t: 180ms;
+  --ctrl-line: color-mix(in srgb, var(--fg) 35%, transparent);
+  --ctrl-hover: color-mix(in srgb, var(--fg) 8%, transparent);
+  /* 액센트 채움 위 텍스트. 액센트가 밝은 네 테마는 Ink 가 대비를 넘긴다
+     (골드 6.1:1 · 로즈 틴트 5.9:1 · 라벤더 틴트 6.4:1). */
+  --ctrl-on-accent: var(--ink);
+}
+/* 아이보리 스튜디오만 액센트가 Deep Stem(어두움) — 대비 텍스트가 뒤집힌다(10.7:1). */
+.db-page[data-flower='lily'],
+.db-page [data-flower='lily'] {
+  --ctrl-on-accent: var(--ivory);
+}
+
+/* focus-visible 은 전 컨트롤 공통 — 2px 링 + 2px 오프셋(§1.6b 공통 상태).
+   globals.css 의 기본값(3px 오프셋)을 이 화면 안에서만 덮는다. */
+.db-page :focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
 /* 리셋은 `:where()` 로 감싸 **명시도 0** 으로 둔다.
    `.db-page p{margin:0}`(0-1-1)처럼 두면 뒤따르는 단일 클래스 규칙(`.db-gate-sub{margin-bottom}`,
    `.db-carousel-hint{margin-left:auto}`, `.db-room-title{font-weight:300}` 등)이 전부 리셋에 져서
@@ -202,12 +229,12 @@ body.db-nav-compact .db-nav {
   text-decoration: none;
   border-radius: 9999px;
   white-space: nowrap;
-  transition: color 0.3s var(--ease), background-color 0.3s var(--ease);
+  transition: color var(--ctrl-t) var(--ease), background-color var(--ctrl-t) var(--ease);
 }
 .db-nav-links a:hover,
 .db-nav-links a:focus-visible {
   color: var(--fg);
-  background: var(--hair);
+  background: var(--ctrl-hover);
 }
 .db-nav-cta {
   display: inline-flex;
@@ -222,13 +249,19 @@ body.db-nav-compact .db-nav {
   text-decoration: none;
   background: var(--cta-bg);
   color: var(--cta-fg);
-  transition: transform 0.35s var(--ease), box-shadow 0.35s var(--ease),
+  /* hover 배율은 `transform` 이 아니라 개별 속성 `scale` 로 준다 —
+     마그네틱 CTA(GSAP quickTo)가 인라인 transform 을 쓰기 때문에, 같은 속성으로 겹치면
+     한쪽이 통째로 무시된다. 개별 속성은 transform 과 합성되어 둘 다 산다. */
+  transition: scale var(--ctrl-t) var(--ease), box-shadow var(--ctrl-t) var(--ease),
     background-color var(--swap) var(--ease), color var(--swap) var(--ease);
 }
 .db-nav-cta:hover,
 .db-nav-cta:focus-visible {
-  transform: scale(1.04);
+  scale: 1.02;
   box-shadow: 0 0 26px var(--cta-glow);
+}
+.db-nav-cta:active {
+  scale: 0.98;
 }
 
 /* ── 타이포·버튼 유틸 ───────────────────────────────────────────────── */
@@ -263,6 +296,7 @@ body.db-nav-compact .db-nav {
   color: var(--on-media-mute);
 }
 
+/* 주 CTA — §1.6b: pill · h 52~56 · 액센트 없는 Ivory/Stem 채움 · hover 글로우+1.02 · active .98 */
 .db-btn {
   display: inline-flex;
   align-items: center;
@@ -276,7 +310,7 @@ body.db-nav-compact .db-nav {
   line-height: 1;
   text-decoration: none;
   white-space: nowrap;
-  transition: transform 0.35s var(--ease), box-shadow 0.35s var(--ease),
+  transition: scale var(--ctrl-t) var(--ease), box-shadow var(--ctrl-t) var(--ease),
     background-color var(--swap) var(--ease), color var(--swap) var(--ease),
     border-color var(--swap) var(--ease);
 }
@@ -286,19 +320,11 @@ body.db-nav-compact .db-nav {
 }
 .db-btn-primary:hover,
 .db-btn-primary:focus-visible {
-  transform: translateY(-2px);
+  scale: 1.02;
   box-shadow: 0 12px 34px var(--cta-glow);
 }
-.db-btn-ghost {
-  background: transparent;
-  color: var(--on-media);
-  border: 1px solid var(--ghost-line);
-  font-weight: 500;
-}
-.db-btn-ghost:hover,
-.db-btn-ghost:focus-visible {
-  border-color: var(--on-media);
-  transform: translateY(-2px);
+.db-btn-primary:active {
+  scale: 0.98;
 }
 .db-btn .db-arw {
   font-family: var(--font-sans);
@@ -477,17 +503,13 @@ body.db-nav-compact .db-nav {
   color: var(--on-media-mute);
   max-width: min(100%, 430px);
 }
+/* 보조 진입이 사라진 뒤로 CTA 는 한 개다 — 오른쪽 끝에 붙여 본문(노트)과 균형을 맞춘다. */
 .db-hero-acts {
   display: flex;
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
   justify-content: flex-end;
-}
-.db-hero-acts .db-btn-ghost {
-  min-height: 52px;
-  padding: 0 20px;
-  font-size: 14px;
 }
 .db-scroll-hint {
   display: flex;
@@ -889,38 +911,35 @@ body.db-nav-compact .db-nav {
   line-height: 1.7;
   color: var(--fg-70);
 }
+/* 꽃 칩 — §1.6b 칩 규격.
+   기본은 투명 배경 + 전경 72%, 선택은 **액센트 채움 + 대비 텍스트 + 동색 보더** 하나로만
+   표시한다(점·밑줄 같은 두 번째 표현 금지). 높이는 44px 로 못 박는다. */
 .db-adopt {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 9px;
-  min-height: 48px;
+  gap: 8px;
+  min-height: 44px;
   margin-top: auto;
   padding: 0 18px;
   border-radius: 9999px;
-  border: 1px solid var(--ghost-line);
+  border: 1px solid var(--ctrl-line);
+  background: transparent;
   font-size: 13.5px;
   font-weight: 500;
-  color: var(--fg);
-  transition: border-color 0.3s var(--ease), background-color 0.3s var(--ease),
-    color 0.3s var(--ease);
+  color: var(--fg-70);
+  transition: border-color var(--ctrl-t) var(--ease), background-color var(--ctrl-t) var(--ease),
+    color var(--ctrl-t) var(--ease);
 }
 .db-adopt:hover,
 .db-adopt:focus-visible {
-  border-color: var(--fg);
-  background: var(--hair);
+  background: var(--ctrl-hover);
+  color: var(--fg);
 }
 .db-adopt[aria-pressed='true'] {
-  border-color: var(--accent-line);
-  color: var(--accent);
-}
-.db-adopt .db-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  flex: none;
-  background: linear-gradient(140deg, var(--bg-3) 0%, var(--bg-2) 58%, var(--accent) 58%);
-  box-shadow: inset 0 0 0 1px var(--hair-2);
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--ctrl-on-accent);
 }
 
 /* 캐러셀 컨트롤 ------------------------------------------------------ */
@@ -936,24 +955,26 @@ body.db-nav-compact .db-nav {
   display: flex;
   gap: 8px;
 }
+/* 아이콘 버튼 — §1.6b: 원형 44×44 · 1px 보더 · 스트로크 1.6 */
 .db-arrow {
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  border: 1px solid var(--ghost-line);
+  border: 1px solid var(--ctrl-line);
   color: var(--fg);
-  transition: border-color 0.3s var(--ease), background-color 0.3s var(--ease), opacity 0.3s;
+  transition: border-color var(--ctrl-t) var(--ease), background-color var(--ctrl-t) var(--ease),
+    opacity var(--ctrl-t) var(--ease);
 }
 .db-arrow:hover:not(:disabled),
 .db-arrow:focus-visible {
   border-color: var(--fg);
-  background: var(--hair);
+  background: var(--ctrl-hover);
 }
 .db-arrow:disabled {
-  opacity: 0.35;
+  opacity: 0.4;
   cursor: default;
 }
 .db-arrow svg {
@@ -961,7 +982,7 @@ body.db-nav-compact .db-nav {
   height: 15px;
   fill: none;
   stroke: currentColor;
-  stroke-width: 1.5;
+  stroke-width: 1.6;
 }
 .db-dots {
   display: flex;
@@ -992,7 +1013,7 @@ body.db-nav-compact .db-nav {
   height: 6px;
   border-radius: 50%;
   background: var(--hair-2);
-  transition: background-color 0.3s var(--ease), width 0.3s var(--ease);
+  transition: background-color var(--ctrl-t) var(--ease), width var(--ctrl-t) var(--ease);
 }
 .db-dots button[aria-current='true'] i {
   width: 18px;
@@ -1270,12 +1291,12 @@ body.db-nav-compact .db-nav {
   font-size: 13.5px;
   color: var(--fg-70);
   text-decoration: none;
-  transition: color 0.3s var(--ease), background-color 0.3s var(--ease);
+  transition: color var(--ctrl-t) var(--ease), background-color var(--ctrl-t) var(--ease);
 }
 .db-footer-links a:hover,
 .db-footer-links a:focus-visible {
   color: var(--fg);
-  background: var(--hair);
+  background: var(--ctrl-hover);
 }
 .db-credits {
   padding-top: clamp(26px, 3.6vh, 40px);
@@ -1382,14 +1403,21 @@ body.db-nav-compact .db-nav {
   color: var(--cta-fg);
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.5s var(--ease), transform 0.35s var(--ease);
+  /* 등장(opacity)만 느리게 — 눌림 반응은 다른 컨트롤과 같은 180ms */
+  transition: opacity 0.5s var(--ease), scale var(--ctrl-t) var(--ease),
+    box-shadow var(--ctrl-t) var(--ease);
 }
 .db-gate-btn.db-ready {
   opacity: 1;
   pointer-events: auto;
 }
-.db-gate-btn:hover {
-  transform: translateY(-2px);
+.db-gate-btn:hover,
+.db-gate-btn:focus-visible {
+  scale: 1.02;
+  box-shadow: 0 12px 34px var(--cta-glow);
+}
+.db-gate-btn:active {
+  scale: 0.98;
 }
 
 /* ═══════════════ 모션 프리셋 ═══════════════
@@ -1458,18 +1486,14 @@ body.db-nav-compact .db-nav {
     align-items: flex-start;
     gap: 0;
   }
-  .db-hero-acts {
+  /* 좁은 화면에서는 하나 남은 CTA 를 풀폭으로 — 엄지 사정거리 안에 둔다 */
+  .db-hero-acts,
+  .db-finale-acts {
     width: 100%;
   }
-  .db-hero-acts .db-btn {
-    flex: 1 1 auto;
-  }
-  .db-hero-acts .db-btn-primary {
-    flex-basis: 100%;
-    order: -1;
-  }
-  .db-finale-acts .db-btn-primary {
-    flex-basis: 100%;
+  .db-hero-acts .db-btn,
+  .db-finale-acts .db-btn {
+    flex: 1 1 100%;
   }
   .db-nav {
     padding: 6px 6px 6px 14px;

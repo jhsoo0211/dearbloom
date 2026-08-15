@@ -274,13 +274,14 @@ export default function TodayCarousel({ slides, globalSlug, onAdopt }: Props) {
 
                   {slide.petCaveat ? <p className="db-caveat">{slide.petCaveat}</p> : null}
 
+                  {/* 꽃 칩 — §1.6b 칩 규격(44px·선택은 액센트 채움 하나로만).
+                      예전의 색 점 표식은 "선택을 다른 표현으로 이중 표시"라 뺐다. */}
                   <button
                     type="button"
                     className="db-adopt"
                     aria-pressed={isGlobal}
                     onClick={() => onAdopt(slide)}
                   >
-                    <span className="db-dot" aria-hidden="true" />
                     {isGlobal
                       ? `${slide.categoryLabel} 분위기로 보는 중`
                       : '이 꽃의 분위기로 바꾸기'}

@@ -81,7 +81,7 @@ export function MemberFieldset({
             return (
               <label
                 key={option.value}
-                className={`${styles.chip} ${styles.chipSm} ${on ? styles.chipOn : ''}`}
+                className={`${styles.chip} ${on ? styles.chipOn : ''}`}
               >
                 <input
                   className={styles.chipInput}
@@ -104,7 +104,7 @@ export function MemberFieldset({
             return (
               <label
                 key={option.value}
-                className={`${styles.chip} ${styles.chipSm} ${on ? styles.chipOn : ''}`}
+                className={`${styles.chip} ${on ? styles.chipOn : ''}`}
               >
                 <input
                   className={styles.chipInput}
@@ -127,7 +127,7 @@ export function MemberFieldset({
             return (
               <label
                 key={option.value}
-                className={`${styles.chip} ${styles.chipSm} ${on ? styles.chipOn : ''}`}
+                className={`${styles.chip} ${on ? styles.chipOn : ''}`}
               >
                 <input
                   className={styles.chipInput}
@@ -140,9 +140,7 @@ export function MemberFieldset({
             );
           })}
           <label
-            className={`${styles.chip} ${styles.chipSm} ${
-              member.fragranceSensitive ? styles.chipOn : ''
-            }`}
+            className={`${styles.chip} ${member.fragranceSensitive ? styles.chipOn : ''}`}
           >
             <input
               className={styles.chipInput}

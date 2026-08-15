@@ -261,21 +261,9 @@ export default function LandingPage({ data }: { data: LandingData }) {
                   관계와 상황만 알려주세요. 어울리는 꽃과 꽃말, 추천 이유, 진짜로 쓸 수 있는 멘트까지
                   45초 안에 골라드려요.
                 </p>
+                {/* 보조 진입 2종은 §1.5d 16차에서 폐지됐다 — 주 CTA 하나로 직행한다.
+                    모드 구분(화해·고백 등)은 플로우 안의 모드 카드가 맡는다. */}
                 <div className="db-hero-acts" data-db-intro>
-                  <Link
-                    className="db-btn db-btn-ghost"
-                    href="/recommend?intent=apology"
-                    prefetch={false}
-                  >
-                    먼저 손 내밀고 싶을 때
-                  </Link>
-                  <Link
-                    className="db-btn db-btn-ghost"
-                    href="/recommend?intent=confession"
-                    prefetch={false}
-                  >
-                    말로는 다 못 전할 때
-                  </Link>
                   <Link
                     className="db-btn db-btn-primary"
                     href="/recommend"
@@ -409,14 +397,16 @@ export default function LandingPage({ data }: { data: LandingData }) {
                 No.&nbsp;03 <span className="db-ko">추천 예시</span>
               </p>
               <h2 className="sr-only" id="db-example-title">
-                추천 예시 — 약속을 잊은 연인에게
+                추천 예시 — 오래 고마웠던 친구에게
               </h2>
+              {/* §1.5d 16차 확정 문구. 이전 사과 예시(“약속을 잊은 연인에게…”)는 폐기됐다. */}
               <figure className="db-quote">
                 <span className="db-mk" aria-hidden="true">
                   “
                 </span>
                 <p data-db-split>
-                  약속을 잊은 연인에게 — 흰 튤립과 ‘변명 없이 사과할게’라는 첫 문장을 추천했어요.
+                  오래 고마웠던 친구에게 — 프리지아와 ‘고맙다는 말, 너무 오래 미뤘지’라는 첫 문장을
+                  추천했어요.
                 </p>
                 <figcaption>dearbloom recommendation</figcaption>
               </figure>
@@ -464,6 +454,7 @@ export default function LandingPage({ data }: { data: LandingData }) {
                   관계와 상황만 알려주세요. 어울리는 꽃과 꽃말, 추천 이유, 진짜로 쓸 수 있는 멘트까지
                   45초 안에 골라드려요.
                 </p>
+                {/* 히어로와 같은 이유로 보조 진입 없음(§1.5d 16차) — 마지막 화면도 주 CTA 하나. */}
                 <div className="db-finale-acts" data-db-reveal>
                   <Link
                     className="db-btn db-btn-primary"
@@ -475,20 +466,6 @@ export default function LandingPage({ data }: { data: LandingData }) {
                     <span className="db-arw" aria-hidden="true">
                       →
                     </span>
-                  </Link>
-                  <Link
-                    className="db-btn db-btn-ghost"
-                    href="/recommend?intent=apology"
-                    prefetch={false}
-                  >
-                    먼저 손 내밀고 싶을 때
-                  </Link>
-                  <Link
-                    className="db-btn db-btn-ghost"
-                    href="/recommend?intent=confession"
-                    prefetch={false}
-                  >
-                    말로는 다 못 전할 때
                   </Link>
                 </div>
               </div>

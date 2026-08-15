@@ -42,7 +42,7 @@ export interface FlowerSummary {
 /** 카테고리 한 묶음(§1.4c v3.2 테마 카테고리 5종). */
 export interface FlowerGroup {
   category: ThemeCategory;
-  /** 색감 이름(`나이트 보태니컬` …). */
+  /** 계열 이름(`숲빛` `상아빛` …) — `/stories` 필터 칩과 같은 말이다. */
   label: string;
   /** 어떤 색 계열이 모이는 칸인지 한 줄(§1.4c v3.2 배정 규칙). */
   hint: string;
@@ -119,7 +119,12 @@ export interface FlowerDetailData {
   category: ThemeCategory;
   categoryLabel: string;
   categoryHint: string;
-  plate?: { src: string; alt: string; credit: string; grade?: string };
+  /**
+   * 히어로 액자에 거는 세밀화 — 원본은 `@/lib/plates`(자체 호스팅 사본 주소가 온다).
+   * `note` 는 종이 다르거나 판면에 손댄 도판의 **정직한 한 줄**이다(없는 꽃이 더 많다).
+   * 있으면 크레딧 아래 각주로 그대로 나간다 — 감추면 "벚꽃이라며 다른 꽃을 보여 준" 화면이 된다.
+   */
+  plate?: { src: string; alt: string; credit: string; note?: string };
   /** 대표 꽃말 — 히어로에 크게 세우는 한 줄. */
   headline: string;
   meaningGroups: MeaningGroup[];

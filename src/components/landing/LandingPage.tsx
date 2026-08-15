@@ -209,6 +209,9 @@ export default function LandingPage({ data }: { data: LandingData }) {
               <a href="/stories">이야기</a>
             </li>
             <li>
+              <Link href="/flowers" prefetch={false}>도감</Link>
+            </li>
+            <li>
               <a href="/groups">여러 명에게</a>
             </li>
             <li>

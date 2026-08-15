@@ -1,9 +1,15 @@
 /**
- * 꽃 세밀화 도판 31종 — 퍼블릭 도메인 보태니컬 도판의 단일 원본.
+ * 꽃 세밀화 도판 31종 — 퍼블릭 도메인 보태니컬 도판의 **단일 원본**.
  *
  * 출처 문서: `docs/illustration-assets.md` (2026-08-15 조사, 31/31 확보).
  * 이 파일은 그 표를 **코드로 옮긴 사본**이다. 도판을 바꾸거나 늘릴 때는 문서를 먼저 고치고
  * 여기로 옮긴다 — 문서가 라이선스 근거를 들고 있고, 이 파일은 화면이 쓰는 모양만 갖는다.
+ *
+ * ⚠ 도판 상수는 **여기 한 벌뿐이다.** 예전에는 `components/stories/plates.ts` 와
+ *   `components/flowers/illustrations.ts` 두 벌이 있었고, 벚꽃(A안/B안)과 거베라(호스트)가
+ *   서로 다른 값을 들고 있어 같은 꽃이 화면마다 다른 그림을 보여 줬다. 그래서 `src/lib` 로
+ *   끌어올려 양쪽 화면(`/stories` · `/flowers`)이 같은 모듈을 import 한다.
+ *   **컴포넌트 폴더에 도판 상수를 다시 만들지 마라.**
  *
  * ── 두 가지 확정 사항 (Advisor, 2026-08-15) ──────────────────────────
  *   · `cherry-blossom` = **B안**(비테 《플로라》 Pl.14). A안(우키요에 화조화)은 새·물·담청
@@ -18,23 +24,38 @@
  * 가장 싼 보험이고, "야간 식물 아카이브" 라는 톤에도 출처 표기가 어울린다).
  * 표기 형식은 문서 사용 규칙 4 그대로 — `Plate: {작품명}, {연도} / {소장·제공 기관}`.
  *
- * ⚠ **자체 호스팅이 정답이다**(문서 배포 규칙 1). 31종은 전부 PD/CC0 라 재배포에 제약이
- *   없으니, 빌드 타임에 한 번 내려받아 `public/` 에 올리고 위키미디어를 런타임 의존성에서
- *   빼는 것이 최종 상태다. 지금은 표준 썸네일 폭만 핫링크하는 중간 단계이고,
- *   실제로 연속 요청은 `HTTP 429` 를 받는다 — 그래서 화면은 **실패를 조용히 감춘다**
- *   (`PlateFrame`). 깨진 이미지 아이콘이 뜨는 쪽이 도판이 없는 쪽보다 훨씬 나쁘다.
+ * ── 자체 호스팅 (문서 배포 규칙 1, 2026-08-15 적용 완료) ──────────────
+ * `src` 는 전부 **우리 `public/plates/` 사본**이다. 31종이 전부 PD/CC0 라 재배포에 제약이
+ * 없고, 위키미디어는 핫링크 연속 요청에 `HTTP 429` 를 돌려주기 때문이다(문서 배포 규칙 2 —
+ * 레인 31줄이 한 화면에서 동시에 요청하면 그 상태가 곧바로 재현된다).
+ *   · 취득 주소는 `remoteSrc` 에 그대로 남겨 둔다 — 재다운로드의 입력이자 출처 증빙이다.
+ *   · 파일을 다시 받는 방법: `node scripts/fetch-plates.mjs`(`--force` 로 덮어쓰기,
+ *     `--reencode` 로 재다운로드 없이 다시 정규화). 저장 경로는 이 파일의 `src` 가 정한다 —
+ *     스크립트가 `src` 를 읽어 그 자리에 쓴다.
+ *   · **31종 전부 `.jpg` 다** — 확장자를 원본대로 두지 않고 한 규격으로 정규화한다.
+ *     스크립트가 `sharp` 로 폭 ≤1100px · 알파는 흰 배경 flatten · JPEG q82(mozjpeg) 로
+ *     **다시 인코딩해** 저장하므로, 파일 바이트 자체가 JPEG 다(이름만 바꾼 게 아니다).
+ *     그래서 정적 서버가 말하는 `Content-Type: image/jpeg` 가 사실과 맞는다.
+ *     위키미디어 PNG 판본 7종이 장당 2.5~4.3MB 로 전체 용량의 2/3 를 먹던 문제가
+ *     이 한 단계로 사라진다(레인 헤더는 44px 썸네일에 그 파일을 통째로 물고 있었다).
  *
- * 순수 데이터·순수 함수만 둔다(React·fs 의존 금지) — 서버·클라이언트 양쪽에서 import 한다.
+ * 순수 데이터·순수 함수만 둔다(React·fs 의존 금지) — 서버·클라이언트 양쪽에서 import 하고,
+ * `scripts/fetch-plates.mjs`(node)도 같은 파일을 읽는다.
  */
 
 export interface FlowerPlate {
   /** `content/flowers.csv` 의 id. */
   flowerId: string;
   /**
-   * 취득 URL = 문서 표의 `직접 URL`(위키미디어 표준 1280px 썸네일).
-   * 화면은 이 값을 그대로 쓰지 않고 `plateSrc()` 로 폭을 줄여 쓴다.
+   * 화면이 쓰는 주소 = **자체 호스팅 사본**(`/plates/…` → `public/plates/…`).
+   * 이 값이 곧 다운로드 저장 경로다(`scripts/fetch-plates.mjs`).
    */
   src: string;
+  /**
+   * 취득 URL = 문서 표의 `직접 URL`(위키미디어 표준 1280px 썸네일).
+   * 런타임에 부르지 않는다 — 재다운로드용이자 출처 증빙이다.
+   */
+  remoteSrc: string;
   /** 파일 페이지 — 라이선스 증빙이자 사람이 확인하러 가는 자리. */
   pageUrl: string;
   /** 도판이 실제로 무엇을 그렸는지. 꽃 이름은 이미 헤딩에 있으므로 여기서는 그림만 말한다. */
@@ -72,7 +93,9 @@ const BHL = 'Biodiversity Heritage Library';
 export const FLOWER_PLATES: Record<string, FlowerPlate> = {
   'rose-red': {
     flowerId: 'rose-red',
-    src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Redoute_-_Rosa_gallica_regalis.jpg/1280px-Redoute_-_Rosa_gallica_regalis.jpg',
+    src: '/plates/rose-red.jpg',
+    remoteSrc:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Redoute_-_Rosa_gallica_regalis.jpg/1280px-Redoute_-_Rosa_gallica_regalis.jpg',
     pageUrl: 'https://commons.wikimedia.org/wiki/File:Redoute_-_Rosa_gallica_regalis.jpg',
     alt: '연분홍 겹장미가 만개한 세밀화',
     artist: REDOUTE,
@@ -83,7 +106,9 @@ export const FLOWER_PLATES: Record<string, FlowerPlate> = {
   },
   'tulip-white': {
     flowerId: 'tulip-white',
-    src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Gc16_tulipa_gesneriana.jpg/1280px-Gc16_tulipa_gesneriana.jpg',
+    src: '/plates/tulip-white.jpg',
+    remoteSrc:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Gc16_tulipa_gesneriana.jpg/1280px-Gc16_tulipa_gesneriana.jpg',
     pageUrl: 'https://commons.wikimedia.org/wiki/File:Gc16_tulipa_gesneriana.jpg',
     alt: '크림빛 양피지 위에 그린 튤립 네 송이 세밀화',
     artist: 'Hans-Simon Holtzbecker',
@@ -93,7 +118,9 @@ export const FLOWER_PLATES: Record<string, FlowerPlate> = {
   },
   freesia: {
     flowerId: 'freesia',
-    src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Freesia-J.Eudes-02.JPG/1280px-Freesia-J.Eudes-02.JPG',
+    src: '/plates/freesia.jpg',
+    remoteSrc:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Freesia-J.Eudes-02.JPG/1280px-Freesia-J.Eudes-02.JPG',
     pageUrl: 'https://commons.wikimedia.org/wiki/File:Freesia-J.Eudes-02.JPG',
     alt: '연노랑 프리지아와 휴면 구근을 함께 그린 세밀화',
     artist: 'Eugène-Jules Eudes',
@@ -103,7 +130,9 @@ export const FLOWER_PLATES: Record<string, FlowerPlate> = {
   },
   'lily-asiatic': {
     flowerId: 'lily-asiatic',
-    src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cf/Lilium_lancifolium_in_Les_liliacees.jpg/1280px-Lilium_lancifolium_in_Les_liliacees.jpg',
+    src: '/plates/lily-asiatic.jpg',
+    remoteSrc:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cf/Lilium_lancifolium_in_Les_liliacees.jpg/1280px-Lilium_lancifolium_in_Les_liliacees.jpg',
     pageUrl: 'https://commons.wikimedia.org/wiki/File:Lilium_lancifolium_in_Les_liliacees.jpg',
     alt: '주황빛 꽃잎이 뒤로 말린 참나리 세밀화',
     artist: REDOUTE,
@@ -114,8 +143,9 @@ export const FLOWER_PLATES: Record<string, FlowerPlate> = {
   },
   gerbera: {
     flowerId: 'gerbera',
+    src: '/plates/gerbera.jpg',
     // Advisor 확정 — plantillustrations.org 대신 같은 스캔의 Internet Archive 사본.
-    src: 'https://archive.org/download/mobot31753002721907/page/n169_w1800.jpg',
+    remoteSrc: 'https://archive.org/download/mobot31753002721907/page/n169_w1800.jpg',
     pageUrl: 'https://archive.org/details/mobot31753002721907/page/n169/mode/1up',
     alt: '살구빛과 크림빛 거베라 두 송이 세밀화',
     artist: 'Matilda Smith · J.N. Fitch',
@@ -126,7 +156,9 @@ export const FLOWER_PLATES: Record<string, FlowerPlate> = {
   },
   anemone: {
     flowerId: 'anemone',
-    src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/WitteHeinrichFlora1868-051-Anemone_coronaria.png/1280px-WitteHeinrichFlora1868-051-Anemone_coronaria.png',
+    src: '/plates/anemone.jpg',
+    remoteSrc:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/WitteHeinrichFlora1868-051-Anemone_coronaria.png/1280px-WitteHeinrichFlora1868-051-Anemone_coronaria.png',
     pageUrl:
       'https://commons.wikimedia.org/wiki/File:WitteHeinrichFlora1868-051-Anemone_coronaria.png',
     alt: '붉은빛·자줏빛·흰빛 아네모네 일곱 송이를 모은 세밀화',
@@ -138,7 +170,9 @@ export const FLOWER_PLATES: Record<string, FlowerPlate> = {
   },
   hellebore: {
     flowerId: 'hellebore',
-    src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fe/WitteHeinrichFlora1868-033-Helleborus_niger.png/1280px-WitteHeinrichFlora1868-033-Helleborus_niger.png',
+    src: '/plates/hellebore.jpg',
+    remoteSrc:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fe/WitteHeinrichFlora1868-033-Helleborus_niger.png/1280px-WitteHeinrichFlora1868-033-Helleborus_niger.png',
     pageUrl:
       'https://commons.wikimedia.org/wiki/File:WitteHeinrichFlora1868-033-Helleborus_niger.png',
     alt: '흰빛에서 연분홍으로 물든 헬레보어 네 송이와 짙은 잎 세밀화',
@@ -150,7 +184,9 @@ export const FLOWER_PLATES: Record<string, FlowerPlate> = {
   },
   hyacinth: {
     flowerId: 'hyacinth',
-    src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/De_blauwe_hyacint_Franciscus_Primus%2C_RP-T-1948-46.jpg/1280px-De_blauwe_hyacint_Franciscus_Primus%2C_RP-T-1948-46.jpg',
+    src: '/plates/hyacinth.jpg',
+    remoteSrc:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/De_blauwe_hyacint_Franciscus_Primus%2C_RP-T-1948-46.jpg/1280px-De_blauwe_hyacint_Franciscus_Primus%2C_RP-T-1948-46.jpg',
     pageUrl:
       'https://commons.wikimedia.org/wiki/File:De_blauwe_hyacint_Franciscus_Primus,_RP-T-1948-46.jpg',
     alt: '연푸른 겹히아신스 한 대를 곧게 세워 그린 수채 세밀화',
@@ -161,7 +197,9 @@ export const FLOWER_PLATES: Record<string, FlowerPlate> = {
   },
   peony: {
     flowerId: 'peony',
-    src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/Favourite_flowers_of_garden_and_greenhouse_%28Pl._13%29_%287789025266%29.jpg/1280px-Favourite_flowers_of_garden_and_greenhouse_%28Pl._13%29_%287789025266%29.jpg',
+    src: '/plates/peony.jpg',
+    remoteSrc:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/Favourite_flowers_of_garden_and_greenhouse_%28Pl._13%29_%287789025266%29.jpg/1280px-Favourite_flowers_of_garden_and_greenhouse_%28Pl._13%29_%287789025266%29.jpg',
     pageUrl:
       'https://commons.wikimedia.org/wiki/File:Favourite_flowers_of_garden_and_greenhouse_(Pl._13)_(7789025266).jpg',
     alt: '흰 작약 두 송이와 잎을 그린 세밀화',
@@ -173,7 +211,9 @@ export const FLOWER_PLATES: Record<string, FlowerPlate> = {
   },
   hydrangea: {
     flowerId: 'hydrangea',
-    src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/59/WitteHeinrichFlora1868-060-Hydrangea_macrophylla.png/1280px-WitteHeinrichFlora1868-060-Hydrangea_macrophylla.png',
+    src: '/plates/hydrangea.jpg',
+    remoteSrc:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/5/59/WitteHeinrichFlora1868-060-Hydrangea_macrophylla.png/1280px-WitteHeinrichFlora1868-060-Hydrangea_macrophylla.png',
     pageUrl:
       'https://commons.wikimedia.org/wiki/File:WitteHeinrichFlora1868-060-Hydrangea_macrophylla.png',
     alt: '붉은 얼룩이 섞인 레이스캡형 수국 세밀화',
@@ -186,7 +226,9 @@ export const FLOWER_PLATES: Record<string, FlowerPlate> = {
   },
   lavender: {
     flowerId: 'lavender',
-    src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f6/Illustration_Lavandula_angustifolia0.jpg/1280px-Illustration_Lavandula_angustifolia0.jpg',
+    src: '/plates/lavender.jpg',
+    remoteSrc:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f6/Illustration_Lavandula_angustifolia0.jpg/1280px-Illustration_Lavandula_angustifolia0.jpg',
     pageUrl: 'https://commons.wikimedia.org/wiki/File:Illustration_Lavandula_angustifolia0.jpg',
     alt: '라벤더 전초와 꽃·수술·씨 해부도를 함께 그린 도감형 세밀화',
     artist: 'Otto Wilhelm Thomé',
@@ -196,7 +238,9 @@ export const FLOWER_PLATES: Record<string, FlowerPlate> = {
   },
   sunflower: {
     flowerId: 'sunflower',
-    src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/07/American_medicinal_plants_%28Plate_83%29_%286025414321%29.jpg/1280px-American_medicinal_plants_%28Plate_83%29_%286025414321%29.jpg',
+    src: '/plates/sunflower.jpg',
+    remoteSrc:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/0/07/American_medicinal_plants_%28Plate_83%29_%286025414321%29.jpg/1280px-American_medicinal_plants_%28Plate_83%29_%286025414321%29.jpg',
     pageUrl:
       'https://commons.wikimedia.org/wiki/File:American_medicinal_plants_(Plate_83)_(6025414321).jpg',
     alt: '왼쪽 반은 채색, 오른쪽 반은 선묘로 그린 해바라기 세밀화',
@@ -208,7 +252,9 @@ export const FLOWER_PLATES: Record<string, FlowerPlate> = {
   },
   carnation: {
     flowerId: 'carnation',
-    src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/Favourite_flowers_of_garden_and_greenhouse_%28Pl._36%29_%287789066486%29.jpg/1280px-Favourite_flowers_of_garden_and_greenhouse_%28Pl._36%29_%287789066486%29.jpg',
+    src: '/plates/carnation.jpg',
+    remoteSrc:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/Favourite_flowers_of_garden_and_greenhouse_%28Pl._36%29_%287789066486%29.jpg/1280px-Favourite_flowers_of_garden_and_greenhouse_%28Pl._36%29_%287789066486%29.jpg',
     pageUrl:
       'https://commons.wikimedia.org/wiki/File:Favourite_flowers_of_garden_and_greenhouse_(Pl._36)_(7789066486).jpg',
     alt: '단색 카네이션 네 송이와 줄무늬 카네이션 두 송이를 한 판에 그린 세밀화',
@@ -220,7 +266,9 @@ export const FLOWER_PLATES: Record<string, FlowerPlate> = {
   },
   lisianthus: {
     flowerId: 'lisianthus',
-    src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/97/Eustoma_exaltatum_subsp._russellianum_%28Lisianthius_russellianus%29_Bot._Mag._65._3626._1838.jpg/1280px-Eustoma_exaltatum_subsp._russellianum_%28Lisianthius_russellianus%29_Bot._Mag._65._3626._1838.jpg',
+    src: '/plates/lisianthus.jpg',
+    remoteSrc:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/9/97/Eustoma_exaltatum_subsp._russellianum_%28Lisianthius_russellianus%29_Bot._Mag._65._3626._1838.jpg/1280px-Eustoma_exaltatum_subsp._russellianum_%28Lisianthius_russellianus%29_Bot._Mag._65._3626._1838.jpg',
     pageUrl:
       'https://commons.wikimedia.org/wiki/File:Eustoma_exaltatum_subsp._russellianum_(Lisianthius_russellianus)_Bot._Mag._65._3626._1838.jpg',
     alt: '자줏빛 리시안셔스 네 송이 세밀화',
@@ -232,7 +280,9 @@ export const FLOWER_PLATES: Record<string, FlowerPlate> = {
   },
   ranunculus: {
     flowerId: 'ranunculus',
-    src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/Ranunculus_asiaticus-Favourite_Flowers_Garden_Greenhouse-1-0030-6.png/1280px-Ranunculus_asiaticus-Favourite_Flowers_Garden_Greenhouse-1-0030-6.png',
+    src: '/plates/ranunculus.jpg',
+    remoteSrc:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/Ranunculus_asiaticus-Favourite_Flowers_Garden_Greenhouse-1-0030-6.png/1280px-Ranunculus_asiaticus-Favourite_Flowers_Garden_Greenhouse-1-0030-6.png',
     pageUrl:
       'https://commons.wikimedia.org/wiki/File:Ranunculus_asiaticus-Favourite_Flowers_Garden_Greenhouse-1-0030-6.png',
     alt: '겹꽃 라넌큘러스 세 송이 세밀화',
@@ -245,7 +295,9 @@ export const FLOWER_PLATES: Record<string, FlowerPlate> = {
   },
   'lily-of-the-valley': {
     flowerId: 'lily-of-the-valley',
-    src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/Convallaria_majalis_in_Les_liliacees.jpg/1280px-Convallaria_majalis_in_Les_liliacees.jpg',
+    src: '/plates/lily-of-the-valley.jpg',
+    remoteSrc:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/Convallaria_majalis_in_Les_liliacees.jpg/1280px-Convallaria_majalis_in_Les_liliacees.jpg',
     pageUrl: 'https://commons.wikimedia.org/wiki/File:Convallaria_majalis_in_Les_liliacees.jpg',
     alt: '뿌리까지 그린 은방울꽃 전초 세밀화',
     artist: REDOUTE,
@@ -255,9 +307,10 @@ export const FLOWER_PLATES: Record<string, FlowerPlate> = {
   },
   chrysanthemum: {
     flowerId: 'chrysanthemum',
-    src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Flora_conspicua_%28Pl._51%29_%286046903472%29.jpg/1280px-Flora_conspicua_%28Pl._51%29_%286046903472%29.jpg',
-    pageUrl:
-      'https://commons.wikimedia.org/wiki/File:Flora_conspicua_(Pl._51)_(6046903472).jpg',
+    src: '/plates/chrysanthemum.jpg',
+    remoteSrc:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Flora_conspicua_%28Pl._51%29_%286046903472%29.jpg/1280px-Flora_conspicua_%28Pl._51%29_%286046903472%29.jpg',
+    pageUrl: 'https://commons.wikimedia.org/wiki/File:Flora_conspicua_(Pl._51)_(6046903472).jpg',
     alt: '진분홍 대륜 국화 한 송이 세밀화',
     artist: 'William Clark',
     work: 'Clark · Morris, Flora Conspicua',
@@ -268,7 +321,9 @@ export const FLOWER_PLATES: Record<string, FlowerPlate> = {
   },
   narcissus: {
     flowerId: 'narcissus',
-    src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Narcissus_pseudonarcissus_-_Les_liliac%C3%A9es%2C_vol._3_-_t._158.jpg/1280px-Narcissus_pseudonarcissus_-_Les_liliac%C3%A9es%2C_vol._3_-_t._158.jpg',
+    src: '/plates/narcissus.jpg',
+    remoteSrc:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Narcissus_pseudonarcissus_-_Les_liliac%C3%A9es%2C_vol._3_-_t._158.jpg/1280px-Narcissus_pseudonarcissus_-_Les_liliac%C3%A9es%2C_vol._3_-_t._158.jpg',
     pageUrl:
       'https://commons.wikimedia.org/wiki/File:Narcissus_pseudonarcissus_-_Les_liliacées,_vol._3_-_t._158.jpg',
     alt: '나팔 모양 부화관이 뚜렷한 노란 수선화 세밀화',
@@ -281,7 +336,9 @@ export const FLOWER_PLATES: Record<string, FlowerPlate> = {
   },
   'forget-me-not': {
     flowerId: 'forget-me-not',
-    src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a0/Favourite_flowers_of_garden_and_greenhouse_%2810593688896%29.jpg/1280px-Favourite_flowers_of_garden_and_greenhouse_%2810593688896%29.jpg',
+    src: '/plates/forget-me-not.jpg',
+    remoteSrc:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a0/Favourite_flowers_of_garden_and_greenhouse_%2810593688896%29.jpg/1280px-Favourite_flowers_of_garden_and_greenhouse_%2810593688896%29.jpg',
     pageUrl:
       'https://commons.wikimedia.org/wiki/File:Favourite_flowers_of_garden_and_greenhouse_(10593688896).jpg',
     alt: '자잘한 푸른 물망초가 모여 핀 세밀화',
@@ -294,8 +351,10 @@ export const FLOWER_PLATES: Record<string, FlowerPlate> = {
   },
   'cherry-blossom': {
     flowerId: 'cherry-blossom',
+    src: '/plates/cherry-blossom.jpg',
     // Advisor 확정 = B안(비테 세트). 나머지 30종과 판본·화풍이 같아 레인에 나란히 세워도 튀지 않는다.
-    src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/WitteHeinrichFlora1868-014-Prunus_japonica.png/1280px-WitteHeinrichFlora1868-014-Prunus_japonica.png',
+    remoteSrc:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/WitteHeinrichFlora1868-014-Prunus_japonica.png/1280px-WitteHeinrichFlora1868-014-Prunus_japonica.png',
     pageUrl:
       'https://commons.wikimedia.org/wiki/File:WitteHeinrichFlora1868-014-Prunus_japonica.png',
     alt: '겹분홍 꽃이 가득 달린 꽃가지 세밀화',
@@ -308,8 +367,11 @@ export const FLOWER_PLATES: Record<string, FlowerPlate> = {
   },
   camellia: {
     flowerId: 'camellia',
-    src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d1/The_Botanical_register_%28Plate_22%29_BHL8339.jpg/1280px-The_Botanical_register_%28Plate_22%29_BHL8339.jpg',
-    pageUrl: 'https://commons.wikimedia.org/wiki/File:The_Botanical_register_(Plate_22)_BHL8339.jpg',
+    src: '/plates/camellia.jpg',
+    remoteSrc:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d1/The_Botanical_register_%28Plate_22%29_BHL8339.jpg/1280px-The_Botanical_register_%28Plate_22%29_BHL8339.jpg',
+    pageUrl:
+      'https://commons.wikimedia.org/wiki/File:The_Botanical_register_(Plate_22)_BHL8339.jpg',
     alt: '희고 연분홍빛이 도는 겹동백 한 송이와 짙은 잎 세밀화',
     artist: 'Sydenham Edwards',
     work: 'Edwards, The Botanical Register',
@@ -319,7 +381,9 @@ export const FLOWER_PLATES: Record<string, FlowerPlate> = {
   },
   violet: {
     flowerId: 'violet',
-    src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ad/Favourite_flowers_of_garden_and_greenhouse_%28Pl._32%29_%287789059768%29.jpg/1280px-Favourite_flowers_of_garden_and_greenhouse_%28Pl._32%29_%287789059768%29.jpg',
+    src: '/plates/violet.jpg',
+    remoteSrc:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ad/Favourite_flowers_of_garden_and_greenhouse_%28Pl._32%29_%287789059768%29.jpg/1280px-Favourite_flowers_of_garden_and_greenhouse_%28Pl._32%29_%287789059768%29.jpg',
     pageUrl:
       'https://commons.wikimedia.org/wiki/File:Favourite_flowers_of_garden_and_greenhouse_(Pl._32)_(7789059768).jpg',
     alt: '겹꽃 파르마 제비꽃이 모여 핀 세밀화',
@@ -332,7 +396,9 @@ export const FLOWER_PLATES: Record<string, FlowerPlate> = {
   },
   iris: {
     flowerId: 'iris',
-    src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/dc/WitteHeinrichFlora1868-049-Iris_xiphium.png/1280px-WitteHeinrichFlora1868-049-Iris_xiphium.png',
+    src: '/plates/iris.jpg',
+    remoteSrc:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/d/dc/WitteHeinrichFlora1868-049-Iris_xiphium.png/1280px-WitteHeinrichFlora1868-049-Iris_xiphium.png',
     pageUrl: 'https://commons.wikimedia.org/wiki/File:WitteHeinrichFlora1868-049-Iris_xiphium.png',
     alt: '보라·황백·청자빛 아이리스 다섯 송이를 모은 세밀화',
     artist: WENDEL,
@@ -344,7 +410,9 @@ export const FLOWER_PLATES: Record<string, FlowerPlate> = {
   },
   marigold: {
     flowerId: 'marigold',
-    src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/Favourite_flowers_of_garden_and_greenhouse_%2810575191053%29.jpg/1280px-Favourite_flowers_of_garden_and_greenhouse_%2810575191053%29.jpg',
+    src: '/plates/marigold.jpg',
+    remoteSrc:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/Favourite_flowers_of_garden_and_greenhouse_%2810575191053%29.jpg/1280px-Favourite_flowers_of_garden_and_greenhouse_%2810575191053%29.jpg',
     pageUrl:
       'https://commons.wikimedia.org/wiki/File:Favourite_flowers_of_garden_and_greenhouse_(10575191053).jpg',
     alt: '노란 아프리칸 메리골드 세밀화',
@@ -356,7 +424,9 @@ export const FLOWER_PLATES: Record<string, FlowerPlate> = {
   },
   'corn-poppy': {
     flowerId: 'corn-poppy',
-    src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6d/Wayside_and_woodland_blossoms_%28Pl._61%29_%288747771268%29.jpg/1280px-Wayside_and_woodland_blossoms_%28Pl._61%29_%288747771268%29.jpg',
+    src: '/plates/corn-poppy.jpg',
+    remoteSrc:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6d/Wayside_and_woodland_blossoms_%28Pl._61%29_%288747771268%29.jpg/1280px-Wayside_and_woodland_blossoms_%28Pl._61%29_%288747771268%29.jpg',
     pageUrl:
       'https://commons.wikimedia.org/wiki/File:Wayside_and_woodland_blossoms_(Pl._61)_(8747771268).jpg',
     alt: '붉은 개양귀비 한 송이를 여백 넓게 그린 세밀화',
@@ -368,7 +438,9 @@ export const FLOWER_PLATES: Record<string, FlowerPlate> = {
   },
   jasmine: {
     flowerId: 'jasmine',
-    src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b0/Flore_m%C3%A9dicale_des_Antilles%2C_ou%2C_Trait%C3%A9_des_plantes_usuelles_%2810421471426%29.jpg/1280px-Flore_m%C3%A9dicale_des_Antilles%2C_ou%2C_Trait%C3%A9_des_plantes_usuelles_%2810421471426%29.jpg',
+    src: '/plates/jasmine.jpg',
+    remoteSrc:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b0/Flore_m%C3%A9dicale_des_Antilles%2C_ou%2C_Trait%C3%A9_des_plantes_usuelles_%2810421471426%29.jpg/1280px-Flore_m%C3%A9dicale_des_Antilles%2C_ou%2C_Trait%C3%A9_des_plantes_usuelles_%2810421471426%29.jpg',
     pageUrl:
       'https://commons.wikimedia.org/wiki/File:Flore_médicale_des_Antilles,_ou,_Traité_des_plantes_usuelles_(10421471426).jpg',
     alt: '흰 재스민 꽃가지와 꽃·씨 해부도를 함께 그린 세밀화',
@@ -380,7 +452,9 @@ export const FLOWER_PLATES: Record<string, FlowerPlate> = {
   },
   'babys-breath': {
     flowerId: 'babys-breath',
-    src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0a/Favourite_flowers_of_garden_and_greenhouse_%28Pl._34%29_%287789063128%29.jpg/1280px-Favourite_flowers_of_garden_and_greenhouse_%28Pl._34%29_%287789063128%29.jpg',
+    src: '/plates/babys-breath.jpg',
+    remoteSrc:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0a/Favourite_flowers_of_garden_and_greenhouse_%28Pl._34%29_%287789063128%29.jpg/1280px-Favourite_flowers_of_garden_and_greenhouse_%28Pl._34%29_%287789063128%29.jpg',
     pageUrl:
       'https://commons.wikimedia.org/wiki/File:Favourite_flowers_of_garden_and_greenhouse_(Pl._34)_(7789063128).jpg',
     alt: '자잘한 흰 꽃이 흩뿌려진 안개꽃 가지 세밀화',
@@ -393,7 +467,9 @@ export const FLOWER_PLATES: Record<string, FlowerPlate> = {
   },
   cosmos: {
     flowerId: 'cosmos',
-    src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/dc/Favourite_flowers_of_garden_and_greenhouse_%2810575182183%29.jpg/1280px-Favourite_flowers_of_garden_and_greenhouse_%2810575182183%29.jpg',
+    src: '/plates/cosmos.jpg',
+    remoteSrc:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/d/dc/Favourite_flowers_of_garden_and_greenhouse_%2810575182183%29.jpg/1280px-Favourite_flowers_of_garden_and_greenhouse_%2810575182183%29.jpg',
     pageUrl:
       'https://commons.wikimedia.org/wiki/File:Favourite_flowers_of_garden_and_greenhouse_(10575182183).jpg',
     alt: '연분홍에서 살구빛으로 물든 코스모스 세 송이 세밀화',
@@ -405,7 +481,9 @@ export const FLOWER_PLATES: Record<string, FlowerPlate> = {
   },
   magnolia: {
     flowerId: 'magnolia',
-    src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Magnolia_kobus_138-8428.jpg/1280px-Magnolia_kobus_138-8428.jpg',
+    src: '/plates/magnolia.jpg',
+    remoteSrc:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Magnolia_kobus_138-8428.jpg/1280px-Magnolia_kobus_138-8428.jpg',
     pageUrl: 'https://commons.wikimedia.org/wiki/File:Magnolia_kobus_138-8428.jpg',
     alt: '크림빛 바탕 위에 흰 목련 가지를 그린 세밀화',
     artist: 'Matilda Smith · J.N. Fitch',
@@ -416,7 +494,9 @@ export const FLOWER_PLATES: Record<string, FlowerPlate> = {
   },
   pansy: {
     flowerId: 'pansy',
-    src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/WitteHeinrichFlora1868-069-Viola_tricolor.png/1280px-WitteHeinrichFlora1868-069-Viola_tricolor.png',
+    src: '/plates/pansy.jpg',
+    remoteSrc:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/WitteHeinrichFlora1868-069-Viola_tricolor.png/1280px-WitteHeinrichFlora1868-069-Viola_tricolor.png',
     pageUrl: 'https://commons.wikimedia.org/wiki/File:WitteHeinrichFlora1868-069-Viola_tricolor.png',
     alt: '자주·노랑·적갈빛 팬지 아홉 송이가 모여 핀 세밀화',
     artist: WENDEL,
@@ -428,7 +508,9 @@ export const FLOWER_PLATES: Record<string, FlowerPlate> = {
   },
   poinsettia: {
     flowerId: 'poinsettia',
-    src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/01/Curtis%27s_botanical_magazine_%28Plate_3493%29_%288043241073%29.jpg/1280px-Curtis%27s_botanical_magazine_%28Plate_3493%29_%288043241073%29.jpg',
+    src: '/plates/poinsettia.jpg',
+    remoteSrc:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/0/01/Curtis%27s_botanical_magazine_%28Plate_3493%29_%288043241073%29.jpg/1280px-Curtis%27s_botanical_magazine_%28Plate_3493%29_%288043241073%29.jpg',
     pageUrl:
       "https://commons.wikimedia.org/wiki/File:Curtis's_botanical_magazine_(Plate_3493)_(8043241073).jpg",
     alt: '붉은 포엽이 화면을 채운 포인세티아 세밀화',
@@ -453,8 +535,11 @@ const IA_WIDTH: Record<PlateWidth, number> = { 250: 400, 500: 800, 1280: 1800 };
 /**
  * 그 폭의 이미지 주소.
  *
- * 레인 헤더의 44px 썸네일에 1280px 원판을 물리면 31줄에서 수십 MB 를 내려받는다 —
- * 폭을 줄이는 것이 성능이자 예의다(위키미디어가 핫링크를 만류하는 이유이기도 하다).
+ * ⚠ 자체 호스팅으로 옮긴 뒤로 **31종 전부 로컬 사본 한 벌(≤1100px)뿐**이라, `/plates/…` 는
+ *   폭을 갈아 끼울 자리가 없어 그대로 돌아간다(파일이 하나면 `width` 는 의도 표시일 뿐이다).
+ *   폭 치환 분기는 원격 주소를 그대로 쓰는 경우를 위해 남겨 둔다 — 다운로드가 실패한 꽃은
+ *   `src` 에 `remoteSrc` 를 남겨 두는 것이 폴백이고, 그때는 44px 썸네일에 1280px 원판을
+ *   물리지 않는 것이 성능이자 예의다(위키미디어가 핫링크를 만류하는 이유이기도 하다).
  * 아는 두 패턴만 갈아 끼우고, 모르는 주소는 **그대로 돌려준다**(깨뜨리지 않는다).
  */
 export function plateSrc(plate: FlowerPlate, width: PlateWidth = 250): string {

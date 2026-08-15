@@ -13,10 +13,10 @@ import {
 import { categoryOf } from '@/components/landing/landing-data';
 import StoriesArchive from '@/components/stories/StoriesArchive';
 import { STORY_CATEGORIES } from '@/components/stories/categories';
-import { plateCredits } from '@/components/stories/plates';
 import styles from '@/components/stories/stories.module.css';
 import type { ArchiveFilterChip, ArchiveLane, ArchiveStory } from '@/components/stories/types';
 import { loadCatalog } from '@/lib/data/catalog';
+import { plateCredits } from '@/lib/plates';
 import type { CatalogFlower, CatalogStory } from '@/lib/data/types';
 
 /**

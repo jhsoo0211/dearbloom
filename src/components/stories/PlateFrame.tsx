@@ -11,8 +11,9 @@
  * ⚠ 도판 위에 본문 텍스트를 올리지 마라(사용 규칙 3) — 밝은 바탕이라 아이보리 타이포가 죽는다.
  *
  * ── 실패는 조용히 감춘다 ─────────────────────────────────────────────
- * 위키미디어는 핫링크 연속 요청에 `HTTP 429` 를 돌려준다(문서 배포 규칙 2). 이 화면은
- * 도판이 없어도 성립해야 하므로, 실패하면 **아무것도 그리지 않는다** — 깨진 이미지 아이콘이
+ * 도판은 이제 우리 `public/plates/` 사본이라 예전처럼 위키미디어의 `HTTP 429` 로 통째로
+ * 사라지지는 않는다(문서 배포 규칙 1 — 자체 호스팅). 그래도 이 화면은 도판이 없어도
+ * 성립해야 하므로 실패 처리는 그대로 남긴다 — 파일 하나가 빠졌을 때 깨진 이미지 아이콘이
  * 레인 헤더마다 뜨는 쪽이 도판이 없는 쪽보다 훨씬 나쁘다.
  * ⚠ `onError` 만으로는 부족하다. 하이드레이션 **전에** 이미 실패한 이미지는 이벤트가 이미
  *   지나가 리스너에 걸리지 않는다 — 마운트 직후 `complete && naturalWidth === 0` 을 한 번
@@ -21,7 +22,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-import { plateSrc, type FlowerPlate, type PlateWidth } from './plates';
+import { plateSrc, type FlowerPlate, type PlateWidth } from '@/lib/plates';
 import styles from './stories.module.css';
 
 export interface PlateFrameProps {
@@ -59,7 +60,7 @@ export default function PlateFrame({
       data-plate={plate.flowerId}
       aria-hidden={decorative ? 'true' : undefined}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element -- 퍼블릭 도메인 도판 원격 URL. next/image 리모트 최적화는 도입하지 않았다(docs/illustration-assets.md). */}
+      {/* eslint-disable-next-line @next/next/no-img-element -- 자체 호스팅 도판 1벌(폭 변형 없음). next/image 최적화는 도입하지 않았다(docs/illustration-assets.md). */}
       <img
         ref={ref}
         className={styles.plateImg}

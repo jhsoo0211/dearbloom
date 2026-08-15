@@ -22,9 +22,9 @@
 
 import { useEffect, useRef, type KeyboardEvent } from 'react';
 
+import { plateFor, plateSourceLine } from '@/lib/plates';
 import PlateFrame from './PlateFrame';
 import { metaNotes } from './meta';
-import { plateFor, plateSourceLine } from './plates';
 import styles from './stories.module.css';
 import type { ArchiveStory } from './types';
 

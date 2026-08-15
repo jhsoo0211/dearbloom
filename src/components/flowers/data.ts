@@ -12,8 +12,13 @@
  * 문구를 여기서 새로 짓지 않는다. 라벨의 원본은 셋뿐이다:
  *   · 꽃말·가격·안전·상황 예시 → `@/components/flow/labels`
  *   · 이야기 각주 한 줄        → `@/components/stories/meta` 의 `metaNotes`
- *   · 카테고리 색감 이름       → `@/components/landing/landing-data` 의 `CATEGORY_THEMES`
+ *   · 꽃 계열 이름             → `@/components/stories/categories` 의 `storyCategoryLabel`
  * 같은 값이 화면마다 다른 말을 하지 않게 하려는 것이라, 라벨이 필요하면 저기부터 고친다.
+ *
+ * ⚠ 계열 이름은 **`숲빛·상아빛·금빛·와인빛·보랏빛`** 이다(`/stories` 의 필터 칩과 같은 말).
+ *   `landing-data` 의 `CATEGORY_THEMES[…].label`(`나이트 보태니컬` …)은 **테마 색감 이름**이라
+ *   랜딩이 "색감"을 소개할 때만 쓴다 — 도감에서 그걸 카테고리 이름으로 내보내면 같은 묶음이
+ *   화면마다 다른 이름을 갖게 된다(2026-08-15 Advisor 확정).
  */
 
 import {
@@ -29,13 +34,14 @@ import {
   storyConfidenceLabel,
   storyTypeLabel,
 } from '@/components/flow/labels';
-import { CATEGORY_THEMES, categoryOf } from '@/components/landing/landing-data';
+import { categoryOf } from '@/components/landing/landing-data';
+import { storyCategoryLabel } from '@/components/stories/categories';
 import { metaNotes } from '@/components/stories/meta';
 import type { ArchiveStory } from '@/components/stories/types';
 import type { Catalog, CatalogFlower, CatalogMeaning, CatalogStory } from '@/lib/data/types';
 import { pickStories } from '@/lib/engine';
+import { plateCredit, plateFor } from '@/lib/plates';
 import { CATEGORY_HINT, CATEGORY_ORDER, normalizeQuery } from './category';
-import { flowerPlate } from './illustrations';
 import type {
   FlowerDetailData,
   FlowerGroup,
@@ -83,7 +89,7 @@ function toSummary(
     nameEn: flower.nameEn,
     scientificName: flower.scientificName,
     category,
-    categoryLabel: CATEGORY_THEMES[category].label,
+    categoryLabel: storyCategoryLabel(category),
     meaning: meaning?.meaningKo ?? NO_MEANING,
     storyCount: storyCountByFlower.get(flower.id) ?? 0,
     // 검색은 **이름 세 가지**만 본다(한국어명·영문명·학명). 꽃말·이야기 본문까지 넣으면
@@ -102,7 +108,7 @@ function toSummary(
 function buildGroups(flowers: FlowerSummary[]): FlowerGroup[] {
   return CATEGORY_ORDER.map((category) => ({
     category,
-    label: CATEGORY_THEMES[category].label,
+    label: storyCategoryLabel(category),
     hint: CATEGORY_HINT[category],
     flowers: flowers.filter((flower) => flower.category === category),
   })).filter((group) => group.flowers.length > 0);
@@ -307,7 +313,9 @@ export function buildFlowerDetail(catalog: Catalog, slug: string): FlowerDetailD
   if (!flower) return undefined;
 
   const category = categoryOf(flower);
-  const plate = flowerPlate(flower.id);
+  // 도판 상수의 단일 원본은 `@/lib/plates` 다(`/stories` 레인·시트와 **같은 그림**을 쓴다).
+  // 화면에는 액자가 필요로 하는 것만 내려보낸다 — 주소·설명·크레딧, 그리고 있을 때만 각주.
+  const plate = plateFor(flower.id);
   const meaningGroups = buildMeaningGroups(flower, catalog.meanings);
   const meaningCount = meaningGroups.reduce((sum, group) => sum + group.items.length, 0);
 
@@ -317,9 +325,19 @@ export function buildFlowerDetail(catalog: Catalog, slug: string): FlowerDetailD
     nameEn: flower.nameEn,
     scientificName: flower.scientificName,
     category,
-    categoryLabel: CATEGORY_THEMES[category].label,
+    categoryLabel: storyCategoryLabel(category),
     categoryHint: CATEGORY_HINT[category],
-    ...(plate ? { plate } : {}),
+    ...(plate
+      ? {
+          plate: {
+            src: plate.src,
+            alt: plate.alt,
+            credit: plateCredit(plate),
+            // 종이 다르거나 판면에 손댄 도판만 갖는 한 줄 — 없는 꽃은 키 자체를 만들지 않는다.
+            ...(plate.note ? { note: plate.note } : {}),
+          },
+        }
+      : {}),
     headline: primaryMeaning(flower, catalog.meanings)?.meaningKo ?? NO_MEANING,
     meaningGroups,
     meaningCount,

@@ -63,9 +63,9 @@ import {
   type PointerEvent,
 } from 'react';
 
+import { plateFor } from '@/lib/plates';
 import PlateFrame from './PlateFrame';
 import { metaNotes } from './meta';
-import { plateFor } from './plates';
 import styles from './stories.module.css';
 import type { ArchiveLane, ArchiveStory } from './types';
 

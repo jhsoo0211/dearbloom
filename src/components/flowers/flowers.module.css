@@ -625,6 +625,17 @@
   letter-spacing: 0.01em;
   color: var(--fg-50);
 }
+/**
+ * 도판 각주 — 종이 다르거나 판면에 손댄 도판이 그 사실을 밝히는 자리.
+ * `/stories` 시트의 `.plateNoteTail` 과 **같은 규칙**이다: 크레딧 아래 줄을 바꿔 서고,
+ * 크레딧(`--fg-50`)보다 한 단 밝은 `--fg-70` 이다 — 출처는 참고지만 이 한 줄은 읽히라고 있다.
+ */
+.plateNote {
+  display: block;
+  margin-top: 4px;
+  letter-spacing: 0;
+  color: var(--fg-70);
+}
 
 .heroCat {
   display: inline-flex;

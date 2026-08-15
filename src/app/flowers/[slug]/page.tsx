@@ -81,15 +81,21 @@ export default async function FlowerDetailPage(props: PageProps<'/flowers/[slug]
               <figure className={styles.frame}>
                 <div className={styles.matte}>
                   <div className={styles.plate}>
-                    <FlowerPlate
-                      src={flower.plate?.src}
-                      alt={flower.plate?.alt}
-                      grade={flower.plate?.grade}
-                    />
+                    <FlowerPlate src={flower.plate?.src} alt={flower.plate?.alt} />
                   </div>
                 </div>
+                {/*
+                  도판 각주 — 종이 다르거나 판면에 손을 댄 도판은 `note` 로 그 사실을 밝힌다
+                  (`/stories` 시트의 `.plateNoteTail` 과 같은 규칙이다). 감추면 "벚꽃이라며
+                  다른 꽃을 보여 준" 화면이 된다. 없는 꽃에는 빈 요소도 세우지 않는다.
+                */}
                 {flower.plate && (
-                  <figcaption className={styles.plateCredit}>{flower.plate.credit}</figcaption>
+                  <figcaption className={styles.plateCredit}>
+                    {flower.plate.credit}
+                    {flower.plate.note && (
+                      <span className={styles.plateNote}>{flower.plate.note}</span>
+                    )}
+                  </figcaption>
                 )}
               </figure>
 

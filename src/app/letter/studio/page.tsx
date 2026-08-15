@@ -49,7 +49,7 @@ export default async function LetterStudioPage() {
         <div className={styles.wrap}>
           <h1 className={styles.title}>편지 쓰기</h1>
           <p className={`${styles.lead} ${styles.sub}`}>
-            적는 대로 오른쪽 편지지에 그대로 앉아요. 다 쓰면 편지 번호를 정하고, 그 번호를 전할
+            적는 대로 편지지에 그대로 앉아요. 다 쓰면 편지 번호를 정하고, 그 번호를 전할
             분께만 알려 주세요.
           </p>
         </div>

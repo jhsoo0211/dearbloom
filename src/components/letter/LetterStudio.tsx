@@ -337,6 +337,8 @@ export default function LetterStudio({ flowers, defaultTheme }: LetterStudioProp
                   title={option.hint}
                   onClick={() => update('theme', option.key)}
                 >
+                  {/* 계열색 점 — 도감 계열 칩과 같은 문법(점검 P1-6). 색은 CSS 가 data-theme 으로 정한다. */}
+                  <span className={styles.chipDot} aria-hidden="true" />
                   {option.label}
                 </button>
               );

@@ -488,7 +488,8 @@ body.db-nav-compact .db-nav {
 }
 .db-hero-card .db-cap {
   display: block;
-  font-size: 10.5px;
+  /* 12px — 라벨·캡션 최소선(§1.6b, 점검 P2-13). */
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -1281,8 +1282,10 @@ body.db-nav-compact .db-nav {
 .db-trust-row:last-child {
   border-bottom: 1px solid var(--hair);
 }
+/* 대기 상태 최소 불투명도 .72 — .45 는 대기 중 본문 3.03:1·골드 숫자 2.33:1 로 4.5:1 미달
+   (디자인 점검 P0-3 실측). .72 면 본문 6.2:1·38px 골드 4.25:1(대형 3:1)로 연출을 지키며 통과. */
 .db-page.db-motion-ready .db-trust-row {
-  opacity: 0.45;
+  opacity: 0.72;
 }
 .db-page.db-motion-ready .db-trust-row.db-is-active {
   opacity: 1;

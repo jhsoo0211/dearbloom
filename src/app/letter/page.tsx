@@ -49,7 +49,7 @@ export default async function LetterPage() {
       {/* ── 1. 인트로 ───────────────────────────────────────────── */}
       <section className={styles.intro}>
         <div className={styles.introBg} aria-hidden="true" />
-        <div className={styles.wrap}>
+        <div className={`${styles.wrap} ${styles.wrapNarrow}`}>
           <h1 className={styles.title}>비밀 편지</h1>
           <p className={`${styles.lead} ${styles.sub}`}>
             꽃 한 송이와 함께 봉해 두는 편지예요. 번호를 아는 분만 봉투를 열 수 있고, 열면 고른
@@ -60,7 +60,7 @@ export default async function LetterPage() {
 
       {/* ── 2. 열기 · 만들기 ────────────────────────────────────── */}
       <main>
-        <div className={styles.wrap}>
+        <div className={`${styles.wrap} ${styles.wrapNarrow}`}>
           <LetterEntrance flowers={flowers} />
         </div>
       </main>

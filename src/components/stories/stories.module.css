@@ -170,20 +170,19 @@
  * 누르는 것이 아니라 **읽는 표시**라 §1.6b 의 44px 규격 대상이 아니다
  * (필터 칩은 `.chip` 이 따로 있다 — 그쪽이 44px 고정이다).
  */
+/* 보더 없는 맨 라벨 — 필터 칩(h44 필)과 같은 모양이면 눌리는 물건으로 읽힌다(점검 P2-12).
+   태그는 정보지 컨트롤이 아니다. */
 .tag {
   display: inline-flex;
   align-items: center;
   min-height: 26px;
-  padding: 2px 10px;
-  border-radius: 9999px;
-  border: 1px solid var(--hair);
+  padding: 2px 4px;
   font-family: var(--font-sans);
   font-size: 12px;
   line-height: 1.5;
   color: var(--fg-50);
 }
 .tagMood {
-  border-color: var(--hair-2);
   color: var(--fg-70);
 }
 

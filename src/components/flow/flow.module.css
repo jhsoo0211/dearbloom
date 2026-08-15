@@ -274,7 +274,9 @@
 }
 .relNo {
   font-family: var(--font-serif);
-  font-weight: 200;
+  /* 300 — 웹폰트 200 페이스는 삭제됐다(폰트 다이어트). 200 을 남기면 폴백 글꼴에서만
+     초경량이 살아나 굵기가 튄다(점검 P2-14). */
+  font-weight: 300;
   font-size: 22px;
   line-height: 1;
   color: var(--fg-50);
@@ -1710,7 +1712,8 @@
   padding: 2px 7px;
   border: 1px solid var(--hair);
   border-radius: 999px;
-  font-size: 10px;
+  /* 12px — 라벨·캡션 최소선(§1.6b, 점검 P2-13). */
+  font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.06em;
   color: var(--fg-50);

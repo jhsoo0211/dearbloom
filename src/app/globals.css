@@ -419,7 +419,8 @@ body {
 
 :focus-visible {
   outline: 2px solid var(--focus);
-  outline-offset: 3px;
+  /* 2px — §1.6b 규격. 모듈 CSS 와 오프셋이 2원화돼 있던 것을 통일(점검 P1-9). */
+  outline-offset: 2px;
   border-radius: 2px;
 }
 
@@ -466,7 +467,7 @@ body {
 .db-skip:focus-visible {
   transform: none;
   outline: 2px solid var(--focus);
-  outline-offset: 3px;
+  outline-offset: 2px;
 }
 .db-skip-inline {
   /* 구간 안 링크는 화면 위쪽이 아니라 **제자리**에 떠야 한다. 숨을 때는 자리를 아예

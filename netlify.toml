@@ -1,0 +1,18 @@
+# Netlify 빌드 설정 — deploy/README.md 의 가이드와 한 벌이다.
+#
+# 이 서비스는 정적 사이트가 아니다 — 추천(/recommend)과 멘트 생성이 서버 액션으로 돌아
+# zip 드래그 앤 드롭 배포로는 동작하지 않는다. 반드시 git 연결(또는 Netlify CLI) 배포를 쓰고,
+# Next.js 런타임 플러그인이 서버 액션을 함수로 옮기게 둔다.
+#
+# ⚠ API 키는 여기에도, 리포 어디에도 넣지 않는다. Netlify 대시보드
+#   Site settings → Environment variables 에서만 넣는다(deploy/README.md 의 표 참조).
+
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "24"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"

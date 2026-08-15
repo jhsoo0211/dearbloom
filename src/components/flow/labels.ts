@@ -17,6 +17,7 @@ import type {
   Relationship,
   SeasonStatus,
   Severity,
+  SourceKind,
   Species,
   StoryMood,
   StoryType,
@@ -179,6 +180,51 @@ export const STORY_CONFIDENCE_LABELS: Record<'repeated' | 'varies' | 'single_sou
   single_source: '드물게 전해지는 이야기예요',
 };
 
+/**
+ * 단일 출처라도 "카더라"가 아닌 출처들(§1.5d 개정 2026-08-15).
+ * 논문·박물관·퍼블릭 도메인 원문·신문·식물원 자료는 출처가 하나여도 그 하나가 기록이다.
+ */
+export const DOCUMENTED_SOURCE_KINDS: readonly SourceKind[] = [
+  'paper',
+  'museum',
+  'book-pd',
+  'newspaper',
+  'garden',
+];
+
+/** 위 다섯 갈래의 single_source 가 받는 문구. */
+export const DOCUMENTED_SINGLE_SOURCE_LABEL = '기록으로 남아 있는 이야기예요';
+
+/**
+ * 이야기의 신뢰 문구를 고른다 — **이야기 라벨의 유일한 진입점이다.**
+ *
+ * `confidence_level` 만 보면 `single_source` 40편이 전부 "드물게 전해지는 이야기예요" 를
+ * 달게 된다. 그런데 그중 29편은 학술 논문·국가기록원·1839년 『보태니컬 매거진』 원문처럼
+ * **출처가 하나일 뿐 단단한** 자료다. 저 문구는 원래 1차 사료가 없는 전승을 위한 말이라
+ * 그런 행에 붙으면 오히려 우리가 우리 데이터를 깎아내리게 된다. 그래서
+ * "출처가 몇 개인가"(confidence)와 "그 하나가 무엇인가"(sourceKind)를 함께 읽는다.
+ *
+ * repeated·varies 는 이미 출처 수가 말해 주므로 갈리지 않는다.
+ * sourceKind 가 없으면 보수적인 쪽(기존 문구)으로 떨어진다 — 없는 근거를 지어내지 않는다.
+ *
+ * 결과 화면(actions.ts)과 이야기 아카이브(/stories)가 **같은 이 함수를 쓴다.**
+ * 같은 이야기가 두 화면에서 다른 신뢰 문구를 다는 일이 생기지 않게 하려는 것이라,
+ * 라벨을 새로 계산하려거든 여기부터 고친다.
+ */
+export function storyConfidenceLabel(
+  confidenceLevel: 'repeated' | 'varies' | 'single_source',
+  sourceKind?: SourceKind,
+): string {
+  if (
+    confidenceLevel === 'single_source' &&
+    sourceKind !== undefined &&
+    DOCUMENTED_SOURCE_KINDS.includes(sourceKind)
+  ) {
+    return DOCUMENTED_SINGLE_SOURCE_LABEL;
+  }
+  return STORY_CONFIDENCE_LABELS[confidenceLevel];
+}
+
 export const AVAILABILITY_LABELS: Record<SeasonStatus, string> = {
   in_season: '지금이 제철이라 상태 좋은 꽃을 만나기 쉬워요',
   limited: '제철을 살짝 비껴갔어요 — 구할 수는 있지만 값이 오를 수 있어요',
@@ -261,6 +307,8 @@ const REGION_WORDS: Record<string, string> = {
   france: '프랑스',
   uk: '영국',
   england: '잉글랜드',
+  scotland: '스코틀랜드',
+  spain: '스페인',
   italy: '이탈리아',
   belgium: '벨기에',
   germany: '독일',
@@ -279,6 +327,8 @@ const REGION_WORDS: Record<string, string> = {
   persia: '페르시아',
   bulgaria: '불가리아',
   africa: '아프리카',
+  kenya: '케냐',
+  mauritius: '모리셔스',
   china: '중국',
   taiwan: '대만',
   japan: '일본',

@@ -8,8 +8,8 @@ DB는 이 CSV에서 시드(upsert)될 뿐, 반대로 DB를 직접 고치지 않�
 | 파일 | 내용 | 현재 행 수 |
 |---|---|---|
 | `flowers.csv` | 꽃 기본 정보 | 31 |
-| `meanings.csv` | 꽃말(출처 필수) | 138 |
-| `stories.csv` | 꽃에 얽힌 일화(창작 외 출처 필수) | 196 |
+| `meanings.csv` | 꽃말(출처 필수) | 168 |
+| `stories.csv` | 꽃에 얽힌 일화(창작 외 출처 필수) | 250 |
 | `rules.csv` | 상황 → 꽃 추천/회피 규칙 | 7 |
 | `templates.csv` | 메시지 템플릿 | 3 |
 | `quotes.csv` | 인용문 | 3 |
@@ -50,6 +50,15 @@ DB는 이 CSV에서 시드(upsert)될 뿐, 반대로 DB를 직접 고치지 않�
     **신규 14종 60편**(`docs/catalog-expansion-2-research.md`)과
     **기존 17종 심화 47편**(`docs/story-research-2.md`). 후자는 메모에 문서 안 번호를
     `#47` 처럼 함께 남겨 두었다.
+  - `seed-v5:` — 한국 인기 절화 11종 심화 (2026-08-15, `docs/story-research-3.md`).
+    `stories.csv` 54행 + `meanings.csv` 30행. 메모에 문서 안 번호(`#7`)를 남겼고,
+    문서 §9(명예·정확성 프레이밍)가 걸린 행은 메모에 `/ §9: …` 로 **권장 프레이밍을 그대로
+    옮겨 두었다** — 본문을 고칠 때 그 제약을 먼저 읽으라는 뜻이다.
+    같은 회차에 `stories.csv` 에 `source_kind` 컬럼이 생겼고, **기존 196행은 `source_url`
+    도메인으로 일괄 소급 분류**했다(아래 참조).
+    문서가 넘긴 55편 중 **1편은 싣지 않았다** — `story-carnation-korea-paper-flower`
+    (스승의 날 카네이션에 대한 청탁금지법 유권해석). 권익위 지침이 이후 바뀌었을 수 있어
+    **재확인 전까지 보류**다(문서 §9-1·§10-1). 지침을 다시 확인하면 문서 표 그대로 넣으면 된다.
 
 ## 절대 하지 말 것
 
@@ -109,7 +118,8 @@ npm run seed:apply    # 실제 upsert (Supabase 환경변수 필요)
 조사 경위·열람 URL·제외 판단은 **`docs/story-research.md`**(기존 9종),
 **`docs/catalog-expansion-research.md`**(seed-v3, 신규 8종 + 농사로 작약 설화 2편),
 **`docs/catalog-expansion-2-research.md`**(seed-v4, 신규 14종 60편),
-**`docs/story-research-2.md`**(seed-v4, 기존 17종 심화 47편)에 남긴다.
+**`docs/story-research-2.md`**(seed-v4, 기존 17종 심화 47편),
+**`docs/story-research-3.md`**(seed-v5, 한국 인기 절화 11종 심화 54편)에 남긴다.
 
 `culture_region` · `era` 는 **`src/components/flow/labels.ts` 가 한국어 라벨을 갖고 있는 값만**
 쓴다. 라벨이 없으면 문화권은 화면에 영문 slug 가 그대로 나오고, 시대는 통째로 감춰진다.
@@ -166,8 +176,46 @@ design-spec §1.5f. 네 값만 쓴다.
   출처가 약하다고 `folklore` 로 내리지 않는다.
 
 이 기준으로 12행을 재배정했다 — `folklore`→`history` 8행, `history`→`folklore` 2행,
-`literary`→`history` 2행. 현재 분포는 `history` 141 · `folklore` 41 · `literary` 14 ·
-`original` 0 이다.
+`literary`→`history` 2행. seed-v5 54행(`history` 50 · `literary` 3 · `folklore` 1)까지
+더한 현재 분포는 `history` 191 · `folklore` 42 · `literary` 17 · `original` 0 이다.
+
+#### `source_kind` — 그 출처가 무엇인가 (2026-08-15 신설)
+
+`confidence_level` 이 **"출처가 몇 개인가"** 라면 이 컬럼은 **"그 하나가 무엇인가"** 다.
+둘을 같이 봐야 화면 문구가 정직해진다.
+
+| 값 | 뜻 | 단일 출처일 때 화면 문구 |
+|---|---|---|
+| `paper` | 학술 논문 | **기록으로 남아 있는 이야기예요** |
+| `museum` | 박물관·국가기록원 등 기관 자료 | **기록으로 남아 있는 이야기예요** |
+| `book-pd` | 퍼블릭 도메인 고서 원문(Gutenberg·Internet Archive·위키문헌) | **기록으로 남아 있는 이야기예요** |
+| `newspaper` | 신문 | **기록으로 남아 있는 이야기예요** |
+| `garden` | 식물원·대학 익스텐션·농업/독성 기관 자료 | **기록으로 남아 있는 이야기예요** |
+| `magazine` | 잡지·칼럼·블로그 기고 | 드물게 전해지는 이야기예요 |
+| `wiki` | 위키·백과사전·정리 사이트 | 드물게 전해지는 이야기예요 |
+| `other` | 위 어디에도 넣기 어려운 것 | 드물게 전해지는 이야기예요 |
+
+- **이 컬럼을 만든 이유.** `single_source` 40편 중 **29편(72.5%)** 은 국립원예특작과학원
+  연구보고서나 1839년 『보태니컬 매거진』 원문처럼 **출처가 하나일 뿐 단단한** 자료다.
+  `confidence_level` 만 보고 라벨을 붙이면 그 29편까지 "드물게 전해지는 이야기예요"(원래
+  1차 사료 없는 카더라를 위한 문구)를 달아 우리가 우리 데이터를 깎아내리게 된다.
+  화면 분화는 `storyConfidenceLabel()`(`src/components/flow/labels.ts`) 한 곳에서만 한다.
+- **필수 컬럼이다.** 비거나 여덟 값 밖이면 시드 실패. `story_type = original`(창작)이라
+  출처가 없는 행도 값은 적어야 하며, 그 자리에는 `other` 를 쓴다.
+- **애매하면 `other`.** 여덟 값 중 `other`·`wiki`·`magazine` 은 보수적인 쪽(기존 문구)으로
+  떨어지므로, 확신이 없을 때 `other` 를 고르면 과장은 절대 일어나지 않는다. 반대로 `paper`·
+  `museum` 을 잘못 붙이면 화면이 없는 신뢰를 주장하게 된다 — **의심스러우면 내려 적는다.**
+- **기존 196행은 `source_url` 도메인으로 일괄 소급 분류했다**(2026-08-15). 결과는
+  `wiki` 160 · `garden` 9 · `magazine` 8 · `other` 8 · `book-pd` 7 · `newspaper` 3 · `paper` 1.
+  1·2차 조사가 사실상 위키피디아 단일 소스였다는 사실이 이 숫자로 드러난다.
+  seed-v5 54행까지 더한 전체 분포는 `wiki` 164 · `garden` 20 · `newspaper` 17 ·
+  `magazine` 14 · `book-pd` 12 · `paper` 11 · `other` 8 · `museum` 4 다.
+- 소급 분류의 판단 근거: 위키피디아·위키낱말사전·상징 정리 사이트 → `wiki` / Gutenberg·
+  Internet Archive·위키문헌·PD 고서 전문 사이트 → `book-pd` / ASPCA·NC State Extension·
+  SANBI·농사로·홍콩 병원관리국 독성식물도감 → `garden` / PMC·KCI·KoreaScience·ScienceON →
+  `paper` / 신문사 도메인 → `newspaper` / 개인·기관 칼럼 블로그 → `magazine` / 나머지 →
+  `other`. **도메인 규칙이라 개별 행의 성격과 어긋날 수 있다** — 새 행을 넣을 때는 도메인이
+  아니라 그 자료가 실제로 무엇인지를 보고 적는다.
 
 #### 선별 태그 — `moods` / `intents` / `hook`
 
@@ -197,6 +245,8 @@ design-spec §1.5f. 네 값만 쓴다.
 - `stories.source_url` 도 마찬가지로 필수다. 출처 없는 일화는 싣지 않는다.
   **유일한 예외가 `story_type = original`**(dearbloom 창작)이고, 그 대신 화면 창작 라벨이 붙는다.
 - `stories.story_type` 은 필수다. 비어 있거나 네 값 밖이면 시드 실패.
+- `stories.source_kind` 도 필수다. 비어 있거나 여덟 값 밖이면 시드 실패.
+  창작(`original`) 행처럼 출처가 없어도 값은 적는다 — 그 자리는 `other` 다.
 - `stories.moods` 는 최소 1개 필수다. 빈 값이면 시드 실패.
   (`stories.intents` 는 반대로 비워 두는 것이 "모든 상황"이라는 정상 값이다.)
 - `rules` 의 `fit_score`(0~100) 와 `avoid_reason` 은 **정확히 하나만** 채운다.
@@ -221,6 +271,7 @@ design-spec §1.5f. 네 값만 쓴다.
 | `quotes.license` | `pd` `original` |
 | `stories.moods` | `romantic` `tragic` `funny` `mythic` `dramatic` `healing` |
 | `stories.story_type` | `folklore` `history` `literary` `original` |
+| `stories.source_kind` | `paper` `magazine` `museum` `newspaper` `book-pd` `garden` `wiki` `other` |
 
 `stories.intents` 는 위 `intent` 어휘를 그대로 쓰되 파이프로 여러 개를 적을 수 있다.
 

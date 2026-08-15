@@ -76,6 +76,34 @@ export const STORY_MOODS = [
  */
 export const STORY_TYPES = ['folklore', 'history', 'literary', 'original'] as const;
 
+/**
+ * 출처가 어떤 성격의 자료인가(stories.source_kind) — design-spec §1.5d 개정(2026-08-15).
+ *   paper     — 학술 논문
+ *   magazine  — 잡지·칼럼·블로그 기고
+ *   museum    — 박물관·국가기록원 등 기관 자료
+ *   newspaper — 신문
+ *   book-pd   — 퍼블릭 도메인 고서 원문
+ *   garden    — 식물원·대학 익스텐션·농업/독성 기관 자료
+ *   wiki      — 위키·백과사전·정리 사이트
+ *   other     — 위 어디에도 넣기 어려운 것
+ *
+ * **화면 문구가 여기에 매달려 있다.** `confidence_level = single_source` 라도 이 값이
+ * paper·museum·book-pd·newspaper·garden 이면 "기록으로 남아 있는 이야기예요" 로 갈린다
+ * (`storyConfidenceLabel`, src/components/flow/labels.ts). 1839년 원문이나 정부 보고서에
+ * "드물게 전해지는" 이라는 카더라 라벨을 붙이지 않기 위한 컬럼이다 —
+ * 현재 single_source 40편 중 29편(72.5%)이 그런 행이다.
+ */
+export const SOURCE_KINDS = [
+  'paper',
+  'magazine',
+  'museum',
+  'newspaper',
+  'book-pd',
+  'garden',
+  'wiki',
+  'other',
+] as const;
+
 export type RelationshipType = (typeof RELATIONSHIP_TYPES)[number];
 export type Intent = (typeof INTENTS)[number];
 export type Tone = (typeof TONES)[number];
@@ -86,6 +114,7 @@ export type ConfidenceLevel = (typeof CONFIDENCE_LEVELS)[number];
 export type QuoteLicense = (typeof QUOTE_LICENSES)[number];
 export type StoryMood = (typeof STORY_MOODS)[number];
 export type StoryType = (typeof STORY_TYPES)[number];
+export type SourceKind = (typeof SOURCE_KINDS)[number];
 
 /* ------------------------------------------------------------------ *
  * 변환 코덱
@@ -455,6 +484,11 @@ export const PetSafetyRowSchema = z
  * 출처가 없다는 사실 자체가 "이건 우리가 지어낸 이야기"라는 표시가 되게 묶어 둔다.
  * (DB 쪽 같은 규칙: 0006_story_type.sql 의 flower_stories_source_required CHECK)
  *
+ * `source_kind` 는 그 출처가 **어떤 성격의 자료인지**를 말한다(논문·박물관·신문·고서 …).
+ * `confidence_level` 이 "출처가 몇 개인가"라면 이쪽은 "그 하나가 무엇인가"라서, 둘을 같이
+ * 봐야 화면 문구가 정직해진다 — 단일 출처라도 1839년 원문이면 "기록으로 남아 있는
+ * 이야기"이지 "드물게 전해지는 이야기"가 아니다(§1.5d 개정, SOURCE_KINDS 주석 참조).
+ *
  * 선별 태그 3종(선별기: `src/lib/engine/stories.ts` 의 pickStories)
  *   moods   — 이야기의 결. 최소 1개 필수. 첫 값이 대표 분위기이며 목록의 다양성 기준이 된다.
  *   intents — 이 이야기가 특히 어울리는 상황. **비워 두면 "모든 상황"** 이라는 뜻이다.
@@ -478,6 +512,7 @@ export const StoryRowSchema = z
     moods: requiredEnumList('moods', STORY_MOODS),
     intents: optionalEnumList('intents', INTENTS),
     hook: optionalText(),
+    source_kind: requiredEnum('source_kind', SOURCE_KINDS),
   })
   .superRefine((row, ctx) => {
     if (row.story_type !== 'original' && row.source_url === undefined) {
@@ -631,7 +666,7 @@ export interface CrossValidateResult {
  *  2. 반려동물 안전성 커버리지 — 모든 꽃이 cat·dog 두 종 모두에 대해 판정을 갖는가.
  *     "모르면 표시 안 함"이 아니라 "모르면 시드 실패"로 막는다.
  *  3. 공유 어휘 일치 — rules / templates 의 relationship_type·intent·tone,
- *     그리고 stories 의 moods·intents·story_type 이 어휘 안에 있는가.
+ *     그리고 stories 의 moods·intents·story_type·source_kind 가 어휘 안에 있는가.
  *     행 스키마가 이미 enum 으로 막지만, 어휘가 늘어날 때 파일마다 따로 새지 않도록
  *     "모든 파일이 같은 어휘를 쓴다"는 사실을 여기서 한 번 더 못 박는다.
  */
@@ -724,6 +759,7 @@ export function crossValidate(data: SeedDataset): CrossValidateResult {
   const tones = new Set<string>(TONES);
   const moods = new Set<string>(STORY_MOODS);
   const storyTypes = new Set<string>(STORY_TYPES);
+  const sourceKinds = new Set<string>(SOURCE_KINDS);
 
   const check = (
     key: SeedFileKey,
@@ -766,10 +802,11 @@ export function crossValidate(data: SeedDataset): CrossValidateResult {
     checkEach('stories', row.line, 'moods', row.value.moods, moods);
     checkEach('stories', row.line, 'intents', row.value.intents, intents);
     check('stories', row.line, 'story_type', row.value.story_type, storyTypes);
+    check('stories', row.line, 'source_kind', row.value.source_kind, sourceKinds);
   }
   const vocabFailures = issues.length - vocabBefore;
   checks.push({
-    name: '공유 어휘 일치 (relationship·intent·tone·mood·story_type)',
+    name: '공유 어휘 일치 (relationship·intent·tone·mood·story_type·source_kind)',
     ok: vocabFailures === 0,
     detail:
       vocabFailures === 0

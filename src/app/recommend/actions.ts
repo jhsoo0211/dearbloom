@@ -47,7 +47,6 @@ import {
   RELATIONSHIP_TO_LABELS,
   SEVERITY_LABELS,
   SPECIES_LABELS,
-  STORY_CONFIDENCE_LABELS,
   STORY_MOOD_FILTERS,
   STORY_MOOD_LABELS,
   TONE_LABELS,
@@ -59,6 +58,7 @@ import {
   flowerForm,
   flowerOccasions,
   regionLabel,
+  storyConfidenceLabel,
   storyTypeLabel,
   toxicPartLabel,
 } from '@/components/flow/labels';
@@ -116,7 +116,7 @@ function toStoryCard(story: StoryRow): StoryCard {
     body: story.storyKo,
     isOriginal,
     typeLabel: storyTypeLabel(story.storyType),
-    confidenceLabel: STORY_CONFIDENCE_LABELS[story.confidenceLevel],
+    confidenceLabel: storyConfidenceLabel(story.confidenceLevel, story.sourceKind),
     moods: story.moods,
     moodLabels: story.moods.map((mood) => STORY_MOOD_LABELS[mood]),
   };

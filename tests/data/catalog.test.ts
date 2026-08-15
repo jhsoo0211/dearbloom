@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
+import { SOURCE_KINDS } from '../../db/seed/schemas';
 import { clearCatalogCache, loadCatalog } from '@/lib/data/catalog';
 import { recommend } from '@/lib/engine';
 import { pickStories } from '@/lib/engine/stories';
@@ -16,7 +17,7 @@ import type { Catalog } from '@/lib/data/types';
  */
 
 const EXPECTED_FLOWERS = 31;
-const EXPECTED_STORIES = 196;
+const EXPECTED_STORIES = 250;
 
 async function load(): Promise<Catalog> {
   return loadCatalog();
@@ -90,6 +91,17 @@ describe('loadCatalog', () => {
       if (story.storyType === 'original') continue;
       expect(story.sourceUrl, `${story.storyId} 에 출처가 없습니다`).toMatch(/^https?:\/\//);
     }
+  });
+
+  it('모든 이야기가 source_kind 를 싣고 온다 (화면 신뢰 문구가 여기에 매달려 있다)', async () => {
+    const catalog = await load();
+
+    for (const story of catalog.stories) {
+      expect(SOURCE_KINDS, `${story.storyId} 의 source_kind`).toContain(story.sourceKind);
+    }
+    // 소스가 한 갈래로만 몰려 있으면 라벨을 갈라 둔 의미가 없다.
+    const kinds = new Set(catalog.stories.map((story) => story.sourceKind));
+    expect(kinds.size).toBeGreaterThanOrEqual(5);
   });
 
   it('두 번 불러도 같은 객체를 돌려준다 (요청마다 다시 읽지 않는다)', async () => {

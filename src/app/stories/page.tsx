@@ -2,12 +2,12 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 import {
-  STORY_CONFIDENCE_LABELS,
   STORY_MOOD_FILTERS,
   STORY_MOOD_LABELS,
   colorChoice,
   eraLabel,
   regionLabel,
+  storyConfidenceLabel,
   storyTypeLabel,
 } from '@/components/flow/labels';
 import StoriesArchive from '@/components/stories/StoriesArchive';
@@ -60,7 +60,7 @@ function toArchiveStory(story: CatalogStory, flowerNameKo: string): ArchiveStory
     body: story.storyKo,
     isOriginal,
     typeLabel: storyTypeLabel(story.storyType),
-    confidenceLabel: STORY_CONFIDENCE_LABELS[story.confidenceLevel],
+    confidenceLabel: storyConfidenceLabel(story.confidenceLevel, story.sourceKind),
     moods: story.moods,
     moodLabels: story.moods.map((mood) => STORY_MOOD_LABELS[mood]),
   };

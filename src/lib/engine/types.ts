@@ -34,6 +34,24 @@ export type StoryMood = 'romantic' | 'tragic' | 'funny' | 'mythic' | 'dramatic' 
  * 네 갈래 중 유일하게 출처(sourceUrl)가 면제된다.
  */
 export type StoryType = 'folklore' | 'history' | 'literary' | 'original';
+/**
+ * 출처가 어떤 성격의 자료인가(stories.csv 의 source_kind) — design-spec §1.5d 개정.
+ *   paper(논문) | magazine(잡지·칼럼) | museum(박물관·기관) | newspaper(신문)
+ *   | book-pd(퍼블릭 도메인 고서) | garden(식물원·익스텐션) | wiki(위키·사전) | other
+ *
+ * `confidenceLevel` 이 "출처가 몇 개인가"라면 이쪽은 "그 하나가 무엇인가"다.
+ * 화면은 둘을 함께 읽어 신뢰 문구를 고른다(`storyConfidenceLabel`).
+ * 어휘의 단일 원본은 `db/seed/schemas.ts` 의 SOURCE_KINDS.
+ */
+export type SourceKind =
+  | 'paper'
+  | 'magazine'
+  | 'museum'
+  | 'newspaper'
+  | 'book-pd'
+  | 'garden'
+  | 'wiki'
+  | 'other';
 export type Species = 'cat' | 'dog';
 export type Severity = 'none' | 'mild_gi' | 'serious' | 'life_threatening';
 export type SeasonStatus = 'in_season' | 'limited' | 'out_of_season' | 'unknown';
@@ -110,6 +128,8 @@ export interface FlowerMeaningRow {
  *   storyType — 이야기의 갈래. 없으면 'folklore' 로 본다(CSV·DB 의 기본값과 같다).
  *   sourceUrl — storyType 이 'original' 인 창작 이야기에서만 비어 있을 수 있다.
  *               화면은 'original' 을 반드시 창작 라벨과 함께 보여 준다.
+ *   sourceKind — 그 출처가 어떤 성격의 자료인가. 없으면 'other' 로 본다(CSV·DB 의 기본값과
+ *               같고, 신뢰 문구가 보수적인 쪽으로 떨어진다).
  */
 export interface StoryRow {
   storyId: string;
@@ -122,6 +142,7 @@ export interface StoryRow {
   sourceUrl?: string;
   confidenceLevel: 'repeated' | 'varies' | 'single_source';
   storyType?: StoryType;
+  sourceKind?: SourceKind;
   moods: StoryMood[];
   intents?: Intent[];
   hook?: string;

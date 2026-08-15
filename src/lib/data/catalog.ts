@@ -171,6 +171,7 @@ function mapStory(row: StoryCsvRow): CatalogStory {
     sourceUrl: row.source_url,
     confidenceLevel: row.confidence_level,
     storyType: row.story_type,
+    sourceKind: row.source_kind,
     moods: row.moods,
     intents: row.intents,
     hook: row.hook,

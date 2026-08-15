@@ -14,6 +14,13 @@
  *       가로줄 하나만 남은 빈 화면이 된다.
  *   · 결(mood) = 진짜 필터. 레인 **안의** 카드를 거르고, 0편이 된 레인은 통째로 감춘다.
  *
+ * 레인 안의 **순서**는 여기서 다시 짠다(`diversifyByMood`). 레인은 앞의 8장만 카드로
+ * 세우기 때문에(StoryLane 의 상한), csv 순서 그대로 두면 같은 결이 몰린 꽃은 8장이
+ * 전부 한 가지 결로 채워진다 — 아카이브의 값인 "결이 여러 가지구나" 가 안 보인다.
+ *
+ * ⚠ 상한은 **보이는 카드**에만 걸린다. 시트의 이전/다음이 도는 `flat` 은 접힌 이야기까지
+ *   전부 들고 있다 — 카드로 안 보이는 이야기도 넘겨서 읽을 수 있어야 탐색이 된다.
+ *
  * 여기서 문장을 새로 지어내지 않는다 — 라벨은 전부 서버가 붙여 준 값이다.
  */
 
@@ -31,6 +38,32 @@ function prefersReduce(): boolean {
   return (
     typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
   );
+}
+
+/**
+ * 같은 결이 연달아 나오지 않게 레인 안의 순서를 다시 짠다.
+ *
+ * 엔진의 `pickStories` 가 "다른 이야기도 보기" 를 고를 때 쓰는 그리디 1패스와 같은 규칙이다
+ * (`src/lib/engine/stories.ts`의 `diversifyByMood`). 후보를 **버리지 않고** 자리만 미루므로
+ * 편수는 그대로고, 결이 하나뿐인 꽃은 원래 순서를 유지한다.
+ *
+ * 무작위가 아니라 입력 순서만으로 정해지는 결정적 함수다 — 다시 찾아온 사람이 같은
+ * 자리에서 같은 이야기를 만난다(서버가 csv 순서를 고정해 둔 이유와 같다).
+ */
+function diversifyByMood(stories: ArchiveStory[]): ArchiveStory[] {
+  const rest = [...stories];
+  const ordered: ArchiveStory[] = [];
+  let lastMood: string | undefined;
+
+  while (rest.length > 0) {
+    let index = rest.findIndex((story) => story.moods[0] !== lastMood);
+    if (index === -1) index = 0; // 남은 이야기가 전부 같은 결 — 원래 순서대로 채운다
+    const [next] = rest.splice(index, 1);
+    ordered.push(next);
+    lastMood = next.moods[0];
+  }
+
+  return ordered;
 }
 
 export interface StoriesArchiveProps {
@@ -54,16 +87,17 @@ export default function StoriesArchive({ lanes, moodChips }: StoriesArchiveProps
     else laneNodes.current.delete(flowerId);
   }, []);
 
-  /** 결로 거른 레인. 0편이 된 줄은 여기서 사라진다. */
+  /** 결로 거르고 결 다양성으로 다시 정렬한 레인. 0편이 된 줄은 여기서 사라진다. */
   const visible = useMemo(
     () =>
       lanes
         .map((lane) => ({
           lane,
-          stories:
+          stories: diversifyByMood(
             mood === ALL
               ? lane.stories
               : lane.stories.filter((story) => story.moods.includes(mood)),
+          ),
         }))
         .filter((row) => row.stories.length > 0),
     [lanes, mood],

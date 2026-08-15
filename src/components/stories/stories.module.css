@@ -17,6 +17,8 @@
   --pad: 22px;
   --maxw: 1180px;
   --dur: 220ms;
+  /* 레인 한 줄의 높이. 지연 렌더의 자리표시가 이 값이다 — 아래 `.strip` 주석 참고. */
+  --lane-h: 376px;
 
   /* 표면 틴트 — flow.module.css 와 같은 규칙(테마 변수에서 파생) */
   --surface: color-mix(in srgb, var(--fg) 5%, transparent);
@@ -458,10 +460,41 @@
   stroke-linejoin: round;
 }
 
+/**
+ * 레인 높이를 **미리 고정한다.**
+ *
+ * 레인은 뷰포트에 가까워질 때 카드를 마운트한다(StoryLane 의 지연 렌더). 카드가 들어서는
+ * 순간 줄 높이가 달라지면 그 아래 30줄이 통째로 밀려 — 스크롤 중에 읽던 자리를 잃는다.
+ * 그래서 스트립에 `min-height` 를 걸어 **빈 줄과 채워진 줄의 상자를 같게** 만든다.
+ * 자리표시는 별도 요소가 아니라 같은 `.strip` 이라(유령 카드만 다르다) 정확히 일치한다.
+ *
+ * 값은 "그 폭에서 가장 키 큰 카드"를 잰 실측치다(카드 최대 높이 + 스트립 세로 패딩 20px).
+ * 카드 높이는 폭이 좁을수록 커진다(꼬리표가 한 줄 더 접힌다) — 그런데 `.slide` 의 폭은
+ * 중단점마다 갈라져서(78vw → 2.25장 → 3.3장 → 4.2장) **넓은 화면이 늘 더 큰 것이 아니다.**
+ * 640px 에서 카드가 259px 로 가장 좁아 다시 커지는 식이라, 값이 오르내린다. 상수를 만지려면
+ * 반드시 320·360·640·768·1040·1280 을 다시 재라 — 부족하면 CLS 가, 남으면 카드가 뜬다.
+ */
+@media (min-width: 360px) {
+  .page {
+    --lane-h: 352px;
+  }
+}
+@media (min-width: 640px) {
+  .page {
+    --lane-h: 376px;
+  }
+}
+@media (min-width: 768px) {
+  .page {
+    --lane-h: 352px;
+  }
+}
+
 .strip {
   display: flex;
   gap: 14px;
   margin-top: 12px;
+  min-height: var(--lane-h);
   /* 화면 끝까지 흐르게 — 음수 마진만큼 padding 으로 되돌려 첫 카드는 본문 줄에 맞춘다. */
   margin-inline: calc(var(--pad) * -1);
   /* 위아래 여백은 카드 호버(-2px)와 포커스 링(offset 3px)이 잘리지 않게 하는 자리다. */
@@ -481,6 +514,32 @@
   cursor: grabbing;
   user-select: none;
   scroll-snap-type: none;
+}
+
+/**
+ * 마운트 전 자리표시 — 유령 카드.
+ *
+ * 빈 칸을 그냥 비워 두면 빠르게 내릴 때 "고장난 화면" 으로 보인다. 카드 윤곽만 남겨
+ * "여기 곧 들어옵니다" 를 알린다. 값은 실제 카드와 같은 반경·선이라 들어설 때 튀지 않는다.
+ */
+.ghost {
+  width: 100%;
+  height: 100%;
+  border: 1px solid var(--hair);
+  border-radius: 16px;
+  background: var(--surface);
+  opacity: 0.45;
+}
+
+/* 들어서는 카드는 살짝 떠오른다. reduced-motion 은 globals.css 전역 규칙이 0 으로 만든다. */
+.strip[data-live='true'] .slide {
+  animation: dbLaneIn 260ms var(--ease);
+}
+@keyframes dbLaneIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
 }
 
 .slide {
@@ -584,6 +643,60 @@
 .card:hover .cardMore,
 .card:focus-visible .cardMore {
   color: var(--accent);
+}
+
+/**
+ * 접어 둔 나머지를 여는 카드 — 레인의 마지막 자리.
+ *
+ * 카드 한 장 자리를 그대로 쓰되 점선으로 둘러 "이야기가 아니라 손잡이" 임을 알린다.
+ * 높이는 옆 카드와 같아지므로(레인이 키를 맞춘다) §1.6 44px 하한은 자동으로 넘지만,
+ * 카드가 한 장도 없는 극단(상한만큼도 안 되는 레인)을 위해 하한을 명시해 둔다.
+ */
+.moreCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 100%;
+  height: 100%;
+  min-height: 44px;
+  padding: 20px 18px;
+  border: 1px dashed var(--hair-2);
+  border-radius: 16px;
+  text-align: center;
+  color: var(--fg-70);
+  transition:
+    border-color var(--dur) var(--ease),
+    background-color var(--dur) var(--ease),
+    color var(--dur) var(--ease),
+    transform var(--dur) var(--ease);
+}
+.moreCard:hover,
+.moreCard:focus-visible {
+  border-color: var(--accent-line);
+  background: var(--surface);
+  color: var(--accent);
+  transform: translateY(-2px);
+}
+.moreNum {
+  font-family: var(--font-serif);
+  font-size: 34px;
+  font-weight: 300;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+.moreLabel {
+  font-size: 14.5px;
+  line-height: 1.5;
+}
+.moreHint {
+  max-width: 20ch;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--fg-50);
 }
 
 .empty {

@@ -19,6 +19,7 @@ import {
   crossValidate,
   validateFile,
   validateRows,
+  type ExcerptType,
   type Intent,
   type SeedDataset,
   type SourceKind,
@@ -57,7 +58,7 @@ const MEANINGS_HEADER =
 const RULES_HEADER =
   'rule_id,relationship_type,intent,occasion,apology_level,aesthetic_tags,budget_range,urgency,flower_id,fit_score,avoid_reason,note';
 const QUOTES_HEADER =
-  'quote_id,text_ko,author,source_title,source_url,license,era,tags,reviewed_at';
+  'quote_id,flower_id,excerpt_type,text_ko,text_original,author,source_title,source_url,license,translator,era,tags,caveat,pd_basis,reviewed_at';
 const PET_SAFETY_HEADER =
   'flower_id,species,toxic,severity,toxic_parts,safe_alternative_flower_ids,source_url,reviewed_at';
 const STORIES_HEADER =
@@ -94,7 +95,54 @@ describe('content/*.csv 실제 데이터', () => {
     expect(dataset.stories.length).toBeGreaterThanOrEqual(55);
     expect(dataset.rules.length).toBeGreaterThanOrEqual(6);
     expect(dataset.templates).toHaveLength(3);
-    expect(dataset.quotes).toHaveLength(3);
+    // 편집팀 자작 3행 + §1.5k 문학 발췌 43행.
+    expect(dataset.quotes).toHaveLength(46);
+  });
+
+  it('문학 발췌 43행은 전부 꽃·갈래·퍼블릭 도메인 근거를 갖는다 (§1.5k)', () => {
+    const { dataset } = loadDataset();
+    const literature = dataset.quotes.filter((row) => row.value.excerpt_type !== undefined);
+    expect(literature).toHaveLength(43);
+
+    for (const row of literature) {
+      // 꽃이 없으면 결과 화면의 문학 블록이 이 행을 영영 못 찾는다.
+      expect(row.value.flower_id).toBeDefined();
+      // 검증된 인용만 싣는다(§1.5e) — 출처 없는 발췌는 존재할 수 없다.
+      expect(row.value.license).toBe('pd');
+      expect(row.value.source_url).toBeDefined();
+      // 판정 근거를 안 적은 pd 주장은 "그냥 옛날 거니까 괜찮겠지"와 같다.
+      expect(row.value.pd_basis).toBeDefined();
+    }
+
+    // 31종 중 26종 커버. 나머지 5종은 근대에 명명돼 고전 문학에 등장하지 않는다
+    // (freesia · gerbera · babys-breath · poinsettia · ranunculus) — 블록을 생략하는 쪽이 맞다.
+    const covered = new Set(literature.map((row) => row.value.flower_id));
+    expect(covered.size).toBe(26);
+    for (const id of ['freesia', 'gerbera', 'babys-breath', 'poinsettia', 'ranunculus']) {
+      expect(covered.has(id)).toBe(false);
+    }
+  });
+
+  it('기존 3행은 문학 컬럼이 비어 있다 (꽃 비연동 인용으로 남는다)', () => {
+    const { dataset } = loadDataset();
+    for (const id of ['q-001', 'q-002', 'q-003']) {
+      const row = dataset.quotes.find((r) => r.value.quote_id === id);
+      expect(row?.value.flower_id).toBeUndefined();
+      expect(row?.value.excerpt_type).toBeUndefined();
+    }
+  });
+
+  it('자체 번역·현대어 표기 행은 translator 를 밝힌다 (원전 PD ≠ 번역 PD)', () => {
+    const { dataset } = loadDataset();
+    // 원문이 한국어가 아닌데 옮긴이가 비어 있으면, 남의 번역을 옮겼는지 우리가 옮겼는지
+    // 데이터만 보고는 알 수 없게 된다. 그 상태를 만들지 않는 것이 이 검사의 목적이다.
+    const foreign = dataset.quotes.filter(
+      (row) => row.value.excerpt_type !== undefined && row.value.text_original !== undefined,
+    );
+    expect(foreign.length).toBeGreaterThan(0);
+    for (const row of foreign) {
+      expect(row.value.translator).toBe('dearbloom');
+    }
   });
 
   it('31종 모두 이야기를 최소 한 편씩 갖는다', () => {
@@ -364,7 +412,7 @@ describe('필수 필드 결손 검출', () => {
   it('quotes: license=pd 인데 source_url 이 없으면 실패한다', () => {
     const record = oneRow(
       QUOTES_HEADER,
-      'q-x,어떤 문장입니다.,셰익스피어,햄릿,,pd,1600s,comfort,2026-08-14',
+      'q-x,,,어떤 문장입니다.,,셰익스피어,햄릿,,pd,,1600s,comfort,,,2026-08-14',
     );
     const result = QuoteRowSchema.safeParse(record);
     expect(result.success).toBe(false);
@@ -374,9 +422,43 @@ describe('필수 필드 결손 검출', () => {
   it('quotes: license=original 이면 source_url 이 없어도 통과한다', () => {
     const record = oneRow(
       QUOTES_HEADER,
-      'q-x,어떤 문장입니다.,DearBloom 편집팀,,,original,modern,comfort,2026-08-14',
+      'q-x,,,어떤 문장입니다.,,DearBloom 편집팀,,,original,,modern,comfort,,,2026-08-14',
     );
     expect(QuoteRowSchema.safeParse(record).success).toBe(true);
+  });
+
+  it('quotes: 문학 컬럼이 전부 비어도 통과한다 (꽃 비연동 인용이 정상 값)', () => {
+    const record = oneRow(
+      QUOTES_HEADER,
+      'q-x,,,꽃을 가리지 않는 문장.,,DearBloom 편집팀,,,original,,modern,comfort,,,2026-08-14',
+    );
+    const result = QuoteRowSchema.safeParse(record);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.flower_id).toBeUndefined();
+      expect(result.data.excerpt_type).toBeUndefined();
+    }
+  });
+
+  it('quotes: excerpt_type 이 어휘 밖이면 실패한다', () => {
+    const record = oneRow(
+      QUOTES_HEADER,
+      'q-x,rose-red,haiku,어떤 발췌입니다.,orig,작가,작품,https://example.com/a,pd,dearbloom,1794,comfort,,근거,2026-08-15',
+    );
+    const result = QuoteRowSchema.safeParse(record);
+    expect(result.success).toBe(false);
+    expect(failedColumns(result)).toContain('excerpt_type');
+  });
+
+  it('quotes: excerpt_type 을 적었는데 flower_id 가 비면 실패한다', () => {
+    // 꽃이 없는 발췌는 결과 화면의 문학 블록이 영영 못 찾는다 — 조용히 사장되지 않게 막는다.
+    const record = oneRow(
+      QUOTES_HEADER,
+      'q-x,,poem,어떤 발췌입니다.,orig,작가,작품,https://example.com/a,pd,dearbloom,1794,comfort,,근거,2026-08-15',
+    );
+    const result = QuoteRowSchema.safeParse(record);
+    expect(result.success).toBe(false);
+    expect(failedColumns(result)).toContain('flower_id');
   });
 
   it('stories: 창작(original)이 아닌데 source_url 이 비면 실패한다', () => {
@@ -605,6 +687,46 @@ describe('교차 검증', () => {
     expect(checks.find((c) => c.name.includes('참조'))?.ok).toBe(false);
   });
 
+  it('quotes 의 끊어진 flower_id 참조도 잡아낸다', () => {
+    const { dataset } = loadDataset();
+    const target = dataset.quotes.findIndex((row) => row.value.flower_id !== undefined);
+    expect(target).toBeGreaterThanOrEqual(0);
+    const broken: SeedDataset = {
+      ...dataset,
+      quotes: dataset.quotes.map((row, index) =>
+        index === target ? { ...row, value: { ...row.value, flower_id: 'ghost-flower' } } : row,
+      ),
+    };
+    const { checks, issues } = crossValidate(broken);
+    expect(issues.some((issue) => issue.file === 'quotes.csv')).toBe(true);
+    expect(checks.find((c) => c.name.includes('참조'))?.ok).toBe(false);
+  });
+
+  it('quotes 의 빈 flower_id 는 참조 검사 대상이 아니다 (꽃 비연동 인용)', () => {
+    // 기존 3행은 flower_id 가 비어 있다. 그 공란을 "끊어진 참조"로 읽으면
+    // 범용 인용을 실을 방법이 없어진다.
+    const { dataset } = loadDataset();
+    const { checks, issues } = crossValidate(dataset);
+    expect(issues.filter((issue) => issue.file === 'quotes.csv')).toEqual([]);
+    expect(checks.find((c) => c.name.includes('참조'))?.ok).toBe(true);
+  });
+
+  it('quotes 의 어휘 밖 excerpt_type 을 잡아낸다', () => {
+    const { dataset } = loadDataset();
+    const target = dataset.quotes.findIndex((row) => row.value.excerpt_type !== undefined);
+    const broken: SeedDataset = {
+      ...dataset,
+      quotes: dataset.quotes.map((row, index) =>
+        index === target
+          ? { ...row, value: { ...row.value, excerpt_type: '하이쿠' as unknown as ExcerptType } }
+          : row,
+      ),
+    };
+    const { checks, issues } = crossValidate(broken);
+    expect(issues.some((issue) => issue.column === 'excerpt_type')).toBe(true);
+    expect(checks.find((c) => c.name.includes('공유 어휘'))?.ok).toBe(false);
+  });
+
   it('stories 의 어휘 밖 mood·intent 를 잡아낸다', () => {
     const { dataset } = loadDataset();
     const broken: SeedDataset = {
@@ -670,7 +792,7 @@ describe('교차 검증', () => {
 
   it('행 번호는 헤더를 1번 줄로 세어 붙는다', () => {
     const records = parseCsv(
-      `${QUOTES_HEADER}\nq-1,좋은 문장.,,,,original,modern,,2026-08-14\nq-2,,,,,original,modern,,2026-08-14\n`,
+      `${QUOTES_HEADER}\nq-1,,,좋은 문장.,,,,,original,,modern,,,,2026-08-14\nq-2,,,,,,,,original,,modern,,,,2026-08-14\n`,
     );
     const { rows, issues } = validateRows('quotes.csv', SEED_SCHEMAS.quotes, records);
     expect(rows).toHaveLength(1);

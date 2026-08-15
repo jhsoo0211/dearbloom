@@ -41,6 +41,38 @@ describe('loadCatalog', () => {
     expect(catalog.petSafety).toHaveLength(EXPECTED_FLOWERS * 2);
   });
 
+  it('문학 발췌를 화면용 필드로 옮기고, pd_basis 는 옮기지 않는다 (§1.5k)', async () => {
+    const catalog = await load();
+    const camellia = catalog.quotes.find((q) => q.quoteId === 'q-lit-camellia-kimyujeong');
+
+    expect(camellia).toMatchObject({
+      flowerId: 'camellia',
+      excerptType: 'novel',
+      author: '김유정',
+      license: 'pd',
+    });
+    // 각주 없이 실으면 서비스가 틀린 정보를 준다 — 생강나무 각주가 화면까지 살아 와야 한다.
+    expect(camellia?.caveat).toContain('생강나무');
+    // 한국어 원전이라 옮긴이가 없다.
+    expect(camellia?.translator).toBeUndefined();
+
+    const shijing = catalog.quotes.find((q) => q.quoteId === 'q-lit-peony-shijing');
+    expect(shijing?.textOriginal).toContain('贈之以勺藥');
+    expect(shijing?.translator).toBe('dearbloom');
+
+    // pd_basis 는 편집자용 값이다. 타입에도 없고 로더도 옮기지 않으므로 실수로 렌더될 수 없다.
+    for (const quote of catalog.quotes) {
+      expect(quote).not.toHaveProperty('pdBasis');
+      expect(quote).not.toHaveProperty('pd_basis');
+    }
+  });
+
+  it('꽃 비연동 인용(기존 3행)은 flowerId 없이 남는다', async () => {
+    const catalog = await load();
+    const general = catalog.quotes.filter((q) => q.flowerId === undefined);
+    expect(general.map((q) => q.quoteId)).toEqual(['q-001', 'q-002', 'q-003']);
+  });
+
   it('snake_case CSV 를 camelCase 엔진 타입으로 옮긴다', async () => {
     const catalog = await load();
     const tulip = catalog.flowers.find((flower) => flower.id === 'tulip-white');

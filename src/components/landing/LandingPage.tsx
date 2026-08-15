@@ -19,10 +19,22 @@ import { SECTION_IMAGES, withParticle, type LandingData, type SlideView } from '
 import { useLandingMotion } from './useLandingMotion';
 import './landing.css';
 
-const EMERSON = {
-  ko: '대지는 꽃으로 웃는다.',
-  en: 'Earth laughs in flowers',
-  caption: '랄프 월도 에머슨, 〈Hamatreya〉(1846)',
+/**
+ * 인용 밴드(§1.5e — 화면당 1개). 에머슨 〈Hamatreya〉를 『시경』으로 교체했다.
+ *
+ * 봄날 진수·유수 강가에서 남녀가 어울려 놀다가 헤어질 때 작약을 꺾어 건네는 장면으로,
+ * **기록에 남은 가장 오래된 '꽃 선물' 장면 중 하나**다. 서비스가 하는 일 그 자체가
+ * 기원전 문헌에 이미 적혀 있다는 것이 이 자리를 에머슨보다 잘 채운다.
+ *
+ * ⚠ **`content/quotes.csv` 의 `q-lit-peony-shijing` 행과 같은 내용이다.** 랜딩은 서버
+ * 데이터를 타지 않는 정적 페이지라 상수로 두었으니, 그 행을 고치면 여기도 같이 고칠 것.
+ * (`text_ko` = ko, `text_original` 의 마지막 구 = hanja, `source_title`·`era` = caption)
+ */
+const SHIJING = {
+  ko: '사내와 아가씨가 / 서로 웃고 놀리다가 / 그에게 작약을 건넨다.',
+  hanja: '贈之以勺藥',
+  caption: '『시경』 정풍 「진유」, 기원전 7세기경',
+  note: '기록에 남은 가장 오래된 꽃 선물의 장면이에요.',
 };
 
 export default function LandingPage({ data }: { data: LandingData }) {
@@ -424,12 +436,22 @@ export default function LandingPage({ data }: { data: LandingData }) {
               </p>
               <figure className="db-qb" data-db-reveal>
                 <blockquote>
-                  <p className="db-qb-ko">“{EMERSON.ko}”</p>
-                  <p className="db-qb-en" lang="en">
-                    {EMERSON.en}
+                  {/* 세 행을 줄로 끊어야 강가의 장면이 장면으로 읽힌다 */}
+                  <p className="db-qb-ko">
+                    {SHIJING.ko.split(' / ').map((line, index) => (
+                      <span className="db-qb-line" key={line}>
+                        {index === 0 ? '“' : null}
+                        {line}
+                        {index === 2 ? '”' : null}
+                      </span>
+                    ))}
+                  </p>
+                  <p className="db-qb-han" lang="zh-Hant">
+                    {SHIJING.hanja}
                   </p>
                 </blockquote>
-                <figcaption>{EMERSON.caption}</figcaption>
+                <figcaption>{SHIJING.caption}</figcaption>
+                <p className="db-qb-note">{SHIJING.note}</p>
               </figure>
             </div>
           </section>

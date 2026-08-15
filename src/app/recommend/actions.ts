@@ -14,7 +14,7 @@
  */
 
 import { loadCatalog } from '@/lib/data/catalog';
-import type { Catalog, CatalogFlower, CatalogMeaning } from '@/lib/data/types';
+import type { Catalog, CatalogFlower, CatalogMeaning, Quote } from '@/lib/data/types';
 import {
   flowerCueName,
   flowerCueSlug,
@@ -55,6 +55,7 @@ import {
   budgetChoice,
   colorChoice,
   eraLabel,
+  excerptTypeLabel,
   flowerForm,
   flowerOccasions,
   regionLabel,
@@ -66,7 +67,9 @@ import type {
   CultureMeaningRow,
   FlowOptionView,
   FlowResponse,
+  LiteratureView,
   PetBadge,
+  QuoteView,
   ResultColorChip,
   ResultPayload,
   StoryCard,
@@ -311,16 +314,112 @@ async function buildToneViews(
 /**
  * §1.5e 함께 담을 한 줄.
  * quotes.csv 에 김소월 〈산유화〉가 적재되면 그쪽을 쓰고, 아직 없으면 스펙 상수로 떨어진다.
+ *
+ * 작가 이름을 본문과 함께 돌려주는 이유: 바로 아래 문학 블록이 **같은 작가를 한 화면에
+ * 두 번 세우지 않으려고** 이 값을 본다. 각주 문자열(`김소월, 〈산유화〉(1925)`)에서
+ * 이름을 다시 파싱하는 대신 처음부터 따로 들고 다닌다.
  */
-function pickQuote(catalog: Catalog) {
+function pickQuote(catalog: Catalog): { view: QuoteView; author: string } {
   const fromCatalog = catalog.quotes.find((q) => (q.author ?? '').includes('김소월'));
-  if (!fromCatalog) return FALLBACK_QUOTE;
+  if (!fromCatalog) {
+    return {
+      view: { textKo: FALLBACK_QUOTE.textKo, attribution: FALLBACK_QUOTE.attribution },
+      author: FALLBACK_QUOTE.author,
+    };
+  }
   const source = fromCatalog.sourceTitle ? `, 〈${fromCatalog.sourceTitle}〉` : '';
   const era = fromCatalog.era ? `(${fromCatalog.era})` : '';
   return {
-    textKo: fromCatalog.textKo,
-    attribution: `${fromCatalog.author ?? ''}${source}${era}`.trim(),
+    view: {
+      textKo: fromCatalog.textKo,
+      attribution: `${fromCatalog.author ?? ''}${source}${era}`.trim(),
+    },
+    author: fromCatalog.author ?? '',
   };
+}
+
+/* ------------------------------------------------------------------ *
+ * §1.5k 문학 속의 이 꽃
+ * ------------------------------------------------------------------ */
+
+/**
+ * 같은 작품을 이야기와 발췌로 두 번 보여 주지 않기 위한 배제 표
+ * (literature-research §7). `stories.csv` 의 literary 17행은 **문학을 소재로 한
+ * 이야기**이고 quotes 의 발췌는 **원문 그 자체**라 역할이 다르지만, 아래 세 쌍은
+ * 같은 작품이라 나란히 놓으면 한 화면에서 같은 말을 두 번 하는 셈이 된다.
+ *
+ * 판정 대상은 **대표 이야기(featured) 하나뿐이다.** 결과 화면은 그 꽃의 이야기를 전부
+ * 목록으로 내려보내므로(k=∞) 목록 전체와 견주면 ㉔·㊳ 두 발췌는 영영 뜨지 못한다 —
+ * 위계상 눈에 먼저 들어오는 대표 자리와만 겹치지 않으면 된다는 판단이다.
+ */
+const LITERATURE_STORY_CONFLICTS: Record<string, string> = {
+  'q-lit-chrysanthemum-taoyuanming': 'story-chrysanthemum-tao-yuanming',
+  'q-lit-poppy-mccrae': 'story-poppy-in-flanders-fields',
+  'q-lit-violet-hamlet': 'story-pansy-ophelia',
+};
+
+/**
+ * `김유정, 「동백꽃」(1936, 《조광》)` 형태의 각주 한 줄.
+ * `source_title` 이 이미 연도를 품고 있는 행이 많아, 겹칠 때는 era 를 덧붙이지 않는다.
+ */
+function literatureAttribution(quote: Quote): string {
+  const base = [quote.author, quote.sourceTitle]
+    .filter((part): part is string => Boolean(part))
+    .join(', ');
+  const era = quote.era ?? '';
+  if (era === '' || base.includes(era)) return base;
+  return `${base}(${era})`;
+}
+
+/**
+ * 그 꽃의 문학 발췌 한 편(§1.5k). **없으면 블록 자체를 생략한다.**
+ *
+ * 고르는 순서
+ *   1. 그 꽃에 붙은 발췌만 후보로 둔다(`excerptType` 이 있는 행 = 문학 발췌).
+ *   2. 대표 이야기와 같은 작품이면 뺀다(§7 상호배제).
+ *   3. 함께 담을 한 줄과 같은 작가면 뺀다 — 한 화면에 같은 이름이 두 번 서지 않게.
+ *   4. 남은 것 중 이 상황(intent)에 어울린다고 적힌 발췌를 먼저 쓰고, 없으면 첫 행.
+ *
+ * 4번의 동점은 CSV 순서로 깬다. 새로고침마다 문장이 바뀌면 "우리가 고른 한 편"이라는
+ * 인상이 사라지고, 무엇보다 결과를 재현할 수 없어 검수가 불가능해진다.
+ */
+function pickLiterature(
+  catalog: Catalog,
+  flowerId: string,
+  intent: Intent,
+  featuredStoryId: string | undefined,
+  sideQuoteAuthor: string,
+): LiteratureView | undefined {
+  const candidates = catalog.quotes.filter((quote) => {
+    if (quote.flowerId !== flowerId || quote.excerptType === undefined) return false;
+    if (
+      featuredStoryId !== undefined &&
+      LITERATURE_STORY_CONFLICTS[quote.quoteId] === featuredStoryId
+    ) {
+      return false;
+    }
+    const author = quote.author ?? '';
+    if (author !== '' && sideQuoteAuthor !== '' && author.includes(sideQuoteAuthor)) return false;
+    return true;
+  });
+
+  const pick = candidates.find((quote) => quote.tags.includes(intent)) ?? candidates[0];
+  if (!pick) return undefined;
+
+  const view: LiteratureView = {
+    textKo: pick.textKo,
+    attribution: literatureAttribution(pick),
+  };
+  if (pick.textOriginal) view.textOriginal = pick.textOriginal;
+  const typeLabel = excerptTypeLabel(pick.excerptType);
+  if (typeLabel) view.typeLabel = typeLabel;
+  // 옮긴이는 사실이 아니라 예의의 문제다 — 우리가 옮긴 문장을 원문인 척 두지 않는다.
+  if (pick.translator) view.translatorNote = `옮김: ${pick.translator}`;
+  if (pick.caveat) view.caveat = pick.caveat;
+  if (pick.sourceTitle) view.sourceTitle = pick.sourceTitle;
+  if (pick.sourceUrl) view.sourceUrl = pick.sourceUrl;
+
+  return view;
 }
 
 /* ------------------------------------------------------------------ *
@@ -332,6 +431,7 @@ function toOptionView(
   index: number,
   catalog: Catalog,
   intent: Intent,
+  sideQuoteAuthor: string,
 ): FlowOptionView | null {
   const flower = catalog.flowers.find((f) => f.id === result.flower.id);
   if (!flower) return null;
@@ -378,6 +478,16 @@ function toOptionView(
   if (flower.careSummary) view.careSummary = flower.careSummary;
   const fallback = bestMeaning(catalog.meanings, flower.id);
   if (fallback) view.fallbackMeaning = fallback;
+
+  // §1.5k — 검증된 발췌가 있는 꽃에만 붙는다. 없으면 필드 자체가 없다.
+  const literature = pickLiterature(
+    catalog,
+    flower.id,
+    intent,
+    stories.featured?.storyId,
+    sideQuoteAuthor,
+  );
+  if (literature) view.literature = literature;
 
   return view;
 }
@@ -488,8 +598,11 @@ export async function submitRecommendation(
   const intent = input.intent;
   const relationship = input.relationship;
 
+  // 함께 담을 한 줄을 먼저 고른다 — 문학 블록이 "같은 작가 두 번 금지"를 이 작가로 판단한다.
+  const sideQuote = pickQuote(catalog);
+
   const options = picks
-    .map((pick, index) => toOptionView(pick, index, catalog, intent))
+    .map((pick, index) => toOptionView(pick, index, catalog, intent, sideQuote.author))
     .filter((option): option is FlowOptionView => option !== null);
 
   if (options.length === 0) {
@@ -537,7 +650,7 @@ export async function submitRecommendation(
     isApology: intent === 'apology',
     options,
     tones,
-    quote: pickQuote(catalog),
+    quote: sideQuote.view,
     messageSource,
     messageNote: MESSAGE_NOTES[messageSource],
     storyCues: cueChips(inferred),

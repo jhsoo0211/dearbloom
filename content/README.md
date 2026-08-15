@@ -12,7 +12,7 @@ DB는 이 CSV에서 시드(upsert)될 뿐, 반대로 DB를 직접 고치지 않�
 | `stories.csv` | 꽃에 얽힌 일화(창작 외 출처 필수) | 250 |
 | `rules.csv` | 상황 → 꽃 추천/회피 규칙 | 7 |
 | `templates.csv` | 메시지 템플릿 | 3 |
-| `quotes.csv` | 인용문 | 3 |
+| `quotes.csv` | 인용문(범용 3 + 문학 발췌 43) | 46 |
 | `pet_safety.csv` | 반려동물 안전성(꽃 × cat/dog 전수) | 62 |
 
 `rules.csv` 는 5종(`rose-red` `tulip-white` `freesia` `lily-asiatic` `gerbera`)만 다룬다.
@@ -239,6 +239,72 @@ design-spec §1.5f. 네 값만 쓴다.
   `celebration`→funny·dramatic / `comfort`→healing / `anniversary`→romantic·mythic /
   `just_because`→funny·mythic.
 
+### `quotes.csv` — 인용문, 그리고 문학 발췌 (2026-08-15 확장)
+
+한 파일에 성격이 다른 두 종류가 산다. **가르는 것은 `flower_id` 하나뿐이다.**
+
+| 종류 | `flower_id` | 화면 자리 | 현재 |
+|---|---|---|---|
+| 범용 인용 | 비어 있음 | 결과 화면 `함께 담을 한 줄`(§1.5e) | 3행(`q-001`~`q-003`) |
+| 문학 발췌 | 꽃 id | 결과 화면 `문학 속의 이 꽃`(§1.5k) | 43행(`q-lit-*`) |
+
+`flower_id` 가 빈 것은 미완성이 아니라 **꽃을 가리지 않는 인용**이라는 정상 값이다.
+
+문학 발췌 6컬럼 (전부 선택):
+
+| 컬럼 | 뜻 |
+|---|---|
+| `flower_id` | 이 발췌가 붙는 꽃 |
+| `excerpt_type` | `poem` `novel` `play` `essay` `classic` |
+| `text_original` | 원어 원문. 화면에 번역과 나란히 소형 병기 |
+| `translator` | 자체 번역·자체 현대어 표기이면 `dearbloom`, 한국어 원전 그대로면 공란 |
+| `caveat` | **화면에 나가는** 한 줄 각주 |
+| `pd_basis` | 퍼블릭 도메인 판정 근거. **데이터 레이어 전용, 화면 비노출** |
+
+`classic` 이 있는 이유: 『시경』·오비디우스 『변신 이야기』·KJV 성경·『이세 이야기』처럼
+시·소설·희곡 어느 갈래로도 안 떨어지는 원전이 6건 있다. 억지로 `poem` 이나 `essay` 로
+접으면 화면 각주가 거짓이 된다.
+
+#### 금지선 — 원전이 PD여도 남의 번역은 PD가 아니다
+
+> **기존 출판 번역·웹 번역을 어떤 경우에도 옮기지 않는다.**
+
+- 성경 한국어 번역본(개역한글·개역개정·새번역) — 대한성서공회 저작권. ⑥·㉒는 KJV **영문에서 자체 번역**했다.
+- 셰익스피어 한국어 번역본 — 역자 저작권 존속. 해당 5행 전부 자체 번역.
+- 김정희 〈水仙花〉 — 검색 상위에 뜨는 한국어 풀이는 국립중앙박물관 2006년 간행 번역문이다. 한자 원문에서 새로 옮겼다.
+
+그래서 `translator` 가 사실상 감사 컬럼이다 — **원문이 한국어가 아닌데 옮긴이가 비어
+있으면** 남의 번역인지 우리 번역인지 데이터만 보고는 알 수 없다. 그 상태를 만들지
+않도록 테스트가 막는다(`tests/seed/schemas.test.ts`).
+
+#### `caveat` — 안 적으면 서비스가 거짓말을 하게 되는 한 줄
+
+각주가 있으면 좋은 정도가 아니라, **없으면 틀린 정보를 주게 되는** 사실만 넣는다.
+
+- `q-lit-camellia-kimyujeong` — 강원 방언의 '동백나무'는 생강나무다. 김유정의 노란 동백꽃은 `Camellia japonica` 가 아니다.
+- `q-lit-lotv-songofsongs` — 은방울꽃은 성경 구절에서 **이름만** 건너왔다. 성경 속 그 꽃이 아니다.
+- `q-lit-marigold-winterstale` — 셰익스피어의 marigold 는 금잔화(Calendula)이고 카탈로그의 만수국(Tagetes)이 아니다. (`flowers.csv` 가 ASPCA 독성 자료에서 이미 같은 혼동을 기록해 두었다.)
+- 그 밖에 종 차이 6건(④⑬⑭㉑㉗㉟㊸)·판본 차이·이름 이전.
+
+#### 원문 표기 규칙 — 출처가 인쇄한 그대로
+
+`text_original` 은 **`source_url` 이 실제로 인쇄한 문자열**이다. 현대 철자로 고치지 않고,
+반대로 옛 철자를 지어내지도 않는다. 2026-08-15 전수 재대조에서 이것 때문에 9행을 고쳤다.
+
+- 구텐베르크 블레이크(#1934)는 **현대 철자판**이다 — `Lilly`·`threatning` 이 아니라 `Lily`·`threat'ning`. 원본이 옛 철자라는 사실은 `caveat` 로 옮겼다.
+- 밀턴 〈Lycidas〉는 1645년 시집 표기 — `Gessamine`·`Pansie freakt with jeat`.
+- 고시문망(gushiwen)은 **간체자** 판본이라 백거이·왕유 두 행은 간체자로 실려 있다.
+- 위키문헌 『고금와카집』·『이세 이야기』는 옛 가나 표기(`さくら`·`きつゝ`) 그대로다.
+- 다만 **활자 관습**(곡선 어포스트로피 `’` → `'`, 두 하이픈 `--` → `—`)은 정규화한다. 같은 낱말의 다른 글자가 아니라 조판 차이이기 때문이다.
+
+#### 적재 회차
+
+- `q-lit-*` 43행 — 2026-08-15, `docs/literature-research.md`. 꽃 26/31종 커버.
+  미커버 5종(`freesia` `gerbera` `babys-breath` `poinsettia` `ranunculus`)은 근대에
+  명명돼 고전 문학에 등장하지 않는다. **편집팀 문장으로 메우지 않는다** — §1.5k 가
+  "있을 때만"이라고 이미 정해 두었고, 문학 블록에 문학이 아닌 걸 넣으면 위화감만 남는다.
+- 라넌큘러스 후보 2건은 보류다(작품 중복 + 속 분리 / 식물 동정 불확실 — 연구 문서 §4).
+
 ### 특히 자주 걸리는 규칙
 
 - `meanings.source_url` 이 비면 **시드 실패**. 출처 없는 꽃말은 싣지 않는다.
@@ -252,6 +318,8 @@ design-spec §1.5f. 네 값만 쓴다.
 - `rules` 의 `fit_score`(0~100) 와 `avoid_reason` 은 **정확히 하나만** 채운다.
   추천 규칙이면 점수를, 회피 규칙이면 이유를 쓴다.
 - `quotes.license = pd` 이면 `source_url` 필수(퍼블릭 도메인 근거).
+- `quotes.excerpt_type` 을 적었으면 `flower_id` 도 필수다. 꽃이 없는 발췌는 결과 화면의
+  문학 블록이 영영 못 찾아 조용히 사장되므로, 시드에서 미리 막는다.
 - `pet_safety` 는 **모든 꽃 × `cat`/`dog` 두 행이 전부** 있어야 한다. 하나라도 빠지면 실패한다.
 - `pet_safety.toxic = true` 이면 `toxic_parts` 와 `safe_alternative_flower_ids` 가 필수다.
 
@@ -269,6 +337,7 @@ design-spec §1.5f. 네 값만 쓴다.
 | `severity` | `none` `mild_gi` `serious` `life_threatening` |
 | `confidence_level` | `repeated` `varies` `single_source` |
 | `quotes.license` | `pd` `original` |
+| `quotes.excerpt_type` | `poem` `novel` `play` `essay` `classic` |
 | `stories.moods` | `romantic` `tragic` `funny` `mythic` `dramatic` `healing` |
 | `stories.story_type` | `folklore` `history` `literary` `original` |
 | `stories.source_kind` | `paper` `magazine` `museum` `newspaper` `book-pd` `garden` `wiki` `other` |

@@ -75,16 +75,38 @@ export interface MessageTemplate {
   reviewedAt?: string;
 }
 
-/** 인용문 한 줄 (quotes.csv). */
+/** quotes.csv 의 excerpt_type 어휘 — §1.5k 문학 연계. 원본은 `db/seed/schemas.ts`. */
+export type ExcerptType = 'poem' | 'novel' | 'play' | 'essay' | 'classic';
+
+/**
+ * 인용문 한 줄 (quotes.csv).
+ *
+ * 두 종류가 한 표에 산다:
+ *   - **범용 인용** — `flowerId` 가 없다. 결과 화면의 "함께 담을 한 줄"(§1.5e) 자리.
+ *   - **문학 발췌** — `flowerId` 가 있다. 결과 화면의 "문학 속의 이 꽃"(§1.5k) 자리.
+ * 둘을 가르는 것은 `flowerId` 하나뿐이라, 조회하는 쪽이 어느 자리인지 정하면 된다.
+ *
+ * `pd_basis`(퍼블릭 도메인 판정 근거)는 **일부러 여기 없다.** 화면 비노출 컬럼이라
+ * 로더가 아예 옮기지 않는다 — 타입에 없으면 실수로 렌더할 수도 없다.
+ */
 export interface Quote {
   quoteId: string;
+  /** 이 발췌가 붙는 꽃. 없으면 꽃을 가리지 않는 범용 인용이다. */
+  flowerId?: string;
+  excerptType?: ExcerptType;
   textKo: string;
+  /** 원어 원문. 화면에 번역과 나란히 소형으로 병기한다. */
+  textOriginal?: string;
   author?: string;
   sourceTitle?: string;
   sourceUrl?: string;
   license: QuoteLicense;
+  /** 자체 번역·자체 현대어 표기이면 `dearbloom`. 한국어 원전 그대로면 없다. */
+  translator?: string;
   era?: string;
   tags: string[];
+  /** 화면에 나가는 한 줄 각주(종 차이·이름 혼동·판본 차이). */
+  caveat?: string;
   reviewedAt?: string;
 }
 

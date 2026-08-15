@@ -208,16 +208,28 @@ function mapTemplate(row: TemplateRow): MessageTemplate {
   };
 }
 
+/**
+ * quotes.csv 한 행 → 화면이 쓰는 인용.
+ *
+ * **`pd_basis` 는 일부러 옮기지 않는다.** 퍼블릭 도메인 판정 근거는 편집자가 CSV 에서
+ * 읽는 값이지 사용자에게 보여 줄 값이 아니다(§1.5d — 근거는 각주로, 법률 메모는 화면 밖).
+ * 여기서 떨어뜨리면 `Catalog` 어디에도 실려 가지 않아 실수로 렌더될 길이 없다.
+ */
 function mapQuote(row: QuoteRow): Quote {
   return {
     quoteId: row.quote_id,
+    flowerId: row.flower_id,
+    excerptType: row.excerpt_type,
     textKo: row.text_ko,
+    textOriginal: row.text_original,
     author: row.author,
     sourceTitle: row.source_title,
     sourceUrl: row.source_url,
     license: row.license,
+    translator: row.translator,
     era: row.era,
     tags: row.tags,
+    caveat: row.caveat,
     reviewedAt: row.reviewed_at,
   };
 }

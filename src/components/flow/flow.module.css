@@ -1471,6 +1471,80 @@
   font-size: 13px;
 }
 
+/* §1.5k 문학 속의 이 꽃 — 함께 담을 한 줄과 같은 곁들임 위계.
+   발췌는 세리프 이탤릭으로 세워 "옮겨 온 문장"임을 서체로 먼저 말한다. */
+.lit {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--hair);
+}
+.litLab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  color: var(--accent);
+}
+.litType {
+  padding: 2px 7px;
+  border: 1px solid var(--hair);
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: var(--fg-50);
+}
+.litKo {
+  margin-top: 12px;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 300;
+  font-size: 15px;
+  line-height: 1.85;
+  letter-spacing: -0.01em;
+  color: var(--fg-70);
+}
+/* 원문은 작게. 한자·라틴어·가나가 섞여 오므로 줄바꿈을 막지 않는다. */
+.litOrig {
+  margin-top: 10px;
+  font-size: 12px;
+  line-height: 1.7;
+  letter-spacing: 0.01em;
+  color: var(--fg-50);
+  overflow-wrap: anywhere;
+}
+.litBy {
+  margin-top: 10px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--fg-50);
+}
+/* 각주 안의 가운뎃점은 이야기 각주(.storyFoot)와 같은 간격을 쓴다 */
+.litBy .sep {
+  padding: 0 6px;
+  opacity: 0.6;
+}
+.litLink {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--hair);
+}
+.litLink:hover {
+  text-decoration-color: currentColor;
+}
+/* 각주 중에서도 "이걸 안 적으면 거짓이 되는" 한 줄이라 왼쪽 선으로 따로 세운다. */
+.litCaveat {
+  margin-top: 10px;
+  padding-left: 10px;
+  border-left: 2px solid var(--hair);
+  font-size: 12px;
+  line-height: 1.75;
+  color: var(--fg-50);
+}
+
 /* ── CTA · 제휴 · 푸터 ──────────────────────────────────────────────── */
 .aff {
   display: grid;

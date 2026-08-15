@@ -977,6 +977,55 @@ export default function ResultView({ payload, onRestart }: ResultViewProps) {
                     <span>{copied === 'quote' ? '복사했어요' : '복사'}</span>
                   </button>
                 </figure>
+
+                {/*
+                  §1.5k 문학 속의 이 꽃 — 함께 담을 한 줄 바로 아래, 같은 "곁들임" 위계다.
+                  서버가 발췌를 못 찾았거나 중복 배제에 걸리면 필드가 아예 없고, 그때는
+                  블록도 서지 않는다(§1.5k "있을 때만"). 억지로 채우지 않는 것이 규칙이다.
+                */}
+                {option.literature ? (
+                  <figure className={styles.lit}>
+                    <figcaption className={styles.litLab}>
+                      문학 속의 이 꽃
+                      {option.literature.typeLabel ? (
+                        <span className={styles.litType}>{option.literature.typeLabel}</span>
+                      ) : null}
+                    </figcaption>
+                    <blockquote>
+                      <p className={styles.litKo}>{option.literature.textKo}</p>
+                    </blockquote>
+                    {/* 원문 병기 — 번역으로는 살지 않는 것들이 여기 남는다(아크로스틱·AI AI) */}
+                    {option.literature.textOriginal ? (
+                      <p className={styles.litOrig}>{option.literature.textOriginal}</p>
+                    ) : null}
+                    <p className={styles.litBy}>
+                      {option.literature.sourceUrl ? (
+                        <a
+                          className={styles.litLink}
+                          href={option.literature.sourceUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          {option.literature.attribution}
+                        </a>
+                      ) : (
+                        option.literature.attribution
+                      )}
+                      {option.literature.translatorNote ? (
+                        <>
+                          <span className={styles.sep} aria-hidden="true">
+                            ·
+                          </span>
+                          {option.literature.translatorNote}
+                        </>
+                      ) : null}
+                    </p>
+                    {/* 밝히지 않으면 서비스가 틀린 정보를 주게 되는 한 줄 */}
+                    {option.literature.caveat ? (
+                      <p className={styles.litCaveat}>{option.literature.caveat}</p>
+                    ) : null}
+                  </figure>
+                ) : null}
               </section>
 
               {/* ═══ 공유·저장 (더미) ═══ */}

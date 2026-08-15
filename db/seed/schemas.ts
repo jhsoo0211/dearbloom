@@ -53,6 +53,21 @@ export const CONFIDENCE_LEVELS = ['repeated', 'varies', 'single_source'] as cons
 export const QUOTE_LICENSES = ['pd', 'original'] as const;
 
 /**
+ * 인용문의 갈래(quotes.excerpt_type) — design-spec §1.5k(문학 연계).
+ *   poem    — 시·시조·와카·하이쿠·한시
+ *   novel   — 소설
+ *   play    — 희곡
+ *   essay   — 산문·수필
+ *   classic — 어느 갈래로도 안 떨어지는 고전 원전
+ *
+ * §1.5k 원문은 poem·novel·play·essay 네 갈래만 적었지만, 『시경』·오비디우스 『변신
+ * 이야기』·KJV 성경·『이세 이야기』처럼 **갈래 이전에 성립한 원전**이 6건 있어 `classic`
+ * 을 더했다. 억지로 poem 이나 essay 로 접으면 화면 각주가 거짓말이 되기 때문이다.
+ * 비워 두면 "문학 발췌가 아닌 인용"(편집팀 자작 문장 등)이라는 뜻이다.
+ */
+export const EXCERPT_TYPES = ['poem', 'novel', 'play', 'essay', 'classic'] as const;
+
+/**
  * 이야기의 분위기 태그(stories.moods).
  * 상황(intent)에 딱 맞는 이야기가 없을 때, 선별기가 "이 상황이면 이런 결의 이야기"로
  * 대신 고르는 축이다. 대응표의 단일 원본은 `src/lib/engine/stories.ts` 의 MOOD_AFFINITY.
@@ -112,6 +127,7 @@ export type Species = (typeof SPECIES)[number];
 export type Severity = (typeof SEVERITIES)[number];
 export type ConfidenceLevel = (typeof CONFIDENCE_LEVELS)[number];
 export type QuoteLicense = (typeof QUOTE_LICENSES)[number];
+export type ExcerptType = (typeof EXCERPT_TYPES)[number];
 export type StoryMood = (typeof STORY_MOODS)[number];
 export type StoryType = (typeof STORY_TYPES)[number];
 export type SourceKind = (typeof SOURCE_KINDS)[number];
@@ -154,6 +170,18 @@ function requiredSlug(label: string) {
   return requiredText(label).refine((value) => SLUG.test(value), {
     error: `${label}: 소문자·숫자·하이픈 slug 형식이어야 합니다`,
   });
+}
+
+/** 비어 있어도 되는 slug. 값이 있으면 requiredSlug 와 같은 형식을 요구한다. */
+function optionalSlug(label: string) {
+  return optionalText().pipe(
+    z
+      .string()
+      .refine((value) => SLUG.test(value), {
+        error: `${label}: 소문자·숫자·하이픈 slug 형식이어야 합니다`,
+      })
+      .optional(),
+  );
 }
 
 function requiredUrl(label: string) {
@@ -402,17 +430,38 @@ export const TemplateRowSchema = z.object({
 /**
  * quotes.csv — 인용문.
  * 퍼블릭 도메인(pd) 주장은 근거 URL 없이 실을 수 없다.
+ *
+ * §1.5k 문학 연계로 6컬럼이 늘었다. 전부 **선택**이라 기존 3행(편집팀 자작 문장)은
+ * 공란 그대로 통과한다 — 꽃에 매달리지 않는 범용 인용이 계속 유효하다는 뜻이다.
+ *
+ *   flower_id     — 이 발췌가 붙는 꽃. 비면 꽃 비연동 인용(결과 화면의 문학 블록에 안 뜬다).
+ *   excerpt_type  — 갈래(EXCERPT_TYPES 주석 참조).
+ *   text_original — 원어 원문. 화면에 소형으로 병기한다(§1.5e).
+ *                   **번역과 원문을 한 칸에 섞지 않는 것이 이 컬럼의 존재 이유다.**
+ *   translator    — 자체 번역·자체 현대어 표기이면 `dearbloom`. 한국어 원전 그대로면 공란.
+ *                   기존 출판 번역은 어떤 경우에도 옮기지 않는다(원전 PD ≠ 번역 PD).
+ *   caveat        — **화면에 나가는** 한 줄 각주. 종 차이·이름 혼동·판본 차이처럼,
+ *                   적지 않으면 서비스가 틀린 정보를 주게 되는 사실을 담는다
+ *                   (예: 김유정 「동백꽃」의 동백은 강원 방언의 생강나무다).
+ *   pd_basis      — 퍼블릭 도메인 판정 근거. **데이터 레이어 전용이라 화면에 안 나간다**
+ *                   (로더가 `Catalog` 로 옮기지 않는다 — src/lib/data/catalog.ts).
  */
 export const QuoteRowSchema = z
   .object({
     quote_id: requiredText('quote_id'),
+    flower_id: optionalSlug('flower_id'),
+    excerpt_type: optionalEnum('excerpt_type', EXCERPT_TYPES),
     text_ko: requiredText('text_ko'),
+    text_original: optionalText(),
     author: optionalText(),
     source_title: optionalText(),
     source_url: optionalUrl('source_url'),
     license: requiredEnum('license', QUOTE_LICENSES),
+    translator: optionalText(),
     era: optionalText(),
     tags: optionalList(),
+    caveat: optionalText(),
+    pd_basis: optionalText(),
     reviewed_at: optionalDate('reviewed_at'),
   })
   .superRefine((row, ctx) => {
@@ -421,6 +470,15 @@ export const QuoteRowSchema = z
         code: 'custom',
         path: ['source_url'],
         message: 'license=pd 이면 퍼블릭 도메인 근거 source_url 이 필요합니다',
+      });
+    }
+    // 갈래를 적었으면 어느 꽃의 문학인지도 적어야 한다. 꽃 없는 발췌는 결과 화면의
+    // 문학 블록이 영영 못 찾으므로, 데이터가 조용히 사장되는 것을 여기서 막는다.
+    if (row.excerpt_type !== undefined && row.flower_id === undefined) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['flower_id'],
+        message: 'excerpt_type 을 적었으면 어느 꽃의 발췌인지 flower_id 도 필요합니다',
       });
     }
   });
@@ -663,6 +721,7 @@ export interface CrossValidateResult {
  *
  *  1. flower_id 참조 무결성 — meanings / stories / rules / pet_safety 가 가리키는 꽃이 flowers 에 있는가.
  *     pet_safety 가 제안하는 대체 꽃(safe_alternative_flower_ids)도 같이 본다.
+ *     quotes 는 flower_id 가 **선택**이라(꽃 비연동 인용이 정상 값) 적힌 행만 골라 본다.
  *  2. 반려동물 안전성 커버리지 — 모든 꽃이 cat·dog 두 종 모두에 대해 판정을 갖는가.
  *     "모르면 표시 안 함"이 아니라 "모르면 시드 실패"로 막는다.
  *  3. 공유 어휘 일치 — rules / templates 의 relationship_type·intent·tone,
@@ -710,6 +769,20 @@ export function crossValidate(data: SeedDataset): CrossValidateResult {
           message: `flowers.csv 에 없는 대체 꽃 id 입니다: ${alternative}`,
         });
       }
+    }
+  }
+  // quotes.flower_id 는 선택이다 — 비어 있는 행(꽃 비연동 인용)은 참조 대상이 아니다.
+  for (const row of data.quotes) {
+    const flowerId = row.value.flower_id;
+    if (flowerId === undefined) continue;
+    refCount += 1;
+    if (!flowerIds.has(flowerId)) {
+      issues.push({
+        file: SEED_FILE_NAMES.quotes,
+        line: row.line,
+        column: 'flower_id',
+        message: `flowers.csv 에 없는 꽃 id 입니다: ${flowerId}`,
+      });
     }
   }
   const refFailures = issues.length - refBefore;
@@ -760,6 +833,7 @@ export function crossValidate(data: SeedDataset): CrossValidateResult {
   const moods = new Set<string>(STORY_MOODS);
   const storyTypes = new Set<string>(STORY_TYPES);
   const sourceKinds = new Set<string>(SOURCE_KINDS);
+  const excerptTypes = new Set<string>(EXCERPT_TYPES);
 
   const check = (
     key: SeedFileKey,
@@ -804,13 +878,16 @@ export function crossValidate(data: SeedDataset): CrossValidateResult {
     check('stories', row.line, 'story_type', row.value.story_type, storyTypes);
     check('stories', row.line, 'source_kind', row.value.source_kind, sourceKinds);
   }
+  for (const row of data.quotes) {
+    check('quotes', row.line, 'excerpt_type', row.value.excerpt_type, excerptTypes);
+  }
   const vocabFailures = issues.length - vocabBefore;
   checks.push({
-    name: '공유 어휘 일치 (relationship·intent·tone·mood·story_type·source_kind)',
+    name: '공유 어휘 일치 (relationship·intent·tone·mood·story_type·source_kind·excerpt_type)',
     ok: vocabFailures === 0,
     detail:
       vocabFailures === 0
-        ? `rules ${data.rules.length}행 · templates ${data.templates.length}행 · stories ${data.stories.length}행 모두 어휘 안에 있음`
+        ? `rules ${data.rules.length}행 · templates ${data.templates.length}행 · stories ${data.stories.length}행 · quotes ${data.quotes.length}행 모두 어휘 안에 있음`
         : `어휘 밖의 값 ${vocabFailures}건`,
   });
 

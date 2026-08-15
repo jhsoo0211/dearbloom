@@ -122,6 +122,32 @@ export interface PetBadge {
   alternatives: string[];
 }
 
+/**
+ * §1.5k `문학 속의 이 꽃` — 결과 화면의 소형 문학 블록.
+ *
+ * **있을 때만 세운다.** 31종 중 26종만 검증된 퍼블릭 도메인 발췌를 갖고 있고, 나머지
+ * 5종(프리지아·거베라·안개꽃·포인세티아·라넌큘러스)은 근대에 명명돼 고전 문학에
+ * 등장하지 않는다. 그 자리를 편집팀 문장으로 메우지 않는 것이 §1.5e "검증된 인용만"
+ * 이라, 이 필드는 `undefined` 가 정상 값이다.
+ */
+export interface LiteratureView {
+  /** 발췌 본문(한국어). 세리프 이탤릭으로 세운다. */
+  textKo: string;
+  /** 원어 원문. 소형으로 병기한다. 한국어 원전이면 없다. */
+  textOriginal?: string;
+  /** `김유정, 「동백꽃」(1936)` 형태의 각주 한 줄. */
+  attribution: string;
+  /** `시` `소설` `희곡` `산문` `고전` — 갈래 라벨. */
+  typeLabel?: string;
+  /** 옮긴이 각주. 자체 번역일 때만 있다. */
+  translatorNote?: string;
+  /** 종 차이·이름 혼동처럼 밝히지 않으면 틀린 정보가 되는 한 줄. */
+  caveat?: string;
+  /** 원문으로 건너뛰는 링크. 각주 톤을 지키려고 제목에만 건다(§1.5i). */
+  sourceTitle?: string;
+  sourceUrl?: string;
+}
+
 /** 추천 한 안(3안 중 하나). */
 export interface FlowOptionView {
   /** 0·1·2 — RecoResult 순서 그대로다(안심 → 의미 → 대담). */
@@ -159,6 +185,8 @@ export interface FlowOptionView {
   fallbackMeaning?: { meaningKo: string; confidenceLabel: string };
   stories: { featured: StoryCard | null; others: StoryCard[] };
   cultureMeanings: CultureMeaningRow[];
+  /** §1.5k 문학 속의 이 꽃. 검증된 발췌가 없거나 중복 배제에 걸리면 없다. */
+  literature?: LiteratureView;
 }
 
 /** 멘트 한 톤. */

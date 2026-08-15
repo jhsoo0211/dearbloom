@@ -562,5 +562,25 @@ export function flowerOccasions(flowerId: string): string[] {
  */
 export const FALLBACK_QUOTE = {
   textKo: '산에는 꽃 피네, 갈 봄 여름 없이 꽃이 피네.',
+  /** 작가 이름을 따로 두는 이유: 문학 블록이 "같은 작가 두 번 금지"를 이 값으로 판단한다. */
+  author: '김소월',
   attribution: '김소월, 〈산유화〉(1925)',
 };
+
+/**
+ * §1.5k 문학 발췌의 갈래 라벨 — quotes.excerpt_type 어휘와 1:1.
+ * `classic` 이 "고전"인 이유: 『시경』·오비디우스·KJV 성경처럼 시·소설·희곡 어느 쪽으로도
+ * 안 떨어지는 원전을 억지로 접으면 각주가 거짓이 된다(어휘 원본은 db/seed/schemas.ts).
+ */
+export const EXCERPT_TYPE_LABELS: Record<string, string> = {
+  poem: '시',
+  novel: '소설',
+  play: '희곡',
+  essay: '산문',
+  classic: '고전',
+};
+
+export function excerptTypeLabel(type: string | undefined): string | undefined {
+  if (type === undefined) return undefined;
+  return EXCERPT_TYPE_LABELS[type];
+}

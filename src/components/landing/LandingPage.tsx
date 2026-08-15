@@ -194,7 +194,7 @@ export default function LandingPage({ data }: { data: LandingData }) {
               <a href="#db-today">오늘의 꽃</a>
             </li>
             <li>
-              <a href="#db-trust">이야기</a>
+              <a href="/stories">이야기</a>
             </li>
             <li>
               <a href="#db-start">시작하기</a>
@@ -506,7 +506,7 @@ export default function LandingPage({ data }: { data: LandingData }) {
               </p>
               <nav className="db-footer-links" aria-label="보조 메뉴">
                 <a href="#db-today">오늘의 꽃</a>
-                <a href="#db-trust">꽃에 얽힌 이야기</a>
+                <a href="/stories">꽃에 얽힌 이야기</a>
                 <Link href="/recommend?intent=apology" prefetch={false}>
                   화해의 꽃
                 </Link>

@@ -1,0 +1,50 @@
+/**
+ * `/stories` 이야기 아카이브의 서버·클라이언트 공용 타입.
+ *
+ * **순수 타입만 둔다.** 클라이언트 컴포넌트가 이 파일만 import 하면 엔진(zod 포함)과
+ * 카탈로그 로더(node:fs)가 브라우저 번들에 섞이지 않는다 —
+ * `src/components/flow/types.ts` 가 지키는 경계와 같은 규칙이다.
+ *
+ * 어휘의 원본은 `src/lib/engine/types.ts`(StoryMood·StoryType)이고, 한국어 표기는
+ * 서버에서 `src/components/flow/labels.ts` 가 붙여 이 모양으로 내려보낸다.
+ */
+
+/** 아카이브 카드 한 장 = stories.csv 한 행 + 꽃 이름. */
+export interface ArchiveStory {
+  /** stories.csv 의 story_id. */
+  id: string;
+  flowerId: string;
+  /** flowers.csv 의 name_ko — 카드의 오버라인이자 꽃 필터의 표기다. */
+  flowerNameKo: string;
+  title: string;
+  /** 티저 한 줄. 카드에서 이야기를 대신 말하는 문장이다. */
+  hook?: string;
+  /** 전문(story_ko). 상세 시트에서만 펼친다(§1.5i). */
+  body: string;
+  /** §1.5f — 창작 이야기는 라벨을 눈에 띄게 세운다(사실처럼 보이지 않게). */
+  isOriginal: boolean;
+  /** story_type 한국어 라벨. `original` 이면 "dearbloom이 지어 본 이야기예요". */
+  typeLabel: string;
+  /** §1.5d 이야기 톤으로 옮긴 confidence_level. */
+  confidenceLabel: string;
+  /** 문화권(한국어). 비어 있는 행이 있을 수 있다. */
+  regionLabel?: string;
+  /** 시대(한국어). 사전에 없는 값은 서버가 감춘다(영문 slug 노출 금지). */
+  eraLabel?: string;
+  /** `이야기의 갈래 — …` 각주에 쓰는 원문 제목. 창작 이야기는 출처가 면제라 없을 수 있다. */
+  sourceTitle?: string;
+  /** 원문 링크. 상세 시트에서 새 탭으로 건너간다. */
+  sourceUrl?: string;
+  /** 이야기의 결(moods). 필터 비교용 문자열로만 쓴다(클라이언트가 엔진을 import 하지 않게). */
+  moods: string[];
+  /** moods 를 한국어로 옮긴 칩 라벨. moods 와 같은 순서다. */
+  moodLabels: string[];
+}
+
+/** 필터 바의 칩 한 칸. `전체` 는 key 가 `all` 이다. */
+export interface ArchiveFilterChip {
+  key: string;
+  label: string;
+  /** 이 칩만 눌렀을 때 남는 편수. 0 인 칩은 서버가 아예 세우지 않는다. */
+  count: number;
+}

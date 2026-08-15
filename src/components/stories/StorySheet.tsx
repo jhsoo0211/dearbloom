@@ -22,7 +22,9 @@
 
 import { useEffect, useRef, type KeyboardEvent } from 'react';
 
+import PlateFrame from './PlateFrame';
 import { metaNotes } from './meta';
+import { plateFor, plateSourceLine } from './plates';
 import styles from './stories.module.css';
 import type { ArchiveStory } from './types';
 
@@ -107,6 +109,8 @@ export default function StorySheet({
 
   /** 본문 **아래** 각주 줄 — 문화권 · 시대 · 갈래 · 신뢰(§1.5i 16차). 카드와 같은 순서다. */
   const notes = metaNotes(story);
+  /** 그 꽃의 세밀화. 상단 우측 소형 액자 + 각주 한 줄(도판 출처)로만 쓴다. */
+  const plate = plateFor(story.flowerId);
 
   return (
     <div className={styles.sheetRoot}>
@@ -144,18 +148,30 @@ export default function StorySheet({
               → "이야기의 갈래 —" 출처)
             열자마자 눈에 오는 것이 이야기여야 한다 — 메타를 본문 위로 올리지 마라.
           */}
-          <div className={styles.sheetTop}>
-            <p className={styles.sheetFlower}>{story.flowerNameKo}</p>
-            {story.moodLabels.map((label) => (
-              <span className={`${styles.tag} ${styles.tagMood}`} key={label}>
-                {label}
-              </span>
-            ))}
-          </div>
+          {/*
+            머리 = 왼쪽 글, 오른쪽 도판.
+            도판은 **본문보다 작게, 본문 옆에** 둔다 — 위계는 이야기가 먼저다(§1.5i).
+            도판 위에 글자를 얹지 않는 것도 규칙이다(illustration-assets 사용 규칙 3:
+            밝은 크림 판면 위에서는 아이보리 타이포가 완전히 죽는다).
+          */}
+          <div className={styles.sheetLede}>
+            <div className={styles.sheetLedeMain}>
+              <div className={styles.sheetTop}>
+                <p className={styles.sheetFlower}>{story.flowerNameKo}</p>
+                {story.moodLabels.map((label) => (
+                  <span className={`${styles.tag} ${styles.tagMood}`} key={label}>
+                    {label}
+                  </span>
+                ))}
+              </div>
 
-          <h2 className={styles.sheetTitle} id="story-sheet-title" tabIndex={-1} ref={titleRef}>
-            {story.title}
-          </h2>
+              <h2 className={styles.sheetTitle} id="story-sheet-title" tabIndex={-1} ref={titleRef}>
+                {story.title}
+              </h2>
+            </div>
+
+            {plate ? <PlateFrame plate={plate} variant="card" width={500} key={plate.flowerId} /> : null}
+          </div>
 
           {story.hook ? <p className={styles.sheetHook}>{story.hook}</p> : null}
           <p className={styles.sheetText} data-testid="sheet-text">
@@ -187,6 +203,20 @@ export default function StorySheet({
                 ) : (
                   story.sourceTitle
                 )}
+              </p>
+            ) : null}
+
+            {/*
+              도판 각주 — 그림의 출처는 이야기의 출처와 **다른 갈래**라 줄을 나눈다.
+              종이 다르거나 판면에 손을 댄 도판은 `note` 로 그 사실을 밝힌다
+              (감추면 "벚꽃이라며 다른 꽃을 보여 준" 화면이 된다).
+            */}
+            {plate ? (
+              <p className={styles.plateNote} data-testid="sheet-plate-note">
+                {plateSourceLine(plate)}
+                {plate.note ? (
+                  <span className={styles.plateNoteTail}>{plate.note}</span>
+                ) : null}
               </p>
             ) : null}
           </div>

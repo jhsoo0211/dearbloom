@@ -41,14 +41,20 @@
   --ctrl-t: 180ms;
   --ctrl-line: color-mix(in srgb, var(--fg) 35%, transparent);
   --ctrl-hover: color-mix(in srgb, var(--fg) 8%, transparent);
-  /* 액센트 채움 위 텍스트. 액센트가 밝은 네 테마는 Ink 가 대비를 넘긴다
-     (골드 6.1:1 · 로즈 틴트 5.9:1 · 라벤더 틴트 6.4:1). */
-  --ctrl-on-accent: var(--ink);
-}
-/* 아이보리 스튜디오만 액센트가 Deep Stem(어두움) — 대비 텍스트가 뒤집힌다(10.7:1). */
-.db-page[data-flower='lily'],
-.db-page [data-flower='lily'] {
-  --ctrl-on-accent: var(--ivory);
+  /**
+   * 선택 상태의 **채움** (§1.6b 2026-08-15 확정).
+   *
+   * 예전에는 액센트(`--accent`)를 깔고 그 위에 Ink 를 얹었다. 기본 테마의 액센트는
+   * Pollen Gold 라 §1.4 의 **"골드 배경 위 텍스트 금지"** 에 정면으로 걸린다.
+   * 규격이 말한 "채움 + 대비 텍스트" 를 지키면서 그 금지선을 넘지 않는 값이
+   * 테마의 솔리드 짝인 `--cta-bg`/`--cta-fg` 다(다크=Ivory+Ink / 라이트=Stem+Ivory) —
+   * 주 CTA·세그먼트가 이미 쓰는 짝이라 화면 안에서 한 가족이 되고,
+   * /stories·/groups 의 칩과도 **같은 문법**이 된다(세 화면 통일).
+   * ⚠ `background: var(--accent)` 로 되돌리지 마라 — §1.4 위반이다.
+   * 골드는 보더·라벨·오버라인 쪽에 그대로 남는다(제거가 아니라 역할 분리다).
+   */
+  --ctrl-on: var(--cta-bg);
+  --ctrl-on-fg: var(--cta-fg);
 }
 
 /* focus-visible 은 전 컨트롤 공통 — 2px 링 + 2px 오프셋(§1.6b 공통 상태).
@@ -912,8 +918,9 @@ body.db-nav-compact .db-nav {
   color: var(--fg-70);
 }
 /* 꽃 칩 — §1.6b 칩 규격.
-   기본은 투명 배경 + 전경 72%, 선택은 **액센트 채움 + 대비 텍스트 + 동색 보더** 하나로만
-   표시한다(점·밑줄 같은 두 번째 표현 금지). 높이는 44px 로 못 박는다. */
+   기본은 투명 배경 + 전경 72%, 선택은 **`--cta-bg`/`--cta-fg` 짝 채움 + 동색 보더** 하나로만
+   표시한다(점·밑줄 같은 두 번째 표현 금지). 높이는 44px 로 못 박는다.
+   채움을 골드로 되돌리지 마라 — 위 `--ctrl-on` 주석 참고(§1.4 골드 배경 금지선). */
 .db-adopt {
   display: inline-flex;
   align-items: center;
@@ -936,10 +943,11 @@ body.db-nav-compact .db-nav {
   background: var(--ctrl-hover);
   color: var(--fg);
 }
-.db-adopt[aria-pressed='true'] {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--ctrl-on-accent);
+.db-adopt[aria-pressed='true'],
+.db-adopt[aria-pressed='true']:hover {
+  background: var(--ctrl-on);
+  border-color: var(--ctrl-on);
+  color: var(--ctrl-on-fg);
 }
 
 /* 캐러셀 컨트롤 ------------------------------------------------------ */
@@ -1205,10 +1213,15 @@ body.db-nav-compact .db-nav {
   letter-spacing: -0.01em;
   color: var(--fg);
 }
-.db-qb-en {
-  margin-top: 10px;
-  font-size: 12.5px;
-  letter-spacing: 0.06em;
+/* 세 행을 각각 한 줄로 — 좁은 화면에서도 행갈이가 무너지지 않게 block 으로 세운다. */
+.db-qb-line {
+  display: block;
+}
+/* 한자 원문은 소형 병기. 자간을 벌려 번역문과 목소리를 구분한다. */
+.db-qb-han {
+  margin-top: 12px;
+  font-size: 13.5px;
+  letter-spacing: 0.12em;
   color: var(--fg-50);
 }
 .db-qb figcaption {
@@ -1216,6 +1229,13 @@ body.db-nav-compact .db-nav {
   font-size: 12.5px;
   line-height: 1.6;
   color: var(--fg-70);
+}
+/* 서브 카피 — 왜 이 문장이 여기 있는지 한 줄로 말한다(§1.5d). */
+.db-qb-note {
+  margin-top: 8px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--fg-50);
 }
 
 /* ═══════════════ 챕터 04 · 피날레 ═══════════════ */

@@ -10,7 +10,10 @@ import {
   storyConfidenceLabel,
   storyTypeLabel,
 } from '@/components/flow/labels';
+import { categoryOf } from '@/components/landing/landing-data';
 import StoriesArchive from '@/components/stories/StoriesArchive';
+import { STORY_CATEGORIES } from '@/components/stories/categories';
+import { plateCredits } from '@/components/stories/plates';
 import styles from '@/components/stories/stories.module.css';
 import type { ArchiveFilterChip, ArchiveLane, ArchiveStory } from '@/components/stories/types';
 import { loadCatalog } from '@/lib/data/catalog';
@@ -104,12 +107,32 @@ function buildLanes(flowers: CatalogFlower[], stories: ArchiveStory[]): ArchiveL
     lanes.push({
       flowerId: flower.id,
       flowerNameKo: flower.nameKo,
+      // 꽃 계열(§1.4c v3.2) — 랜딩의 테마 배정과 **같은 함수**를 쓴다.
+      // 화면마다 "이 꽃은 무슨 계열" 이 갈리면 같은 서비스가 두 가지 분류를 갖게 된다.
+      category: categoryOf(flower),
       dotColor: swatch.hex,
       dotLabel: swatch.label,
       stories: own,
     });
   }
   return lanes;
+}
+
+/**
+ * 꽃 계열 칩 — §1.4c 순서 그대로, 이야기가 한 편도 없는 계열은 세우지 않는다.
+ *
+ * 예전에는 이 자리에 **꽃 31칸**이 서서 390px 화면에서 여섯 줄로 접혔다(필터 바가 화면의
+ * 65%를 먹었다). 고르는 값보다 고르는 부담이 커진 상태라, 계열 5칸으로 접고 꽃 한 종을
+ * 직접 찾는 일은 `꽃 고르기` 시트로 옮겼다(2026-08-15 사용자 지시).
+ */
+function categoryChips(lanes: ArchiveLane[]): ArchiveFilterChip[] {
+  return STORY_CATEGORIES.map((category) => ({
+    key: category.key,
+    label: category.label,
+    count: lanes
+      .filter((lane) => lane.category === category.key)
+      .reduce((sum, lane) => sum + lane.stories.length, 0),
+  })).filter((chip) => chip.count > 0);
 }
 
 /** 전체 + 실제로 쓰인 결(엔진 STORY_MOODS 순서). */
@@ -134,8 +157,11 @@ export default async function StoriesPage() {
 
   const lanes = buildLanes(catalog.flowers, stories);
   const moods = moodChips(stories);
+  const categories = categoryChips(lanes);
   // 인트로 숫자는 실제로 화면에 세운 것만 센다(레인 = 이야기가 있는 꽃).
   const laneStoryCount = lanes.reduce((sum, lane) => sum + lane.stories.length, 0);
+  // 도판 크레딧 — 화면에 실제로 쓴 꽃의 판본만, 판본 단위로 합쳐서(illustration-assets 사용 규칙 4).
+  const credits = plateCredits(lanes.map((lane) => lane.flowerId));
 
   return (
     <div className={styles.page}>
@@ -180,7 +206,7 @@ export default async function StoriesPage() {
 
       {/* ── 2. 필터 · 꽃별 레인 · 상세 시트 ─────────────────────── */}
       <main>
-        <StoriesArchive lanes={lanes} moodChips={moods} />
+        <StoriesArchive lanes={lanes} moodChips={moods} categoryChips={categories} />
 
         {/* ── 3. 하단 CTA ──────────────────────────────────────── */}
         <section className={styles.cta} aria-labelledby="stories-cta-title">
@@ -203,6 +229,31 @@ export default async function StoriesPage() {
       {/* ── 4. 푸터 ─────────────────────────────────────────────── */}
       <footer className={styles.siteFoot}>
         <div className={styles.wrap}>
+          {/*
+            도판 크레딧 — `docs/illustration-assets.md` 사용 규칙 4.
+            표기 형식 `Plate: {작품명}, {연도} / {소장·제공 기관}` 을 그대로 쓴다.
+            31종은 전부 퍼블릭 도메인·CC0 라 **표기 의무는 없다.** 그래도 적어 두는 이유는
+            BHL→Flickr 경유 파일에 `CC BY 2.0` 상자가 기계적으로 함께 붙어 있어서다 —
+            분쟁 여지를 0으로 만드는 가장 싼 보험이고, 아카이브라는 톤에도 출처가 어울린다.
+          */}
+          <section className={styles.credits} aria-labelledby="plate-credits-title">
+            <h2 className={styles.creditsTitle} id="plate-credits-title">
+              <span className={styles.eyebrow}>Image credits</span>
+              <span className={styles.srOnly}>도판 출처</span>
+            </h2>
+            <p className={styles.creditsLead}>
+              레인과 이야기 카드의 세밀화는 19세기 전후의 식물 도감에서 왔어요. 모두 퍼블릭
+              도메인·CC0 도판이고, 판본을 아래에 밝혀 둘게요.
+            </p>
+            <ul className={styles.creditList}>
+              {credits.map((credit) => (
+                <li className={styles.creditItem} key={credit}>
+                  {credit}
+                </li>
+              ))}
+            </ul>
+          </section>
+
           <p className={styles.footSay}>
             꽃말은 시대와 나라를 건너며 조금씩 다른 이야기가 돼요. dearbloom은 그 갈래를 함께
             들려드려요.

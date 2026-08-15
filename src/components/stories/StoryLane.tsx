@@ -1,7 +1,8 @@
 'use client';
 
 /**
- * 꽃 한 종의 가로 레인 — 헤더(카테고리 점 · 꽃 이름 · 편수 · 화살표) + scroll-snap 카드 스트립.
+ * 꽃 한 종의 가로 레인 — 헤더(세밀화 액자 · 카테고리 점 · 꽃 이름 · 편수 · 화살표)
+ * + scroll-snap 카드 스트립.
  *
  * 아카이브의 기본 뷰는 세로 그리드가 아니라 **꽃마다 한 줄**이다(넷플릭스식). 이야기가
  * 89편이라 한 판에 늘어놓으면 "꽃 17종이 있구나"가 안 보이고, 스크롤만 길어진다.
@@ -62,7 +63,9 @@ import {
   type PointerEvent,
 } from 'react';
 
+import PlateFrame from './PlateFrame';
 import { metaNotes } from './meta';
+import { plateFor } from './plates';
 import styles from './stories.module.css';
 import type { ArchiveLane, ArchiveStory } from './types';
 
@@ -128,6 +131,8 @@ export default function StoryLane({ lane, stories, jumped, onOpen, onMount }: St
   const live = seen || jumped;
   const shown = expanded ? stories : stories.slice(0, LANE_CAP);
   const hidden = stories.length - shown.length;
+  /** 이 꽃의 세밀화. 아직 도판이 없는 꽃이면 헤더는 그대로 이름만 세운다. */
+  const plate = plateFor(lane.flowerId);
 
   const drag = useRef({ active: false, startX: 0, startLeft: 0, moved: 0 });
   const ticking = useRef(false);
@@ -345,6 +350,12 @@ export default function StoryLane({ lane, stories, jumped, onOpen, onMount }: St
       }}
     >
       <header className={styles.laneHead}>
+        {/*
+          꽃 세밀화 소형 액자(§1.4b · docs/illustration-assets.md).
+          꽃 이름이 바로 옆에 있으므로 **장식**으로 둔다 — 스크린리더가 줄마다 도판 설명을
+          두 번 읽으면 31줄에서 소음이 된다. 도판이 없거나 못 받으면 아무것도 그리지 않는다.
+        */}
+        {plate ? <PlateFrame plate={plate} variant="thumb" decorative /> : null}
         <span
           className={styles.laneDot}
           style={{ background: lane.dotColor }}

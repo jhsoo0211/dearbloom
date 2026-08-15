@@ -100,12 +100,15 @@
  * 컨트롤마다 링을 따로 쓰다가 값이 갈리는 사고를 막는다.
  */
 .chip:focus-visible,
+.pickBtn:focus-visible,
 .reset:focus-visible,
 .laneArrow:focus-visible,
 .card:focus-visible,
 .moreCard:focus-visible,
 .sheetClose:focus-visible,
-.sheetNavBtn:focus-visible {
+.sheetNavBtn:focus-visible,
+.pickerInput:focus-visible,
+.pickerItem:focus-visible {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
 }
@@ -272,9 +275,15 @@
 /**
  * 필터 바.
  *
- * 좁은 화면에서는 **고정하지 않는다.** 꽃 18칸이 여섯 줄로 접히면 바 자체가 390px 뷰포트의
- * 65%(실측 545px)를 먹어 화면을 덮어 버린다 — 고정 바가 본문을 가리면 필터가 아니라 방해다.
- * 1040px 위에서는 두 줄로 접혀 29% 로 내려가고 그리드도 3열이라, 그때만 고정한다.
+ * 좁은 화면에서는 **고정하지 않는다.** 1040px 위에서만 고정한다 —
+ * 그 폭에서는 두 줄 다 한 줄로 펴져 바가 167px(뷰포트의 19%)이고, 아래 그리드도 3열이라
+ * 가릴 것이 적다. 좁은 화면에서 고정 바가 본문을 덮으면 그건 필터가 아니라 방해다.
+ *
+ * 390px 실측(2026-08-15, 꽃 31종·이야기 250편):
+ *   · 예전(꽃 31칸을 그대로 세우던 때) — 바 1023px, 그중 꽃 줄만 821px(칩 17줄).
+ *     뷰포트(844px)보다 바가 더 컸다. 그래서 계열 5칸 + `꽃 고르기` 로 접었다.
+ *   · 지금 — 바 321px(38%), 두 줄 모두 칩 2줄. 360px 에서도 같다(칩 가로 여백만 줄여서).
+ * ⚠ 이 자리에 칩을 더 세우려거든 먼저 재라. 한 줄이 접힐 때마다 44px 이 붙는다.
  */
 .filters {
   padding: 14px 0 12px;
@@ -312,6 +321,20 @@
   letter-spacing: 0.14em;
   color: var(--fg-50);
 }
+/**
+ * 좁은 화면에서는 라벨을 **칩 줄 위로 올린다.**
+ *
+ * 라벨이 줄 안에 서 있으면 76px(=346px 중 22%)을 가져가고, 그만큼 칩이 한 줄 더 접힌다.
+ * 라벨 한 줄은 12px, 칩 한 줄은 44px — 옮기는 쪽이 3배 싸다.
+ * 640px 위에서는 폭이 남으므로 원래대로 같은 줄에 선다(줄 수가 늘지 않는다).
+ */
+@media (max-width: 639px) {
+  .filterLabel {
+    flex-basis: 100%;
+    min-width: 0;
+    padding-top: 2px;
+  }
+}
 .chips {
   display: flex;
   flex-wrap: wrap;
@@ -320,10 +343,17 @@
 /**
  * 필터 칩 — §1.6b 규격.
  *
- * 꽃 칩(건너뛰기)과 결 칩(필터)은 **하는 일이 다르지만 생김새는 같다.** 둘 다 "지금 무엇을
- * 고른 상태인가" 를 말하는 컨트롤이라, 하나는 채움·하나는 밑줄 식으로 갈리면 화면이
- * 두 가지 언어를 쓰게 된다(aria 는 `aria-current` / `aria-pressed` 로 갈리고,
- * 그 차이는 스크린리더가 읽어 준다 — 눈에는 한 가지 표현이면 된다).
+ * 계열 칩과 결 칩은 **거르는 축이 다르지만 생김새는 같다.** 둘 다 "지금 무엇을 고른
+ * 상태인가" 를 말하는 컨트롤이라, 하나는 채움·하나는 밑줄 식으로 갈리면 화면이
+ * 두 가지 언어를 쓰게 된다. 선택 표현은 채움 하나뿐이다(밑줄·점 금지).
+ *
+ * ── 계열 칩의 한국어 라벨 (2026-08-15 확정) ─────────────────────────
+ * `숲빛 · 상아빛 · 금빛 · 와인빛 · 보랏빛` — 값은 `categories.ts` 가 갖는다.
+ * §1.4c v3.2 의 카테고리 이름(`나이트 보태니컬`·`아이보리 스튜디오`·`잉크 앤 골드`·
+ * `이브닝 와인`·`딥 라벤더`)은 **테마 이름**이라 44px 칩에는 길고, 여기서 하는 일은
+ * 테마 소개가 아니라 31줄을 다섯으로 접는 **거르기**다. 그래서 배정 기준인 대표색
+ * (흰·초록 / 크림 / 노랑·주황 / 빨강·분홍 / 보라·파랑)을 그대로 말하는 한 단어로 줄이고,
+ * 다섯을 `-빛` 으로 맞춰 한 가족으로 묶었다 — 길이가 들쭉날쭉하면 칩 줄이 흔들린다.
  */
 .chip {
   display: inline-flex;
@@ -344,6 +374,20 @@
     color var(--dur) var(--ease),
     background-color var(--dur) var(--ease);
 }
+/**
+ * 가장 좁은 화면(360px 안팎)에서는 **가로 여백만** 줄인다.
+ *
+ * §1.6b 가 못 박은 것은 높이 44px 이고, 줄일 수 있다고 명시한 것이 가로 여백이다.
+ * 이 3px 이 결 칩 7칸을 세 줄에서 두 줄로 되돌린다(=44px 한 줄을 통째로 아낀다).
+ */
+@media (max-width: 479px) {
+  .chip {
+    padding: 0 11px;
+  }
+  .pickBtn {
+    padding: 0 13px;
+  }
+}
 .chip:hover {
   border-color: var(--hair-2);
   background: var(--ctrl-hover);
@@ -357,6 +401,12 @@
   color: var(--ctrl-on-fg);
   font-weight: 600;
 }
+/* §1.6b 공통 상태 — disabled = 40% 투명 + 커서 기본.
+   눌러도 0편이 되는 칩은 잠근다(숫자는 그대로 보여 준다 — 왜 잠겼는지가 숫자에 있다). */
+.chip:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
 /* 카운트는 여는 괄호 없이 숫자만 소형(§1.6b) */
 .chipCount {
   font-family: var(--font-sans);
@@ -367,6 +417,40 @@
 .chipOn .chipCount {
   color: var(--ctrl-on-fg);
   opacity: 0.7;
+}
+
+/**
+ * `꽃 고르기` — 칩 줄 끝에 서는 **보조 버튼**(§1.6b: pill · h 44~48 · 고스트 1px 보더).
+ *
+ * 일부러 칩과 다르게 생겼다. 계열 칩은 "거르기"(누르면 화면이 줄어든다)이고 이 버튼은
+ * "찾기"(누르면 시트가 열린다)라, 같은 모양을 하면 눌러 보기 전에는 구분이 안 된다.
+ * 보더를 한 단계 진하게(`--ghost-line`) 주는 것으로만 갈라 두고 높이·모서리는 칩과 같다.
+ */
+.pickBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 44px;
+  padding: 0 16px;
+  border-radius: 9999px;
+  border: 1px solid var(--ghost-line);
+  background: transparent;
+  font-size: 13.5px;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--fg);
+  transition:
+    border-color var(--dur) var(--ease),
+    background-color var(--dur) var(--ease);
+}
+.pickBtn:hover {
+  background: var(--ctrl-hover);
+}
+.pickNum {
+  font-family: var(--font-sans);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
 }
 
 .count {
@@ -456,6 +540,67 @@
   border-radius: 9999px;
   /* 어두운 대표색(빨강·푸른색)도 형태가 보이게 헤어라인을 두른다. */
   border: 1px solid var(--hair-2);
+}
+
+/* ── 세밀화 액자 (docs/illustration-assets.md 사용 규칙) ──────────────
+   19세기 도판을 다크 그린 위에 얹는 방법은 **누끼가 아니라 액자**다. 크림 판면을 그대로 둔 채
+   아이보리 매트를 두르고 그 안쪽에 골드 헤어라인을 넣으면, 어두운 방에 걸린 표본 액자처럼
+   읽힌다(누끼로 날리면 종이 질감과 인쇄 활자가 사라져 그냥 꽃 클립아트가 된다).
+
+   두 겹의 톤 통일은 **전 애셋에 같은 값**으로 건다 — 도판이 1613~1929년 사이 14개 판본에서
+   와 종이 흰색이 제각각이라, 나란히 놓으면 그 차이가 먼저 보인다.
+     ① `filter: sepia(.12) saturate(.92) contrast(1.04) brightness(.98)`
+     ② 아이보리를 `mix-blend-mode: multiply` 로 6% 덮는 오버레이
+   순백 누끼본(ranunculus)·가로 판면(poinsettia)도 아이보리 매트가 바탕을 대신 깔아 준다.
+   ⚠ 도판 **위에 텍스트를 올리지 마라**(사용 규칙 3) — 밝은 바탕에서 아이보리 타이포가 죽는다.
+   ═════════════════════════════════════════════════════════════════ */
+.plateThumb,
+.plateCard {
+  position: relative;
+  flex: none;
+  display: block;
+  overflow: hidden;
+  background: var(--ivory);
+  border: 1px solid var(--accent-line);
+}
+.plateThumb::after,
+.plateCard::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--ivory);
+  mix-blend-mode: multiply;
+  opacity: 0.06;
+  pointer-events: none;
+}
+.plateImg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  object-fit: cover;
+  /* 판면 위쪽에 꽃, 아래쪽에 인쇄 학명이 오는 구성이 많다 — 위에서 조금 내려온 자리를 잡는다. */
+  object-position: 50% 32%;
+  filter: sepia(0.12) saturate(0.92) contrast(1.04) brightness(0.98);
+}
+
+/* 레인 헤더의 소형 원판 — 44px(=§1.6 터치 타깃과 같은 격자. 누르는 것은 아니다). */
+.plateThumb {
+  align-self: center;
+  width: 44px;
+  height: 44px;
+  padding: 2px;
+  border-radius: 9999px;
+}
+
+/* 상세 시트의 세로 액자 — 본문보다 작게, 본문 옆에(§1.5i 본문 우선). */
+.plateCard {
+  width: clamp(72px, 19vw, 92px);
+  aspect-ratio: 3 / 4;
+  padding: 4px;
+  border-radius: 3px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
 }
 
 .laneName {
@@ -860,6 +1005,43 @@
   font-size: 13.5px;
   color: var(--fg-50);
 }
+/**
+ * 도판 크레딧 — 푸터 맨 위의 작은 블록(illustration-assets 사용 규칙 4).
+ *
+ * 31종이 아니라 **판본 수만큼**(14줄 안팎) 나온다. 표기 형식은 문서가 정한
+ * `Plate: {작품명}, {연도} / {소장·제공 기관}` 고정이다 — 형식을 바꾸지 마라.
+ * 읽으러 오는 글이 아니라 "밝혀 두는" 글이라 12px·전경 62%로 가장 낮은 위계에 둔다.
+ */
+.credits {
+  padding-bottom: 20px;
+  margin-bottom: 22px;
+  border-bottom: 1px solid var(--hair);
+}
+.creditsTitle {
+  font-family: var(--font-sans);
+  font-size: inherit;
+  font-weight: 400;
+  line-height: inherit;
+}
+.creditsLead {
+  margin-top: 10px;
+  max-width: 52ch;
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--fg-50);
+}
+.creditList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 18px;
+  margin-top: 10px;
+}
+.creditItem {
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--fg-50);
+}
+
 .footSay {
   max-width: 52ch;
   line-height: 1.8;
@@ -995,6 +1177,22 @@
   outline: 2px solid var(--focus);
   outline-offset: 3px;
 }
+/**
+ * 시트 머리 — 왼쪽에 글(꽃 이름·결 칩·제목), 오른쪽에 세밀화 액자.
+ *
+ * 도판을 헤더 배경으로 깔지 않고 **옆에 세운다**: 배경으로 깔면 제목이 도판 위에 앉는데,
+ * 크림 판면 위 아이보리 타이포는 읽히지 않고(사용 규칙 3), 도판을 어둡게 눌러 글을 살리면
+ * 이번엔 도판이 안 보인다. 옆에 두면 둘 다 산다 — 그리고 위계는 글이 먼저다(§1.5i).
+ */
+.sheetLede {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+.sheetLedeMain {
+  flex: 1;
+  min-width: 0;
+}
 /* 상단은 카드와 같은 규칙 — 꽃 이름 + 결 칩만(§1.5i 16차). 지역·시대는 각주 블록으로. */
 .sheetTop {
   display: flex;
@@ -1058,6 +1256,21 @@
   text-decoration: underline;
   text-underline-offset: 3px;
 }
+/**
+ * 도판 각주 — 이야기의 출처와 **다른 갈래**라 줄을 나눈다(그림의 출처는 글의 출처가 아니다).
+ * 표기 형식은 `docs/illustration-assets.md` 사용 규칙 4를 따르고, 종이 다르거나 판면에
+ * 손댄 도판은 뒷줄(`.plateNoteTail`)에 그 사실을 그대로 적는다 — 감추면 거짓말이 된다.
+ */
+.plateNote {
+  margin-top: 10px;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--fg-50);
+}
+.plateNoteTail {
+  display: block;
+  color: var(--fg-70);
+}
 .sheetNav {
   display: flex;
   gap: 8px;
@@ -1083,4 +1296,123 @@
 .sheetNavBtn:disabled {
   opacity: 0.4;
   cursor: default;
+}
+
+/* ── `꽃 고르기` 시트 ────────────────────────────────────────────────
+   이야기 시트(`.sheet`)의 상자를 그대로 쓰고 내용물만 다르다 — 한 화면에서 시트가 두 가지
+   모양으로 열리면 "무엇이 열린 건가" 를 매번 다시 읽어야 한다. 다른 것은 하나뿐:
+   여기는 **찾는 자리**라 검색 칸이 머리에 고정되고 목록만 스크롤한다.
+   ═════════════════════════════════════════════════════════════════ */
+.pickerSheet {
+  max-width: 560px;
+}
+.pickerTitle {
+  font-family: var(--font-serif);
+  font-size: 19px;
+  font-weight: 400;
+  line-height: 1.4;
+  color: var(--fg);
+}
+.pickerSearch {
+  padding: 4px 22px 12px;
+  border-bottom: 1px solid var(--hair);
+}
+/* §1.6b 보조 컨트롤과 같은 문법 — pill · 고스트 보더 · h48. */
+.pickerInput {
+  width: 100%;
+  height: 48px;
+  padding: 0 16px;
+  border-radius: 9999px;
+  border: 1px solid var(--ghost-line);
+  background: transparent;
+  font: inherit;
+  font-size: 15px;
+  color: var(--fg);
+  /* iOS 가 검색 인풋에 얹는 기본 모양(둥근 회색 상자·내부 그림자)을 지운다. */
+  appearance: none;
+}
+.pickerInput::placeholder {
+  color: var(--fg-50);
+}
+.pickerHint {
+  margin-top: 8px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--fg-50);
+}
+.pickerHintTail {
+  margin-left: 4px;
+}
+.pickerBody {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 6px 22px 22px;
+}
+.pickerGroup {
+  margin-top: 16px;
+}
+.pickerGroup:first-child {
+  margin-top: 8px;
+}
+.pickerGroupHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--hair);
+  font-family: var(--font-serif);
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--accent);
+}
+.pickerGroupHint {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  color: var(--fg-50);
+}
+/* 31칸을 한 판에 늘어놓되, 넓어지면 칸이 늘어나는 것이 아니라 열이 늘어난다. */
+.pickerList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+  gap: 2px 10px;
+  margin-top: 4px;
+}
+.pickerItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  /* §1.6 터치 타깃 — 목록 행도 44px 아래로 내려가지 않는다. */
+  min-height: 48px;
+  padding: 0 10px;
+  border-radius: 12px;
+  text-align: left;
+  color: var(--fg);
+  transition: background-color var(--dur) var(--ease);
+}
+.pickerItem:hover {
+  background: var(--ctrl-hover);
+}
+.pickerName {
+  flex: 1;
+  min-width: 0;
+  font-size: 15px;
+  line-height: 1.5;
+}
+.pickerNum {
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--fg-50);
+}
+.pickerEmpty {
+  margin-top: 18px;
+  padding: 20px 18px;
+  border: 1px dashed var(--hair-2);
+  border-radius: 14px;
+  font-size: 14.5px;
+  line-height: 1.75;
+  color: var(--fg-70);
 }

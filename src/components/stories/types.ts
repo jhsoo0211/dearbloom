@@ -50,8 +50,16 @@ export interface ArchiveStory {
  */
 export interface ArchiveLane {
   flowerId: string;
-  /** 레인 헤더의 제목이자 건너뛰기 칩의 표기. */
+  /** 레인 헤더의 제목이자 `꽃 고르기` 시트의 표기. */
   flowerNameKo: string;
+  /**
+   * 꽃 계열(§1.4c v3.2 테마 카테고리) — `forest|ivory|gold|wine|dusk`.
+   *
+   * 필터 칩 5칸이 이 값으로 레인을 거르고, `꽃 고르기` 시트가 이 값으로 31종을 묶는다.
+   * 배정은 서버가 `landing-data.categoryOf()` 로 정한다 — 클라이언트는 문자열만 비교한다
+   * (엔진·카탈로그를 브라우저 번들에 들이지 않으려는 경계).
+   */
+  category: string;
   /**
    * 레인 헤더의 카테고리 점 색.
    *
@@ -66,10 +74,15 @@ export interface ArchiveLane {
   stories: ArchiveStory[];
 }
 
-/** 필터 바의 칩 한 칸. `전체` 는 key 가 `all` 이다. */
+/** 필터 바의 칩 한 칸. 결 필터의 `전체` 는 key 가 `all` 이다. */
 export interface ArchiveFilterChip {
   key: string;
   label: string;
-  /** 이 칩만 눌렀을 때 남는 편수. 0 인 칩은 서버가 아예 세우지 않는다. */
+  /**
+   * 이 칩만 눌렀을 때 남는 편수(서버가 센 값 = 다른 필터가 없을 때의 수).
+   * 화면에서는 **다른 축의 필터와 AND** 한 수로 다시 계산해 보여 준다 —
+   * 눌러도 0편이 되는 칩이 큰 숫자를 달고 있으면 거짓말이 된다.
+   * 서버 기준 0 인 칩은 아예 세우지 않는다.
+   */
   count: number;
 }

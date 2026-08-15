@@ -15,18 +15,23 @@
   --dur: 180ms; /* §1.6b 공통 전환 — 버튼·칩·세그먼트가 같은 속도로 반응한다 */
   --gut: 20px;
 
-  /* §1.6b 컨트롤 토큰 — 팔레트 변수에서 파생(하드코딩 금지). 랜딩과 같은 값이다. */
+  /* §1.6b 컨트롤 토큰 — 팔레트 변수에서 파생(하드코딩 금지). 랜딩·/stories 와 같은 값이다. */
   --ctrl-line: color-mix(in srgb, var(--fg) 35%, transparent);
   --ctrl-hover: color-mix(in srgb, var(--fg) 8%, transparent);
-  /* 액센트 채움 위 대비 텍스트 — 이 화면 기본 테마의 액센트는 골드(Ink 6.1:1) */
-  --ctrl-on-accent: var(--ink);
+  /**
+   * 선택 상태의 **채움** (§1.6b 2026-08-15 확정).
+   *
+   * 예전에는 액센트(골드) 채움 + Ink 텍스트였는데, §1.4 는 **골드 배경 위 텍스트를 금지**한다.
+   * 규격의 "채움 + 대비 텍스트" 를 지키면서 그 금지선을 넘지 않는 값이 테마의 솔리드 짝인
+   * `--cta-bg`/`--cta-fg`(다크=Ivory+Ink / 라이트=Stem+Ivory)다 — 주 CTA 와 한 가족이고,
+   * 랜딩 꽃 칩·/stories 필터 칩과도 같은 문법이 된다.
+   * ⚠ `background: var(--accent)` 로 되돌리지 마라. 골드는 보더·라벨 쪽에 그대로 남는다.
+   */
+  --ctrl-on: var(--cta-bg);
+  --ctrl-on-fg: var(--cta-fg);
 
   min-height: 100dvh;
   background: var(--bg-2);
-}
-/* 아이보리 스튜디오만 액센트가 Deep Stem(어두움) — 대비 텍스트가 뒤집힌다 */
-[data-flower='lily'] .shell {
-  --ctrl-on-accent: var(--ivory);
 }
 
 /* focus-visible 은 전 컨트롤 공통 — 2px 링 + 2px 오프셋(§1.6b).
@@ -233,8 +238,9 @@
 }
 
 /* §1.6b 칩 — 화면·목적을 가리지 않고 같은 모양이다.
-   h 44px 고정 · 기본은 투명 배경 + 전경 72% · 선택은 **액센트 채움 + 대비 텍스트 + 동색 보더**
-   하나로만 표시한다(예전의 점 표식은 두 번째 선택 표현이라 뺐다). */
+   h 44px 고정 · 기본은 투명 배경 + 전경 72% · 선택은 **`--cta-bg`/`--cta-fg` 짝 채움 + 동색 보더**
+   하나로만 표시한다(예전의 점 표식은 두 번째 선택 표현이라 뺐다).
+   채움을 골드로 되돌리지 마라 — 위 `--ctrl-on` 주석 참고(§1.4 골드 배경 금지선). */
 .chip {
   display: inline-flex;
   align-items: center;
@@ -258,15 +264,11 @@
   border-color: var(--fg);
   color: var(--fg);
 }
-.chipOn {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--ctrl-on-accent);
-}
+.chipOn,
 .chipOn:hover {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--ctrl-on-accent);
+  background: var(--ctrl-on);
+  border-color: var(--ctrl-on);
+  color: var(--ctrl-on-fg);
 }
 
 /* 칩 속 네이티브 input — 눈에서만 감춘다(포커스·읽기 동작은 그대로 살아 있어야 한다) */
@@ -504,8 +506,9 @@
 }
 
 /* ── 모드 토글 (세그먼트) ─────────────────────────────────────────────
-   §1.6b: pill 트랙(배경 전경 8%) 안 토글 · 선택 = 액센트 채움 + 대비 텍스트.
-   칩과 같은 "선택 = 액센트 채움" 문법이라 두 컨트롤이 한 화면에서 어긋나 보이지 않는다. */
+   §1.6b: pill 트랙(배경 전경 8%) 안 토글 · 선택 = 채움 + 대비 텍스트.
+   채움은 칩과 **같은 `--ctrl-on` 짝**이다 — 한 화면에서 "선택" 이 두 가지 색으로 보이면
+   같은 뜻의 컨트롤이 서로 다른 말을 하는 셈이 된다(§1.6b 실패 조건). */
 .seg {
   position: relative;
   display: grid;
@@ -523,7 +526,7 @@
   width: calc((100% - 8px) / 2);
   height: calc(100% - 8px);
   border-radius: 9999px;
-  background: var(--accent);
+  background: var(--ctrl-on);
   transform: translateX(calc(var(--i, 0) * 100%));
   transition: transform var(--dur) var(--ease);
 }
@@ -547,7 +550,7 @@
 }
 .segBtn[aria-selected='true'],
 .segBtn[aria-selected='true']:hover {
-  color: var(--ctrl-on-accent);
+  color: var(--ctrl-on-fg);
 }
 
 .panel {

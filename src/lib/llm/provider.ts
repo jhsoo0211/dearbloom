@@ -43,16 +43,16 @@ const GEMINI_DEFAULT_MODEL = 'gemini-flash-lite-latest';
 const CLAUDE_DEFAULT_MODEL = 'claude-opus-5';
 
 /**
- * NVIDIA NIM 기본 모델.
+ * NVIDIA NIM 기본 모델 — 실키 실측으로 고른 값이다(2026-08-15).
+ *
+ *  - `openai/gpt-oss-20b`: `reasoning_effort: 'low'` 와 함께 **2초**에 3톤 JSON 통과.
+ *  - `meta/llama-3.3-70b-instruct`(이전 기본값): 40초 무응답(서버리스 콜드스타트로
+ *    추정)이라 10초 예산에서는 사실상 사용 불가 — 폐기.
  *
  * IfSave 가 같은 계정으로 `google/gemma-4-31b-it` 를 쓰고 있어, 레이트리밋을 나눠 쓰지
- * 않도록 일부러 다른 모델을 고른다.
- *
- * ⚠ 키 발급 전에 정한 값이라 실존 여부를 아직 확인하지 못했다. 키를 넣은 뒤
- * `GET https://integrate.api.nvidia.com/v1/models` 로 목록을 확인하고, 이름이 다르면
- * `NVIDIA_MODEL` 환경변수로 덮어써라(코드 수정 없이 바뀐다).
+ * 않도록 다른 모델을 유지한다. 바꾸려면 `NVIDIA_MODEL` 환경변수로 덮어써라.
  */
-const NVIDIA_DEFAULT_MODEL = 'meta/llama-3.3-70b-instruct';
+const NVIDIA_DEFAULT_MODEL = 'openai/gpt-oss-20b';
 
 /** 3톤 × 200자 + 부연이면 넉넉하다. */
 const MAX_OUTPUT_TOKENS = 2048;
@@ -264,6 +264,10 @@ async function callNvidia(
         { role: 'user', content: userContent },
       ],
       max_tokens: MAX_OUTPUT_TOKENS,
+      // 추론 모델(gpt-oss 등)은 기본 effort 로 사고 과정을 수천 자 생성해 20초를 넘긴다
+      // (실측: 기본 22초 → low 2초). 비추론 모델(gemma 실측 200)도 이 필드를 무시할 뿐
+      // 거부하지 않으므로 조건 없이 보낸다.
+      reasoning_effort: 'low',
     }),
     signal,
   });

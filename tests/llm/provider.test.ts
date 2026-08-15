@@ -294,10 +294,13 @@ describe('generateMessages — NVIDIA 요청 본문', () => {
     const body = JSON.parse(String(init.body)) as {
       model: string;
       max_tokens: number;
+      reasoning_effort: string;
       messages: Array<{ role: string; content: string }>;
     };
 
-    expect(body.model).toBe('meta/llama-3.3-70b-instruct');
+    expect(body.model).toBe('openai/gpt-oss-20b');
+    // 이 필드가 빠지면 추론 모델이 사고 과정을 수천 자 생성해 10초 예산을 넘긴다(실측 22초).
+    expect(body.reasoning_effort).toBe('low');
     expect(body.messages[0].role).toBe('system');
     expect(body.messages[1].role).toBe('user');
     // JSON 강제는 response_format 이 아니라 프롬프트로 한다(모델마다 지원이 갈려서).

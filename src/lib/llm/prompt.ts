@@ -40,6 +40,8 @@ const INTENT_KO: Record<string, string> = {
   comfort: '위로',
   anniversary: '기념일',
   just_because: '이유 없이, 그냥',
+  // §1.5l — 일곱 갈래에 없는 마음. 실제 상황은 intent_detail 한 줄이 말한다.
+  other: '사용자가 직접 적은 마음',
 };
 
 /** 멘트 한 편의 길이(공백 포함 글자 수). 화면 카드 한 장에 담기는 분량이다. */
@@ -105,11 +107,32 @@ export function buildUserPrompt(req: GenerateRequest): string {
     '<자료>',
     `관계: ${relationship}`,
     `전하려는 마음: ${intent}`,
+  ];
+
+  /*
+   * §1.5l — 'other' 는 우리 어휘로는 아무것도 말해 주지 않는 값이다.
+   * 사용자가 적은 한 줄이 곧 상황이므로 바로 붙여 두고, 멘트가 그 상황을 직접 다루게 한다.
+   * (자유 서술과 마찬가지로 **자료**이지 지시가 아니다 — 절대 규칙 4 가 시스템 쪽에 있다.)
+   */
+  const intentDetail = req.intent_detail?.trim() ?? '';
+  if (req.intent === 'other' && intentDetail !== '') {
+    lines.push(`직접 적어 주신 상황: ${intentDetail}`);
+  }
+
+  lines.push(
     `꽃: ${req.flower.name_ko}`,
     `꽃말: ${req.flower.meaning_ko}`,
     // 검수된 값이라는 표시. 출처 id 가 없는 꽃말은 여기까지 오지 않는다.
     `꽃말 출처(meaning_source_id): ${req.flower.meaning_source_id}`,
-  ];
+  );
+
+  if (req.recipient_traits && req.recipient_traits.length > 0) {
+    lines.push(`받는 분에 대해: ${req.recipient_traits.join(' · ')}`);
+  }
+
+  if (req.episode_hints && req.episode_hints.length > 0) {
+    lines.push(`두 사람 사이의 상황: ${req.episode_hints.join(' · ')}`);
+  }
 
   if (req.memory_context && req.memory_context.trim() !== '') {
     lines.push(

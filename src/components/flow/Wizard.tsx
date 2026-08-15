@@ -3,23 +3,40 @@
 /**
  * 질문 5문항 — 한 화면에 한 질문(확정 시안 `design/app-v3/question.html` 문법).
  *
- *   ① 어떤 사이인가요        (관계 6종 · 필수)
- *   ② 어떤 마음을 전하나요   (마음 7종 · 필수)
- *   ③ 상대는 어떤 분인가요   (분위기 태그 · 좋아하는 색 · 반려동물 · 향)
+ *   ① 어떤 사이인가요        (시작 프리셋 8종 + 관계 6종 · 필수)
+ *   ② 어떤 마음을 전하나요   (마음 8종 · 필수 — `직접 쓸게요` 를 고르면 한 줄 입력)
+ *   ③ 상대는 어떤 분인가요   (특징 칩 한 그룹 · 좋아하는 색 · 상황 칩 + 자유 서술 2필드)
  *   ④ 현실 조건              (예산 · 전하는 날)
  *   ⑤ 확인하고 추천받기
  *
  * 선택지 값(slug)은 전부 서버가 엔진 어휘에서 만들어 props 로 내려준다 —
  * 화면이 어휘를 새로 만들지 않기 위해서다. 답은 서버 액션으로만 보내고 URL 에는 싣지 않는다.
+ *
+ * §1.5l 개편으로 늘어난 것은 **입력의 폭이지 단계 수가 아니다.** 프리셋은 1·2번을 한 번에
+ * 채우고 3번으로 건너뛰는 지름길이고, 라디오 경로는 그대로 남아 있다.
  */
 
 import { useState } from 'react';
 import Link from 'next/link';
 
-import type { ChoiceOption, ColorChoice, FlowResponse, ResultPayload, WizardOptions, WizardSubmission } from './types';
+import type {
+  ChoiceOption,
+  ColorChoice,
+  FlowResponse,
+  PresetOption,
+  ResultPayload,
+  WizardOptions,
+  WizardSubmission,
+} from './types';
 import styles from './flow.module.css';
 
 const TOTAL_STEPS = 5;
+
+/** 마음 목록에서 `직접 쓸게요` 를 가리키는 값. 어휘 원본은 엔진 INTENTS 다. */
+const INTENT_OTHER = 'other';
+
+/** §1.5l 직접 쓴 마음 한 줄의 길이 상한(서버 `INTENT_DETAIL_MAX_CHARS` 와 같은 값). */
+const INTENT_DETAIL_MAX = 80;
 
 const STEP_HEADS = [
   { overline: 'Question 01', title: '어떤 사이인가요?', lede: '관계에 따라 같은 꽃말도 다르게 풀어드려요.' },
@@ -207,13 +224,16 @@ export default function Wizard({ options, defaultDateISO, action, onResult }: Wi
   const [step, setStep] = useState(1);
   const [relationship, setRelationship] = useState('');
   const [intent, setIntent] = useState('');
-  const [traits, setTraits] = useState<string[]>([]);
+  // §1.5l `직접 쓸게요` 한 줄. 비워도 진행된다 — 고르는 것 자체가 이미 답이다.
+  const [intentDetail, setIntentDetail] = useState('');
+  /** 어떤 프리셋으로 시작했는지. 관계·마음을 직접 고치면 지운다(요약이 거짓말하지 않게). */
+  const [preset, setPreset] = useState('');
+  const [recipientChips, setRecipientChips] = useState<string[]>([]);
   const [colorPrefs, setColorPrefs] = useState<string[]>([]);
-  const [pets, setPets] = useState<string[]>([]);
-  const [fragranceSensitive, setFragranceSensitive] = useState(false);
   // §1.5j 자유 서술 2필드. 둘 다 선택이고, 서버로만 건너가며 저장되지 않는다.
   const [recipientNote, setRecipientNote] = useState('');
   const [episode, setEpisode] = useState('');
+  const [episodeHints, setEpisodeHints] = useState<string[]>([]);
   const [budgetKey, setBudgetKey] = useState('');
   const [dateISO, setDateISO] = useState(defaultDateISO);
   const [pending, setPending] = useState(false);
@@ -230,6 +250,34 @@ export default function Wizard({ options, defaultDateISO, action, onResult }: Wi
     return list.find((o) => o.value === value)?.label ?? value;
   }
 
+  function labelsOf(list: ChoiceOption[] | ColorChoice[], values: string[]): string {
+    return values.length > 0 ? values.map((v) => labelOf(list, v)).join(' · ') : '';
+  }
+
+  /**
+   * §1.5l 시작 프리셋 — 관계·마음을 한 번에 채우고 3번 질문으로 건너뛴다.
+   * **건너뛴 것이지 잠근 것이 아니다.** 뒤로 가면 1·2번이 고른 값 그대로 서 있다.
+   */
+  function applyPreset(option: PresetOption) {
+    setPreset(option.value);
+    setRelationship(option.relationship);
+    setIntent(option.intent);
+    setIntentDetail('');
+    setStep(3);
+    window.scrollTo({ top: 0 });
+  }
+
+  function chooseRelationship(next: string) {
+    setRelationship(next);
+    setPreset('');
+  }
+
+  function chooseIntent(next: string) {
+    setIntent(next);
+    setPreset('');
+    if (next !== INTENT_OTHER) setIntentDetail('');
+  }
+
   async function submit() {
     setPending(true);
     setError(null);
@@ -237,12 +285,12 @@ export default function Wizard({ options, defaultDateISO, action, onResult }: Wi
       const response = await action({
         relationship,
         intent,
-        recipientTraits: traits,
+        intentDetail: intent === INTENT_OTHER ? intentDetail : '',
+        recipientChips,
         colorPrefs,
-        pets,
-        fragranceSensitive,
         recipientNote,
         episode,
+        episodeHints,
         budgetKey,
         dateISO,
       });
@@ -349,34 +397,124 @@ export default function Wizard({ options, defaultDateISO, action, onResult }: Wi
           </div>
 
           {step === 1 ? (
-            <ChoiceList
-              name="relationship"
-              labelledBy="q-title"
-              options={options.relationships}
-              value={relationship}
-              onChange={setRelationship}
-            />
+            <>
+              {/*
+                #20 — 여러 명에게 주는 경우는 **이 위저드가 다루지 않는다.**
+                랜딩 내비에 `여러 명에게` 를 따로 세워 두었더니 두 갈래가 첫 화면에서
+                갈려 버렸고("추천 시작"과 "여러 명에게" 중 무엇이 본류인지 알 수 없다),
+                묶음 추천은 질문 자체가 다르다(누구누구인지·몇 다발인지). 그래서 진입은
+                하나로 모으고 갈림길만 여기 한 줄로 둔다 — 고르면 기존 그룹 플로우로
+                건너간다. 위저드를 둘로 나누거나 합치지 않는다.
+              */}
+              <div className={styles.group}>
+                <p className={styles.groupHead} id="q-count">
+                  몇 분께 드리나요?
+                </p>
+                <div className={styles.chips} role="group" aria-labelledby="q-count">
+                  <button
+                    type="button"
+                    className={`${styles.chip} ${styles.chipOn}`}
+                    aria-pressed={true}
+                  >
+                    한 분께
+                  </button>
+                  <Link
+                    className={`${styles.chip} ${styles.chipLink}`}
+                    href="/groups"
+                    prefetch={false}
+                  >
+                    여러 분께
+                  </Link>
+                </div>
+                <p className={styles.groupNote}>
+                  여러 분께 드릴 거라면 묶음 추천으로 안내해 드려요 — 받는 분마다 꽃을 따로
+                  골라드립니다. 이 질문은 한 분께 드리는 경우예요.
+                </p>
+              </div>
+
+              {/* §1.5l 시작 프리셋 — 자주 오는 순간 8가지. 1·2번을 한 번에 채운다. */}
+              <div className={styles.group}>
+                <p className={styles.groupHead} id="q-presets">
+                  이런 순간이신가요?
+                </p>
+                <p className={styles.groupNote}>
+                  고르면 두 질문을 건너뛰어요. 다음 화면에서 언제든 되돌아와 바꿀 수 있어요.
+                </p>
+                <div className={styles.chips} role="group" aria-labelledby="q-presets">
+                  {options.presets.map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      className={styles.chip}
+                      onClick={() => applyPreset(option)}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <p className={styles.presetDivider}>또는 직접 고를게요</p>
+
+              <ChoiceList
+                name="relationship"
+                labelledBy="q-title"
+                options={options.relationships}
+                value={relationship}
+                onChange={chooseRelationship}
+              />
+            </>
           ) : null}
 
           {step === 2 ? (
-            <ChoiceList
-              name="intent"
-              labelledBy="q-title"
-              options={options.intents}
-              value={intent}
-              onChange={setIntent}
-            />
+            <>
+              <ChoiceList
+                name="intent"
+                labelledBy="q-title"
+                options={options.intents}
+                value={intent}
+                onChange={chooseIntent}
+              />
+
+              {/* §1.5l — 목록에 없는 마음. 적어 주면 멘트가 그 상황을 직접 다룬다. */}
+              {intent === INTENT_OTHER ? (
+                <div className={styles.group}>
+                  <label className={styles.fieldLabel} htmlFor="q-intent-detail">
+                    어떤 마음인지 한 줄로 적어 주세요
+                  </label>
+                  <input
+                    id="q-intent-detail"
+                    className={styles.field}
+                    type="text"
+                    maxLength={INTENT_DETAIL_MAX}
+                    placeholder="예: 유학 떠나는 조카를 배웅해요"
+                    value={intentDetail}
+                    onChange={(e) => setIntentDetail(e.target.value)}
+                  />
+                  <p className={styles.fieldNote}>
+                    비워 두셔도 괜찮아요. 적어주신 내용은 추천과 멘트에만 쓰고, 저장하지 않아요.
+                  </p>
+                </div>
+              ) : null}
+            </>
           ) : null}
 
           {step === 3 ? (
             <>
+              {/*
+                §1.5l — 분위기·향·반려동물을 한 그룹으로 합쳤다. 묻는 것이 결국 같은
+                질문이라 위계를 셋으로 나눌 이유가 없다. 반려동물 안전 제외는 칩이
+                그대로 이어받는다(서버가 pets 로 나눈다).
+              */}
               <fieldset className={styles.group}>
-                <legend className={styles.groupHead}>분위기</legend>
-                <p className={styles.groupNote}>여러 개 골라도 좋아요.</p>
+                <legend className={styles.groupHead}>받는 분은 어떤 분인가요</legend>
+                <p className={styles.groupNote}>
+                  여러 개 골라도 좋아요. 반려동물을 알려주시면 위험한 꽃은 미리 빼드려요.
+                </p>
                 <ToggleChips
-                  options={options.traits}
-                  values={traits}
-                  onToggle={(v) => setTraits(toggle(traits, v))}
+                  options={options.recipientChips}
+                  values={recipientChips}
+                  onToggle={(v) => setRecipientChips(toggle(recipientChips, v))}
                 />
               </fieldset>
 
@@ -390,34 +528,10 @@ export default function Wizard({ options, defaultDateISO, action, onResult }: Wi
                 />
               </fieldset>
 
-              <fieldset className={styles.group}>
-                <legend className={styles.groupHead}>함께 사는 반려동물</legend>
-                <p className={styles.groupNote}>
-                  고양이·강아지에게 위험한 꽃은 후보에서 미리 빼드려요.
-                </p>
-                <ToggleChips
-                  options={options.pets}
-                  values={pets}
-                  onToggle={(v) => setPets(toggle(pets, v))}
-                />
-                <div className={styles.chips} style={{ marginTop: 10 }}>
-                  <button
-                    type="button"
-                    className={
-                      fragranceSensitive ? `${styles.chip} ${styles.chipOn}` : styles.chip
-                    }
-                    aria-pressed={fragranceSensitive}
-                    onClick={() => setFragranceSensitive(!fragranceSensitive)}
-                  >
-                    향에 민감해요
-                  </button>
-                </div>
-              </fieldset>
-
               {/* §1.5j — 이야기로 적어 주면 그 안에서 분위기·색·꽃 단서를 읽어 낸다. */}
               <fieldset className={styles.group}>
                 <legend className={styles.groupHead}>들려주고 싶은 이야기</legend>
-                <p className={styles.groupNote}>둘 다 선택이에요. 한 줄이면 충분해요.</p>
+                <p className={styles.groupNote}>전부 선택이에요. 한 줄이면 충분해요.</p>
 
                 <label className={styles.fieldLabel} htmlFor="q-recipient-note">
                   상대방은 어떤 사람인가요?
@@ -431,6 +545,18 @@ export default function Wizard({ options, defaultDateISO, action, onResult }: Wi
                   value={recipientNote}
                   onChange={(e) => setRecipientNote(e.target.value)}
                 />
+
+                {/* §1.5l 상황 칩 — 빈 칸 앞에서 멈추지 않도록 고를 수도 있게 열어 둔 길. */}
+                <p className={styles.fieldLabel} id="q-episode-hints">
+                  요즘 두 분 사이는 어떤가요?
+                </p>
+                <div className={styles.hintChips} role="group" aria-labelledby="q-episode-hints">
+                  <ToggleChips
+                    options={options.episodeHints}
+                    values={episodeHints}
+                    onToggle={(v) => setEpisodeHints(toggle(episodeHints, v))}
+                  />
+                </div>
 
                 <label className={styles.fieldLabel} htmlFor="q-episode">
                   함께한 기억이나 에피소드가 있나요?
@@ -477,38 +603,33 @@ export default function Wizard({ options, defaultDateISO, action, onResult }: Wi
 
           {step === 5 ? (
             <dl className={styles.summary}>
+              {/* 프리셋으로 시작했다면 그 사실부터 — 관계·마음이 어디서 왔는지 보이게. */}
+              {preset !== '' ? (
+                <div className={styles.row}>
+                  <dt>고른 순간</dt>
+                  <dd>{labelOf(options.presets, preset)}</dd>
+                </div>
+              ) : null}
               <div className={styles.row}>
                 <dt>사이</dt>
                 <dd>{labelOf(options.relationships, relationship)}</dd>
               </div>
               <div className={styles.row}>
                 <dt>마음</dt>
-                <dd>{labelOf(options.intents, intent)}</dd>
+                <dd>
+                  {labelOf(options.intents, intent)}
+                  {intent === INTENT_OTHER && intentDetail.trim() !== ''
+                    ? ` — ${intentDetail.trim()}`
+                    : ''}
+                </dd>
               </div>
               <div className={styles.row}>
-                <dt>분위기</dt>
-                <dd>
-                  {traits.length > 0
-                    ? traits.map((t) => labelOf(options.traits, t)).join(' · ')
-                    : '고르지 않았어요'}
-                </dd>
+                <dt>받는 분</dt>
+                <dd>{labelsOf(options.recipientChips, recipientChips) || '고르지 않았어요'}</dd>
               </div>
               <div className={styles.row}>
                 <dt>좋아하는 색</dt>
-                <dd>
-                  {colorPrefs.length > 0
-                    ? colorPrefs.map((c) => labelOf(options.colors, c)).join(' · ')
-                    : '고르지 않았어요'}
-                </dd>
-              </div>
-              <div className={styles.row}>
-                <dt>반려동물·향</dt>
-                <dd>
-                  {[
-                    ...pets.map((p) => labelOf(options.pets, p)),
-                    ...(fragranceSensitive ? ['향에 민감해요'] : []),
-                  ].join(' · ') || '해당 없음'}
-                </dd>
+                <dd>{labelsOf(options.colors, colorPrefs) || '고르지 않았어요'}</dd>
               </div>
               <div className={styles.row}>
                 <dt>예산</dt>
@@ -522,6 +643,12 @@ export default function Wizard({ options, defaultDateISO, action, onResult }: Wi
                 <div className={styles.row}>
                   <dt>어떤 분</dt>
                   <dd>{recipientNote.trim()}</dd>
+                </div>
+              ) : null}
+              {episodeHints.length > 0 ? (
+                <div className={styles.row}>
+                  <dt>요즘 사이</dt>
+                  <dd>{labelsOf(options.episodeHints, episodeHints)}</dd>
                 </div>
               ) : null}
               {episode.trim() !== '' ? (

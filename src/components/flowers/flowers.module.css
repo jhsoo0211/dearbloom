@@ -539,24 +539,121 @@
   position: relative;
   padding: 10px 0 clamp(30px, 5vw, 52px);
 }
+/**
+ * 히어로 = **대표 실사(주) + 이름·꽃말 + 세밀화 액자(보조)**.
+ *
+ * DOM 순서는 사진 → 이름·꽃말 → 도판이다. 모바일(세로 한 줄)에서 이름이 사진 바로 아래
+ * 와야 하기 때문인데, 데스크톱에서는 도판이 사진 밑(왼쪽 칸)으로 돌아가야 한다 —
+ * 그래서 880px 부터 flex 를 버리고 **그리드 영역**으로 자리를 지정한다.
+ *   [실사 ] [이름 ]
+ *   [도판 ] [꽃말 ]
+ */
 .heroGrid {
   display: flex;
   flex-direction: column;
-  gap: clamp(22px, 3.6vw, 34px);
+  gap: clamp(20px, 3.2vw, 30px);
 }
 @media (min-width: 880px) {
   .heroGrid {
-    flex-direction: row;
-    align-items: center;
-    gap: 44px;
+    display: grid;
+    grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr);
+    grid-template-areas:
+      'shot text'
+      'plate text';
+    align-items: start;
+    column-gap: 44px;
+    row-gap: 26px;
   }
-  .frame {
-    flex: 0 0 clamp(300px, 38%, 400px);
+  .shot {
+    grid-area: shot;
   }
   .heroText {
-    flex: 1;
+    grid-area: text;
+    /* 사진 위쪽에 이름을 맞춘다 — 도판까지 포함한 왼쪽 칸 높이에 가운데를 맞추면
+       이름이 화면 한참 아래로 내려간다(실측 y≈620px). */
+    align-self: start;
+    padding-top: clamp(8px, 2vw, 28px);
     min-width: 0;
   }
+  .frame {
+    grid-area: plate;
+  }
+}
+
+/**
+ * 대표 실사(`@/lib/photos`) — 도감에서 사진이 가장 크게 서는 자리.
+ *
+ * ⚠ 사진 위에 글자를 얹지 않는다. 이름·꽃말은 옆(또는 아래) 칸에 있으므로 스크림도
+ *   필요 없고, §1.5g 의 대비 계산을 처음부터 만들지 않는 것이 가장 싼 해법이다.
+ */
+.shot {
+  margin: 0;
+}
+.shotFrame {
+  position: relative;
+  overflow: hidden;
+  /* 32컷이 가로·세로가 섞여 있어 한 틀에 담고 잘라 낸다(액자와 달리 여백을 두지 않는다). */
+  aspect-ratio: 4 / 3;
+  border: 1px solid var(--hair);
+  border-radius: 3px;
+  /* 로드 전·실패 시 드러나는 면 — 도판 폴백과 같은 규칙(그 꽃의 카테고리 색). */
+  background: linear-gradient(158deg, var(--cat-tone) 0%, var(--ink-900) 52%, var(--ink-950) 100%);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.42);
+}
+.shotImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* 테마 공통 사진 틴트 — 랜딩 카드·히어로와 같은 값을 쓴다. */
+  filter: var(--media-filter);
+}
+/**
+ * 작가 크레딧은 사진 바로 아래 캡션에(문서 §주의 6 — 도감은 캡션, 랜딩은 푸터 일괄).
+ * 다만 **전문은 '출처' 한 단어 뒤로 접는다**(2026-08-15 사용자 피드백). 표기를 없애는 게
+ * 아니라 한 번의 클릭 뒤로 옮기는 것이고, `<details>` 라 JS 없이도 열린다.
+ */
+.shotCredit {
+  margin-top: 2px;
+  font-size: 11.5px;
+  line-height: 1.6;
+  letter-spacing: 0.01em;
+  color: var(--fg-50);
+}
+.creditSum {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  /* §1.6b 공통 — 글자는 작아도 누르는 면은 44px. */
+  min-height: 44px;
+  cursor: pointer;
+  list-style: none;
+  transition: color var(--dur) var(--ease);
+}
+.creditSum::-webkit-details-marker {
+  display: none;
+}
+.creditSum:hover {
+  color: var(--fg-70);
+}
+.creditSum:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+.creditSum svg {
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  transition: transform 0.2s var(--ease);
+}
+.creditFold[open] .creditSum svg {
+  transform: rotate(90deg);
+}
+.creditText {
+  display: block;
+  padding-bottom: 6px;
 }
 
 /**
@@ -569,6 +666,17 @@
 .frame {
   width: min(100%, 420px);
   margin-inline: auto;
+}
+/**
+ * 보조로 내려온 도판은 실사보다 작게 선다 — 위계가 크기로도 읽혀야 한다.
+ * ⚠ 이 블록은 반드시 위 `.frame` 기본값 **뒤에** 온다. 미디어 쿼리는 우선순위를 올리지
+ *   않으므로(같은 0,1,0), 앞에 두면 나중에 오는 420px 이 이겨서 아무 일도 일어나지 않는다.
+ */
+@media (min-width: 880px) {
+  .frame {
+    width: min(100%, 264px);
+    margin-inline: 0;
+  }
 }
 /**
  * 아이보리 매트(파스파르투)는 **도판만** 감싼다.

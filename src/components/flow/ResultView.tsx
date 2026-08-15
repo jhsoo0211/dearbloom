@@ -4,11 +4,15 @@
  * 결과 화면 — 확정 시안 `design/app-v3/result.html` 을 실데이터로 옮긴 것.
  *
  * 위계는 §1.5i 가 확정한 5단이다(위 → 아래):
- *   ① 꽃(3D) + 이름 + 꽃말 (+ 색 다시 고르기)
+ *   ① 꽃(대표 실사) + 이름 + 꽃말 (+ 색 다시 고르기)
  *   ② 꽃에 얽힌 설화 + 나라별 꽃말   ← 멘트보다 위. "정보"보다 "이야기"가 먼저다
  *   ③ 추천 이유 · 이런 날 건네보세요
- *   ④ 멘트 3톤 + 함께 담을 한 줄
+ *   ④ 멘트 3톤 + 함께 담을 한 줄 + 문학 속의 이 꽃
  *   ⑤ 최하단 참고(작게) — 반려동물 배지 · 계절 · 향 · 관리 · 가격 1줄 · 제휴 고지
+ *
+ * ⚠ ① 은 2026-08-15(#14)에 **3D 뷰어에서 대표 실사로 바뀌었다.** 절차적 3D 는 "이 꽃이
+ *   어떻게 생겼나"에 답하지 못했다 — 도감이 실사를 먼저 세우는 것과 같은 이유다.
+ *   되돌릴 수 있게 `FlowerViewer`·`flowerScene`·`FlowerFallback` 파일은 지우지 않았다.
  *
  * 값은 전부 서버가 만들어 준 `ResultPayload` 다. 여기서 문장을 새로 지어내지 않는다
  * (라벨 사전·엔진·카탈로그는 서버 쪽에만 있다).
@@ -17,33 +21,14 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import Link from 'next/link';
 
-import FlowerViewer from './FlowerViewer';
-import type { FlowerForm, ResultPayload, StoryCard } from './types';
+import type { ResultPayload, StoryCard } from './types';
 import styles from './flow.module.css';
-
-/** 색 정보가 없는 꽃에 쓰는 형태별 기본 꽃잎 색(확정 시안 값). */
-const FORM_PETAL: Record<FlowerForm, string> = {
-  rose: '#B5768A',
-  tulip: '#E9E1D3',
-  spike: '#7E71A0',
-};
-
-/** 형태별 림라이트 — §1.4 팔레트 안에서 고른다. */
-const FORM_RIM: Record<FlowerForm, string> = {
-  rose: '#8A3448',
-  tulip: '#C8963E',
-  spike: '#83779C',
-};
-
-/** 무대 배경의 마지막 색면. */
-const FORM_TONE: Record<FlowerForm, string> = {
-  rose: 'rgba(138, 52, 72, 0.20)',
-  tulip: 'rgba(200, 150, 62, 0.22)',
-  spike: 'rgba(131, 119, 156, 0.34)',
-};
 
 /** 결 필터의 `전체` 칸 — 서버가 내려보내는 필터 목록의 첫 값과 같은 key 다. */
 const MOOD_ALL = 'all';
+
+/** 가격 구간 칸 수 — 라벨 사전(`labels.ts` PRICE_BAND_SLOTS)과 같은 값이다(#11). */
+const PRICE_SLOTS = [1, 2, 3] as const;
 
 function IconCopy() {
   return (
@@ -297,6 +282,9 @@ export default function ResultView({ payload, onRestart }: ResultViewProps) {
   const [moodFilter, setMoodFilter] = useState<string>(MOOD_ALL);
   const [openStoryId, setOpenStoryId] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
+  /** §1.5k 문학 — 펼침 상태와 지금 보고 있는 발췌의 자리(0 = 대표). */
+  const [litOpen, setLitOpen] = useState(false);
+  const [litIndex, setLitIndex] = useState(0);
 
   const option = payload.options[active];
   const chip = option.colors[colorIndex[active]];
@@ -341,20 +329,16 @@ export default function ResultView({ payload, onRestart }: ResultViewProps) {
   const navIndex = navStories.findIndex((story) => story.id === openStoryId);
   const openStory = navIndex === -1 ? null : navStories[navIndex];
 
-  const viewerFlowers = useMemo(
-    () =>
-      payload.options.map((item, index) => {
-        const picked = item.colors[colorIndex[index]];
-        return {
-          form: item.form,
-          colorHex: picked?.hex ?? FORM_PETAL[item.form],
-          rimHex: FORM_RIM[item.form],
-          stageTone: FORM_TONE[item.form],
-          alt: item.nameKo,
-        };
-      }),
-    [payload.options, colorIndex],
-  );
+  /**
+   * §1.5k 문학 — 대표를 맨 앞에 둔 그 꽃의 발췌 전부(#1).
+   * 화면은 이 목록을 한 편씩 넘겨 보고, 첫 칸(대표)이 접힌 상태의 기본값이다.
+   */
+  const literature = useMemo(() => {
+    const block = option.literature;
+    if (!block) return [];
+    return [block.featured, ...block.others];
+  }, [option.literature]);
+  const currentLit = literature[Math.min(litIndex, literature.length - 1)];
 
   async function copy(text: string, key: string) {
     try {
@@ -377,12 +361,20 @@ export default function ResultView({ payload, onRestart }: ResultViewProps) {
     }
   }
 
-  /** 다른 안으로 갈아탈 때 이야기 상태(펼침·필터·시트)는 초기화한다 — 꽃이 바뀌면 이야기도 다르다. */
+  /** 다른 안으로 갈아탈 때 이야기·문학 상태는 초기화한다 — 꽃이 바뀌면 읽을 것도 다르다. */
   function selectOption(next: number) {
     setActive(next);
     setStoriesOpen(false);
     setMoodFilter(MOOD_ALL);
     setOpenStoryId(null);
+    setLitOpen(false);
+    setLitIndex(0);
+  }
+
+  /** 문학 발췌 넘기기 — 목록 안에서 순환한다(끝에서 처음으로 돌아온다). */
+  function moveLit(delta: number) {
+    if (literature.length < 2) return;
+    setLitIndex((current) => (current + delta + literature.length) % literature.length);
   }
 
   function moveTab(delta: number) {
@@ -411,6 +403,11 @@ export default function ResultView({ payload, onRestart }: ResultViewProps) {
   const toneCopyText = currentTone.headline
     ? `${currentTone.headline}\n\n${currentTone.body ?? ''}`
     : (currentTone.body ?? '');
+  /**
+   * §1.5e 함께 담을 한 줄 — **고른 톤의 것**(#13).
+   * 그 톤에 맞춘 줄이 없으면(예문도 생성도 없는 상황) 공용 인용으로 떨어진다.
+   */
+  const cardLine = currentTone.cardLine ?? payload.quote;
   const hasCueBand = Boolean(payload.episodeText) || payload.storyCues.length > 0;
   const featured = option.stories.featured;
 
@@ -470,12 +467,87 @@ export default function ResultView({ payload, onRestart }: ResultViewProps) {
             <div className={styles.colA}>
               <div className={styles.colAInner}>
 
-                {/* ═══ ① 꽃 — 주인공 ═══ */}
-                <FlowerViewer flowers={viewerFlowers} activeIndex={active} tag={option.segmentTag} />
+                {/*
+                  ═══ ① 꽃 — 주인공. 대표 실사 한 컷(#14) ═══
+
+                  3안을 **전부 겹쳐 두고** 활성 안만 띄운다(3D 뷰어가 한 씬 안에서 활성 꽃을
+                  바꾸던 것과 같은 문법이다). 탭을 눌렀을 때 사진이 새로 로드되며 깜빡이지
+                  않고, 크로스페이드로 넘어간다.
+                */}
+                <figure className={styles.shotFig}>
+                  <div className={styles.shotStage}>
+                    {payload.options.map((item, index) =>
+                      item.photo ? (
+                        // eslint-disable-next-line @next/next/no-img-element -- Unsplash 원격 CDN. 승인 URL 을 그대로 쓴다(docs/image-assets.md — 핫링크가 권장 사용법).
+                        <img
+                          key={item.flowerId}
+                          className={[
+                            styles.shotImg,
+                            item.photo.bright ? styles.shotBright : '',
+                            index === active ? styles.shotOn : '',
+                          ]
+                            .filter(Boolean)
+                            .join(' ')}
+                          src={item.photo.src}
+                          alt={index === active ? item.photo.alt : ''}
+                          aria-hidden={index === active ? undefined : true}
+                          fetchPriority={index === 0 ? 'high' : 'low'}
+                          decoding="async"
+                        />
+                      ) : null,
+                    )}
+
+                    <span className={styles.shotVig} aria-hidden="true" />
+                    <span
+                      className={
+                        option.photo?.bright
+                          ? `${styles.shotScrim} ${styles.shotScrimBright}`
+                          : styles.shotScrim
+                      }
+                      aria-hidden="true"
+                    />
+                    <span className={styles.shotTopscrim} aria-hidden="true" />
+
+                    <p className={styles.shotHead}>
+                      <span className={styles.overline}>
+                        No.&nbsp;{String(active + 1).padStart(2, '0')}{' '}
+                        <span className={styles.ko}>추천 {payload.options.length}안</span>
+                      </span>
+                    </p>
+                    <span className={styles.shotTag}>{option.segmentTag}</span>
+                  </div>
+
+                  {/*
+                    사진 크레딧은 '출처' 한 단어 뒤로 접는다 — 도감 상세와 같은 문법이다
+                    (2026-08-15 피드백: `Photo: … / Unsplash` 전문이 상시 노출되면 화면이
+                    크레딧에 먹힌다). 표기가 사라지는 게 아니라 한 번의 클릭 뒤로 갈 뿐이고,
+                    `<details>` 라 JS 없이 열리며 스크린리더는 접힌 내용까지 읽는다.
+                  */}
+                  {option.photo ? (
+                    <figcaption className={styles.shotCredit}>
+                      <details className={styles.creditFold}>
+                        <summary className={styles.creditSum}>
+                          출처
+                          <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="m9 6 6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        </summary>
+                        <span className={styles.creditText}>{option.photo.credit}</span>
+                      </details>
+                    </figcaption>
+                  ) : null}
+                </figure>
 
                 <ul className={styles.ctx} aria-label="입력한 조건">
                   {payload.contextChips.map((chipText) => (
-                    <li key={chipText}>{chipText}</li>
+                    <li
+                      key={chipText}
+                      /* §1.5l — 사용자가 직접 쓴 한 줄만 말줄임 규격을 탄다(칩 높이는 그대로). */
+                      className={chipText === payload.intentDetail ? styles.ctxOwn : undefined}
+                      title={chipText === payload.intentDetail ? chipText : undefined}
+                    >
+                      {chipText}
+                    </li>
                   ))}
                 </ul>
 
@@ -960,18 +1032,23 @@ export default function ResultView({ payload, onRestart }: ResultViewProps) {
                   <p className={styles.footNote}>{payload.toneOffNote}</p>
                 ) : null}
 
-                {/* §1.5e 인용 한 줄 — 멘트가 주인공, 이건 곁들임 */}
-                <figure className={styles.qline}>
+                {/*
+                  §1.5e 인용 한 줄 — 멘트가 주인공, 이건 곁들임.
+                  #13 부터 **고른 톤을 따라간다**: 톤을 바꾸면 이 줄도 함께 바뀐다.
+                  `aria-live` 를 두는 이유가 그것이다 — 화면을 못 보는 사람에게도 톤을
+                  바꾼 결과가 여기까지 미쳤다는 사실이 전해져야 한다.
+                */}
+                <figure className={styles.qline} aria-live="polite">
                   <figcaption className={styles.qlineLab}>함께 담을 한 줄</figcaption>
                   <blockquote>
-                    <p className={styles.qlineKo}>{payload.quote.textKo}</p>
+                    <p className={styles.qlineKo}>{cardLine.textKo}</p>
                   </blockquote>
-                  <p className={styles.qlineBy}>{payload.quote.attribution}</p>
+                  <p className={styles.qlineBy}>{cardLine.attribution}</p>
                   <button
                     type="button"
                     className={`${styles.copy} ${styles.copySm}`}
                     aria-label="함께 담을 한 줄 복사"
-                    onClick={() => copy(payload.quote.textKo, 'quote')}
+                    onClick={() => copy(cardLine.textKo, 'quote')}
                   >
                     <IconCopy />
                     <span>{copied === 'quote' ? '복사했어요' : '복사'}</span>
@@ -982,49 +1059,103 @@ export default function ResultView({ payload, onRestart }: ResultViewProps) {
                   §1.5k 문학 속의 이 꽃 — 함께 담을 한 줄 바로 아래, 같은 "곁들임" 위계다.
                   서버가 발췌를 못 찾았거나 중복 배제에 걸리면 필드가 아예 없고, 그때는
                   블록도 서지 않는다(§1.5k "있을 때만"). 억지로 채우지 않는 것이 규칙이다.
+
+                  #1 — 한 편 고정에서 **넘겨 보기**로 바뀌었다. 기본은 여전히 대표 한 편이고
+                  (첫 화면이 목록이 되면 곁들임이 본문을 이긴다), '다른 문학도 보기'를 눌러야
+                  이전/다음이 열린다. 나오는 차례는 서버가 정한다(작가 인터리브·언어권 분산).
                 */}
-                {option.literature ? (
-                  <figure className={styles.lit}>
-                    <figcaption className={styles.litLab}>
-                      문학 속의 이 꽃
-                      {option.literature.typeLabel ? (
-                        <span className={styles.litType}>{option.literature.typeLabel}</span>
+                {currentLit ? (
+                  <>
+                    <figure className={styles.lit} aria-live="polite">
+                      <figcaption className={styles.litLab}>
+                        문학 속의 이 꽃
+                        {currentLit.typeLabel ? (
+                          <span className={styles.litType}>{currentLit.typeLabel}</span>
+                        ) : null}
+                      </figcaption>
+                      <blockquote>
+                        <p className={styles.litKo}>{currentLit.textKo}</p>
+                      </blockquote>
+                      {/* 원문 병기 — 번역으로는 살지 않는 것들이 여기 남는다(아크로스틱·AI AI) */}
+                      {currentLit.textOriginal ? (
+                        <p className={styles.litOrig}>{currentLit.textOriginal}</p>
                       ) : null}
-                    </figcaption>
-                    <blockquote>
-                      <p className={styles.litKo}>{option.literature.textKo}</p>
-                    </blockquote>
-                    {/* 원문 병기 — 번역으로는 살지 않는 것들이 여기 남는다(아크로스틱·AI AI) */}
-                    {option.literature.textOriginal ? (
-                      <p className={styles.litOrig}>{option.literature.textOriginal}</p>
-                    ) : null}
-                    <p className={styles.litBy}>
-                      {option.literature.sourceUrl ? (
-                        <a
-                          className={styles.litLink}
-                          href={option.literature.sourceUrl}
-                          target="_blank"
-                          rel="noreferrer"
+                      <p className={styles.litBy}>
+                        {currentLit.sourceUrl ? (
+                          <a
+                            className={styles.litLink}
+                            href={currentLit.sourceUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            {currentLit.attribution}
+                          </a>
+                        ) : (
+                          currentLit.attribution
+                        )}
+                        {currentLit.translatorNote ? (
+                          <>
+                            <span className={styles.sep} aria-hidden="true">
+                              ·
+                            </span>
+                            {currentLit.translatorNote}
+                          </>
+                        ) : null}
+                      </p>
+                      {/* 밝히지 않으면 서비스가 틀린 정보를 주게 되는 한 줄 */}
+                      {currentLit.caveat ? (
+                        <p className={styles.litCaveat}>{currentLit.caveat}</p>
+                      ) : null}
+                    </figure>
+
+                    {literature.length > 1 ? (
+                      <>
+                        <button
+                          type="button"
+                          className={styles.teaser}
+                          aria-expanded={litOpen}
+                          aria-controls="lit-more"
+                          onClick={() => setLitOpen(!litOpen)}
                         >
-                          {option.literature.attribution}
-                        </a>
-                      ) : (
-                        option.literature.attribution
-                      )}
-                      {option.literature.translatorNote ? (
-                        <>
-                          <span className={styles.sep} aria-hidden="true">
-                            ·
+                          다른 문학도 보기 ({literature.length - 1})
+                          <span className={styles.tar} aria-hidden="true">
+                            <svg
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="1.8"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <path d="M5 12h13M12.5 6l6 6-6 6" />
+                            </svg>
                           </span>
-                          {option.literature.translatorNote}
-                        </>
-                      ) : null}
-                    </p>
-                    {/* 밝히지 않으면 서비스가 틀린 정보를 주게 되는 한 줄 */}
-                    {option.literature.caveat ? (
-                      <p className={styles.litCaveat}>{option.literature.caveat}</p>
+                        </button>
+
+                        {litOpen ? (
+                          <div className={styles.litNav} id="lit-more">
+                            <button
+                              type="button"
+                              className={styles.litNavBtn}
+                              onClick={() => moveLit(-1)}
+                            >
+                              이전 발췌
+                            </button>
+                            <p className={styles.litCount}>
+                              {litIndex + 1} / {literature.length}
+                            </p>
+                            <button
+                              type="button"
+                              className={styles.litNavBtn}
+                              onClick={() => moveLit(1)}
+                            >
+                              다음 발췌
+                            </button>
+                          </div>
+                        ) : null}
+                      </>
                     ) : null}
-                  </figure>
+                  </>
                 ) : null}
               </section>
 
@@ -1091,8 +1222,33 @@ export default function ResultView({ payload, onRestart }: ResultViewProps) {
                   {option.careSummary ? (
                     <div className={styles.noteLine}>{option.careSummary}</div>
                   ) : null}
-                  {/* 가격은 한 줄 언급까지다 — 표·강조 금지(§1.5i) */}
-                  <div className={styles.noteLine}>{option.priceLabel}</div>
+                  {/*
+                    가격은 한 줄 언급까지다 — 표·강조 금지(§1.5i).
+                    #11 로 그 한 줄이 두 가지를 더 말한다:
+                      · `₩ ₩₩ ₩₩₩` 세 칸을 다 세우고 이 꽃의 구간까지만 채운다
+                        (셋 중 어디인지가 보여야 낮은 구간이 "부족"으로 읽히지 않는다)
+                      · 가장 낮은 구간에는 §1.5d 톤 한마디를 붙인다
+                    ⚠ 가격이 마음의 크기에 비례한다는 함의는 여전히 금지다.
+                  */}
+                  <div className={styles.noteLine}>
+                    <span className={styles.priceBand} aria-hidden="true">
+                      {PRICE_SLOTS.map((slot) => (
+                        <span
+                          key={slot}
+                          className={slot <= option.priceBand ? styles.priceOn : styles.priceOff}
+                        >
+                          ₩
+                        </span>
+                      ))}
+                    </span>
+                    <span className="sr-only">가격대 3구간 중 {option.priceBand}구간.</span>
+                    <span>
+                      {option.priceLabel}
+                      {option.priceNote ? (
+                        <span className={styles.priceNote}> — {option.priceNote}</span>
+                      ) : null}
+                    </span>
+                  </div>
                 </div>
 
                 <div className={styles.aff} style={{ marginTop: 18 }}>
@@ -1140,8 +1296,9 @@ export default function ResultView({ payload, onRestart }: ResultViewProps) {
             <div className={styles.credits}>
               <h2>About this view</h2>
               <p>
-                이 화면의 꽃은 사진이 아니라 절차적으로 그린 3D 모델이에요. 꽃말·이야기·안전
-                정보는 출처를 확인한 콘텐츠에서 가져옵니다.
+                맨 위 사진은 그 꽃의 대표 실사예요 — 작가 표기는 사진 아래 ‘출처’에 접어 두었고,
+                Unsplash 라이선스로 씁니다. 꽃말·이야기·안전 정보는 출처를 확인한 콘텐츠에서
+                가져옵니다.
               </p>
             </div>
           </footer>

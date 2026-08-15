@@ -7,8 +7,29 @@
  * `src/components/flow/labels.ts` 가 붙여 이 모양으로 내려보낸다.
  */
 
-/** 3D 뷰어가 그릴 절차적 꽃의 형태. 카탈로그의 꽃 slug → 형태 매핑은 labels.ts 가 갖는다. */
+/**
+ * 절차적 꽃의 형태.
+ *
+ * ⚠ 2026-08-15(#14) 결과 화면이 3D 뷰어를 **실사로 교체**하면서 화면에서는 쓰이지 않는다.
+ * 롤백 후보인 `FlowerViewer`·`flowerScene`·`FlowerFallback` 이 이 어휘를 쓰고 있어
+ * 타입과 `labels.ts` 의 매핑은 그대로 둔다(되돌릴 때 다시 필요하다).
+ */
 export type FlowerForm = 'rose' | 'tulip' | 'spike';
+
+/**
+ * 결과 화면 맨 위에 거는 **대표 실사**(#14). 원본은 `@/lib/photos` 한 벌뿐이고,
+ * 서버가 폭·다크 오버레이 여부까지 정해 이 모양으로 내려보낸다.
+ *
+ * `bright` 는 배경이 밝은 컷 4종(라벤더·안개꽃·은방울꽃·제비꽃)이라는 표시다 —
+ * 화면은 이 값으로 BRIGHT_GRADE 필터와 강화 스크림을 건다(랜딩 카드와 같은 규칙).
+ */
+export interface FlowerPhotoView {
+  src: string;
+  alt: string;
+  /** `Photo: {작가} / Unsplash` — 이미 완성된 한 줄이다. */
+  credit: string;
+  bright: boolean;
+}
 
 /** 라디오·칩 한 칸. value 는 엔진 어휘(slug), label 은 화면 표기. */
 export interface ChoiceOption {
@@ -27,13 +48,29 @@ export interface ColorChoice {
   needsRing?: boolean;
 }
 
+/**
+ * §1.5l 시작 프리셋 한 칸 — 누르면 관계·마음을 한 번에 채운다.
+ * 값의 원본은 엔진 어휘이고, 짝을 짓는 표는 서버(`labels.ts` PRESET_MOMENTS)에 있다.
+ */
+export interface PresetOption {
+  value: string;
+  label: string;
+  relationship: string;
+  intent: string;
+}
+
 /** 질문 화면이 서버에서 받아 가는 선택지 묶음. */
 export interface WizardOptions {
+  /** §1.5l 시작 프리셋 8종. */
+  presets: PresetOption[];
   relationships: ChoiceOption[];
+  /** 마음 8종(7종 + `other` = 직접 쓸게요). */
   intents: ChoiceOption[];
-  traits: ChoiceOption[];
+  /** §1.5l 받는 분 특징 칩 — 분위기·향·반려동물을 한 그룹으로 합친 목록. */
+  recipientChips: ChoiceOption[];
   colors: ColorChoice[];
-  pets: ChoiceOption[];
+  /** §1.5l 상황 칩 6종. 자유 서술 위에 선다. */
+  episodeHints: ChoiceOption[];
   budgets: ChoiceOption[];
 }
 
@@ -41,10 +78,14 @@ export interface WizardOptions {
 export interface WizardSubmission {
   relationship: string;
   intent: string;
-  recipientTraits: string[];
+  /**
+   * §1.5l 마음이 `other` 일 때 직접 적은 한 줄(선택, 80자).
+   * ⚠ 자유 서술과 같은 취급이다 — 추천·멘트에만 쓰고 저장하지 않는다.
+   */
+  intentDetail: string;
+  /** §1.5l 받는 분 특징 칩. 엔진 입력(태그·반려동물·향)으로 나누는 일은 서버가 한다. */
+  recipientChips: string[];
   colorPrefs: string[];
-  pets: string[];
-  fragranceSensitive: boolean;
   /**
    * §1.5j `상대방은 어떤 사람인가요?` 자유 서술(선택).
    * ⚠ 이 값과 `episode` 는 추천·멘트에만 쓰고 로그·DB 어디에도 남기지 않는다.
@@ -52,6 +93,8 @@ export interface WizardSubmission {
   recipientNote: string;
   /** §1.5j `함께한 기억이나 에피소드가 있나요?` 자유 서술(선택). 저장하지 않는다. */
   episode: string;
+  /** §1.5l 상황 칩. 자유 글과 별개 필드이며 멘트 재료로만 쓴다. */
+  episodeHints: string[];
   budgetKey: string;
   dateISO: string;
 }
@@ -131,6 +174,8 @@ export interface PetBadge {
  * 이라, 이 필드는 `undefined` 가 정상 값이다.
  */
 export interface LiteratureView {
+  /** `quotes.csv` 의 quote_id. 여러 편을 넘겨 볼 때 React 키·자리 계산에 쓴다(#1). */
+  id: string;
   /** 발췌 본문(한국어). 세리프 이탤릭으로 세운다. */
   textKo: string;
   /** 원어 원문. 소형으로 병기한다. 한국어 원전이면 없다. */
@@ -160,6 +205,8 @@ export interface FlowOptionView {
   headline: string;
   form: FlowerForm;
   flowerId: string;
+  /** #14 대표 실사. 32종 전원이 갖고 있지만, 없어도 화면은 성립해야 한다(폴백 색면). */
+  photo?: FlowerPhotoView;
   nameKo: string;
   scientificName: string;
   fitScore: number;
@@ -173,6 +220,17 @@ export interface FlowOptionView {
   /** 제철이 아닐 때 대신 권할 꽃 이름. */
   substitutes: string[];
   priceLabel: string;
+  /**
+   * `flowers.csv` 의 price_band 그대로(1·2·3). 화면은 `₩ ₩₩ ₩₩₩` 세 구간을 **전부**
+   * 세워 두고 이 구간까지만 채운다 — "얼마쯤인지"가 아니라 "셋 중 어디인지"를 보여 준다(#11).
+   */
+  priceBand: 1 | 2 | 3;
+  /**
+   * 가격 한 줄에 덧붙는 §1.5d 톤 한마디. 지금은 band 1(가장 낮은 구간)에만 붙는다 —
+   * 싼 꽃을 고른 사람이 미안해질 자리를 만들지 않는다.
+   * ⚠ "가격이 클수록 마음이 크다"는 함의는 어떤 표현으로도 쓰지 않는다(§1.5i).
+   */
+  priceNote?: string;
   fragranceLabel: string;
   careSummary?: string;
   /** §1.5h `이런 날 건네보세요` 2~3줄. */
@@ -185,8 +243,13 @@ export interface FlowOptionView {
   fallbackMeaning?: { meaningKo: string; confidenceLabel: string };
   stories: { featured: StoryCard | null; others: StoryCard[] };
   cultureMeanings: CultureMeaningRow[];
-  /** §1.5k 문학 속의 이 꽃. 검증된 발췌가 없거나 중복 배제에 걸리면 없다. */
-  literature?: LiteratureView;
+  /**
+   * §1.5k 문학 속의 이 꽃. 검증된 발췌가 없거나 중복 배제에 걸리면 필드 자체가 없다.
+   *
+   * #1 로 **다중 반환**이 됐다 — 대표 1편은 그대로 서고, 나머지는 "다른 문학도 보기"
+   * 뒤에서 넘겨 본다. 이야기(`stories`)와 같은 `{ featured, others }` 모양을 쓴다.
+   */
+  literature?: { featured: LiteratureView; others: LiteratureView[] };
 }
 
 /** 멘트 한 톤. */
@@ -205,6 +268,16 @@ export interface ToneView {
   source?: 'llm' | 'template';
   /** 템플릿을 못 찾았을 때 보여 줄 안내. */
   emptyNote?: string;
+  /**
+   * §1.5e `함께 담을 한 줄` — **이 톤의 것**(#13).
+   *
+   * 예전에는 3~4톤이 김소월 한 줄을 나눠 썼다. 톤을 바꿔도 카드에 적을 문장이 그대로라
+   * "톤을 고른 보람"이 마지막 칸에서 사라졌다. 이제 LLM 이 쓴 톤은 그 응답의 첫 마디를,
+   * 예문 톤은 그 예문의 첫 문장을 여기에 담는다.
+   * 둘 다 없으면(=`other` 처럼 템플릿이 없는 상황) 이 필드가 없고, 화면은
+   * `ResultPayload.quote`(공용 인용)로 떨어진다.
+   */
+  cardLine?: QuoteView;
 }
 
 /** §1.5e 함께 담을 한 줄. */
@@ -243,6 +316,14 @@ export interface ResultPayload {
    * ⚠ 클라이언트 상태로만 살아 있다(§1.5j: 로그·분석·DB 저장 금지).
    */
   episodeText?: string;
+  /**
+   * §1.5l `직접 쓸게요` 로 적어 준 한 줄의 **원문**.
+   *
+   * 맥락 칩이 `직접 쓸게요` 라는 빈 라벨 대신 사용자가 쓴 말을 그대로 세우기 위한 값이다
+   * (그 자리에 `직접 쓸게요` 가 서 있으면 우리가 무엇을 들었는지 화면이 못 보여 준다).
+   * ⚠ `episodeText` 와 같은 취급이다 — 클라이언트 상태로만 살아 있고 로그·DB 에 남기지 않는다.
+   */
+  intentDetail?: string;
   /** 이야기 목록의 결 필터 칩(전체 + 6종). 화면은 실제로 있는 결만 골라 세운다. */
   storyMoodFilters: StoryMoodFilter[];
 }

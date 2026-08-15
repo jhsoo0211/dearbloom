@@ -24,6 +24,7 @@ export const REASON_TEXTS: Record<RuleId, string> = {
   SC_SEASON: '지금이 제철이라 상태 좋은 꽃을 구하기 쉬워요.',
   SC_AESTHETIC: '좋아하신다고 하신 색·분위기와 잘 어울려요.',
   SC_PERSONA: '상대의 분위기와 꽃의 인상이 잘 맞아요.',
+  SC_FRAGRANCE: '향기를 좋아한다고 하셔서, 향이 살아 있는 꽃으로 골랐어요.',
 };
 
 const FALLBACK_REASON = '추천 규칙에 부합하는 선택이에요.';

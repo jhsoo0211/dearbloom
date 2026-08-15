@@ -120,6 +120,14 @@ export interface FlowerDetailData {
   categoryLabel: string;
   categoryHint: string;
   /**
+   * 히어로 맨 위에 거는 **대표 실사** — 원본은 `@/lib/photos`(Unsplash CDN 주소가 온다).
+   *
+   * 도감이 먼저 답해야 하는 질문은 "이 꽃이 어떻게 생겼나"다. 19세기 세밀화는 그 답을
+   * 아름답게는 하지만 정확하게는 못 한다(판본에 따라 종이 다르고, 겹꽃 변종이 섞인다).
+   * 그래서 **실사가 앞이고 도판이 보조**다 — 도판은 아래 `plate` 로 액자에 남는다.
+   */
+  photo?: { src: string; alt: string; credit: string };
+  /**
    * 히어로 액자에 거는 세밀화 — 원본은 `@/lib/plates`(자체 호스팅 사본 주소가 온다).
    * `note` 는 종이 다르거나 판면에 손댄 도판의 **정직한 한 줄**이다(없는 꽃이 더 많다).
    * 있으면 크레딧 아래 각주로 그대로 나간다 — 감추면 "벚꽃이라며 다른 꽃을 보여 준" 화면이 된다.

@@ -17,11 +17,26 @@ const flowerBriefSchema = z.object({
   meaning_source_id: z.string().min(1),
 });
 
+/** §1.5l `직접 쓸게요` 한 줄의 길이 상한. 화면·서버·계약이 같은 값을 쓴다. */
+export const INTENT_DETAIL_MAX_CHARS = 80;
+
 export const generateRequestSchema = z.object({
   relationship: relationshipSchema,
   intent: intentSchema,
+  /**
+   * §1.5l — intent 가 'other' 일 때 사용자가 직접 적은 상황 한 줄.
+   * 일곱 갈래에 없는 마음이라 이 값이 곧 상황 설명이다(프롬프트가 그대로 다룬다).
+   */
+  intent_detail: z.string().max(INTENT_DETAIL_MAX_CHARS).optional(),
   flower: flowerBriefSchema,
   memory_context: z.string().optional(),
+  /**
+   * §1.5l 받는 분 특징 칩의 라벨(멘트 재료).
+   * 반려동물·향 민감 칩은 여기 담지 않는다 — 절대 규칙 3 이 금지한 자리다.
+   */
+  recipient_traits: z.array(z.string()).max(12).optional(),
+  /** §1.5l 상황 칩의 라벨. 자유 서술과 달리 서비스 어휘라 그대로 실어도 안전하다. */
+  episode_hints: z.array(z.string()).max(6).optional(),
   tones: z.array(toneSchema).min(1).max(3),
   rules: z.array(z.string()).optional(),
 });

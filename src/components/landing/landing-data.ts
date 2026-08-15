@@ -14,6 +14,7 @@
 
 import type { Catalog, CatalogFlower, CatalogStory } from '@/lib/data/types';
 import { pickStories, todayFlower, type TodayBasis } from '@/lib/engine';
+import { canLeadHero, needsDarkOverlay, photoFor, photoSrc } from '@/lib/photos';
 import { FLOWER_THEMES, getFlowerTheme, type FlowerThemeSlug } from '@/lib/theme/flowers';
 
 /* ------------------------------------------------------------------ *
@@ -80,6 +81,16 @@ const CATEGORY_BY_FLOWER: Record<string, ThemeCategory> = {
   jasmine: 'ivory',
   'babys-breath': 'ivory',
   magnolia: 'ivory',
+  /**
+   * seed-v5 — 데이지. 대표색(`colors[0]`)이 `white` 라 **폴백과 같은 `forest`** 지만
+   * 일부러 적어 둔다: 바로 위 흰색 세 종이 `ivory` 로 옮겨 가 있어, 명시가 없으면
+   * "데이지도 옮기려다 빠뜨린 것"으로 읽히기 때문이다.
+   *
+   * 옮기지 않는 이유는 두 가지다. ① `ivory` 를 채운 목적(라이트 테마 배정 2 → 5종)은
+   * 이미 이뤄졌다. ② 데이지는 나머지 색이 분홍·빨강이고 화단·화분에 낮게 피는 들꽃이라,
+   * 크림·화이트 스튜디오보다 숲빛 쪽 결에 가깝다.
+   */
+  daisy: 'forest',
 };
 
 /** 미배정 신규 꽃의 폴백 — 대표색(colors[0]) 규칙. */
@@ -140,6 +151,8 @@ const OCCASIONS: Record<string, string[]> = {
   ranunculus: ['봄맞이 인사를 건넬 때', '화사한 축하가 필요한 날에'],
   'lily-of-the-valley': ['5월의 첫날, 행운을 빌어 줄 때', '오래 기다린 소식을 축하할 때'],
   chrysanthemum: ['고인을 기억하는 자리에', '어른께 절기 인사를 드릴 때'],
+  // 카탈로그 확장분(seed-v5). 꽃말 '순수한 마음'·'같은 마음이에요 — 당신 뜻에 함께합니다' 에서 왔다.
+  daisy: ['괜찮냐고 묻고 싶은 날에', '같은 편이라고 말해주고 싶을 때'],
 };
 
 /** toxic_parts → 한국어. 각주 한 줄을 데이터에서 만들기 위한 표. */
@@ -194,6 +207,11 @@ export interface SlideImage {
   credit: string;
   /** 팔레트 밖 색을 눌러야 하는 컷의 CSS filter. */
   grade?: string;
+  /**
+   * 배경이 밝은 컷인가(docs/image-assets.md §통합할 때 주의할 것 4).
+   * 카드가 스크림을 한 단 더 올려 사진 위 이름의 대비를 지킨다(§1.5g).
+   */
+  bright?: boolean;
 }
 
 export interface SlideView {
@@ -216,7 +234,7 @@ export interface SlideView {
   occasions: string[];
   /** 위험한 꽃일 때만 있는 각주 1줄. */
   petCaveat?: string;
-  /** 승인 목록에 카드 사진이 있는 꽃만. 없으면 카테고리 그라디언트 카드. */
+  /** 카드 사진. 카탈로그 전종에 대표 실사가 있어 실제로는 언제나 채워진다(`slideImage`). */
   image?: SlideImage;
   /** 오늘의 꽃인가. */
   isToday: boolean;
@@ -277,6 +295,45 @@ function themeForFlower(flowerId: string) {
   return FLOWER_THEMES.find((theme) => theme.catalogFlowerId === flowerId);
 }
 
+/**
+ * 배경이 밝은 컷을 다크 팔레트로 끌어내리는 그레이딩(§1.4 팔레트 · §1.5g).
+ *
+ * 스크림만 올려도 글자는 읽히지만, 검정 배경 컷 27장 사이에 흰 배경 카드가 끼면 **그리드
+ * 자체가 튄다**(docs/image-assets.md §통합할 때 주의할 것 4). 그래서 스크림 강화(카드 CSS)와
+ * 이 필터를 함께 건다 — 색은 죽이지 않고 밝기만 내리는 값이라 라벤더 보라·안개꽃 흰빛은 남는다.
+ */
+const BRIGHT_GRADE = 'brightness(.74) saturate(.94) contrast(1.04)';
+
+/**
+ * 카드 사진 한 장.
+ *
+ * 순서에 뜻이 있다: **테마 상수 컷이 먼저**다(§1.4c 5종은 편집 검수를 통과한 "장면"이고
+ * 그레이딩 값까지 손으로 맞춰 뒀다). 나머지는 `@/lib/photos` 의 대표 실사가 채운다 —
+ * 카탈로그 32종 전원에 컷이 있으므로 **"사진이 없어 그라디언트로 남는 카드"는 이제 없다.**
+ */
+function slideImage(flowerId: string): SlideImage | undefined {
+  const theme = themeForFlower(flowerId);
+  if (theme) {
+    return {
+      src: theme.card.src,
+      alt: theme.card.alt,
+      credit: theme.card.credit,
+      grade: theme.card.grade,
+    };
+  }
+
+  const photo = photoFor(flowerId);
+  if (!photo) return undefined;
+
+  const bright = needsDarkOverlay(photo);
+  return {
+    src: photoSrc(photo, 1080),
+    alt: photo.alt,
+    credit: photo.credit,
+    ...(bright ? { grade: BRIGHT_GRADE, bright: true } : {}),
+  };
+}
+
 /** 대표 꽃말 — 대표색과 같은 색의 행을 먼저 보고, 없으면 첫 행. */
 function meaningFor(flower: CatalogFlower, catalog: Catalog) {
   const mine = catalog.meanings.filter((row) => row.flowerId === flower.id);
@@ -317,14 +374,7 @@ function toSlide(flower: CatalogFlower, catalog: Catalog, isToday: boolean): Sli
     occasions: OCCASIONS[flower.id] ?? [],
     // 테마 상수의 각주가 있으면 그것을(편집 검수를 거친 문장), 없으면 데이터에서 만든다.
     petCaveat: theme?.caveat ?? petCaveatFor(flower),
-    image: theme
-      ? {
-          src: theme.card.src,
-          alt: theme.card.alt,
-          credit: theme.card.credit,
-          grade: theme.card.grade,
-        }
-      : undefined,
+    image: slideImage(flower.id),
     isToday,
   };
 }
@@ -370,14 +420,43 @@ export function buildLandingData(catalog: Catalog, todayISO: string): LandingDat
     .map((flower) => toSlide(flower, catalog, false));
   const slides = [today, ...rest];
 
-  // 히어로 사진은 카테고리 대표 테마의 컷을 쓴다.
-  // (오늘의 꽃이 사진 없는 꽃이어도 히어로는 항상 그 색감의 실사로 채워진다.)
   const categoryTheme = CATEGORY_THEMES[today.category];
   const heroTheme = getFlowerTheme(categoryTheme.slug);
 
+  /**
+   * 히어로 = **오늘의 꽃 본인의 실사**(#5 화면 일치).
+   *
+   * 예전에는 카테고리 대표 테마의 "장면컷"을 걸었다. 오늘의 꽃에 사진이 없는 경우가 많아
+   * "그 꽃 아닌 사진"과 "그 꽃 이름"을 나란히 세우는 절충이었는데, 32종 전수 확보로
+   * 그 근거가 사라졌다(docs/image-assets.md §꽃별 대표 실사 32종). 색감 테마는 그대로
+   * 카테고리가 소유한다 — 바뀐 것은 **사진이 가리키는 대상**뿐이다.
+   *
+   * ⚠ 예외 하나: **rose-red 가 오늘의 꽃이면 카테고리 대표 컷을 유지한다.** 첫 화면을
+   *   빨간 장미가 덮으면 서비스 톤이 "야간 식물 아카이브"에서 로맨스로 넘어간다
+   *   (문서 §사용 규칙 3 · Advisor 확정). 장미 실사는 카드·도감에서만 나온다.
+   */
+  const heroPhoto = canLeadHero(today.flowerId) ? photoFor(today.flowerId) : undefined;
+  const hero: HeroImage = heroPhoto
+    ? {
+        src: photoSrc(heroPhoto, 2560),
+        // 모바일은 4:5 별도 크롭 대신 같은 컷의 좁은 폭을 쓴다(히어로는 object-fit: cover 다).
+        srcMobile: photoSrc(heroPhoto, 1080),
+        alt: heroPhoto.alt,
+        credit: heroPhoto.credit,
+        // 밝은 컷 4종은 히어로에서도 같은 그레이딩으로 눌러야 다크 팔레트가 유지된다.
+        ...(needsDarkOverlay(heroPhoto) ? { grade: BRIGHT_GRADE } : {}),
+      }
+    : {
+        src: heroTheme.hero.src,
+        srcMobile: heroTheme.hero.srcMobile,
+        alt: heroTheme.hero.alt,
+        credit: heroTheme.hero.credit,
+        grade: heroTheme.hero.grade,
+      };
+
   const credits = [
     ...new Set([
-      heroTheme.hero.credit,
+      hero.credit,
       ...slides.map((slide) => slide.image?.credit).filter((credit): credit is string => !!credit),
       ...Object.values(SECTION_IMAGES).map((image) => image.credit),
     ]),
@@ -390,13 +469,7 @@ export function buildLandingData(catalog: Catalog, todayISO: string): LandingDat
     category: today.category,
     themeSlug: categoryTheme.slug,
     categoryLabel: categoryTheme.label,
-    hero: {
-      src: heroTheme.hero.src,
-      srcMobile: heroTheme.hero.srcMobile,
-      alt: heroTheme.hero.alt,
-      credit: heroTheme.hero.credit,
-      grade: heroTheme.hero.grade,
-    },
+    hero,
     today,
     slides,
     credits,

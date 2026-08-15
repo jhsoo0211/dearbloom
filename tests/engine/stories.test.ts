@@ -245,7 +245,7 @@ describe('pickStories — 빈 intents 는 모든 상황', () => {
  * ------------------------------------------------------------------ */
 
 describe('어휘와 배럴 export', () => {
-  it('MOOD_AFFINITY 는 7개 상황을 전부 덮고 값은 STORY_MOODS 안에 있다', () => {
+  it('MOOD_AFFINITY 는 상황 어휘 전부(§1.5l other 포함)를 덮고 값은 STORY_MOODS 안에 있다', () => {
     expect(Object.keys(MOOD_AFFINITY).sort()).toEqual([...INTENTS].sort());
     for (const intent of INTENTS) {
       const moods: readonly StoryMood[] = MOOD_AFFINITY[intent];

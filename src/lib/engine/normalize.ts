@@ -19,6 +19,8 @@ export const INTENTS = [
   'comfort',
   'anniversary',
   'just_because',
+  // §1.5l — "직접 쓸게요". 규칙표에 짝이 없는 값이라 점수는 중립이다(score.ts).
+  'other',
 ] as const satisfies readonly Intent[];
 
 export const TONES = ['plain', 'sincere', 'romantic', 'playful'] as const satisfies readonly Tone[];
@@ -80,6 +82,7 @@ export const recoInputSchema = z.object({
   region: z.string().optional(),
   pets: z.array(speciesSchema).default([]),
   fragranceSensitive: z.boolean().default(false),
+  fragrancePreference: z.boolean().default(false),
   personalCues: z.array(z.string()).default([]),
   // 한국어 라벨을 slug 로 옮긴 뒤 어휘 검사를 한다. 어휘 밖의 값은 조용히 버리지 않고 throw.
   recipientTraits: z
@@ -120,7 +123,9 @@ export function normalizeInput(raw: unknown): RecoInput {
     colorPrefs: cleanSlugs(parsed.colorPrefs),
     dislikedFlowerIds: cleanSlugs(parsed.dislikedFlowerIds),
     pets: Array.from(new Set(parsed.pets)),
+    // 향에 민감하다는 말이 있으면 향을 좋아한다는 신호는 접는다(안전이 취향보다 앞선다).
     fragranceSensitive: parsed.fragranceSensitive,
+    fragrancePreference: parsed.fragrancePreference && !parsed.fragranceSensitive,
     personalCues: cleanTexts(parsed.personalCues),
     recipientTraits: Array.from(new Set(parsed.recipientTraits)),
   };

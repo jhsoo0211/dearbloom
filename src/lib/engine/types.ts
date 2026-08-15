@@ -12,7 +12,15 @@ export type Intent =
   | 'celebration'
   | 'comfort'
   | 'anniversary'
-  | 'just_because';
+  | 'just_because'
+  /**
+   * 위 일곱 갈래에 없는 마음 — 사용자가 직접 적는다(design-spec §1.5l).
+   *
+   * 규칙표(recommendation_rules)에는 이 값을 가진 행이 없고, 있더라도 점수로 세지 않는다
+   * (score.ts 가 명시적으로 0 으로 둔다). 상황 가점 없이 색·제철·분위기 신호만으로 고른다는
+   * 뜻이다 — 모르는 상황에 아는 척하는 가점을 주는 것보다 중립이 정직하다.
+   */
+  | 'other';
 export type Tone = 'plain' | 'sincere' | 'romantic' | 'playful';
 /**
  * 받는 사람의 분위기·취향 태그(페르소나).
@@ -100,6 +108,12 @@ export interface RecoInput {
   region?: string;
   pets?: Species[];
   fragranceSensitive?: boolean;
+  /**
+   * 향이 있는 꽃을 반긴다는 신호(§1.5l 특징 칩 `향기를 좋아해요`).
+   * `fragranceSensitive` 와 반대 축이며, 둘이 함께 오면 **안전 쪽(민감)이 이긴다**
+   * — 화면 칩을 엔진 입력으로 나누는 `splitRecipientChips` 가 그 판단을 한다.
+   */
+  fragrancePreference?: boolean;
   personalCues?: string[];
   /** 받는 사람의 분위기·취향 태그. RecipientTrait slug 배열이며 미지정도 허용한다. */
   recipientTraits?: string[];

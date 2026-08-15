@@ -23,7 +23,7 @@ import type {
   StoryType,
   Tone,
 } from '@/lib/engine';
-import type { ColorChoice, FlowerForm } from './types';
+import type { ChoiceOption, ColorChoice, FlowerForm } from './types';
 
 /* ------------------------------------------------------------------ *
  * 관계 · 마음
@@ -61,7 +61,55 @@ export const INTENT_LABELS: Record<Intent, { label: string; desc: string }> = {
   comfort: { label: '위로', desc: '말로는 다 못 전할 때' },
   anniversary: { label: '기념일', desc: '함께 지나온 날을 기억할 때' },
   just_because: { label: '그냥, 문득', desc: '이유 없이 떠올랐을 때' },
+  // §1.5l — 일곱 갈래에 없는 마음. 고르면 한 줄로 직접 적을 수 있다(적지 않아도 된다).
+  other: { label: '직접 쓸게요', desc: '위에 없는 마음이에요' },
 };
+
+/**
+ * §1.5l `직접 쓸게요` 한 줄의 길이 상한.
+ * 화면 `maxLength` · 서버 자르기 · LLM 계약(`intent_detail`)이 같은 값을 쓴다.
+ */
+export const INTENT_DETAIL_MAX_CHARS = 80;
+
+/* ------------------------------------------------------------------ *
+ * §1.5l 시작 프리셋
+ * ------------------------------------------------------------------ */
+
+/**
+ * 질문 1번 위에 세우는 지름길 버튼.
+ *
+ * 관계·마음을 한 번에 채우고 3번 질문으로 건너뛴다. **경로를 바꾸는 것이 아니라
+ * 줄이는 것이라** 라디오 목록은 그대로 남고, 뒤로 가면 언제든 고쳐 고를 수 있다.
+ *
+ * 문구는 §1.5d 톤 — "사과해야 해요" 같은 지시형 대신 그 순간을 서술한다.
+ * 순서는 자주 쓰일 것부터다(부모님 감사 → 다툰 다음 날 → 생일 …).
+ */
+export interface PresetMoment {
+  value: string;
+  label: string;
+  relationship: Relationship;
+  intent: Intent;
+}
+
+export const PRESET_MOMENTS: PresetMoment[] = [
+  { value: 'parents-thanks', label: '부모님 감사 인사', relationship: 'family', intent: 'gratitude' },
+  { value: 'after-quarrel', label: '다툰 다음 날', relationship: 'lover', intent: 'apology' },
+  { value: 'friend-birthday', label: '친구의 생일', relationship: 'friend', intent: 'celebration' },
+  {
+    value: 'colleague-new-start',
+    label: '동료의 새 출발',
+    relationship: 'colleague',
+    intent: 'celebration',
+  },
+  { value: 'our-anniversary', label: '우리의 기념일', relationship: 'lover', intent: 'anniversary' },
+  { value: 'tired-friend', label: '지친 친구에게', relationship: 'friend', intent: 'comfort' },
+  { value: 'first-confession', label: '설레는 고백', relationship: 'crush', intent: 'confession' },
+  { value: 'just-because', label: '이유 없이, 문득', relationship: 'lover', intent: 'just_because' },
+];
+
+export function presetMoment(value: string): PresetMoment | undefined {
+  return PRESET_MOMENTS.find((preset) => preset.value === value);
+}
 
 /* ------------------------------------------------------------------ *
  * 페르소나 · 색
@@ -83,6 +131,132 @@ export const TRAIT_DESCS: Record<RecipientTrait, string> = {
   elegant: '단정하고 기품 있는 분',
   minimal: '군더더기 없는 걸 좋아하는 분',
 };
+
+/* ------------------------------------------------------------------ *
+ * §1.5l 받는 분 특징 칩
+ * ------------------------------------------------------------------ */
+
+/**
+ * 질문 3번의 **하나뿐인 다중선택 칩 그룹**(§1.5l).
+ *
+ * 예전에는 분위기·반려동물·향이 각각 따로 서 있었다. 묻는 것이 결국 "받는 분은 어떤
+ * 분인가"로 같은데 위계만 셋이라, 화면이 길고 반려동물 칸은 유난히 무겁게 읽혔다.
+ * 그래서 한 그룹으로 합치고, 대신 **칩 하나가 엔진 입력의 어디로 가는지**를 여기에
+ * 표로 적어 둔다. 분해는 `splitRecipientChips` 한 곳에서만 한다.
+ *
+ * 엔진에 신호가 없는 칩(처음 받아봄·오래 두고 봄)은 억지로 어휘를 만들지 않고
+ * 멘트 재료로만 흘려보낸다 — 없는 근거를 지어내는 것보다 낫다.
+ */
+export interface RecipientChip {
+  value: string;
+  label: string;
+  /** 엔진 recipientTraits 로 가는 페르소나 태그. */
+  trait?: RecipientTrait;
+  /** 함께 사는 반려동물 — 안전 제외(EX_PET_TOXIC)로 이어진다. */
+  pet?: Species;
+  /** 향에 민감 — 향 강한 꽃 제외(EX_FRAGRANCE)로 이어진다. */
+  fragranceSensitive?: true;
+  /** 향기를 좋아함 — A(미적) 안의 향 신호로 들어간다(SC_FRAGRANCE). */
+  fragrancePreference?: true;
+}
+
+export const RECIPIENT_CHIPS: RecipientChip[] = [
+  { value: 'vivid', label: '화려한 걸 좋아해요', trait: 'vivid' },
+  { value: 'calm', label: '은은하고 담백한 걸 좋아해요', trait: 'calm' },
+  { value: 'loves-fragrance', label: '향기를 좋아해요', fragrancePreference: true },
+  { value: 'fragrance-sensitive', label: '향에 민감해요', fragranceSensitive: true },
+  { value: 'first-flowers', label: '꽃을 처음 받아봐요' },
+  { value: 'long-lasting', label: '오래 두고 보고 싶어해요' },
+  { value: 'cat-home', label: '반려묘와 살아요', pet: 'cat' },
+  { value: 'dog-home', label: '반려견과 살아요', pet: 'dog' },
+  { value: 'cute', label: '귀엽고 사랑스러운 걸 좋아해요', trait: 'cute' },
+  { value: 'elegant', label: '단정하고 기품 있는 걸 좋아해요', trait: 'elegant' },
+  { value: 'minimal', label: '군더더기 없는 걸 좋아해요', trait: 'minimal' },
+];
+
+/** 칩 하나를 엔진 입력의 여러 자리로 나눈 결과. */
+export interface RecipientChipSplit {
+  /** 엔진 recipientTraits(어휘 검사를 통과하는 값만). */
+  traits: RecipientTrait[];
+  pets: Species[];
+  fragranceSensitive: boolean;
+  fragrancePreference: boolean;
+  /** 고른 칩 전체의 라벨(고른 순서). 결과 화면 맥락 칩에 그대로 세운다. */
+  labels: string[];
+  /**
+   * 멘트에 재료로 넘겨도 되는 칩의 라벨.
+   *
+   * 반려동물·향 민감 칩은 **일부러 뺀다.** 그 둘은 안전 판단이고, 프롬프트의 절대 규칙 3
+   * ("반려동물 안전·독성·알레르기를 문장에 쓰지 않는다")이 금지한 자리로 모델을 끌어들이는
+   * 미끼가 된다. 그 판단은 데이터가 하고 화면 배지가 말한다.
+   */
+  messageNotes: string[];
+}
+
+/**
+ * 특징 칩 → 엔진 입력. **화면이 아니라 서버가 나눈다**(§1.5l).
+ *
+ * 사전에 없는 값은 조용히 버린다 — 화면은 여기서 만든 목록만 그리므로 사전 밖 값은
+ * 조작된 요청이라는 뜻이고, 어휘 밖 값을 엔진에 밀어 넣으면 zod 가 요청 전체를 던진다.
+ * `향에 민감` 과 `향기를 좋아함` 이 함께 오면 안전 쪽이 이긴다(엔진도 같은 판단을 한다).
+ */
+export function splitRecipientChips(values: readonly string[]): RecipientChipSplit {
+  const chips = values
+    .map((value) => RECIPIENT_CHIPS.find((chip) => chip.value === value.trim()))
+    .filter((chip): chip is RecipientChip => chip !== undefined);
+
+  const unique = Array.from(new Map(chips.map((chip) => [chip.value, chip])).values());
+
+  const fragranceSensitive = unique.some((chip) => chip.fragranceSensitive === true);
+
+  return {
+    traits: unique
+      .map((chip) => chip.trait)
+      .filter((trait): trait is RecipientTrait => trait !== undefined),
+    pets: unique.map((chip) => chip.pet).filter((pet): pet is Species => pet !== undefined),
+    fragranceSensitive,
+    fragrancePreference:
+      !fragranceSensitive && unique.some((chip) => chip.fragrancePreference === true),
+    labels: unique.map((chip) => chip.label),
+    messageNotes: unique
+      .filter((chip) => chip.pet === undefined && chip.fragranceSensitive === undefined)
+      .map((chip) => chip.label),
+  };
+}
+
+/* ------------------------------------------------------------------ *
+ * §1.5l 상황 칩(에피소드)
+ * ------------------------------------------------------------------ */
+
+/**
+ * 자유 서술 앞에 세우는 상황 칩(§1.5l).
+ *
+ * 빈 칸 앞에서 멈추는 사람이 많아 "고를 수도 있게" 열어 둔 길이다. 자유 글과 **별개
+ * 필드**로 보내고(`episodeHints`), 글에서 단서를 읽는 `inferCuesFromText` 경로는
+ * 자유 글에만 그대로 걸린다 — 칩은 이미 어휘라 다시 읽어 낼 것이 없다.
+ * 쓰임은 멘트 재료이며, 저장하지 않는다는 §1.5j 원칙은 그대로다.
+ */
+export const EPISODE_HINTS: ChoiceOption[] = [
+  { value: 'long-time', label: '오랜만에 연락해요' },
+  { value: 'quarrel', label: '최근에 다퉜어요' },
+  { value: 'trip-memory', label: '함께 여행한 추억이 있어요' },
+  { value: 'worn-out', label: '많이 지쳐 보여요' },
+  { value: 'good-news', label: '축하할 일이 생겼어요' },
+  { value: 'far-apart', label: '멀리 떨어져 지내요' },
+];
+
+/** 상황 칩 slug → 한국어 라벨. 사전 밖 값은 버린다(칩 목록도 서버가 만든다). */
+export function episodeHintLabels(values: readonly string[]): string[] {
+  const seen = new Set<string>();
+  const labels: string[] = [];
+  for (const value of values) {
+    const hit = EPISODE_HINTS.find((hint) => hint.value === value.trim());
+    if (!hit || seen.has(hit.value)) continue;
+    seen.add(hit.value);
+    labels.push(hit.label);
+  }
+  return labels;
+}
 
 /**
  * 색 slug → 표기·스와치.
@@ -240,6 +414,27 @@ export const PRICE_LABELS: Record<1 | 2 | 3, string> = {
   1: '3만 원 안쪽에서 만들 수 있어요',
   2: '3~6만 원대가 흔해요',
   3: '6만 원대부터 시작해요',
+};
+
+/**
+ * 가격 구간 표기의 칸 수(#11).
+ *
+ * 화면은 `₩ ₩₩ ₩₩₩` 세 칸을 **전부** 세워 두고 그 꽃의 band 까지만 채운다.
+ * 채운 칸만 보여 주면 "₩"가 적은 것인지 싼 것인지 알 수 없고, 무엇보다 세 구간이
+ * 있다는 사실 자체가 안 보인다 — band 1 이 "부족한 값"이 아니라 "세 구간 중 하나"로
+ * 읽히려면 나머지 두 칸이 흐리게라도 함께 서 있어야 한다.
+ */
+export const PRICE_BAND_SLOTS = [1, 2, 3] as const;
+
+/**
+ * 가격 한 줄에 덧붙는 §1.5d 한마디. band 1(가장 낮은 구간)에만 붙는다(#11).
+ *
+ * ⚠ 금지선은 그대로다 — 가격이 마음의 크기에 비례한다는 함의를 어떤 표현으로도 쓰지
+ * 않는다(§1.5i). 그래서 "적어도 괜찮아요"(= 원래는 더 써야 한다는 전제)가 아니라
+ * "이 꽃은 이 값에 이미 충분하다"로 적는다.
+ */
+export const PRICE_BAND_NOTES: Partial<Record<1 | 2 | 3, string>> = {
+  1: '가볍게 준비해도 충분히 마음이 서는 꽃이에요',
 };
 
 export const FRAGRANCE_LABELS: Record<0 | 1 | 2 | 3, string> = {
@@ -584,3 +779,145 @@ export function excerptTypeLabel(type: string | undefined): string | undefined {
   if (type === undefined) return undefined;
   return EXCERPT_TYPE_LABELS[type];
 }
+
+/* ------------------------------------------------------------------ *
+ * §1.5k 문학 발췌 고르기 — 순서 규칙 (#1)
+ *
+ * `pickLiterature`(actions.ts)는 **후보를 거르는 일**을 하고, 거른 뒤 무엇을 앞에
+ * 세우고 나머지를 어떤 차례로 넘길지는 여기 있는 순수 함수가 정한다. 규칙을 여기
+ * 두는 이유는 하나다 — 이 순서는 눈으로 검수할 수 없어서(꽃 32종 × 상황 8종)
+ * 테스트가 대신 봐야 하는데, actions.ts 는 `'use server'` 라 순수 함수를 내보낼 수 없다.
+ * ------------------------------------------------------------------ */
+
+/** 순서 규칙이 후보에게 요구하는 최소한의 모양. 카탈로그 `Quote` 가 이 모양을 만족한다. */
+export interface LiteratureCandidate {
+  quoteId: string;
+  author?: string;
+  /** 원어 원문. 없으면 한국어 원전이라는 뜻이다. */
+  textOriginal?: string;
+  tags: string[];
+}
+
+/**
+ * 원문이 어느 언어권인지 — **문자(script)로 가른다.**
+ *
+ * `quotes.csv` 에 언어 컬럼이 없고, 만들 이유도 없다. 우리가 알고 싶은 것은
+ * ISO 코드가 아니라 "방금 보여 준 것과 다른 세계의 글인가" 뿐이고, 그건 문자가 답한다.
+ * 한글이 섞인 한문(이정보 〈국화야〉)은 한국 것으로 읽히는 게 맞아서 한글을 먼저 본다.
+ */
+export function literatureLanguage(candidate: LiteratureCandidate): string {
+  const original = candidate.textOriginal ?? '';
+  if (original === '') return 'ko'; // 원문이 없다 = 한국어 원전
+  if (/[가-힣]/.test(original)) return 'ko';
+  if (/[぀-ヿ]/.test(original)) return 'ja';
+  if (/[Ѐ-ӿ]/.test(original)) return 'cyrillic';
+  if (/[Ͱ-Ͽ]/.test(original)) return 'greek';
+  if (/[؀-ۿ]/.test(original)) return 'arabic';
+  if (/[一-鿿]/.test(original)) return 'han';
+  return 'latin';
+}
+
+/** 같은 사람의 글을 한 묶음으로 본다. `A / B 옮김` 형태는 앞사람(원저자)으로 센다. */
+function authorKey(candidate: LiteratureCandidate): string {
+  const author = (candidate.author ?? '').split('/')[0]?.trim() ?? '';
+  // 작가가 비어 있으면 서로 다른 작품으로 본다 — 한 바구니에 담아 붙여 놓지 않는다.
+  return author === '' ? `#${candidate.quoteId}` : author;
+}
+
+/** 꽃 id 하나로 정해지는 값. 새로고침해도 같은 편이 나와야 검수가 가능하다(§1.5k). */
+function stableHash(text: string): number {
+  let hash = 0;
+  for (let i = 0; i < text.length; i += 1) hash = (hash * 31 + text.charCodeAt(i)) >>> 0;
+  return hash;
+}
+
+/**
+ * 작가 기준 인터리브 — 같은 작가의 글이 **연달아** 나오지 않게 번갈아 뽑는다.
+ *
+ * 베르길리우스 3행이나 셸리의 인접 연처럼 한 사람의 여러 행이 붙어 있으면, 넘겨 보는
+ * 사람에게는 "다른 문학"이 아니라 "같은 시의 다음 줄"로 읽힌다. 작가별 줄을 세워
+ * 한 명씩 돌아가며 뽑으면 그 붙음이 풀린다(작가가 한 명뿐이면 원래 순서 그대로다).
+ */
+export function interleaveByAuthor<T extends LiteratureCandidate>(rows: readonly T[]): T[] {
+  const buckets = new Map<string, T[]>();
+  for (const row of rows) {
+    const key = authorKey(row);
+    const bucket = buckets.get(key);
+    if (bucket) bucket.push(row);
+    else buckets.set(key, [row]);
+  }
+
+  const queues = [...buckets.values()];
+  const out: T[] = [];
+  let moved = true;
+  while (moved) {
+    moved = false;
+    for (const queue of queues) {
+      const next = queue.shift();
+      if (!next) continue;
+      out.push(next);
+      moved = true;
+    }
+  }
+  return out;
+}
+
+/**
+ * 대표 1편 + 나머지 순서(#1).
+ *
+ *   ① 이 상황(intent)에 어울린다고 적힌 발췌가 있으면 대표는 **그 안에서만** 고른다.
+ *   ② 그 안에서는 **원문 언어권**으로 가른다 — 꽃 id 로 언어권 하나를 정하고 그 언어권의
+ *      첫 편을 세운다. 3안이 서로 다른 꽃이므로 세 블록의 원문이 한 언어로 몰리지 않는다.
+ *      상태를 저장하지 않고도 "직전과 다른 언어권"에 가까워지는 가장 싼 방법이다.
+ *   ③ 나머지는 작가 기준 인터리브로 넘긴다.
+ *
+ * 후보가 비어 있으면 `undefined` — 화면은 블록 자체를 세우지 않는다(§1.5k "있을 때만").
+ */
+export function orderLiterature<T extends LiteratureCandidate>(
+  candidates: readonly T[],
+  flowerId: string,
+  intent: Intent,
+): { featured: T; others: T[] } | undefined {
+  if (candidates.length === 0) return undefined;
+
+  const fitting = candidates.filter((quote) => quote.tags.includes(intent));
+  const pool = fitting.length > 0 ? fitting : candidates;
+
+  const languages = [...new Set(pool.map(literatureLanguage))];
+  const language = languages[stableHash(flowerId) % languages.length];
+  const featured = pool.find((quote) => literatureLanguage(quote) === language) ?? pool[0];
+  if (!featured) return undefined;
+
+  const others = interleaveByAuthor(
+    candidates.filter((quote) => quote.quoteId !== featured.quoteId),
+  );
+  return { featured, others };
+}
+
+/* ------------------------------------------------------------------ *
+ * §1.5e 함께 담을 한 줄 — 톤별 변형 (#13)
+ * ------------------------------------------------------------------ */
+
+/**
+ * 첫 문장만 떼어 낸다.
+ *
+ * 카드에 적을 한 줄이므로 멘트 전문을 그대로 옮길 수는 없다. 문장부호가 없는 짧은 글은
+ * **통째로** 돌려준다 — 글자 수로 자르면 말이 중간에서 끊겨 카드에 옮겨 적을 수가 없다.
+ */
+export function firstSentence(text: string): string {
+  const trimmed = text.trim();
+  const match = /^[^.!?…]*[.!?…]+/.exec(trimmed);
+  return (match ? match[0] : trimmed).trim();
+}
+
+/**
+ * `함께 담을 한 줄` 밑에 서는 각주.
+ *
+ * 위 멘트와 같은 문장이 다시 나오는 자리라, 그것이 실수가 아니라 **의도**임을 이 한 줄이
+ * 말해 준다("첫 마디만 카드에 적어도 된다"). 출처가 사람인 공용 인용과 달리 여기서는
+ * 우리가 만든 문장이므로, 작가 이름을 흉내 내는 표기를 쓰지 않는다.
+ */
+export const CARD_LINE_NOTES: Record<'llm' | 'template', string> = {
+  llm: '방금 쓴 멘트의 첫 마디',
+  template: '준비해 둔 예문의 첫 마디',
+};

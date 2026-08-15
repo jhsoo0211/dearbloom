@@ -23,26 +23,21 @@ import {
   reasonText,
   recommend,
 } from '@/lib/engine';
-import type {
-  Intent,
-  RecoInput,
-  RecoResult,
-  Relationship,
-  Species,
-  StoryRow,
-  Tone,
-} from '@/lib/engine';
-import { RESPONSE_TONE_COUNT } from '@/lib/llm/contracts';
+import type { Intent, RecoInput, RecoResult, Relationship, StoryRow, Tone } from '@/lib/engine';
+import { INTENT_DETAIL_MAX_CHARS, RESPONSE_TONE_COUNT } from '@/lib/llm/contracts';
 import type { GenerateRequest } from '@/lib/llm/contracts';
 import { generateMessages } from '@/lib/llm/provider';
 import { isBlockedForGeneration } from '@/lib/llm/safety';
+import { needsDarkOverlay, photoFor, photoSrc } from '@/lib/photos';
 import {
   AVAILABILITY_LABELS,
+  CARD_LINE_NOTES,
   CONFIDENCE_LABELS,
   FALLBACK_QUOTE,
   FRAGRANCE_LABELS,
   INTENT_LABELS,
   OPTION_LABELS,
+  PRICE_BAND_NOTES,
   PRICE_LABELS,
   RELATIONSHIP_TO_LABELS,
   SEVERITY_LABELS,
@@ -54,11 +49,15 @@ import {
   TRAIT_LABEL_BY_SLUG,
   budgetChoice,
   colorChoice,
+  episodeHintLabels,
   eraLabel,
   excerptTypeLabel,
+  firstSentence,
   flowerForm,
   flowerOccasions,
+  orderLiterature,
   regionLabel,
+  splitRecipientChips,
   storyConfidenceLabel,
   storyTypeLabel,
   toxicPartLabel,
@@ -67,6 +66,7 @@ import type {
   CultureMeaningRow,
   FlowOptionView,
   FlowResponse,
+  FlowerPhotoView,
   LiteratureView,
   PetBadge,
   QuoteView,
@@ -197,7 +197,16 @@ function toColorChips(result: RecoResult): ResultColorChip[] {
   });
 }
 
-/** 멘트 3~4톤의 밑바닥 — 카탈로그 템플릿에서 상황·톤이 맞는 문장을 고른다. */
+/**
+ * 멘트 3~4톤의 밑바닥 — 카탈로그 템플릿에서 상황·톤이 맞는 문장을 고른다.
+ *
+ * #13 — 예문을 찾은 톤에는 `함께 담을 한 줄`도 그 예문의 **첫 문장**으로 함께 붙인다.
+ * `templates.csv` 에 한 줄짜리 컬럼이 따로 없어서(있는 것은 `template_text` 뿐이다)
+ * 새 컬럼을 만드는 대신 있는 문장에서 떼어 낸다 — 톤마다 다른 말이 나온다는 것이
+ * 목적이고, 그건 예문 자체가 이미 톤별로 다르기 때문에 첫 문장만으로 충족된다.
+ * 예문조차 없는 톤(`other` 처럼 templates.csv 에 상황이 없는 경우)은 이 필드가 없고,
+ * 화면이 공용 인용(김소월)으로 떨어진다 — 톤별 접미사를 붙여 억지로 변형하지 않는다.
+ */
 function buildTones(catalog: Catalog, intent: Intent, relationship: Relationship): ToneView[] {
   // 사과 자리에서 유쾌 톤은 내린다(§1.5).
   const tones: Tone[] = TONE_ORDER.filter((tone) => !(intent === 'apology' && tone === 'playful'));
@@ -213,6 +222,10 @@ function buildTones(catalog: Catalog, intent: Intent, relationship: Relationship
     if (hit) {
       view.body = hit.templateText;
       view.source = 'template';
+      view.cardLine = {
+        textKo: firstSentence(hit.templateText),
+        attribution: CARD_LINE_NOTES.template,
+      };
     } else {
       view.emptyNote = '이 톤의 예문은 아직 모으는 중이에요. 다른 톤을 먼저 봐주세요.';
     }
@@ -260,11 +273,28 @@ function generationRules(intent: Intent): string[] {
 }
 
 /**
+ * 멘트에 함께 실어 보내는 §1.5l 재료.
+ * 자유 서술(memoryContext)과 달리 **서비스 어휘**라 원문 그대로 실어도 안전하다.
+ */
+interface MessageExtras {
+  /** 마음이 `other` 일 때 직접 적은 한 줄. 잘라 낸 뒤의 값이다. */
+  intentDetail: string;
+  /** 특징 칩 라벨(반려동물·향 민감 칩은 빠져 있다 — 프롬프트 절대 규칙 3). */
+  recipientNotes: string[];
+  /** 상황 칩 라벨. */
+  episodeHints: string[];
+}
+
+/**
  * 멘트 조립 — LLM 을 한 번 부르고, 못 받으면 템플릿 그대로 둔다.
  *
  * 계약(`contracts.ts`)이 3톤 1회 호출로 고정돼 있어 요청은 앞 3톤(담백·다정·진지)까지다.
  * 사과가 아닐 때 화면에 함께 서는 유쾌 톤은 템플릿을 유지한다 — 그래서 톤마다
  * `source` 를 따로 들고 다닌다.
+ *
+ * intent 가 `other` 면 템플릿이 아예 없다(templates.csv 에 그 상황이 없다). 이때는 기존
+ * "이 톤의 예문은 아직 모으는 중" 경로를 그대로 타고, LLM 이 붙으면 그 자리가 채워진다 —
+ * `other` 전용 템플릿을 새로 만들지 않는다.
  *
  * ⚠ `memoryContext` 는 요청 본문에만 들어간다. 로그·에러·반환값 어디에도 싣지 않는다(§1.5j).
  */
@@ -274,11 +304,13 @@ async function buildToneViews(
   relationship: Relationship,
   pick: RecoResult,
   memoryContext: string,
+  extras: MessageExtras,
 ): Promise<ToneView[]> {
   const views = buildTones(catalog, intent, relationship);
 
   // 심각한 상황은 생성 호출 **전에** 차단한다(기획안 v2 후퇴 금지선).
-  if (isBlockedForGeneration([memoryContext])) return views;
+  // 직접 적은 마음도 사용자가 쓴 글이라 같은 문을 통과해야 한다.
+  if (isBlockedForGeneration([memoryContext, extras.intentDetail])) return views;
 
   const flower = flowerBriefFor(catalog, pick);
   if (!flower) return views;
@@ -290,6 +322,9 @@ async function buildToneViews(
   const rules = generationRules(intent);
   if (rules.length > 0) request.rules = rules;
   if (memoryContext !== '') request.memory_context = memoryContext;
+  if (extras.intentDetail !== '') request.intent_detail = extras.intentDetail;
+  if (extras.recipientNotes.length > 0) request.recipient_traits = extras.recipientNotes;
+  if (extras.episodeHints.length > 0) request.episode_hints = extras.episodeHints;
 
   let generated;
   try {
@@ -307,6 +342,11 @@ async function buildToneViews(
     if (!hit) return view;
     const next: ToneView = { ...view, body: hit.message, headline: hit.headline, source: 'llm' };
     delete next.emptyNote;
+    // #13 — 이 톤에 맞춘 `함께 담을 한 줄`. 방금 쓴 첫 마디가 그 자리에 가장 어울린다
+    //       (톤을 바꾸면 문장도 함께 바뀐다는 것을 사용자가 눈으로 확인하는 자리다).
+    if (hit.headline) {
+      next.cardLine = { textKo: hit.headline, attribution: CARD_LINE_NOTES.llm };
+    }
     return next;
   });
 }
@@ -371,16 +411,35 @@ function literatureAttribution(quote: Quote): string {
   return `${base}(${era})`;
 }
 
+/** 카탈로그 한 행 → 화면 발췌 한 편. 없는 필드는 아예 두지 않는다(있는 척하지 않는다). */
+function toLiteratureView(quote: Quote): LiteratureView {
+  const view: LiteratureView = {
+    id: quote.quoteId,
+    textKo: quote.textKo,
+    attribution: literatureAttribution(quote),
+  };
+  if (quote.textOriginal) view.textOriginal = quote.textOriginal;
+  const typeLabel = excerptTypeLabel(quote.excerptType);
+  if (typeLabel) view.typeLabel = typeLabel;
+  // 옮긴이는 사실이 아니라 예의의 문제다 — 우리가 옮긴 문장을 원문인 척 두지 않는다.
+  if (quote.translator) view.translatorNote = `옮김: ${quote.translator}`;
+  if (quote.caveat) view.caveat = quote.caveat;
+  if (quote.sourceTitle) view.sourceTitle = quote.sourceTitle;
+  if (quote.sourceUrl) view.sourceUrl = quote.sourceUrl;
+  return view;
+}
+
 /**
- * 그 꽃의 문학 발췌 한 편(§1.5k). **없으면 블록 자체를 생략한다.**
+ * 그 꽃의 문학 발췌 — **대표 1편 + 나머지 전부**(§1.5k · #1). 없으면 블록 자체를 생략한다.
  *
- * 고르는 순서
+ * 거르는 순서
  *   1. 그 꽃에 붙은 발췌만 후보로 둔다(`excerptType` 이 있는 행 = 문학 발췌).
  *   2. 대표 이야기와 같은 작품이면 뺀다(§7 상호배제).
  *   3. 함께 담을 한 줄과 같은 작가면 뺀다 — 한 화면에 같은 이름이 두 번 서지 않게.
- *   4. 남은 것 중 이 상황(intent)에 어울린다고 적힌 발췌를 먼저 쓰고, 없으면 첫 행.
  *
- * 4번의 동점은 CSV 순서로 깬다. 새로고침마다 문장이 바뀌면 "우리가 고른 한 편"이라는
+ * 거른 뒤의 **차례**는 `orderLiterature`(labels.ts)가 정한다 — 상황에 맞는 편을 대표로,
+ * 그 안에서 원문 언어권을 갈라 세우고, 나머지는 작가 기준 인터리브로 넘긴다.
+ * 어느 단계에도 난수가 없다: 새로고침마다 문장이 바뀌면 "우리가 고른 한 편"이라는
  * 인상이 사라지고, 무엇보다 결과를 재현할 수 없어 검수가 불가능해진다.
  */
 function pickLiterature(
@@ -389,7 +448,7 @@ function pickLiterature(
   intent: Intent,
   featuredStoryId: string | undefined,
   sideQuoteAuthor: string,
-): LiteratureView | undefined {
+): { featured: LiteratureView; others: LiteratureView[] } | undefined {
   const candidates = catalog.quotes.filter((quote) => {
     if (quote.flowerId !== flowerId || quote.excerptType === undefined) return false;
     if (
@@ -403,23 +462,35 @@ function pickLiterature(
     return true;
   });
 
-  const pick = candidates.find((quote) => quote.tags.includes(intent)) ?? candidates[0];
-  if (!pick) return undefined;
+  const ordered = orderLiterature(candidates, flowerId, intent);
+  if (!ordered) return undefined;
 
-  const view: LiteratureView = {
-    textKo: pick.textKo,
-    attribution: literatureAttribution(pick),
+  return {
+    featured: toLiteratureView(ordered.featured),
+    others: ordered.others.map(toLiteratureView),
   };
-  if (pick.textOriginal) view.textOriginal = pick.textOriginal;
-  const typeLabel = excerptTypeLabel(pick.excerptType);
-  if (typeLabel) view.typeLabel = typeLabel;
-  // 옮긴이는 사실이 아니라 예의의 문제다 — 우리가 옮긴 문장을 원문인 척 두지 않는다.
-  if (pick.translator) view.translatorNote = `옮김: ${pick.translator}`;
-  if (pick.caveat) view.caveat = pick.caveat;
-  if (pick.sourceTitle) view.sourceTitle = pick.sourceTitle;
-  if (pick.sourceUrl) view.sourceUrl = pick.sourceUrl;
+}
 
-  return view;
+/* ------------------------------------------------------------------ *
+ * #14 대표 실사
+ * ------------------------------------------------------------------ */
+
+/**
+ * 결과 화면 맨 위에 걸 실사 한 컷.
+ *
+ * 폭은 **1600**(도감 상세와 같은 값)이다. 결과 무대는 폰 프레임 안이지만 데스크톱
+ * 2단에서는 좌단을 가득 채우고, 레티나에서 1080 은 눈에 띄게 물러진다.
+ * `photoSrc` 가 허용하는 네 폭 밖의 값을 쓰지 않는 것이 CDN 캐시를 가르지 않는 조건이다.
+ */
+function photoView(flowerId: string): FlowerPhotoView | undefined {
+  const photo = photoFor(flowerId);
+  if (!photo) return undefined;
+  return {
+    src: photoSrc(photo, 1600),
+    alt: photo.alt,
+    credit: photo.credit,
+    bright: needsDarkOverlay(photo),
+  };
 }
 
 /* ------------------------------------------------------------------ *
@@ -463,6 +534,7 @@ function toOptionView(
     availabilityLabel: AVAILABILITY_LABELS[result.availability],
     substitutes: result.substitutes.map((s) => s.nameKo),
     priceLabel: PRICE_LABELS[flower.priceBand],
+    priceBand: flower.priceBand,
     fragranceLabel: FRAGRANCE_LABELS[flower.fragranceLevel],
     occasions: flowerOccasions(flower.id),
     petBadge: petBadge(flower, catalog),
@@ -476,6 +548,12 @@ function toOptionView(
   };
 
   if (flower.careSummary) view.careSummary = flower.careSummary;
+  // #11 — 가장 낮은 구간에만 붙는 한마디. 나머지 두 구간은 값 자체가 이미 충분한 설명이다.
+  const priceNote = PRICE_BAND_NOTES[flower.priceBand];
+  if (priceNote) view.priceNote = priceNote;
+  // #14 — 32종 전원에 컷이 있지만, 없어도 화면이 서야 하므로 있을 때만 붙인다.
+  const photo = photoView(flower.id);
+  if (photo) view.photo = photo;
   const fallback = bestMeaning(catalog.meanings, flower.id);
   if (fallback) view.fallbackMeaning = fallback;
 
@@ -556,7 +634,18 @@ export async function submitRecommendation(
    */
   const recipientNote = submission.recipientNote.trim();
   const episode = submission.episode.trim();
+  // 단서 추론은 **자유 글에만** 건다(§1.5l) — 상황 칩은 이미 어휘라 읽어 낼 것이 없다.
   const inferred = inferCuesFromTexts([recipientNote, episode]);
+
+  // §1.5l 직접 쓴 마음 한 줄. 자유 서술과 같은 취급이라 길이만 잘라 넘기고 저장하지 않는다.
+  const intentDetail = submission.intentDetail.trim().slice(0, INTENT_DETAIL_MAX_CHARS);
+  const hints = episodeHintLabels(submission.episodeHints);
+
+  /*
+   * §1.5l — 특징 칩 한 줄을 엔진 입력의 제 자리로 나눈다.
+   * 반려묘·반려견 칩이 pets 로 가야 반려동물 안전 제외(EX_PET_TOXIC)가 그대로 돈다.
+   */
+  const chips = splitRecipientChips(submission.recipientChips);
 
   // 어휘 검사는 recommend() 안의 normalizeInput(zod)이 한다 — 여기서는 모양만 맞춘다.
   // (단언은 "아직 검사 전"이라는 뜻일 뿐이고, 어휘 밖 값이면 바로 아래에서 throw 된다.)
@@ -564,10 +653,11 @@ export async function submitRecommendation(
     relationship: submission.relationship as Relationship,
     intent: submission.intent as Intent,
     // 직접 고른 칩이 먼저, 글에서 읽어 낸 단서가 뒤 — 겹치면 한 번만 남는다.
-    recipientTraits: mergeUnique(submission.recipientTraits, inferred.recipientTraits),
+    recipientTraits: mergeUnique(chips.traits, inferred.recipientTraits),
     colorPrefs: mergeUnique(submission.colorPrefs, inferred.colorPrefs),
-    pets: submission.pets as Species[],
-    fragranceSensitive: submission.fragranceSensitive,
+    pets: chips.pets,
+    fragranceSensitive: chips.fragranceSensitive,
+    fragrancePreference: chips.fragrancePreference,
     personalCues: [recipientNote, episode, ...inferred.personalCues].filter((v) => v !== ''),
   };
   if (budget) {
@@ -610,25 +700,33 @@ export async function submitRecommendation(
   }
 
   const whenChip = dateChip(submission.dateISO);
+  /*
+   * §1.5l `직접 쓸게요` 의 맥락 칩 — **라벨 대신 사용자가 쓴 말**을 세운다.
+   * `직접 쓸게요` 는 질문 화면에서는 선택지 이름이라 맞지만, 결과 화면의 맥락 칩은
+   * "우리가 무엇을 듣고 골랐는가" 를 되비추는 자리다. 거기 선택지 이름이 서 있으면
+   * 정작 사용자가 적어 준 상황("유학 떠나는 조카를 배웅해요")이 화면 어디에도 없다.
+   * ⚠ 자유 서술과 같은 취급 — 여기서 화면으로만 건너가고 어디에도 저장하지 않는다.
+   */
+  const intentChip =
+    intent === 'other' && intentDetail !== '' ? intentDetail : INTENT_LABELS[intent].label;
   const contextChips: string[] = [
     RELATIONSHIP_TO_LABELS[relationship],
-    INTENT_LABELS[intent].label,
-    ...submission.recipientTraits
-      .map((slug) => TRAIT_LABEL_BY_SLUG[slug as keyof typeof TRAIT_LABEL_BY_SLUG])
-      .filter((label): label is string => Boolean(label)),
+    intentChip,
+    // 특징 칩은 고른 라벨을 그대로 세운다 — 화면과 결과가 같은 말을 쓰게(§1.5l).
+    ...chips.labels,
     ...submission.colorPrefs.map((slug) => `${colorChoice(slug).label} 선호`),
-    ...submission.pets
-      .map((slug) => SPECIES_LABELS[slug as Species])
-      .filter(Boolean)
-      .map((s) => `${s.label}와 함께 살아요`),
-    ...(submission.fragranceSensitive ? ['향에 민감해요'] : []),
+    ...hints,
     ...(budget ? [budget.label] : []),
     ...(whenChip ? [whenChip] : []),
   ];
 
   // ⚠ 자유 서술 원문은 여기서 요청 본문으로만 흘러간다(로그·DB 금지 — §1.5j).
   const memoryContext = [recipientNote, episode].filter((text) => text !== '').join('\n');
-  const tones = await buildToneViews(catalog, intent, relationship, picks[0], memoryContext);
+  const tones = await buildToneViews(catalog, intent, relationship, picks[0], memoryContext, {
+    intentDetail,
+    recipientNotes: chips.messageNotes,
+    episodeHints: hints,
+  });
 
   const hasLlm = tones.some((tone) => tone.source === 'llm');
   const hasBody = tones.some((tone) => tone.body !== undefined);
@@ -658,6 +756,8 @@ export async function submitRecommendation(
   };
 
   if (episode !== '') payload.episodeText = episode;
+  // 칩 하나가 사용자의 원문이라는 표시 — 화면은 이 값으로 그 칩만 말줄임 규격을 건다.
+  if (intent === 'other' && intentDetail !== '') payload.intentDetail = intentDetail;
 
   if (intent === 'apology') payload.toneOffNote = '사과 상황에서는 유쾌 톤을 잠시 꺼두었어요.';
 

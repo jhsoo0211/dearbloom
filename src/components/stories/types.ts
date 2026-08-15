@@ -70,6 +70,14 @@ export interface ArchiveLane {
   dotColor: string;
   /** 그 색의 한국어 표기. 점은 장식(aria-hidden)이라 스크린리더는 이 말만 듣는다. */
   dotLabel: string;
+  /**
+   * 검색 색인 — 이름 **세 가지**(한국어명·영문명·학명)를 정규화해 이어 붙인 문자열.
+   *
+   * 영문명·학명은 아카이브 화면 어디에도 나오지 않으므로 클라이언트가 만들 수 없다.
+   * 그래서 서버가 `/flowers` 와 **같은 함수**(`normalizeQuery`)로 미리 접어 내려보낸다 —
+   * 질의도 같은 함수를 지나 `includes` 한 번으로 만난다("튤" · "rosa" · "baby's breath").
+   */
+  searchKey: string;
   /** 이 꽃의 이야기. stories.csv 순서 그대로다. */
   stories: ArchiveStory[];
 }

@@ -279,11 +279,17 @@
  * 그 폭에서는 두 줄 다 한 줄로 펴져 바가 167px(뷰포트의 19%)이고, 아래 그리드도 3열이라
  * 가릴 것이 적다. 좁은 화면에서 고정 바가 본문을 덮으면 그건 필터가 아니라 방해다.
  *
- * 390px 실측(2026-08-15, 꽃 31종·이야기 250편):
+ * 390px 실측(꽃 32종·이야기 317편 기준):
  *   · 예전(꽃 31칸을 그대로 세우던 때) — 바 1023px, 그중 꽃 줄만 821px(칩 17줄).
  *     뷰포트(844px)보다 바가 더 컸다. 그래서 계열 5칸 + `꽃 고르기` 로 접었다.
- *   · 지금 — 바 321px(38%), 두 줄 모두 칩 2줄. 360px 에서도 같다(칩 가로 여백만 줄여서).
+ *   · 2026-08-15 17차 직후 — 바 321px(38%), 두 줄 모두 칩 2줄.
+ *   · 찾기·꽃말을 얹은 직후 — 456px(54%). 검색 56 + 계열 127 + 꽃말 79 + 결 127 + 편수 30.
+ *   · 지금 — 바 **408px(48%)**. 검색 56 + **계열 79** + 꽃말 79 + 결 127 + 편수 30.
+ *     계열·꽃말 두 줄을 `.chipsScroll`(가로 스크롤 한 줄)로 담아 각각 44px 씩 아꼈다.
+ *     줄바꿈에 맡겼다면 계열 127 · 꽃말 123 이라 바가 500px 을 넘었다.
  * ⚠ 이 자리에 칩을 더 세우려거든 먼저 재라. 한 줄이 접힐 때마다 44px 이 붙는다.
+ *   남은 큰 덩어리는 결 줄(127px = 칩 2줄)이다. 다만 결 칩은 **레인 안의 카드**를 거르는
+ *   다른 축이라, 접을 때는 계열·꽃말과 헷갈리지 않는지 먼저 보라.
  */
 .filters {
   padding: 14px 0 12px;
@@ -451,6 +457,187 @@
   font-size: 11.5px;
   font-variant-numeric: tabular-nums;
   color: var(--accent);
+}
+
+/**
+ * 칩을 **한 줄 가로 스크롤**로 담는 상자 (계열 줄 · 꽃말 줄).
+ *
+ * 칩 자체는 §1.6b 규격 그대로다(`.chip` 을 함께 건다) — 다른 것은 담는 상자뿐이다.
+ * 390px 에서 줄바꿈에 맡기면 계열 줄(5칸 + `꽃 고르기`)과 꽃말 줄(8칸)이 각각 두 줄이
+ * 되어 바에 88px 이 더 붙는다. 접었을 때 두 줄 모두 79px 로 같아진다.
+ *
+ * ⚠ 세로로 자르지 마라. 여기서 감춘 칩은 **옆으로 밀면 나오는** 칩이지 없는 칩이 아니다 —
+ *   `.chip` 은 여전히 tabIndex 를 가지므로 Tab 으로 닿을 수 있고, 브라우저가 포커스를 받은
+ *   칩을 이 상자 안에서 자동으로 스크롤해 보여 준다(그래서 상자에만 overflow 를 건다).
+ * ⚠ 가로 스크롤은 이 상자 **안에서만** 일어난다 — `.wrap` 안에 있고 밖으로 삐져나가지
+ *   않으므로 페이지가 가로로 밀리지 않는다(`.strip` 이 지키는 관계와 같다).
+ */
+.chipsScroll {
+  flex: 1 1 0;
+  /* flex 자식의 기본 min-width:auto 를 풀지 않으면 상자가 내용만큼 벌어져 스크롤이 안 생긴다. */
+  min-width: 0;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  /* 스크롤바를 감춰도 눌리는 면은 그대로 44px 이어야 한다(§1.6). */
+  padding-bottom: 1px;
+}
+.chipsScroll::-webkit-scrollbar {
+  display: none;
+}
+/* 줄이 하나뿐이므로 어떤 칸도 좁혀지지 않는다 — 눌리는 면(44px)과 글자가 그대로 남는다. */
+.chipsScroll > .chip,
+.chipsScroll > .pickBtn {
+  flex: none;
+}
+
+/* ── 찾기 (검색 + 콤보박스) ──────────────────────────────────────────
+   거르기(칩)와 다른 일을 하므로 칩 줄 **위**에 홀로 선다. §1.6b 보조 컨트롤 문법
+   (pill · 고스트 보더 · h48)을 `꽃 고르기` 시트의 입력과 그대로 공유한다.
+   ═════════════════════════════════════════════════════════════════ */
+.searchRow {
+  position: relative;
+  padding: 2px 0 6px;
+}
+
+.searchBar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 48px;
+  padding: 0 8px 0 14px;
+  border-radius: 9999px;
+  border: 1px solid var(--ghost-line);
+  transition: border-color var(--dur) var(--ease);
+}
+/* 포커스 링은 상자 전체에 준다 — 안의 인풋에만 주면 pill 안에 사각 링이 겹쳐 보인다. */
+.searchBar:focus-within {
+  border-color: var(--fg-50);
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.searchIcon {
+  flex: none;
+  width: 19px;
+  height: 19px;
+  color: var(--fg-50);
+}
+.searchInput {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 15px;
+  color: var(--fg);
+  /* iOS 가 검색 인풋에 얹는 기본 모양(둥근 회색 상자·내부 그림자)을 지운다. */
+  appearance: none;
+}
+.searchInput:focus {
+  outline: none;
+}
+.searchInput::placeholder {
+  color: var(--fg-50);
+}
+/* §1.6b 아이콘 버튼 — 원형 터치 타깃. 보더는 인풋 상자가 이미 갖고 있어 생략한다. */
+.searchClear {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 9999px;
+  color: var(--fg-50);
+  transition: background-color var(--dur) var(--ease);
+}
+.searchClear:hover {
+  background: var(--ctrl-hover);
+  color: var(--fg);
+}
+.searchClear svg {
+  width: 15px;
+  height: 15px;
+}
+.searchClear:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/**
+ * 결과 드롭다운.
+ *
+ * 필터 바가 1040px 위에서 고정(sticky)이라 그 위에 떠야 한다 — z-index 는 바(25)보다
+ * 크게 잡는다. 목록이 길어지면 상자 안에서만 스크롤한다(페이지를 끌고 내려가지 않는다).
+ */
+.combo {
+  position: absolute;
+  top: calc(100% - 2px);
+  left: 0;
+  right: 0;
+  z-index: 40;
+  max-height: min(58svh, 420px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 6px 0;
+  border-radius: 16px;
+  border: 1px solid var(--hair-2);
+  background: var(--bg-2);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.42);
+}
+.comboGroup {
+  padding: 4px 0;
+}
+.comboGroup + .comboGroup {
+  border-top: 1px solid var(--hair);
+}
+.comboHead {
+  padding: 6px 16px 4px;
+  font-family: var(--font-sans);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: var(--fg-50);
+}
+/* 결과 한 줄 — 44px 터치 타깃(§1.6). 목록 항목이라 포커스는 받지 않는다(입력이 갖는다). */
+.comboOpt {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 6px 16px;
+  cursor: pointer;
+  transition: background-color var(--dur) var(--ease);
+}
+/* 지금 가리키는 줄 — 키보드 ↑↓ 와 마우스 hover 가 **같은 표시**를 쓴다. */
+.comboOptOn {
+  background: var(--ctrl-hover);
+}
+.comboName {
+  flex: 1;
+  min-width: 0;
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: var(--fg);
+  /* 제목이 길어도 줄을 바꾸지 않는다 — 한 줄 높이가 흔들리면 ↑↓ 로 훑기 어렵다. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.comboTail {
+  flex: none;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--fg-50);
+}
+.comboMore,
+.comboEmpty {
+  padding: 8px 16px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--fg-50);
 }
 
 .count {

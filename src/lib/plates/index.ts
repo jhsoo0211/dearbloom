@@ -1,7 +1,7 @@
 /**
- * 꽃 세밀화 도판 31종 — 퍼블릭 도메인 보태니컬 도판의 **단일 원본**.
+ * 꽃 세밀화 도판 32종 — 퍼블릭 도메인 보태니컬 도판의 **단일 원본**.
  *
- * 출처 문서: `docs/illustration-assets.md` (2026-08-15 조사, 31/31 확보).
+ * 출처 문서: `docs/illustration-assets.md` (2026-08-15 조사 31종 + 같은 날 데이지 1종 = 32/32).
  * 이 파일은 그 표를 **코드로 옮긴 사본**이다. 도판을 바꾸거나 늘릴 때는 문서를 먼저 고치고
  * 여기로 옮긴다 — 문서가 라이선스 근거를 들고 있고, 이 파일은 화면이 쓰는 모양만 갖는다.
  *
@@ -19,20 +19,20 @@
  *     plantillustrations.org 는 안정성을 신뢰할 수 없다(문서 §미확보 B).
  *
  * ── 라이선스 ────────────────────────────────────────────────────────
- * 31종 전부 퍼블릭 도메인 또는 CC0 다. 표기 의무는 없지만 **표기를 기본값으로 운용**한다
+ * 32종 전부 퍼블릭 도메인 또는 CC0 다. 표기 의무는 없지만 **표기를 기본값으로 운용**한다
  * (BHL→Flickr 경유 파일 16종에 `CC BY 2.0` 상자가 기계적으로 붙어 있는 이슈를 한 번에 덮는
  * 가장 싼 보험이고, "야간 식물 아카이브" 라는 톤에도 출처 표기가 어울린다).
  * 표기 형식은 문서 사용 규칙 4 그대로 — `Plate: {작품명}, {연도} / {소장·제공 기관}`.
  *
  * ── 자체 호스팅 (문서 배포 규칙 1, 2026-08-15 적용 완료) ──────────────
- * `src` 는 전부 **우리 `public/plates/` 사본**이다. 31종이 전부 PD/CC0 라 재배포에 제약이
+ * `src` 는 전부 **우리 `public/plates/` 사본**이다. 32종이 전부 PD/CC0 라 재배포에 제약이
  * 없고, 위키미디어는 핫링크 연속 요청에 `HTTP 429` 를 돌려주기 때문이다(문서 배포 규칙 2 —
- * 레인 31줄이 한 화면에서 동시에 요청하면 그 상태가 곧바로 재현된다).
+ * 레인 32줄이 한 화면에서 동시에 요청하면 그 상태가 곧바로 재현된다).
  *   · 취득 주소는 `remoteSrc` 에 그대로 남겨 둔다 — 재다운로드의 입력이자 출처 증빙이다.
  *   · 파일을 다시 받는 방법: `node scripts/fetch-plates.mjs`(`--force` 로 덮어쓰기,
  *     `--reencode` 로 재다운로드 없이 다시 정규화). 저장 경로는 이 파일의 `src` 가 정한다 —
  *     스크립트가 `src` 를 읽어 그 자리에 쓴다.
- *   · **31종 전부 `.jpg` 다** — 확장자를 원본대로 두지 않고 한 규격으로 정규화한다.
+ *   · **32종 전부 `.jpg` 다** — 확장자를 원본대로 두지 않고 한 규격으로 정규화한다.
  *     스크립트가 `sharp` 로 폭 ≤1100px · 알파는 흰 배경 flatten · JPEG q82(mozjpeg) 로
  *     **다시 인코딩해** 저장하므로, 파일 바이트 자체가 JPEG 다(이름만 바꾼 게 아니다).
  *     그래서 정적 서버가 말하는 `Content-Type: image/jpeg` 가 사실과 맞는다.
@@ -83,13 +83,14 @@ const STEP_FAVOURITE = 'Step, Favourite Flowers of Garden and Greenhouse';
 const REDOUTE_LILIACEES = 'Redouté, Les Liliacées';
 const CURTIS = "Curtis's Botanical Magazine";
 const WENDEL = 'A.J. Wendel · G. Severeyns';
+const STEP_WAYSIDE = 'Step, Wayside and Woodland Blossoms';
 const REDOUTE = 'Pierre-Joseph Redouté';
 const STEP = 'Edward Step';
 
 const COMMONS = 'Wikimedia Commons';
 const BHL = 'Biodiversity Heritage Library';
 
-/** 꽃 id → 도판. 카탈로그 31종 전원이 여기 있다(`tests/components/plates.test.ts` 가 지킨다). */
+/** 꽃 id → 도판. 카탈로그 32종 전원이 여기 있다(`tests/components/plates.test.ts` 가 지킨다). */
 export const FLOWER_PLATES: Record<string, FlowerPlate> = {
   'rose-red': {
     flowerId: 'rose-red',
@@ -431,7 +432,7 @@ export const FLOWER_PLATES: Record<string, FlowerPlate> = {
       'https://commons.wikimedia.org/wiki/File:Wayside_and_woodland_blossoms_(Pl._61)_(8747771268).jpg',
     alt: '붉은 개양귀비 한 송이를 여백 넓게 그린 세밀화',
     artist: STEP,
-    work: 'Step, Wayside and Woodland Blossoms',
+    work: STEP_WAYSIDE,
     plateNo: 'Pl.61',
     year: '1895',
     institution: BHL,
@@ -521,6 +522,22 @@ export const FLOWER_PLATES: Record<string, FlowerPlate> = {
     institution: 'Royal Botanic Gardens Kew',
     note: '세트에서 유일한 가로 판면이라, 액자 안에서 가운데를 잘라 보여드려요.',
   },
+  daisy: {
+    flowerId: 'daisy',
+    src: '/plates/daisy.jpg',
+    // 32번째(seed-v5 신규 꽃). `corn-poppy` 와 **같은 책·같은 해·같은 기관**이라 크레딧이 합쳐진다.
+    // 판면 캡션에 `Daisy. / Bellis perennis.` 가 직접 찍혀 있어 종 동정이 문자로 확인된다.
+    remoteSrc:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/Wayside_and_woodland_blossoms_%28Pl._1%29_%288746620415%29.jpg/1280px-Wayside_and_woodland_blossoms_%28Pl._1%29_%288746620415%29.jpg',
+    pageUrl:
+      'https://commons.wikimedia.org/wiki/File:Wayside_and_woodland_blossoms_(Pl._1)_(8746620415).jpg',
+    alt: '분홍빛이 비치는 흰 꽃 세 송이와 뿌리째 그린 잎 세밀화',
+    artist: STEP,
+    work: STEP_WAYSIDE,
+    plateNo: 'Pl.1',
+    year: '1895',
+    institution: BHL,
+  },
 };
 
 /**
@@ -573,7 +590,7 @@ export function plateCredit(plate: FlowerPlate): string {
 
 /**
  * 화면에 실제로 쓴 도판들의 크레딧 — 판본 단위로 합치고 가나다·알파벳 순으로 세운다.
- * 31줄이 아니라 판본 수(14개 안팎)만큼만 나온다 — 그게 "일괄 표기" 의 뜻이다.
+ * 32줄이 아니라 판본 수(14개 안팎)만큼만 나온다 — 그게 "일괄 표기" 의 뜻이다.
  */
 export function plateCredits(flowerIds: readonly string[]): string[] {
   const lines = new Set<string>();

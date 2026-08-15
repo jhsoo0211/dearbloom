@@ -21,6 +21,7 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 
 import { STORY_CATEGORIES } from './categories';
+import { normalizeQuery } from './search';
 import styles from './stories.module.css';
 
 function IconClose() {
@@ -46,6 +47,8 @@ export interface PickableFlower {
   /** 계열 키(§1.4c) — 묶음의 기준. */
   category: string;
   count: number;
+  /** 서버가 만든 이름 색인(한국어명·영문명·학명). 필터 바의 검색과 **같은 색인**이다. */
+  searchKey: string;
 }
 
 export interface FlowerPickerProps {
@@ -54,11 +57,6 @@ export interface FlowerPickerProps {
   moodLabel?: string;
   onPick: (flowerId: string) => void;
   onClose: () => void;
-}
-
-/** 검색 정규화 — 대소문자·공백만 지운다(이름 부분 일치). */
-function fold(input: string): string {
-  return input.toLowerCase().replace(/\s+/g, '');
 }
 
 export default function FlowerPicker({ flowers, moodLabel, onPick, onClose }: FlowerPickerProps) {
@@ -82,10 +80,15 @@ export default function FlowerPicker({ flowers, moodLabel, onPick, onClose }: Fl
     inputRef.current?.focus();
   }, []);
 
+  /**
+   * 이름 부분 일치. 정규화도 색인도 **필터 바의 검색과 같은 것**을 쓴다(`search.ts`) —
+   * 같은 서비스 안에서 "튤" 이 여기서는 걸리고 저기서는 안 걸리면 그건 두 가지 규칙이다.
+   * 예전에는 이 자리에 한국어명만 보는 자체 `fold` 가 있어 "rosa" 로는 찾지 못했다.
+   */
   const matched = useMemo(() => {
-    const needle = fold(query);
+    const needle = normalizeQuery(query);
     if (!needle) return flowers;
-    return flowers.filter((flower) => fold(flower.nameKo).includes(needle));
+    return flowers.filter((flower) => flower.searchKey.includes(needle));
   }, [flowers, query]);
 
   /** 계열 순서(§1.4c)대로 묶는다. 비어 있는 묶음은 세우지 않는다. */

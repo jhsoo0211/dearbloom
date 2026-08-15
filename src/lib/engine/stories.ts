@@ -34,6 +34,8 @@ export const MOOD_AFFINITY = {
   comfort: ['healing'],
   anniversary: ['romantic', 'mythic'],
   just_because: ['funny', 'mythic'],
+  // §1.5l 직접 쓴 마음 — 상황을 모를 때는 어느 자리에 놓아도 어긋나지 않는 결부터 본다.
+  other: ['mythic', 'healing'],
 } as const satisfies Record<Intent, readonly StoryMood[]>;
 
 /** 한 번에 보여 주는 이야기 수(featured 1편 + others 최대 3편). */

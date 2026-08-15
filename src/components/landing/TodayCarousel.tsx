@@ -10,8 +10,21 @@
  *    국소 적용한다. 전역 배경·내비·CTA 는 건드리지 않는다(슬라이드 부수효과 금지).
  *  · 전역 테마 변경은 카드 안의 명시적 버튼("이 꽃의 분위기로 바꾸기")으로만 일어난다.
  *  · reduced-motion 이면 스냅은 즉시 전환, 자동 넘김은 애초에 없다.
+ *
+ * ── 카드 = 링크 (2026-08-15) ────────────────────────────────────────
+ * 카드를 누르면 그 꽃의 도감(`/flowers/{id}`)으로 간다. 구현은 **스트레치 링크** 패턴이다:
+ * 링크는 이름 블록 하나뿐이고, 그 `::after` 가 카드 전면을 덮는다(landing.css).
+ *   · 그래서 링크 안에 버튼이 들어가는 **중첩 인터랙티브가 생기지 않는다** — "이 꽃의 분위기로
+ *     바꾸기" 버튼은 DOM 상 링크의 형제이고, `z-index` 로 덮개 위에 떠 있을 뿐이다.
+ *   · 탭 순서도 자연스럽다: 카드 링크 → (본문) → 분위기 버튼.
+ *   · 드래그로 끝난 포인터는 `onClickCapture` 가 이미 막고 있어 링크에도 그대로 적용된다.
+ *
+ * ⚠ 예전에는 이름 블록이 **터치 첫 탭으로 티저를 펼치는 버튼**이었다. 카드가 링크가 된 이상
+ *   그 자리를 두 가지로 쓸 수 없어 없앴고, 대신 호버가 없는 기기에서는 티저를 **처음부터
+ *   보여 준다**(landing.css `@media (hover: none)`). 정보가 사라지지 않는 쪽으로 옮긴 것이다.
  */
 
+import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { SlideView } from './landing-data';
@@ -34,8 +47,6 @@ export default function TodayCarousel({ slides, globalSlug, onAdopt }: Props) {
   const trackRef = useRef<HTMLUListElement>(null);
   const [index, setIndex] = useState(0);
   const [edge, setEdge] = useState({ atStart: true, atEnd: false });
-  /** 사진 위 강화 상태(터치 첫 탭 토글) — 한 번에 한 장만. */
-  const [revealed, setRevealed] = useState<number | null>(null);
 
   const drag = useRef({ active: false, startX: 0, startLeft: 0, moved: 0 });
   const ticking = useRef(false);
@@ -176,7 +187,6 @@ export default function TodayCarousel({ slides, globalSlug, onAdopt }: Props) {
         onClickCapture={onClickCapture}
       >
         {slides.map((slide, i) => {
-          const isRevealed = revealed === i;
           const isGlobal = slide.themeSlug === globalSlug;
           const teaser = slide.storyHook ?? slide.note ?? slide.meaning;
           return (
@@ -188,8 +198,26 @@ export default function TodayCarousel({ slides, globalSlug, onAdopt }: Props) {
               aria-label={`${i + 1} / ${slides.length} ${slide.name}`}
             >
               <article className="db-card">
+                {/*
+                  카드 전면 덮개 링크. 버튼("이 꽃의 분위기로 바꾸기")의 **형제**라
+                  중첩 인터랙티브가 아니다(landing.css `.db-card-hit`).
+                  `draggable={false}` 는 데스크톱 드래그 스크롤이 네이티브 링크 드래그로
+                  가로채이지 않게 한다 — 드래그로 끝난 클릭은 `onClickCapture` 가 막는다.
+                */}
+                <Link
+                  className="db-card-hit"
+                  href={`/flowers/${slide.flowerId}`}
+                  prefetch={false}
+                  draggable={false}
+                  aria-label={`${slide.name} — 도감에서 보기`}
+                />
                 <div
-                  className={`db-card-media${isRevealed ? ' db-revealed' : ''}`}
+                  className={
+                    'db-card-media' +
+                    // 밝은 배경 컷(라벤더·안개꽃·은방울꽃·제비꽃) — 스크림을 한 단 올려
+                    // 사진 위 이름의 대비를 지킨다(§1.5g · docs/image-assets.md §주의 4).
+                    (slide.image?.bright ? ' db-on-bright' : '')
+                  }
                   data-db-media
                 >
                   {slide.image ? (
@@ -221,17 +249,19 @@ export default function TodayCarousel({ slides, globalSlug, onAdopt }: Props) {
 
                   {/* 작가 크레딧은 푸터 "Image credits" 에 일괄 표기한다(사진 위 10px 글자 금지). */}
 
+                  {/* 이름 블록은 글자만 갖는다 — 클릭은 위의 덮개 링크가 받는다. */}
                   <h3 className="db-card-nameblock">
-                    <button
-                      type="button"
-                      className="db-card-reveal"
-                      aria-expanded={isRevealed}
-                      onClick={() => setRevealed(isRevealed ? null : i)}
-                    >
+                    <span className="db-card-reveal">
                       <span className="db-card-name">{slide.name}</span>
                       <span className="db-card-latin">{slide.latin}</span>
                       <span className="db-card-teaser">{teaser}</span>
-                    </button>
+                      <span className="db-card-go" aria-hidden="true">
+                        도감에서 보기
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                          <path d="m9 5 7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </span>
+                    </span>
                   </h3>
                 </div>
 

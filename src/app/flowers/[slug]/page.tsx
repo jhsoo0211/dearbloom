@@ -12,7 +12,9 @@ import { loadCatalog } from '@/lib/data/catalog';
 /**
  * `/flowers/[slug]` — 도감 상세.
  *
- * 위계는 §1.5i 그대로다: **꽃(도판) → 꽃말 → 이야기 → 상황 → 참고(작게) → CTA.**
+ * 위계는 §1.5i 그대로다: **꽃(실사 → 세밀화) → 꽃말 → 이야기 → 상황 → 참고(작게) → CTA.**
+ * 히어로 맨 위는 그 꽃의 **대표 실사**다(2026-08-15) — 도감이 먼저 답해야 하는 질문이
+ * "이 꽃이 어떻게 생겼나"이기 때문이다. 세밀화 액자는 그 아래 보조 자리로 내려왔다.
  * "정보"보다 "이야기"가 먼저이고, 안전·계절·가격은 찾을 수 있는 위치면 충분해 맨 아래
  * 작은 블록으로 내린다(§1.5h 반려동물 위계 강등도 같은 자리에서 지켜진다).
  *
@@ -66,7 +68,7 @@ export default async function FlowerDetailPage(props: PageProps<'/flowers/[slug]
       </header>
 
       <main>
-        {/* ── ① 히어로 — 세밀화 액자 + 이름 + 대표 꽃말 ─────────── */}
+        {/* ── ① 히어로 — 대표 실사 + 이름 + 대표 꽃말, 세밀화는 보조 ─── */}
         <section className={styles.hero}>
           <div className={styles.introBg} aria-hidden="true" />
           <div className={styles.wrap}>
@@ -78,6 +80,64 @@ export default async function FlowerDetailPage(props: PageProps<'/flowers/[slug]
             </Link>
 
             <div className={styles.heroGrid}>
+              {/*
+                ① 대표 실사 — 도감이 먼저 답하는 것은 "이 꽃이 어떻게 생겼나"다.
+                세밀화는 아름답지만 판본에 따라 종이 갈리므로(겹꽃 변종·근연종) **실사가 앞이고
+                도판이 보조**다. 사진 위에 글자를 얹지 않으므로 스크림이 필요 없다(§1.5g).
+              */}
+              {flower.photo && (
+                <figure className={styles.shot}>
+                  <div className={styles.shotFrame}>
+                    {/* eslint-disable-next-line @next/next/no-img-element -- Unsplash 원격 CDN. 승인 URL 을 그대로 쓴다(docs/image-assets.md — 핫링크가 권장 사용법). */}
+                    <img
+                      className={styles.shotImg}
+                      src={flower.photo.src}
+                      alt={flower.photo.alt}
+                      fetchPriority="high"
+                      decoding="async"
+                    />
+                  </div>
+                  {/*
+                    사진 크레딧은 '출처' 한 단어로 접어 둔다(2026-08-15 사용자 피드백 —
+                    `Photo: … / Unsplash` 전문이 사진마다 상시 노출되면 화면이 크레딧에 먹힌다).
+                    표기가 사라지는 게 아니라 한 번의 클릭 뒤로 갈 뿐이고, `<details>` 라
+                    JS 없이 열린다. 도판(`Plate:`) 크레딧은 액자 각주에 그대로 둔다 —
+                    거기엔 종·판면에 대한 `note` 각주가 함께 서기 때문이다.
+                  */}
+                  <figcaption className={styles.shotCredit}>
+                    <details className={styles.creditFold}>
+                      <summary className={styles.creditSum}>
+                        출처
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                          <path d="m9 6 6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </summary>
+                      <span className={styles.creditText}>{flower.photo.credit}</span>
+                    </details>
+                  </figcaption>
+                </figure>
+              )}
+
+              <div className={styles.heroText}>
+                <p className={styles.heroCat}>
+                  <span className={styles.dot} aria-hidden="true" />
+                  {flower.categoryLabel} · {flower.categoryHint}
+                </p>
+                <h1 className={styles.heroName}>{flower.nameKo}</h1>
+                <p className={styles.heroLatin}>
+                  {flower.nameEn ? `${flower.nameEn} · ` : ''}
+                  {flower.scientificName}
+                </p>
+                <p className={styles.heroMeaning}>{flower.headline}</p>
+              </div>
+
+              {/*
+                ② 세밀화 액자 — 실사에 자리를 내주고 보조로 내려왔지만 **버리지 않는다.**
+                도판·크레딧·각주는 이 서비스가 쌓아 온 자산이고, 19세기 판면이 있어야
+                "야간 식물 아카이브"라는 톤이 성립한다.
+                DOM 순서는 사진 → 이름·꽃말 → 도판이다(모바일에서 이름이 사진 바로 아래
+                오게). 데스크톱은 CSS 그리드가 도판을 사진 밑 왼쪽 칸으로 되돌린다.
+              */}
               <figure className={styles.frame}>
                 <div className={styles.matte}>
                   <div className={styles.plate}>
@@ -98,19 +158,6 @@ export default async function FlowerDetailPage(props: PageProps<'/flowers/[slug]
                   </figcaption>
                 )}
               </figure>
-
-              <div className={styles.heroText}>
-                <p className={styles.heroCat}>
-                  <span className={styles.dot} aria-hidden="true" />
-                  {flower.categoryLabel} · {flower.categoryHint}
-                </p>
-                <h1 className={styles.heroName}>{flower.nameKo}</h1>
-                <p className={styles.heroLatin}>
-                  {flower.nameEn ? `${flower.nameEn} · ` : ''}
-                  {flower.scientificName}
-                </p>
-                <p className={styles.heroMeaning}>{flower.headline}</p>
-              </div>
             </div>
           </div>
         </section>

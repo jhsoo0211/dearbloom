@@ -643,15 +643,28 @@ body.db-nav-compact .db-nav {
   display: flex;
 }
 
+/**
+ * 카드면은 **카테고리 계열 셰이드**를 입는다 (#22 · 2026-08-15).
+ *
+ * 예전에는 넉 장이 전부 `--bg-2`(다크 4종은 #0B0C0A / #141613)라 나란히 놓으면
+ * 구분이 안 됐다 — 아이보리 한 장만 튀어 그리드가 "검정 넷 + 흰 하나"로 읽혔다.
+ * 이제 카드가 자기 색을 갖는다: 숲 / 먹빛+골드 / 와인 / 어스름 / 아이보리.
+ *
+ * ⚠ 이것은 **카드 국소** 값이다(`--card-bg`). 전역 배경(`--bg`)은 v3.3 규칙 그대로
+ *   진입 시 1회로 정해지고 세션 중 저절로 바뀌지 않는다 — 페이지가 아니라 카드만 물든다.
+ * ⚠ 색값과 실측 대비는 `globals.css` 의 각 테마 블록 주석에 있다. 여기서 hex 를 직접
+ *   쓰지 않는 이유가 그것이다(대비를 잰 자리와 색을 정하는 자리를 갈라 두지 않는다).
+ * 전환은 그대로 `--swap` 크로스페이드라 아이보리 ↔ 다크 이행도 부드럽다.
+ */
 .db-card {
   position: relative;
   display: flex;
   flex-direction: column;
   width: 100%;
-  border: 1px solid var(--hair);
+  border: 1px solid var(--card-line, var(--hair));
   border-radius: 22px;
   overflow: hidden;
-  background: var(--bg-2);
+  background: var(--card-bg, var(--bg-2));
   box-shadow: 0 30px 80px rgba(11, 12, 10, 0.34);
   transition: background-color var(--swap) var(--ease), border-color var(--swap) var(--ease);
 }
@@ -712,6 +725,27 @@ body.db-nav-compact .db-nav {
     rgba(11, 12, 10, 0.86) 100%
   );
 }
+/**
+ * 밝은 배경 컷 4종(라벤더·안개꽃·은방울꽃·제비꽃)의 스크림 강화.
+ *
+ * 무료 라이선스 안에서 이 넷은 어두운 배경 후보가 저채도·모션블러·흑백뿐이라 **밝고 선명한
+ * 컷을 택했다**(docs/image-assets.md §선정 기준 3). 검정 배경 컷 스물여덟 장 사이에 그대로
+ * 놓으면 ⓐ 그리드 톤이 튀고 ⓑ 아이보리 이름이 흰 배경 위에 얹혀 §1.5g(사진 위 텍스트
+ * 4.5:1)를 깬다. 사진 자체는 `--db-grade`(landing-data 의 `BRIGHT_GRADE`)가 눌러 주고,
+ * **글자 뒤 대비는 이 한 겹이 맡는다** — 같은 그라디언트를 위로 더 끌어올리고 짙게 한다.
+ * 사진을 통째로 어둡게 덮지 않는 것은 §1.5g 의 나머지 절반("사진을 죽이지 말 것") 때문이다.
+ */
+.db-on-bright .db-card-scrim {
+  height: 78%;
+  background: linear-gradient(
+    180deg,
+    rgba(11, 12, 10, 0) 0%,
+    rgba(11, 12, 10, 0.42) 30%,
+    rgba(11, 12, 10, 0.78) 62%,
+    rgba(11, 12, 10, 0.94) 100%
+  );
+}
+
 .db-card-boost {
   position: absolute;
   inset: auto 0 0 0;
@@ -727,9 +761,8 @@ body.db-nav-compact .db-nav {
   );
   transition: opacity 0.26s var(--ease);
 }
-.db-card-media:hover .db-card-boost,
-.db-card-media:focus-within .db-card-boost,
-.db-card-media.db-revealed .db-card-boost {
+.db-card:hover .db-card-boost,
+.db-card:focus-within .db-card-boost {
   opacity: 1;
 }
 
@@ -739,6 +772,29 @@ body.db-nav-compact .db-nav {
   margin: 0;
   display: flex;
 }
+/**
+ * 카드 전면 덮개 링크 — 카드 어디를 눌러도 그 꽃의 도감(`/flowers/{id}`)으로 간다.
+ *
+ * `<a>` 로 카드를 통째로 감싸지 않는 이유는 카드 안에 이미 버튼("이 꽃의 분위기로 바꾸기")이
+ * 있기 때문이다 — 감싸면 링크 안에 버튼이 들어가 **중첩 인터랙티브**가 된다. 그래서 링크는
+ * 버튼의 **형제**로 두고 절대 배치로 카드를 덮는다(카드 오버레이 링크 패턴).
+ *   · 보이는 이름은 `.db-card-name` 이고, 링크의 이름은 `aria-label` 이 준다
+ *     (`{꽃 이름} — 도감에서 보기` — 보이는 텍스트로 시작하므로 WCAG 2.5.3 도 지킨다).
+ *   · 버튼은 `z-index: 2` 로 이 덮개보다 한 단 위에 뜬다.
+ */
+.db-card-hit {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+.db-card-hit:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: -3px;
+}
+
+/* 이름 블록은 이제 링크가 아니라 **덮개 아래 놓인 글자**다(클릭은 덮개가 받는다). */
 .db-card-reveal {
   position: relative;
   display: flex;
@@ -749,6 +805,40 @@ body.db-nav-compact .db-nav {
   width: 100%;
   padding: 18px 20px 18px;
   text-align: left;
+}
+
+/**
+ * 클릭 가능하다는 최소 어포던스 — 호버·포커스에서만 나타나는 한 줄.
+ * 티저와 같은 문법(투명도 전환)이라 새 규칙을 만들지 않는다.
+ */
+.db-card-go {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  color: var(--db-media-mute);
+  text-shadow: 0 1px 18px rgba(11, 12, 10, 0.75);
+  opacity: 0;
+  transform: translateY(2px);
+  transition: opacity 0.24s var(--ease), transform 0.24s var(--ease);
+}
+.db-card-go svg {
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+}
+.db-card:hover .db-card-go,
+.db-card:focus-within .db-card-go {
+  opacity: 1;
+  transform: none;
+}
+/* 카드가 눌리는 면임을 미세하게 — 이미 있는 이미지 확대와 같은 결이다. */
+.db-card:hover {
+  border-color: var(--hair-2);
 }
 /* §1.5g 타이포 보강 — 마루 부리 400(300 금지) + 소프트 섀도 */
 .db-card-name {
@@ -762,9 +852,8 @@ body.db-nav-compact .db-nav {
   transition: transform 0.24s var(--ease);
   transform-origin: left bottom;
 }
-.db-card-media:hover .db-card-name,
-.db-card-media:focus-within .db-card-name,
-.db-card-media.db-revealed .db-card-name {
+.db-card:hover .db-card-name,
+.db-card:focus-within .db-card-name {
   transform: scale(1.03);
 }
 .db-card-latin {
@@ -787,11 +876,29 @@ body.db-nav-compact .db-nav {
   text-shadow: 0 1px 18px rgba(11, 12, 10, 0.75);
   transition: opacity 0.24s var(--ease), max-height 0.28s var(--ease);
 }
-.db-card-media:hover .db-card-teaser,
-.db-card-media:focus-within .db-card-teaser,
-.db-card-media.db-revealed .db-card-teaser {
+.db-card:hover .db-card-teaser,
+.db-card:focus-within .db-card-teaser {
   opacity: 1;
   max-height: 5.4em;
+}
+
+/**
+ * 호버가 없는 기기 — 예전에는 첫 탭이 티저를 펼쳤지만, 이제 첫 탭은 도감으로 간다.
+ * 그래서 티저를 **처음부터 펼쳐 둔다**(정보를 없애지 않는다). 글자가 늘어난 만큼
+ * 스크림도 함께 올려 §1.5g 대비를 유지한다.
+ */
+@media (hover: none) {
+  .db-card-teaser {
+    opacity: 1;
+    max-height: 5.4em;
+  }
+  .db-card-boost {
+    opacity: 1;
+  }
+  .db-card-go {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 .db-card-badge {
@@ -828,7 +935,8 @@ body.db-nav-compact .db-nav {
   gap: 12px;
   flex: 1;
   padding: clamp(16px, 1.8vw, 22px);
-  background: var(--bg-2);
+  /* 카드 겉면과 같은 면이다(#22) — 사진 아래 본문이 카드의 색을 그대로 이어받는다. */
+  background: var(--card-bg, var(--bg-2));
   transition: background-color var(--swap) var(--ease);
 }
 .db-card-meaning {
@@ -921,7 +1029,10 @@ body.db-nav-compact .db-nav {
    기본은 투명 배경 + 전경 72%, 선택은 **`--cta-bg`/`--cta-fg` 짝 채움 + 동색 보더** 하나로만
    표시한다(점·밑줄 같은 두 번째 표현 금지). 높이는 44px 로 못 박는다.
    채움을 골드로 되돌리지 마라 — 위 `--ctrl-on` 주석 참고(§1.4 골드 배경 금지선). */
+/* 스트레치 링크 덮개(`.db-card-reveal::after`, z-index 1) 위에 떠 있어야 눌린다. */
 .db-adopt {
+  position: relative;
+  z-index: 2;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1321,13 +1432,55 @@ body.db-nav-compact .db-nav {
 .db-credits {
   padding-top: clamp(26px, 3.6vh, 40px);
 }
-.db-credits h2 {
+/**
+ * 크레딧 접힘 — 표기를 없애는 게 아니라 **한 번의 클릭 뒤로** 옮긴다.
+ * `<details>` 를 쓰는 이유는 JS 없이 열리고, 접힌 내용도 문서에 남아 있기 때문이다
+ * (라이선스 표기 의무가 스크립트 상태에 매이면 안 된다).
+ */
+.db-credit-sum {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  /* §1.6b 공통 — 포인터 타깃 44px. 글자는 작지만 누르는 면은 작지 않다. */
+  min-height: 44px;
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--accent);
-  margin-bottom: 10px;
+  cursor: pointer;
+  list-style: none;
+  transition: color var(--ctrl-t, 0.18s) var(--ease);
+}
+.db-credit-sum::-webkit-details-marker {
+  display: none;
+}
+.db-credit-sum:hover {
+  color: var(--fg);
+}
+.db-credit-sum:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+.db-credit-sum svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  transition: transform 0.2s var(--ease);
+}
+.db-credit-fold[open] .db-credit-sum svg {
+  transform: rotate(90deg);
+}
+/* 몇 건인지 — 열기 전에도 분량을 짐작할 수 있게 숫자만 소형으로(§1.6b 카운트 규칙). */
+.db-credit-n {
+  letter-spacing: 0;
+  color: var(--fg-50);
+}
+.db-credit-fold > p {
+  margin-top: 4px;
 }
 .db-credits p {
   font-size: 12.5px;
@@ -1366,6 +1519,16 @@ body.db-nav-compact .db-nav {
     transition: opacity 0.55s var(--ease), visibility 0s linear 0.55s;
   }
 }
+/*
+ * 세션당 1회 (#21) — 이미 들어온 적 있는 세션의 **새로고침·재진입**은 이 파일이 아니라
+ * `LandingPage` 의 부트 스크립트가 처리한다(`<head>` 에 `.db-gate{display:none}` 한 줄을
+ * 게이트가 파싱되기 전에 넣는다). 여기 규칙으로 둘 수 없는 이유는 조건이 CSS 로 표현되지
+ * 않기 때문이다 — sessionStorage 는 셀렉터가 읽지 못하고, 루트에 표식을 남기면 React 19
+ * 하이드레이션이 그 속성을 불일치로 잡는다(그 시도와 실패는 LandingPage 주석에 적어 뒀다).
+ *
+ * 클라이언트 네비게이션(뒤로 가기)으로 돌아온 경우는 서버 HTML 자체가 없으므로 스크립트도
+ * 필요 없다 — 첫 렌더부터 `.db-entered` 가 붙어 있어 게이트가 그려진 적조차 없다.
+ */
 @keyframes db-gate-failsafe {
   to {
     opacity: 0;

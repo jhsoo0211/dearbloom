@@ -157,7 +157,7 @@ export const FLOWER_THEMES: readonly FlowerTheme[] = [
   {
     slug: 'freesia',
     nameKo: '프리지아',
-    latin: 'Freesia refracta',
+    latin: 'Freesia × hybrida',
     scheme: 'dark',
     catalogFlowerId: 'freesia',
     themeColor: '#141613',

@@ -5,16 +5,16 @@ import RecommendFlow from '@/components/flow/RecommendFlow';
 import {
   BUDGET_CHOICES,
   COLOR_CHOICES,
+  EPISODE_HINTS,
   INTENT_LABELS,
+  PRESET_MOMENTS,
+  RECIPIENT_CHIPS,
   RELATIONSHIP_LABELS,
-  SPECIES_LABELS,
-  TRAIT_DESCS,
-  TRAIT_LABEL_BY_SLUG,
   colorChoice,
 } from '@/components/flow/labels';
 import type { ColorChoice, WizardOptions } from '@/components/flow/types';
 import { loadCatalog } from '@/lib/data/catalog';
-import { INTENTS, RECIPIENT_TRAITS, RELATIONSHIPS, SPECIES } from '@/lib/engine';
+import { INTENTS, RELATIONSHIPS } from '@/lib/engine';
 
 import { submitRecommendation } from './actions';
 
@@ -39,7 +39,8 @@ function tomorrowInSeoul(): string {
  * 질문 화면 — 선택지는 **엔진 어휘에서 만들어** 내려보낸다.
  *
  * 화면(클라이언트 컴포넌트)은 어휘도 라벨 사전도 갖지 않는다. 여기서 만든 값만 쓰기 때문에
- * relationship 6종·intent 7종·trait 5종이 늘거나 바뀌면 이 페이지가 자동으로 따라간다.
+ * relationship 6종·intent 8종(§1.5l `직접 쓸게요` 포함)·특징 칩·프리셋·상황 칩이 늘거나
+ * 바뀌면 이 페이지가 자동으로 따라간다.
  * 좋아하는 색 칩도 카탈로그에 실제로 존재하는 색만 세운다(고를 수 없는 색을 보여 주지 않는다).
  *
  * `connection()` 으로 요청 시점 렌더를 명시한다 — 기본 날짜가 "내일"이라 빌드 때 미리
@@ -56,6 +57,13 @@ export default async function RecommendPage() {
   const colors: ColorChoice[] = [...known, ...extra].map(colorChoice);
 
   const options: WizardOptions = {
+    // §1.5l — 프리셋도 어휘를 새로 만들지 않는다. 관계·마음 어휘의 짝일 뿐이다.
+    presets: PRESET_MOMENTS.map((preset) => ({
+      value: preset.value,
+      label: preset.label,
+      relationship: preset.relationship,
+      intent: preset.intent,
+    })),
     relationships: RELATIONSHIPS.map((value) => ({
       value,
       label: RELATIONSHIP_LABELS[value].label,
@@ -66,17 +74,11 @@ export default async function RecommendPage() {
       label: INTENT_LABELS[value].label,
       desc: INTENT_LABELS[value].desc,
     })),
-    traits: RECIPIENT_TRAITS.map((value) => ({
-      value,
-      label: TRAIT_LABEL_BY_SLUG[value],
-      desc: TRAIT_DESCS[value],
-    })),
+    // 분위기·향·반려동물을 한 그룹으로 합친 특징 칩(§1.5l). 엔진 입력으로 나누는 일은
+    // 서버 액션의 splitRecipientChips 가 하고, 화면은 value 만 되돌려준다.
+    recipientChips: RECIPIENT_CHIPS.map((chip) => ({ value: chip.value, label: chip.label })),
     colors,
-    pets: SPECIES.map((value) => ({
-      value,
-      label: SPECIES_LABELS[value].label,
-      desc: SPECIES_LABELS[value].desc,
-    })),
+    episodeHints: EPISODE_HINTS.map((hint) => ({ value: hint.value, label: hint.label })),
     budgets: BUDGET_CHOICES.map((budget) => ({
       value: budget.value,
       label: budget.label,

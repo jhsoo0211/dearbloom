@@ -13,7 +13,9 @@ import {
 import { categoryOf } from '@/components/landing/landing-data';
 import StoriesArchive from '@/components/stories/StoriesArchive';
 import { STORY_CATEGORIES } from '@/components/stories/categories';
+import { flowerSearchKey } from '@/components/stories/search';
 import styles from '@/components/stories/stories.module.css';
+import { buildFlowerThemes, buildThemeChips } from '@/components/stories/themes';
 import type { ArchiveFilterChip, ArchiveLane, ArchiveStory } from '@/components/stories/types';
 import { loadCatalog } from '@/lib/data/catalog';
 import { plateCredits } from '@/lib/plates';
@@ -112,6 +114,9 @@ function buildLanes(flowers: CatalogFlower[], stories: ArchiveStory[]): ArchiveL
       category: categoryOf(flower),
       dotColor: swatch.hex,
       dotLabel: swatch.label,
+      // 검색 색인 — 이름 세 가지를 `/flowers` 와 **같은 함수**로 접는다. 영문명·학명은
+      // 이 화면 어디에도 안 나오므로 클라이언트가 만들 수 없다(그래서 서버가 실어 보낸다).
+      searchKey: flowerSearchKey(flower),
       stories: own,
     });
   }
@@ -158,6 +163,22 @@ export default async function StoriesPage() {
   const lanes = buildLanes(catalog.flowers, stories);
   const moods = moodChips(stories);
   const categories = categoryChips(lanes);
+
+  /**
+   * 꽃말 테마 — `meanings.csv` 를 훑는 일은 **여기서 한 번**만 한다(`themes.ts`).
+   *
+   * 레인이 선 꽃의 꽃말만 본다. 이야기가 없는 꽃은 화면에 줄이 없으므로 그 꽃의 테마를
+   * 함께 실어 보내면 아무도 못 누르는 칩이 생기고(=거짓말하는 숫자), payload 만 는다.
+   */
+  const laneFlowerIds = new Set(lanes.map((lane) => lane.flowerId));
+  const flowerThemes = buildFlowerThemes(
+    catalog.meanings.filter((meaning) => laneFlowerIds.has(meaning.flowerId)),
+  );
+  // 매칭된 꽃이 한 종도 없는 테마는 여기서 사라진다(칩을 세우지 않는다).
+  const themes = buildThemeChips(
+    lanes.map((lane) => ({ flowerId: lane.flowerId, storyCount: lane.stories.length })),
+    flowerThemes,
+  );
   // 인트로 숫자는 실제로 화면에 세운 것만 센다(레인 = 이야기가 있는 꽃).
   const laneStoryCount = lanes.reduce((sum, lane) => sum + lane.stories.length, 0);
   // 도판 크레딧 — 화면에 실제로 쓴 꽃의 판본만, 판본 단위로 합쳐서(illustration-assets 사용 규칙 4).
@@ -206,7 +227,13 @@ export default async function StoriesPage() {
 
       {/* ── 2. 필터 · 꽃별 레인 · 상세 시트 ─────────────────────── */}
       <main>
-        <StoriesArchive lanes={lanes} moodChips={moods} categoryChips={categories} />
+        <StoriesArchive
+          lanes={lanes}
+          moodChips={moods}
+          categoryChips={categories}
+          themeChips={themes}
+          flowerThemes={flowerThemes}
+        />
 
         {/* ── 3. 하단 CTA ──────────────────────────────────────── */}
         <section className={styles.cta} aria-labelledby="stories-cta-title">

@@ -40,6 +40,7 @@ import { metaNotes } from '@/components/stories/meta';
 import type { ArchiveStory } from '@/components/stories/types';
 import type { Catalog, CatalogFlower, CatalogMeaning, CatalogStory } from '@/lib/data/types';
 import { pickStories } from '@/lib/engine';
+import { photoFor, photoSrc } from '@/lib/photos';
 import { plateCredit, plateFor } from '@/lib/plates';
 import { CATEGORY_HINT, CATEGORY_ORDER, normalizeQuery } from './category';
 import type {
@@ -313,6 +314,9 @@ export function buildFlowerDetail(catalog: Catalog, slug: string): FlowerDetailD
   if (!flower) return undefined;
 
   const category = categoryOf(flower);
+  // 실사 상수의 단일 원본은 `@/lib/photos` 다(랜딩 카드와 **같은 컷**을 쓴다).
+  // 상세 히어로는 도감에서 사진이 가장 크게 서는 자리라 1600px 을 부른다.
+  const photo = photoFor(flower.id);
   // 도판 상수의 단일 원본은 `@/lib/plates` 다(`/stories` 레인·시트와 **같은 그림**을 쓴다).
   // 화면에는 액자가 필요로 하는 것만 내려보낸다 — 주소·설명·크레딧, 그리고 있을 때만 각주.
   const plate = plateFor(flower.id);
@@ -327,6 +331,9 @@ export function buildFlowerDetail(catalog: Catalog, slug: string): FlowerDetailD
     category,
     categoryLabel: storyCategoryLabel(category),
     categoryHint: CATEGORY_HINT[category],
+    ...(photo
+      ? { photo: { src: photoSrc(photo, 1600), alt: photo.alt, credit: photo.credit } }
+      : {}),
     ...(plate
       ? {
           plate: {

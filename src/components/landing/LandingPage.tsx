@@ -12,7 +12,7 @@
  */
 
 import Link from 'next/link';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 
 import TodayCarousel from './TodayCarousel';
 import { SECTION_IMAGES, withParticle, type LandingData, type SlideView } from './landing-data';
@@ -37,6 +37,87 @@ const SHIJING = {
   note: '기록에 남은 가장 오래된 꽃 선물의 장면이에요.',
 };
 
+/* ═══ 로딩 게이트 — 세션당 1회 (#21) ═══════════════════════════════════
+   "들어가기"는 첫 방문의 의식(儀式)이지, 홈에 돌아올 때마다 치를 통행세가 아니다.
+   추천을 받고 뒤로 가기로 돌아온 사람에게 다시 로고와 진행 바를 보여 주면 그건
+   분위기가 아니라 벽이다. 그래서 **한 세션에 한 번만** 세운다.
+
+   기억은 `sessionStorage` 다(탭을 닫으면 잊는다 — 다음 방문에는 다시 첫 방문이다).
+   그런데 그 값을 **언제** 읽느냐가 이 문제의 전부다. 세 경로가 각각 다르다:
+
+     ① 첫 로드          — 서버 HTML 에 게이트가 들어 있고 브라우저가 먼저 그린다.
+                          React 가 아무리 빨라도 이미 한 프레임 번쩍인 뒤다.
+                          → **부트 스크립트**(아래 `GATE_BOOT`)가 파싱 중에 막는다.
+     ② 하이드레이션     — 서버가 그린 것과 다르게 그리면 하이드레이션이 깨진다.
+                          → `useSyncExternalStore` 의 서버 스냅샷이 항상 `false` 라
+                            첫 렌더는 서버와 같고, 그 직후 실제 값으로 다시 그린다.
+     ③ 클라 네비게이션  — 뒤로 가기로 돌아오면 서버 HTML 도 부트 스크립트도 없다.
+                          → 이때 `useSyncExternalStore` 는 하이드레이션이 아니므로
+                            처음부터 실제 값을 쓴다. 게이트는 렌더된 적조차 없다.
+
+   ⚠ 부트 스크립트는 **루트 엘리먼트를 건드리지 않는다.** `<html>` 에 data 속성을 붙이는
+     흔한 수법을 먼저 썼다가 React 19 가 그대로 잡아냈다("some attributes of the server
+     rendered HTML didn't match the client properties" — `data-db-gate` 를 지목한다).
+     레이아웃이 소유한 노드라 React 가 속성 전부를 견주기 때문이다. 그래서 아무도 소유하지
+     않은 것을 만든다 — `<head>` 에 넣는 **스타일 규칙 한 줄**. 렌더 트리 밖이라 비교 대상이
+     아니고, 하는 일은 속성판과 똑같다(첫 프레임부터 게이트가 없다).
+   ⚠ 들어간 뒤 이 규칙을 런타임에 넣지는 않는다 — 넣으면 `display:none` 이 즉시 먹어
+     "게이트가 사라지는" 페이드(0.55s)가 잘린다. 그 자리는 `.db-entered` 가 맡는다. */
+
+const GATE_KEY = 'dearbloom.gate.entered';
+
+/**
+ * 게이트보다 먼저 실행돼 게이트를 지우는 한 줄.
+ * `!important` 인 이유: 미디어 쿼리 안의 `.db-page .db-gate{display:grid}` 보다 뒤에
+ * 오는지 보장할 수 없는 자리(런타임 삽입)라, 순서에 기대지 않고 이긴다.
+ */
+const GATE_BOOT =
+  `try{if(sessionStorage.getItem('${GATE_KEY}')==='1'){` +
+  `var s=document.createElement('style');` +
+  `s.setAttribute('data-db-gate','skip');` +
+  `s.textContent='.db-gate{display:none!important}';` +
+  `document.head.appendChild(s)}}catch(e){}`;
+
+/**
+ * 세션 기억의 캐시. sessionStorage 를 못 쓰는 환경(사생활 보호 모드 등)에서도
+ * 최소한 이 탭 안에서는 기억한다 — 저장이 막혔다고 게이트가 안 닫히면 안 된다.
+ */
+let gateMemo: boolean | undefined;
+const gateListeners = new Set<() => void>();
+
+function subscribeGate(onChange: () => void): () => void {
+  gateListeners.add(onChange);
+  return () => {
+    gateListeners.delete(onChange);
+  };
+}
+
+function gateSnapshot(): boolean {
+  if (gateMemo === undefined) {
+    try {
+      gateMemo = window.sessionStorage.getItem(GATE_KEY) === '1';
+    } catch {
+      gateMemo = false;
+    }
+  }
+  return gateMemo;
+}
+
+/** 서버에는 세션이 없다. 항상 "아직 안 들어왔다" — 그래야 첫 렌더가 서버 HTML 과 같다. */
+function gateServerSnapshot(): boolean {
+  return false;
+}
+
+function markGateEntered() {
+  gateMemo = true;
+  try {
+    window.sessionStorage.setItem(GATE_KEY, '1');
+  } catch {
+    // 저장이 막힌 환경 — 위 캐시가 이 탭 동안 대신 기억한다.
+  }
+  for (const listener of gateListeners) listener();
+}
+
 export default function LandingPage({ data }: { data: LandingData }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const progressRef = useRef<HTMLSpanElement>(null);
@@ -44,7 +125,8 @@ export default function LandingPage({ data }: { data: LandingData }) {
 
   /** 전역 테마 — 진입 시 오늘의 꽃 카테고리. 명시적 액션으로만 바뀐다(§1.4c v3.3). */
   const [globalSlug, setGlobalSlug] = useState(data.themeSlug);
-  const [entered, setEntered] = useState(false);
+  /** 이 세션에서 이미 들어왔는가(#21). 서버·하이드레이션에서는 늘 false 다 — 위 주석 참고. */
+  const entered = useSyncExternalStore(subscribeGate, gateSnapshot, gateServerSnapshot);
   const [gateReady, setGateReady] = useState(false);
   /** 게이트 로딩 바. 첫 프레임부터 조금 차 있는 편이 "멈춘 화면"으로 보이지 않는다. */
   const [gateProgress, setGateProgress] = useState(0.12);
@@ -86,9 +168,12 @@ export default function LandingPage({ data }: { data: LandingData }) {
   /* ── 로딩 게이트 ──────────────────────────────────────────────────
      게이트 자체는 CSS(미디어 쿼리)가 띄운다. 여기서는 "언제 들어갈 수 있는지"와
      페일세이프만 다룬다. 모션을 끈 사용자에게는 게이트가 없으니 아무것도 하지 않는다. */
-  const enter = useCallback(() => setEntered(true), []);
+  const enter = useCallback(() => markGateEntered(), []);
 
   useEffect(() => {
+    /* #21 — 이미 지난 세션이면 게이트 자체가 없다. 그러니 **잠금도 타이머도 걸지 않는다.**
+       (여기서 일찍 물러나지 않으면 게이트 없는 화면에서 body 스크롤만 잠긴다.) */
+    if (entered) return;
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
     // 게이트가 떠 있는 동안 뒤 페이지가 밀리지 않게 잠근다(CSS 로는 조상에 닿지 못한다).
@@ -125,12 +210,9 @@ export default function LandingPage({ data }: { data: LandingData }) {
       document.removeEventListener('keydown', onKey);
       document.body.style.overflow = previousOverflow;
     };
-  }, [data.hero.src, data.hero.srcMobile, enter]);
-
-  // 입장하면 스크롤 잠금을 푼다(게이트 효과의 정리는 언마운트 때만 돌기 때문).
-  useEffect(() => {
-    if (entered) document.body.style.overflow = '';
-  }, [entered]);
+    /* `entered` 가 deps 에 있는 것이 잠금 해제의 전부다 — 들어가는 순간 위 정리 함수가
+       돌아 원래 overflow 로 되돌리고, 다시 실행된 이펙트는 첫 줄에서 물러난다. */
+  }, [entered, data.hero.src, data.hero.srcMobile, enter]);
 
   useEffect(() => {
     if (gateReady && !entered) gateButtonRef.current?.focus({ preventScroll: true });
@@ -154,6 +236,13 @@ export default function LandingPage({ data }: { data: LandingData }) {
 
   return (
     <>
+      {/*
+        #21 — 게이트보다 **먼저** 파싱돼야 하는 한 줄. 인라인 스크립트라 파서가 여기서
+        멈추고 실행하므로, 아래 `.db-gate` 는 만들어지기 전에 이미 숨겨질 운명이 된다.
+        (마운트를 기다리면 이미 한 프레임 그린 뒤다 — 그게 "번쩍임"의 정체다.)
+      */}
+      <script dangerouslySetInnerHTML={{ __html: GATE_BOOT }} />
+
       <div className={pageClass} data-flower={globalSlug} ref={rootRef}>
         {/* ═══ 로딩 게이트 ═══ */}
         <div className="db-gate" role="dialog" aria-modal="true" aria-labelledby="db-gate-title">
@@ -211,9 +300,12 @@ export default function LandingPage({ data }: { data: LandingData }) {
             <li>
               <Link href="/flowers" prefetch={false}>도감</Link>
             </li>
-            <li>
-              <a href="/groups">여러 명에게</a>
-            </li>
+            {/*
+              #20 — `여러 명에게`(/groups)는 내비에서 내렸다. 첫 화면에 진입이 둘이면
+              "추천 시작"과 나란히 놓인 그 항목이 별개 서비스처럼 읽혔다. 페이지는
+              그대로 살아 있고, 갈림길은 질문 1번 위("몇 분께 드리나요?")로 옮겼다 —
+              한 명/여러 명은 랜딩에서 고를 일이 아니라 질문의 첫 줄이다.
+            */}
             <li>
               <a href="#db-start">시작하기</a>
             </li>
@@ -520,12 +612,27 @@ export default function LandingPage({ data }: { data: LandingData }) {
                 </Link>
               </nav>
             </div>
+            {/*
+              이미지 크레딧 — **한 번의 클릭 뒤로** 옮겼다(2026-08-15 사용자 피드백:
+              "Photo: … / Unsplash" 가 서른 줄 넘게 깔려 푸터가 크레딧 밴드가 돼 버렸다).
+              ⚠ 표기가 사라진 게 아니다. `<details>` 라 JS 없이도 열리고, 검색엔진·스크린리더는
+                접힌 내용까지 읽는다 — Unsplash License 의 표기 권고는 그대로 지켜진다.
+            */}
             <div className="db-credits">
-              <h2>Image credits</h2>
-              <p>{data.credits.join(' · ')}</p>
-              <p className="db-lic">
-                Unsplash License · 상업적 사용 가능 · 출처 표기는 dearbloom 자체 운용 원칙입니다.
-              </p>
+              <h2 className="sr-only">Image credits</h2>
+              <details className="db-credit-fold">
+                <summary className="db-credit-sum">
+                  <span>사진 출처 보기</span>
+                  <span className="db-credit-n">{data.credits.length}</span>
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="m9 6 6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </summary>
+                <p>{data.credits.join(' · ')}</p>
+                <p className="db-lic">
+                  Unsplash License · 상업적 사용 가능 · 출처 표기는 dearbloom 자체 운용 원칙입니다.
+                </p>
+              </details>
             </div>
           </div>
         </footer>

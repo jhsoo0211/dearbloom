@@ -42,3 +42,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# autoskills - other-IDE duplicate skill copies (claude-code copies live in .claude/skills)
+.agents/

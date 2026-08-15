@@ -197,6 +197,9 @@ export default function LandingPage({ data }: { data: LandingData }) {
               <a href="/stories">이야기</a>
             </li>
             <li>
+              <a href="/groups">여러 명에게</a>
+            </li>
+            <li>
               <a href="#db-start">시작하기</a>
             </li>
           </ul>

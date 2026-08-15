@@ -41,6 +41,31 @@ export interface ArchiveStory {
   moodLabels: string[];
 }
 
+/**
+ * 꽃 한 종 = 가로 레인 한 줄.
+ *
+ * 아카이브의 기본 뷰는 **꽃별 가로 레인**이라 서버가 꽃 순서(카탈로그 순서)대로
+ * 이야기를 접어서 내려보낸다. 클라이언트는 레인 안에서 결(mood)로 거르기만 한다 —
+ * 이야기가 없는 꽃은 서버가 아예 레인을 세우지 않는다.
+ */
+export interface ArchiveLane {
+  flowerId: string;
+  /** 레인 헤더의 제목이자 건너뛰기 칩의 표기. */
+  flowerNameKo: string;
+  /**
+   * 레인 헤더의 카테고리 점 색.
+   *
+   * `flowers.csv` 대표색(colors[0])을 §1.4 승인 스와치(`COLOR_CHOICES`)로 옮긴 hex 다.
+   * 테마 5종(forest·ivory·gold·wine·dusk)은 accent 가 겹쳐(튤립·프리지아 둘 다 골드)
+   * 17줄을 구분하지 못한다 — 카테고리의 원본인 대표색을 그대로 쓰는 쪽이 정직하고 잘 갈린다.
+   */
+  dotColor: string;
+  /** 그 색의 한국어 표기. 점은 장식(aria-hidden)이라 스크린리더는 이 말만 듣는다. */
+  dotLabel: string;
+  /** 이 꽃의 이야기. stories.csv 순서 그대로다. */
+  stories: ArchiveStory[];
+}
+
 /** 필터 바의 칩 한 칸. `전체` 는 key 가 `all` 이다. */
 export interface ArchiveFilterChip {
   key: string;

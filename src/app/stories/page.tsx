@@ -5,15 +5,16 @@ import {
   STORY_CONFIDENCE_LABELS,
   STORY_MOOD_FILTERS,
   STORY_MOOD_LABELS,
+  colorChoice,
   eraLabel,
   regionLabel,
   storyTypeLabel,
 } from '@/components/flow/labels';
 import StoriesArchive from '@/components/stories/StoriesArchive';
 import styles from '@/components/stories/stories.module.css';
-import type { ArchiveFilterChip, ArchiveStory } from '@/components/stories/types';
+import type { ArchiveFilterChip, ArchiveLane, ArchiveStory } from '@/components/stories/types';
 import { loadCatalog } from '@/lib/data/catalog';
-import type { Catalog, CatalogStory } from '@/lib/data/types';
+import type { CatalogFlower, CatalogStory } from '@/lib/data/types';
 
 /**
  * `/stories` — 꽃에 얽힌 이야기들 (아카이브).
@@ -23,12 +24,15 @@ import type { Catalog, CatalogStory } from '@/lib/data/types';
  * 그 자리다 — 이야기 전량을 꽃·결로 골라 보고, 한 장을 누르면 §1.5i 규격의 상세 시트가
  * 전문과 출처까지 펼친다.
  *
- * · 데이터는 서버가 통째로 확정해 내려보낸다(`loadCatalog()` → 꽃 이름과 조인 → 한국어 라벨).
+ * 보는 방식은 **꽃별 가로 레인**이다(넷플릭스식). 89편을 한 판에 늘어놓으면 "꽃 17종이
+ * 있구나" 가 보이지 않고 스크롤만 길어져서, 꽃마다 한 줄로 접고 그 줄 안에서 밀어 본다.
+ *
+ * · 데이터는 서버가 통째로 확정해 내려보낸다(`loadCatalog()` → 꽃별로 접기 → 한국어 라벨).
  *   클라이언트는 라벨 사전도 엔진도 갖지 않는다 — 어휘가 늘면 이 파일이 자동으로 따라간다.
  * · `revalidate = 3600` — `content/*.csv` 는 배포에 고정된 읽기 전용 데이터라
  *   그 이상 자주 읽을 이유가 없다(랜딩과 같은 판단).
  * · 셸(헤더·인트로·CTA·푸터)은 상태가 없어 서버에서 그대로 렌더하고,
- *   필터·그리드·시트만 클라이언트 컴포넌트가 맡는다.
+ *   필터·레인·시트만 클라이언트 컴포넌트가 맡는다.
  */
 
 export const revalidate = 3600;
@@ -74,48 +78,38 @@ function toArchiveStory(story: CatalogStory, flowerNameKo: string): ArchiveStory
 }
 
 /**
- * 꽃을 번갈아 세운 순서로 늘어놓는다.
+ * 이야기를 꽃별 레인으로 접는다 — 화면의 기본 뷰가 그대로 이 모양이다.
  *
- * CSV 순서 그대로 두면 첫 화면이 한 꽃의 이야기로만 채워진다(장미 8편 → 튤립 10편 …).
- * 아카이브의 첫인상은 "여러 꽃이 있구나" 여야 해서, 꽃마다 한 편씩 돌아가며 뽑는다.
- * 무작위가 아니라 **결정적**이다 — 재생성마다 순서가 흔들리면 다시 찾아온 사람이 헤맨다.
+ * 줄 순서는 **카탈로그 순서**(flowers.csv)이고, 줄 안은 stories.csv 순서다. 둘 다
+ * 결정적이라 다시 찾아온 사람이 같은 자리에서 같은 이야기를 만난다 — 무작위 금지.
+ * 이야기가 한 편도 없는 꽃은 줄을 세우지 않는다(빈 레인은 스크롤만 잡아먹는다).
+ *
+ * 카테고리 점은 `flowers.csv` 대표색(colors[0])의 §1.4 승인 스와치를 쓴다. 테마 5종의
+ * accent 는 튤립·프리지아가 같은 골드라 17줄을 갈라 주지 못한다 — 그 카테고리를 정하는
+ * 원본이 애초에 대표색이므로(landing-data `CATEGORY_BY_COLOR`) 원본을 그대로 쓴다.
  */
-function interleaveByFlower(stories: ArchiveStory[], flowerOrder: string[]): ArchiveStory[] {
+function buildLanes(flowers: CatalogFlower[], stories: ArchiveStory[]): ArchiveLane[] {
   const buckets = new Map<string, ArchiveStory[]>();
-  for (const flowerId of flowerOrder) buckets.set(flowerId, []);
   for (const story of stories) {
-    // 카탈로그에 없는 꽃은 교차 검증이 막아 주지만, 막히더라도 이야기를 잃지 않게 칸을 만든다.
     const bucket = buckets.get(story.flowerId);
     if (bucket) bucket.push(story);
     else buckets.set(story.flowerId, [story]);
   }
 
-  const out: ArchiveStory[] = [];
-  for (let depth = 0; out.length < stories.length; depth += 1) {
-    let added = false;
-    for (const bucket of buckets.values()) {
-      const story = bucket[depth];
-      if (!story) continue;
-      out.push(story);
-      added = true;
-    }
-    // 어느 칸에도 그 깊이의 이야기가 없으면 끝이다(길이 조건과 함께 무한 루프를 막는다).
-    if (!added) break;
+  const lanes: ArchiveLane[] = [];
+  for (const flower of flowers) {
+    const own = buckets.get(flower.id);
+    if (!own || own.length === 0) continue;
+    const swatch = colorChoice(flower.colors[0] ?? '');
+    lanes.push({
+      flowerId: flower.id,
+      flowerNameKo: flower.nameKo,
+      dotColor: swatch.hex,
+      dotLabel: swatch.label,
+      stories: own,
+    });
   }
-  return out;
-}
-
-/** 전체 + 실제로 이야기가 있는 꽃(카탈로그 순서). 눌러도 빈 화면이 되는 칩은 세우지 않는다. */
-function flowerChips(catalog: Catalog, stories: ArchiveStory[]): ArchiveFilterChip[] {
-  const counts = new Map<string, number>();
-  for (const story of stories) counts.set(story.flowerId, (counts.get(story.flowerId) ?? 0) + 1);
-
-  const chips: ArchiveFilterChip[] = [{ key: ALL, label: '전체', count: stories.length }];
-  for (const flower of catalog.flowers) {
-    const count = counts.get(flower.id) ?? 0;
-    if (count > 0) chips.push({ key: flower.id, label: flower.nameKo, count });
-  }
-  return chips;
+  return lanes;
 }
 
 /** 전체 + 실제로 쓰인 결(엔진 STORY_MOODS 순서). */
@@ -134,17 +128,14 @@ export default async function StoriesPage() {
   const catalog = await loadCatalog();
 
   const flowerNames = new Map(catalog.flowers.map((flower) => [flower.id, flower.nameKo]));
-  const stories = interleaveByFlower(
-    catalog.stories.map((story) =>
-      toArchiveStory(story, flowerNames.get(story.flowerId) ?? story.flowerId),
-    ),
-    catalog.flowers.map((flower) => flower.id),
+  const stories = catalog.stories.map((story) =>
+    toArchiveStory(story, flowerNames.get(story.flowerId) ?? story.flowerId),
   );
 
-  const flowers = flowerChips(catalog, stories);
+  const lanes = buildLanes(catalog.flowers, stories);
   const moods = moodChips(stories);
-  // 칩의 첫 칸은 `전체` 라 꽃 수는 그만큼 뺀다.
-  const flowerCount = flowers.length - 1;
+  // 인트로 숫자는 실제로 화면에 세운 것만 센다(레인 = 이야기가 있는 꽃).
+  const laneStoryCount = lanes.reduce((sum, lane) => sum + lane.stories.length, 0);
 
   return (
     <div className={styles.page}>
@@ -172,11 +163,11 @@ export default async function StoriesPage() {
           {/* 실데이터 그대로 — 이야기가 늘면 이 숫자가 먼저 따라 움직인다. */}
           <ul className={styles.stats}>
             <li className={styles.stat}>
-              <span className={styles.statNum}>{stories.length}</span>
+              <span className={styles.statNum}>{laneStoryCount}</span>
               <span className={styles.statLabel}>편의 이야기</span>
             </li>
             <li className={styles.stat}>
-              <span className={styles.statNum}>{flowerCount}</span>
+              <span className={styles.statNum}>{lanes.length}</span>
               <span className={styles.statLabel}>가지 꽃</span>
             </li>
             <li className={styles.stat}>
@@ -187,9 +178,9 @@ export default async function StoriesPage() {
         </div>
       </section>
 
-      {/* ── 2. 필터 · 그리드 · 상세 시트 ────────────────────────── */}
+      {/* ── 2. 필터 · 꽃별 레인 · 상세 시트 ─────────────────────── */}
       <main>
-        <StoriesArchive stories={stories} flowerChips={flowers} moodChips={moods} />
+        <StoriesArchive lanes={lanes} moodChips={moods} />
 
         {/* ── 3. 하단 CTA ──────────────────────────────────────── */}
         <section className={styles.cta} aria-labelledby="stories-cta-title">

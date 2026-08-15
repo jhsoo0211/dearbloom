@@ -74,6 +74,11 @@ function nvidiaBody(text: string) {
   return { choices: [{ message: { content: text } }] };
 }
 
+/** CLOVA Studio 응답 봉투. 200 이어도 status.code 가 20000 이어야 성공이다. */
+function clovaBody(text: string, code = '20000') {
+  return { status: { code }, result: { message: { content: text } } };
+}
+
 function okResponse(body: unknown) {
   return { ok: true, status: 200, json: async () => body };
 }
@@ -92,9 +97,10 @@ function mockFetch(impl: FetchImpl) {
 }
 
 /** 어느 프로바이더로 간 요청인지 URL 로 가른다. */
-function providerOf(url: string): 'gemini' | 'claude' | 'nvidia' {
+function providerOf(url: string): 'gemini' | 'claude' | 'clova' | 'nvidia' {
   if (url.includes('generativelanguage.googleapis.com')) return 'gemini';
   if (url.includes('api.anthropic.com')) return 'claude';
+  if (url.includes('clovastudio.stream.ntruss.com')) return 'clova';
   return 'nvidia';
 }
 
@@ -102,6 +108,8 @@ function providerOf(url: string): 'gemini' | 'claude' | 'nvidia' {
 const MANAGED_KEYS = [
   'GEMINI_API_KEY',
   'ANTHROPIC_API_KEY',
+  'CLOVA_API_KEY',
+  'CLOVA_MODEL',
   'NVIDIA_API_KEY',
   'NVIDIA_MODEL',
   'LLM_MODEL',
@@ -177,6 +185,31 @@ describe('generateMessages — 정상 응답', () => {
     expect(result?.tones).toHaveLength(3);
   });
 
+  it('CLOVA 응답도 같은 계약으로 파싱한다', async () => {
+    process.env.CLOVA_API_KEY = 'test-clova-key';
+    const fetchMock = mockFetch(() => okResponse(clovaBody(JSON.stringify(VALID_PAYLOAD))));
+
+    const result = await generateMessages(REQUEST);
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(String(fetchMock.mock.calls[0][0])).toBe(
+      'https://clovastudio.stream.ntruss.com/testapp/v3/chat-completions/HCX-DASH-002',
+    );
+    expect(result?.tones).toHaveLength(3);
+  });
+
+  it('safety_flags 를 통째로 생략해도 빈 배열로 관용한다 (CLOVA 실측 습성)', async () => {
+    process.env.CLOVA_API_KEY = 'test-clova-key';
+    const noFlags = structuredClone(VALID_PAYLOAD) as { tones: Array<Record<string, unknown>> };
+    for (const tone of noFlags.tones) delete tone.safety_flags;
+    mockFetch(() => okResponse(clovaBody(JSON.stringify(noFlags))));
+
+    const result = await generateMessages(REQUEST);
+
+    expect(result?.tones).toHaveLength(3);
+    expect(result?.tones[0].safety_flags).toEqual([]);
+  });
+
   it('```json 펜스로 감싸 와도 벗겨 읽는다', async () => {
     process.env.GEMINI_API_KEY = 'test-gemini-key';
     mockFetch(() => okResponse(geminiBody('```json\n' + JSON.stringify(VALID_PAYLOAD) + '\n```')));
@@ -238,9 +271,10 @@ describe('generateMessages — 프로바이더 체인', () => {
     expect(result?.tones[0].headline).toBe('늦었지만, 먼저 미안해.');
   });
 
-  it('세 키가 다 있으면 gemini → claude → nvidia 순으로 내려간다', async () => {
+  it('네 키가 다 있으면 gemini → claude → clova → nvidia 순으로 내려간다', async () => {
     process.env.GEMINI_API_KEY = 'test-gemini-key';
     process.env.ANTHROPIC_API_KEY = 'test-claude-key';
+    process.env.CLOVA_API_KEY = 'test-clova-key';
     process.env.NVIDIA_API_KEY = 'test-nvidia-key';
 
     const fetchMock = mockFetch((url) => {
@@ -254,9 +288,31 @@ describe('generateMessages — 프로바이더 체인', () => {
     expect(fetchMock.mock.calls.map((call) => providerOf(String(call[0])))).toEqual([
       'gemini',
       'claude',
+      'clova',
       'nvidia',
     ]);
     expect(result?.tones).toHaveLength(3);
+  });
+
+  it('CLOVA 가 200 이어도 status.code 가 20000 이 아니면 재시도 없이 넘어간다', async () => {
+    process.env.CLOVA_API_KEY = 'test-clova-key';
+    process.env.NVIDIA_API_KEY = 'test-nvidia-key';
+
+    const fetchMock = mockFetch((url) =>
+      providerOf(String(url)) === 'clova'
+        ? // 200 인데 인증/쿼터 오류. 같은 요청을 다시 보내도 같은 코드가 온다.
+          okResponse(clovaBody('', '40103'))
+        : okResponse(nvidiaBody(JSON.stringify(FALLBACK_PAYLOAD))),
+    );
+
+    const result = await generateMessages(REQUEST);
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls.map((call) => providerOf(String(call[0])))).toEqual([
+      'clova',
+      'nvidia',
+    ]);
+    expect(result?.tones[0].headline).toBe('늦었지만, 먼저 미안해.');
   });
 
   it('NVIDIA 키만 있으면 NVIDIA 가 1차다', async () => {
@@ -319,6 +375,53 @@ describe('generateMessages — NVIDIA 요청 본문', () => {
 
     const body = JSON.parse(String(fetchMock.mock.calls[0][1].body)) as { model: string };
     expect(body.model).toBe('mistralai/mistral-large');
+  });
+});
+
+describe('generateMessages — CLOVA 요청 본문', () => {
+  it('Bearer 키를 싣고, maxTokens(camelCase)와 스키마 지시문을 붙인다', async () => {
+    process.env.CLOVA_API_KEY = 'test-clova-key';
+    const fetchMock = mockFetch(() => okResponse(clovaBody(JSON.stringify(VALID_PAYLOAD))));
+
+    await generateMessages(REQUEST);
+
+    const init = fetchMock.mock.calls[0][1];
+    const headers = init.headers as Record<string, string>;
+    expect(headers.authorization).toBe('Bearer test-clova-key');
+
+    // 모델은 URL 경로에 들어간다. 스코프는 테스트 앱이다(/serviceapp/ 은 400).
+    expect(String(fetchMock.mock.calls[0][0])).toBe(
+      'https://clovastudio.stream.ntruss.com/testapp/v3/chat-completions/HCX-DASH-002',
+    );
+
+    const body = JSON.parse(String(init.body)) as {
+      maxTokens: number;
+      max_tokens?: number;
+      messages: Array<{ role: string; content: string }>;
+    };
+
+    // snake_case 로 보내면 조용히 무시된다.
+    expect(body.maxTokens).toBe(2048);
+    expect(body.max_tokens).toBeUndefined();
+    expect(body.messages[0].role).toBe('system');
+    expect(body.messages[1].role).toBe('user');
+    // JSON 강제는 NVIDIA 와 같은 방식 — 스키마를 프롬프트에 붙인다.
+    expect(body.messages[1].content).toContain('JSON 스키마');
+    expect(body.messages[1].content).toContain('why_it_fits');
+    expect(body.messages[1].content).toContain('greenaway-1884');
+  });
+
+  it('CLOVA 모델은 CLOVA_MODEL 만 본다 (LLM_MODEL 이 덮지 않는다)', async () => {
+    process.env.CLOVA_API_KEY = 'test-clova-key';
+    process.env.CLOVA_MODEL = 'HCX-005';
+    process.env.LLM_MODEL = 'gemini-3-pro';
+    const fetchMock = mockFetch(() => okResponse(clovaBody(JSON.stringify(VALID_PAYLOAD))));
+
+    await generateMessages(REQUEST);
+
+    expect(String(fetchMock.mock.calls[0][0])).toBe(
+      'https://clovastudio.stream.ntruss.com/testapp/v3/chat-completions/HCX-005',
+    );
   });
 });
 

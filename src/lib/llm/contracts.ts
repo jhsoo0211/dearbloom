@@ -31,7 +31,9 @@ const toneMessageSchema = z.object({
   headline: z.string().min(1),
   message: z.string().min(1),
   why_it_fits: z.string().min(1),
-  safety_flags: z.array(z.string()),
+  // 플래그가 없으면 필드째 생략하고 보내는 모델이 있다(CLOVA HCX 실측 — 매 호출 재현).
+  // "없음 = 빈 배열" 이므로 생략을 관용한다. 파싱 후에는 항상 배열이다.
+  safety_flags: z.array(z.string()).default([]),
 });
 
 export const generateResponseSchema = z.object({

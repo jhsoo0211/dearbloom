@@ -1,8 +1,10 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
+import BirthDictionary from '@/components/flowers/BirthDictionary';
 import BirthdayFinder from '@/components/flowers/BirthdayFinder';
 import FlowerSearch from '@/components/flowers/FlowerSearch';
+import { BIRTH_DICT_CATALOG_TITLE, BIRTH_DICT_TITLE } from '@/components/flowers/birth-copy';
 import { buildFlowerIndex } from '@/components/flowers/data';
 import styles from '@/components/flowers/flowers.module.css';
 import { loadCatalog } from '@/lib/data/catalog';
@@ -18,8 +20,13 @@ import { loadCatalog } from '@/lib/data/catalog';
  *   클라이언트는 라벨 사전도 엔진도 갖지 않고, 문자열 색인에 `includes` 만 한다.
  * · `revalidate = 3600` — `content/*.csv` 는 배포에 고정된 읽기 전용 데이터다(/stories 와 같은 판단).
  * · 셸(헤더·인트로·CTA·푸터)은 상태가 없어 서버에서 그대로 렌더하고, 검색만 클라이언트가 맡는다.
- * · **생일 꽃 찾기**는 예외적으로 값을 미리 내려보내지 않는다 — 탄생화 366행은
- *   실제로 하루치만 읽히므로 서버 액션으로 그때 가져온다(`actions.ts` 주석에 근거).
+ * · **생일 꽃 찾기 · 탄생화 사전**은 예외적으로 값을 미리 내려보내지 않는다 — 탄생화
+ *   366행은 실제로 하루치(찾기) 또는 한 달치(사전)만 읽히므로 서버 액션으로 그때
+ *   가져온다(`actions.ts` 주석에 근거). 미리 가는 것은 달력 12개 숫자와 통계 두 개뿐이다.
+ *
+ * ⚠ 이 화면은 **2단 티어**를 드러내는 자리다(§1.5m ⑤). 정식 도감(검증 완료 32종)과
+ *   탄생화 사전(이름·꽃말만 옮긴 366일)을 한 숫자로 합치지 마라 — 인트로 통계·사전 구획·
+ *   목록 줄의 티어 표시가 전부 그 구분 위에 서 있다.
  */
 
 export const revalidate = 3600;
@@ -32,7 +39,15 @@ export const metadata: Metadata = {
 
 export default async function FlowersPage() {
   const catalog = await loadCatalog();
-  const { flowers, groups, meaningCount, storyCount, birthCalendar } = buildFlowerIndex(catalog);
+  const {
+    flowers,
+    groups,
+    meaningCount,
+    storyCount,
+    birthCalendar,
+    birthDayCount,
+    birthSpeciesCount,
+  } = buildFlowerIndex(catalog);
 
   return (
     <div className={styles.page}>
@@ -57,11 +72,17 @@ export default async function FlowersPage() {
             품는지, 어느 나라에서 어떤 이야기로 전해졌는지 한자리에 모아 두었어요.
           </p>
 
-          {/* 실데이터 그대로 — 꽃·꽃말·이야기가 늘면 이 숫자가 먼저 따라 움직인다. */}
+          {/* 실데이터 그대로 — 꽃·꽃말·이야기가 늘면 이 숫자가 먼저 따라 움직인다.
+              첫 두 칸이 **2단 티어**다(§1.5m ⑤): 검증을 마친 정식 도감과, 이름·꽃말만
+              먼저 옮겨 둔 탄생화 사전. 둘을 한 숫자로 합치면 어느 쪽도 정직하지 않다. */}
           <ul className={styles.stats}>
             <li className={styles.stat}>
               <span className={styles.statNum}>{flowers.length}</span>
-              <span className={styles.statLabel}>가지 꽃</span>
+              <span className={styles.statLabel}>종 · {BIRTH_DICT_CATALOG_TITLE}</span>
+            </li>
+            <li className={styles.stat}>
+              <span className={styles.statNum}>{birthDayCount}</span>
+              <span className={styles.statLabel}>일 · {BIRTH_DICT_TITLE}</span>
             </li>
             <li className={styles.stat}>
               <span className={styles.statNum}>{meaningCount}</span>
@@ -72,6 +93,16 @@ export default async function FlowersPage() {
               <span className={styles.statLabel}>편의 이야기</span>
             </li>
           </ul>
+
+          {/*
+            ⚠ **여기에 설명 문단을 덧붙이지 마라**(CLS 0 규율, 2026-08-16 실측).
+            인트로는 `<main>` **위**에 있어서, 이 자리의 텍스트가 웹폰트 교체로 한 줄만
+            늘어도 아래 화면 전체가 밀린다. 실제로 두 티어를 설명하는 3줄짜리 문단을
+            여기 뒀다가 1280px CLS 가 **0.005 → 0.17** 로 뛰었다(폰트 스왑이 늦게 도착한
+            로드에서 재현). 그 설명은 사전 구획 안으로 옮겼다 — 거기서는 같은 재배치가
+            화면 밖에서 일어나 이동으로 세어지지 않는다.
+            티어 구분 자체는 위 통계 라벨(`종 · 정식 도감` / `일 · 탄생화 사전`)이 말한다.
+          */}
         </div>
       </section>
 
@@ -86,7 +117,18 @@ export default async function FlowersPage() {
             12개 숫자만 넘기고, 고른 하루는 서버 액션이 가져온다(`app/flowers/actions.ts`). */}
         <BirthdayFinder calendar={birthCalendar} />
 
-        {/* ── 4. 하단 CTA ──────────────────────────────────────── */}
+        {/* ── 4. 탄생화 사전 ───────────────────────────────────────
+            생일 찾기가 "내 날짜 하루"라면 여기는 **표 전체를 훑는** 문이다(§1.5m ⑤).
+            366일 전체를 열람 가능하게 하되 정식 도감과 티어를 눈으로 구별되게 그린다.
+            여기 넘어가는 것도 366행이 아니라 **숫자 두 개**다 — 목록은 달을 고른 사람만
+            서버 액션(`listBirthMonth`)으로 한 달치씩 받는다. */}
+        <BirthDictionary
+          catalogCount={flowers.length}
+          dayCount={birthDayCount}
+          speciesCount={birthSpeciesCount}
+        />
+
+        {/* ── 5. 하단 CTA ──────────────────────────────────────── */}
         <section className={styles.cta} aria-labelledby="flowers-cta-title">
           <div className={styles.wrap}>
             <span className={styles.eyebrow}>Next</span>
@@ -104,7 +146,7 @@ export default async function FlowersPage() {
         </section>
       </main>
 
-      {/* ── 5. 푸터 ─────────────────────────────────────────────── */}
+      {/* ── 6. 푸터 ─────────────────────────────────────────────── */}
       <footer className={styles.siteFoot}>
         <div className={styles.wrap}>
           <p className={styles.footSay}>

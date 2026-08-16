@@ -207,17 +207,26 @@ export default function LetterEntrance({ flowers }: LetterEntranceProps) {
           번호 칸 **아래** 에 두어 위계를 뺏지 않는다 — 이 화면의 주인은 편지를 받은 사람이다.
           예시는 저장소를 거치지 않고 곧장 열람 연출로 간다(`sample.ts` 머리말).
         */}
-        <p className={styles.sampleLine}>
-          어떤 모습으로 열리는지 궁금하시면 —{' '}
+        {/*
+          2026-08-16 · 위계 상향. 예전에는 이 진입이 문장 속 밑줄 링크였다 — 번호 없이
+          들어온 사람에게 **이 화면에서 할 수 있는 유일한 일**인데, 본문에 섞여 있으니
+          읽는 줄로 지나쳤다. 보조 버튼(고스트 필)으로 세워 "여기 누를 것이 있다"를
+          모양으로 먼저 말한다. 문구는 그대로다.
+
+          ⚠ 주 CTA(`.btn`)로 올리지 마라. 이 화면의 주인은 번호를 들고 온 사람이고,
+            예시는 그 사람이 아닌 이에게 건네는 곁문이다 — 고스트가 그 위계다.
+        */}
+        <div className={styles.sampleLine}>
+          <p className={styles.sampleNote}>어떤 모습으로 열리는지 궁금하시면 —</p>
           <button
             type="button"
-            className={styles.textBtn}
+            className={styles.ghost}
             data-testid="open-sample"
             onClick={() => setOpened({ letter: SAMPLE_LETTER, own: false, sample: true })}
           >
             예시 편지 먼저 열어 보세요
           </button>
-        </p>
+        </div>
       </section>
 
       {/* ── 편지 만들기 · 내가 만든 편지 ───────────────────────────── */}

@@ -35,6 +35,7 @@ import { fileURLToPath } from 'node:url';
 
 import { loadCatalog } from '../src/lib/data/catalog.ts';
 import { birthDateLabel } from '../src/lib/data/birth-flowers.ts';
+import { buildBirthMonth } from '../src/components/flowers/birth-dict.ts';
 import { hasFinalConsonant } from '../src/components/landing/landing-data.ts';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -129,6 +130,23 @@ function toBirthFlowerTable(catalog) {
   return table;
 }
 
+/**
+ * `/flowers` **탄생화 사전**이 여는 한 달치 — `"3"` → 그달의 `BirthMonthView`.
+ *
+ * 위 `toBirthFlowerTable` 과 나란히 두는 이유는 같은 표에서 나오지만 **자르는 단위가
+ * 다르기** 때문이다(하루 / 한 달). 그리고 여기서는 조립을 손으로 베끼지 않고
+ * `buildBirthMonth` 를 **그대로 부른다** — 서버가 만드는 값과 글자 하나까지 같아야
+ * 정적 데모에서만 다른 문장이 나오는 일이 없다(모양의 원본은 `components/flowers/types.ts`).
+ */
+function toBirthMonthTable(catalog) {
+  const table = {};
+  for (let month = 1; month <= 12; month += 1) {
+    const view = buildBirthMonth(catalog, month);
+    if (view) table[String(month)] = view;
+  }
+  return table;
+}
+
 /** `export const X = "…";` 한 줄짜리 모듈. 값은 JSON 문자열 그대로다. */
 function toModule(name, value, headline) {
   const json = JSON.stringify(value);
@@ -187,6 +205,7 @@ async function main() {
 
   const storyDetails = catalog.stories.map(toStoryDetail);
   const birthTable = toBirthFlowerTable(catalog);
+  const birthMonths = toBirthMonthTable(catalog);
 
   const files = [
     {
@@ -216,6 +235,15 @@ async function main() {
       ),
       label: `탄생화 (${Object.keys(birthTable).length}일)`,
     },
+    {
+      name: 'birth-months.ts',
+      text: toModule(
+        'DEMO_BIRTH_MONTHS_JSON',
+        birthMonths,
+        '정적 데모용 탄생화 사전 — `/flowers` 사전 구획이 펼치는 한 달치 목록.',
+      ),
+      label: `탄생화 사전 (${Object.keys(birthMonths).length}달)`,
+    },
   ];
 
   await mkdir(OUT_DIR, { recursive: true });
@@ -233,7 +261,7 @@ async function main() {
     console.log(`  · ${file.name.padEnd(18)} ${kb(raw).padStart(8)}  (gzip ${kb(gzip)})  — ${file.label}`);
   }
   console.log(`  합계 ${kb(totalRaw)} (gzip ${kb(totalGzip)})`);
-  console.log('  ※ 셋 다 지연 로드다 — 첫 화면이 아니라 그 기능을 처음 쓸 때 받는다.');
+  console.log('  ※ 넷 다 지연 로드다 — 첫 화면이 아니라 그 기능을 처음 쓸 때 받는다.');
 }
 
 await main();

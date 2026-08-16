@@ -8,6 +8,8 @@
  *  · 오늘의 꽃 탐색은 슬라이드 캐러셀이며, 넘겨도 카드 안쪽만 바뀐다.
  *  · 전역 전환은 리드 아래 "화면의 빛깔" 선택기 한 줄로만 일어난다(§1.4c v3.4 —
  *    카드마다 있던 반복 버튼은 폐지했다).
+ *  · 그렇게 고른 빛깔은 **세션이 기억한다**(§1.4c v3.4 · 2026-08-16). 도감을 다녀와도
+ *    남아 있고, 저장값이 있으면 오늘의 꽃 카테고리 대신 그 값으로 시작한다.
  *
  * 데이터(오늘의 꽃·꽃말·설화)는 서버에서 계산해 props 로 받는다 — 여기서 fs 를 만지지 않는다.
  */
@@ -16,6 +18,7 @@ import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 
 import { STORY_CATEGORIES } from '@/components/stories/categories';
+import type { FlowerThemeSlug } from '@/lib/theme/flowers';
 
 import TodayCarousel from './TodayCarousel';
 import {
@@ -150,6 +153,69 @@ function markGateEntered() {
   for (const listener of gateListeners) listener();
 }
 
+/* ═══ 화면의 빛깔 기억 — 세션당 1키 (§1.4c v3.4) ═══════════════════════
+   빛깔은 **고른 사람이 있는 선택**이다. 그런데 그 선택이 도감 한 번 다녀오면 사라졌다 —
+   `useState` 로만 들고 있었으니 랜딩이 언마운트되는 순간 오늘의 꽃 카테고리로 되돌아갔다.
+   고른 것이 말없이 되돌려지면 그건 선택이 아니라 장식이다.
+
+   기억은 게이트와 **같은 문법**이다(`sessionStorage` + `useSyncExternalStore`):
+     · 서버 스냅샷이 늘 `null` 이라 첫 렌더가 서버 HTML 과 같다 → 하이드레이션 경고 0.
+     · 뒤로 가기·클라 네비게이션으로 돌아올 때는 하이드레이션이 아니므로 처음부터 실제 값.
+     · 탭을 닫으면 잊는다 — 다음 방문은 다시 그날의 오늘의 꽃로 시작한다.
+
+   ⚠ 게이트와 달리 **부트 스크립트를 두지 않는다.** 게이트는 `<head>` 스타일 한 줄로
+     "아무도 소유하지 않은 것"을 만들 수 있었지만, 빛깔은 `<html data-flower>` 를 만져야
+     하고 그 속성은 layout.tsx 가 소유한 노드에 있다 — React 19 가 그대로 잡아낸다
+     (위 게이트 주석의 실패 사례와 같은 자리). 테마는 지금도 마운트 뒤 이펙트가 입히므로
+     첫 프레임 기준이 달라지지 않는다.
+   ⚠ 선택 해제라는 개념은 없다(다섯 중 하나는 늘 눌려 있다). 그래서 저장값이 있으면
+     **무조건 이긴다** — "오늘의 꽃 따라가기"는 저장 전의 기본값이지 되돌아갈 상태가 아니다. */
+
+const TINT_KEY = 'dearbloom.tint';
+
+/** 저장값은 남이 넣을 수도 있는 문자열이다 — 아는 slug 다섯 개만 통과시킨다. */
+const TINT_SLUGS = new Set<string>(
+  Object.values(CATEGORY_THEMES).map((theme) => theme.slug),
+);
+
+/** 게이트와 같은 이유의 캐시 — 저장이 막힌 환경에서도 이 탭 안에서는 기억한다. */
+let tintMemo: FlowerThemeSlug | null | undefined;
+const tintListeners = new Set<() => void>();
+
+function subscribeTint(onChange: () => void): () => void {
+  tintListeners.add(onChange);
+  return () => {
+    tintListeners.delete(onChange);
+  };
+}
+
+function tintSnapshot(): FlowerThemeSlug | null {
+  if (tintMemo === undefined) {
+    try {
+      const saved = window.sessionStorage.getItem(TINT_KEY);
+      tintMemo = saved && TINT_SLUGS.has(saved) ? (saved as FlowerThemeSlug) : null;
+    } catch {
+      tintMemo = null;
+    }
+  }
+  return tintMemo;
+}
+
+/** 서버에는 세션이 없다. 항상 "아직 안 골랐다" — 그래야 첫 렌더가 서버 HTML 과 같다. */
+function tintServerSnapshot(): FlowerThemeSlug | null {
+  return null;
+}
+
+function rememberTint(slug: FlowerThemeSlug) {
+  tintMemo = slug;
+  try {
+    window.sessionStorage.setItem(TINT_KEY, slug);
+  } catch {
+    // 저장이 막힌 환경 — 위 캐시가 이 탭 동안 대신 기억한다.
+  }
+  for (const listener of tintListeners) listener();
+}
+
 /**
  * 색면 배경 한 장의 스타일.
  *
@@ -170,8 +236,14 @@ export default function LandingPage({ data }: { data: LandingData }) {
   const gateRef = useRef<HTMLDivElement>(null);
   const gateButtonRef = useRef<HTMLButtonElement>(null);
 
-  /** 전역 테마 — 진입 시 오늘의 꽃 카테고리. 명시적 액션으로만 바뀐다(§1.4c v3.3). */
-  const [globalSlug, setGlobalSlug] = useState(data.themeSlug);
+  /**
+   * 전역 테마 — 명시적 액션으로만 바뀐다(§1.4c v3.3).
+   *
+   * 상태를 따로 들지 않는다. 세션에 고른 빛깔이 있으면 그것이고, 없으면 오늘의 꽃
+   * 카테고리다 — 값이 한 곳(`sessionStorage` + 그 캐시)에만 있으니 둘이 어긋날 자리가 없다.
+   */
+  const savedTint = useSyncExternalStore(subscribeTint, tintSnapshot, tintServerSnapshot);
+  const globalSlug = savedTint ?? data.themeSlug;
   /** 이 세션에서 이미 들어왔는가(#21). 서버·하이드레이션에서는 늘 false 다 — 위 주석 참고. */
   const entered = useSyncExternalStore(subscribeGate, gateSnapshot, gateServerSnapshot);
   const [gateReady, setGateReady] = useState(false);
@@ -613,7 +685,9 @@ export default function LandingPage({ data }: { data: LandingData }) {
                   오늘 꺼내 온 한 송이, 그리고 이어지는 이야기들
                 </h2>
                 <p className="db-today-lede" data-db-reveal>
-                  {data.todayLabel}, 오늘의 꽃은 {withParticle(today.name, 'copula')}.{' '}
+                  {/* ⚠ 여기는 `todayDateLabel`(`8월 16일`)이다. `todayLabel`(`2026.08.16`)로
+                      되돌리지 마라 — 두 줄 아래 탄생화 각주와 표기가 어긋난다. */}
+                  {data.todayDateLabel}, 오늘의 꽃은 {withParticle(today.name, 'copula')}.{' '}
                   {data.todayReason}
                 </p>
                 <p className="db-today-aside" data-db-reveal>
@@ -674,7 +748,7 @@ export default function LandingPage({ data }: { data: LandingData }) {
                           data-tint={tint.key}
                           aria-pressed={on}
                           aria-label={`${tint.label} 색감으로 보기`}
-                          onClick={() => setGlobalSlug(slug)}
+                          onClick={() => rememberTint(slug)}
                         >
                           <span className="db-tint-dot" aria-hidden="true" />
                           {tint.label}

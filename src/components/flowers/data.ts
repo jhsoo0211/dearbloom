@@ -38,7 +38,12 @@ import { categoryOf } from '@/components/landing/landing-data';
 import { storyCategoryLabel } from '@/components/stories/categories';
 import { metaNotes } from '@/components/stories/meta';
 import type { ArchiveStory } from '@/components/stories/types';
-import { birthCalendar, birthDatesLabel, birthDaysOf } from '@/lib/data/birth-flowers';
+import {
+  birthCalendar,
+  birthDatesLabel,
+  birthDaysOf,
+  birthSpeciesCount,
+} from '@/lib/data/birth-flowers';
 import type { Catalog, CatalogFlower, CatalogMeaning, CatalogStory } from '@/lib/data/types';
 import { pickStories } from '@/lib/engine';
 import { photoSrc, photoSrcSet, photosFor } from '@/lib/photos';
@@ -139,6 +144,14 @@ export function buildFlowerIndex(catalog: Catalog): FlowerIndexData {
      * 여기 실리는 것은 그 셀렉트가 마운트 시점에 필요로 하는 것뿐이다.
      */
     birthCalendar: birthCalendar(catalog.birthFlowers),
+    /**
+     * 인트로 통계의 **2단 티어 숫자**(§1.5m ⑤) — 날짜 수와 고유 이름 수 둘 다 표에서 센다.
+     *
+     * 이것 역시 366행이 아니라 **숫자 두 개**다. 사전 목록 자체는 달을 고른 사람만
+     * 서버 액션(`listBirthMonth`)으로 받아 간다.
+     */
+    birthDayCount: catalog.birthFlowers.length,
+    birthSpeciesCount: birthSpeciesCount(catalog.birthFlowers),
   };
 }
 
@@ -211,6 +224,12 @@ const SOURCE_LABELS: Record<string, string> = {
   'archive.org': 'Internet Archive',
   'www.nihhs.go.kr': '국립원예특작과학원',
   'www.nongsaro.go.kr': '농사로',
+  /**
+   * 탄생화 366일 표의 출처(조사 문서 §3 소스 B). 퓨니코드를 그대로 두면 링크 이름이
+   * `xn--oi2bpqy92ashbd12b.kr` 이 되어 어디로 가는지 아무도 읽을 수 없다
+   * (도메인 자체는 `로얄플라워.kr` 이고, 운영 주체는 한국화훼유통협회다).
+   */
+  'www.xn--oi2bpqy92ashbd12b.kr': '한국화훼유통협회 로얄플라워',
 };
 
 export function sourceLabel(url: string): string {

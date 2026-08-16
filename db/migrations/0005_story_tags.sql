@@ -59,7 +59,7 @@ alter table flower_stories
   add constraint flower_stories_intents_vocab check (
     intents is null or intents <@ array[
       'apology', 'confession', 'gratitude', 'celebration',
-      'comfort', 'anniversary', 'just_because'
+      'comfort', 'anniversary', 'just_because', 'other'
     ]::text[]
   );
 

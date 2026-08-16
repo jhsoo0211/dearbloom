@@ -602,7 +602,7 @@
   cursor: not-allowed;
 }
 .soonTag {
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1;
   padding: 4px 7px;
   border: 1px dashed var(--hair-soft);

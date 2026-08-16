@@ -86,7 +86,6 @@
 .input:focus-visible,
 .textarea:focus-visible,
 .codeInput:focus-visible,
-.textBtn:focus-visible,
 .rowOpen:focus-visible,
 /* 꽃 카드는 라디오를 `.srOnly` 로 품고 있어 **카드가 대신** 링을 받는다(FlowerChoice 머리말). */
 .flowerCard:focus-within {
@@ -582,33 +581,22 @@
    번호 칸 아래에 헤어라인 하나를 두고 낮은 목소리로 선다. 고스트 pill 을 쓰지 않는 이유는
    위계다 — 이 패널의 주인공은 번호를 들고 온 사람이고, 예시는 "궁금하면" 이다.
    대신 §1.6b 의 44px 은 지킨다(패딩으로 벌어 둔 높이 = 12+21+12 ≈ 45px). */
+/* 예시 편지 곁문 — 안내 한 줄 **위**, 고스트 필 **아래**. 한 줄에 섞으면 버튼이 다시
+   문장 부속으로 읽힌다(그래서 위계를 올린 것이다). */
 .sampleLine {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
   margin-top: 14px;
   padding-top: 14px;
   border-top: 1px solid var(--hair);
+}
+.sampleNote {
   font-size: 13.5px;
   line-height: 1.7;
   color: var(--fg-50);
 }
-.textBtn {
-  display: inline-block;
-  /* 위아래 패딩이 터치 타깃을 벌린다. 줄 사이가 벌어지지 않게 세로 여백은 음수로 되돌린다. */
-  margin: -12px 0;
-  padding: 12px 2px;
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 1.5;
-  color: var(--accent);
-  text-decoration: underline;
-  text-decoration-color: var(--accent-line);
-  text-decoration-thickness: 1px;
-  text-underline-offset: 5px;
-  transition: text-decoration-color var(--dur) var(--ease);
-}
-.textBtn:hover {
-  text-decoration-color: var(--accent);
-}
-
 /* ── 내가 만든 편지 목록 ─────────────────────────────────────────────── */
 .letterList {
   margin-top: 18px;
@@ -923,7 +911,7 @@
 
 .sheetEyebrow {
   font-family: var(--font-sans);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.22em;
   text-transform: uppercase;
@@ -1008,7 +996,7 @@
 .sheetCredit {
   margin-top: 8px;
   font-family: var(--font-sans);
-  font-size: 10.5px;
+  font-size: 12px;
   line-height: 1.6;
   color: var(--paper-mute);
 }
@@ -1046,7 +1034,7 @@
 .sheetSignFrom {
   display: block;
   font-family: var(--font-sans);
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--paper-mute);

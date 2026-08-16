@@ -94,9 +94,11 @@ create table recommendation_rules (
   rule_id            text    not null unique,      -- stable id shared with the CSV
   relationship_type  text    check (relationship_type in
                        ('lover', 'spouse', 'crush', 'friend', 'family', 'colleague')),
+  -- 'other' = 직접 쓴 마음(§1.5l, 2026-08-16). 규칙표는 other 행을 갖지 않지만(엔진이
+  -- 중립 처리) 어휘는 앱 intent 8종과 한 벌로 맞춘다.
   intent             text    check (intent in
                        ('apology', 'confession', 'gratitude', 'celebration',
-                        'comfort', 'anniversary', 'just_because')),
+                        'comfort', 'anniversary', 'just_because', 'other')),
   occasion           text,
   apology_level      int,
   aesthetic_tags     text[],
@@ -128,9 +130,10 @@ create table message_templates (
   template_id               text not null unique,
   relationship_type         text check (relationship_type in
                               ('lover', 'spouse', 'crush', 'friend', 'family', 'colleague')),
+  -- 'other' 예문 3~4행이 실제로 실린다(키 없는 폴백·정적 데모의 얼굴 — 2026-08-16).
   intent                    text not null check (intent in
                               ('apology', 'confession', 'gratitude', 'celebration',
-                               'comfort', 'anniversary', 'just_because')),
+                               'comfort', 'anniversary', 'just_because', 'other')),
   tone                      text not null
     check (tone in ('plain', 'sincere', 'romantic', 'playful')),
   length                    text check (length in ('short', 'medium')),

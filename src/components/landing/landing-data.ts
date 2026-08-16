@@ -205,8 +205,16 @@ export interface BirthFlowerLine {
 export interface LandingData {
   /** KST 기준 오늘(YYYY-MM-DD). */
   todayISO: string;
-  /** 화면 표기용 날짜 — `2026.08.15`. */
+  /** 화면 표기용 날짜 — `2026.08.15`. 히어로 캡션(`오늘의 꽃 · …`)이 쓴다. */
   todayLabel: string;
+  /**
+   * 리드 첫머리에 서는 날짜 — `8월 16일`.
+   *
+   * `todayLabel`(`2026.08.16`)과 **일부러 다르다.** 리드는 읽는 문장이고 그 두 줄 아래
+   * 탄생화 각주가 이미 `8월 16일의 탄생화는…` 이라고 말한다 — 같은 오늘을 한 문단 안에서
+   * 두 가지 표기로 부르면 서로 다른 날처럼 읽힌다. 연도가 붙은 점 표기는 캡션의 어휘다.
+   */
+  todayDateLabel: string;
   /** 오늘의 꽃을 어느 후보군에서 뽑았는지(제철/앞뒤 달/전체). */
   basis: TodayBasis;
   /**

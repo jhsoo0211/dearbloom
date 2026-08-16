@@ -25,6 +25,7 @@ import Link from 'next/link';
 import { useId, useRef, useState, useTransition } from 'react';
 
 import { lookupBirthFlower } from '@/app/flowers/actions';
+import { BIRTH_FINDER_MISS, BIRTH_SOURCE_NOTE } from './birth-copy';
 import styles from './flowers.module.css';
 import type { BirthFlowerView } from './types';
 
@@ -152,6 +153,17 @@ export default function BirthdayFinder({ calendar }: BirthdayFinderProps) {
         <div className={styles.birthPanel} role="status">
           {pending && <p className={styles.birthPending}>그날의 꽃을 찾고 있어요…</p>}
 
+          {/*
+            아직 안 물어본 상태(§1.5d). 이 칸은 카드가 들어올 자리를 미리 비워 둔 172px
+            인데, 비워만 두면 화면에 이유 없는 구멍이 하나 뚫린 것으로 읽힌다. 그래서
+            **무엇을 기다리는 자리인지** 한 줄로 말해 둔다 — 채우기 위한 문장이 아니라
+            빈칸의 뜻을 밝히는 문장이라, 카드가 들어오면 조용히 비켜난다.
+          */}
+          {/* 문구는 두 줄 위 리드("날짜를 고르면 …")와 겹치지 않게 빈칸 자체를 가리킨다(QA 지적). */}
+          {!pending && found === undefined && (
+            <p className={styles.birthHint}>고르신 날의 꽃이 여기 놓여요.</p>
+          )}
+
           {!pending && found === null && (
             <p className={styles.birthPending}>그 날짜는 아직 표에 없어요. 다시 골라주세요.</p>
           )}
@@ -177,19 +189,16 @@ export default function BirthdayFinder({ calendar }: BirthdayFinderProps) {
                   </svg>
                 </Link>
               ) : (
-                /* 309일은 도감에 없는 꽃이다. 빈손으로 돌려보내지 않고 있는 것만 정직하게 건넨다. */
-                <p className={styles.birthMiss}>
-                  도감에는 아직 없는 꽃이에요 — 이름과 꽃말만 먼저 건네요.
-                </p>
+                /* 309일은 도감에 없는 꽃이다. 빈손으로 돌려보내지 않고 있는 것만 정직하게 건넨다.
+                   문구의 원본은 `birth-copy.ts` — 사전 시트가 쓰는 티어 고지와 같은 자리에 산다. */
+                <p className={styles.birthMiss}>{BIRTH_FINDER_MISS}</p>
               )}
 
               {/*
                 계보 각주 — 이 한 줄이 워딩 대전제를 지키는 자리다(조사 문서 §2·§8).
                 지우거나 "전통적으로 정해진 탄생화" 로 바꾸지 마라.
               */}
-              <p className={styles.birthNote}>
-                널리 통하는 탄생화 표에서 가져왔어요 — 예로부터 정해진 목록은 아니에요.
-              </p>
+              <p className={styles.birthNote}>{BIRTH_SOURCE_NOTE}</p>
             </div>
           )}
         </div>

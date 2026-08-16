@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { INTENTS } from '@/lib/engine';
 import { generateRequestSchema } from '@/lib/llm/contracts';
 import type { GenerateRequest } from '@/lib/llm/contracts';
 import type { WizardSubmission } from '@/components/flow/types';
@@ -342,5 +343,69 @@ describe('submitRecommendation — §1.5l 맥락 칩은 사용자의 말을 되�
     // 칩만 다르다 — 사용자가 고른 말이 그대로 남는다.
     expect(under20.payload.contextChips).toContain('1~2만 원대');
     expect(under30.payload.contextChips).toContain('3만 원 미만');
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * 키 없는 폴백 — templates.csv 확장(2026-08-16)
+ *
+ * 이 파일의 어댑터 목은 **언제나 null 을 돌려준다**(= 키가 없는 배포와 같은 상태).
+ * 그래서 여기서 보는 멘트는 정확히 `buildTones` 가 templates.csv 에서 고른 예문이고,
+ * 정적 드롭 데모가 보여 주는 것과도 같은 값이다(데모는 애초에 LLM 을 안 부른다).
+ * ------------------------------------------------------------------ */
+
+describe('멘트 폴백 — 마음 8종의 톤 탭이 빠짐없이 찬다', () => {
+  it('어느 마음을 골라도 "아직 모으는 중" 으로 떨어지지 않는다', async () => {
+    for (const intent of INTENTS) {
+      const response = await submitRecommendation(submission({ intent }));
+      expect(response.ok, intent).toBe(true);
+      if (!response.ok) continue;
+      // 'empty' 는 그 상황의 예문이 한 줄도 없다는 뜻이다 — 이 확장이 없앤 상태다.
+      expect(response.payload.messageSource, intent).toBe('template');
+    }
+  });
+
+  it('화면에 서는 톤은 전부 본문과 `함께 담을 한 줄`을 받는다 (빈 탭 0)', async () => {
+    for (const intent of INTENTS) {
+      const response = await submitRecommendation(submission({ intent }));
+      if (!response.ok) throw new Error(`${intent}: 추천에 실패했습니다`);
+
+      const { tones } = response.payload;
+      // 사과는 유쾌 톤을 내리므로 3탭, 나머지는 4탭이 선다(§1.5).
+      expect(tones.length, intent).toBe(intent === 'apology' ? 3 : 4);
+      for (const tone of tones) {
+        expect(tone.source, `${intent}/${tone.key}`).toBe('template');
+        expect(tone.body?.trim(), `${intent}/${tone.key}`).toBeTruthy();
+        expect(tone.cardLine?.textKo.trim(), `${intent}/${tone.key}`).toBeTruthy();
+        expect(tone.emptyNote, `${intent}/${tone.key}`).toBeUndefined();
+      }
+    }
+  });
+
+  it('톤이 다르면 예문도 다르다 — 톤 탭이 같은 문장을 세 번 보여 주지 않는다', async () => {
+    for (const intent of INTENTS) {
+      const response = await submitRecommendation(submission({ intent }));
+      if (!response.ok) throw new Error(`${intent}: 추천에 실패했습니다`);
+
+      const bodies = response.payload.tones
+        .map((tone) => tone.body)
+        .filter((body): body is string => body !== undefined);
+      expect(new Set(bodies).size, intent).toBe(bodies.length);
+    }
+  });
+
+  it('사과 밖의 예문은 관계가 바뀌어도 같다 (관계 중립 행이 폴백을 맡는다)', async () => {
+    for (const intent of INTENTS) {
+      if (intent === 'apology') continue; // 사과의 담백·진지 두 행만 관계를 적어 두었다.
+      const [toFriend, toColleague] = await Promise.all([
+        submitRecommendation(submission({ intent, relationship: 'friend' })),
+        submitRecommendation(submission({ intent, relationship: 'colleague' })),
+      ]);
+      if (!toFriend.ok || !toColleague.ok) throw new Error(`${intent}: 추천에 실패했습니다`);
+
+      expect(toFriend.payload.tones.map((tone) => tone.body), intent).toEqual(
+        toColleague.payload.tones.map((tone) => tone.body),
+      );
+    }
   });
 });

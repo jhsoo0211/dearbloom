@@ -286,6 +286,10 @@
  *   · 지금 — 바 **408px(48%)**. 검색 56 + **계열 79** + 꽃말 79 + 결 127 + 편수 30.
  *     계열·꽃말 두 줄을 `.chipsScroll`(가로 스크롤 한 줄)로 담아 각각 44px 씩 아꼈다.
  *     줄바꿈에 맡겼다면 계열 127 · 꽃말 123 이라 바가 500px 을 넘었다.
+ *   · 2026-08-16 12px 하한 상향 뒤 **재실측: 408px(48%) 그대로**. 칩 안 카운터
+ *     (`.chipCount`·`.pickNum`)가 11.5 → 12px 로 커졌지만 계열·꽃말 줄은 가로 스크롤이라
+ *     폭이 늘어도 줄이 접히지 않고, 결 줄(127px = 칩 2줄)도 접힘 수가 그대로였다.
+ *     세 줄 실측 79 / 79 / 127 — 상향 전과 같은 값이다.
  * ⚠ 이 자리에 칩을 더 세우려거든 먼저 재라. 한 줄이 접힐 때마다 44px 이 붙는다.
  *   남은 큰 덩어리는 결 줄(127px = 칩 2줄)이다. 다만 결 칩은 **레인 안의 카드**를 거르는
  *   다른 축이라, 접을 때는 계열·꽃말과 헷갈리지 않는지 먼저 보라.
@@ -417,7 +421,7 @@
 /* 카운트는 여는 괄호 없이 숫자만 소형(§1.6b) */
 .chipCount {
   font-family: var(--font-sans);
-  font-size: 11.5px;
+  font-size: 12px;
   font-variant-numeric: tabular-nums;
   color: var(--fg-50);
 }
@@ -455,7 +459,7 @@
 }
 .pickNum {
   font-family: var(--font-sans);
-  font-size: 11.5px;
+  font-size: 12px;
   font-variant-numeric: tabular-nums;
   color: var(--accent);
 }
@@ -608,7 +612,7 @@
 .comboHead {
   padding: 6px 16px 4px;
   font-family: var(--font-sans);
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.14em;
   color: var(--fg-50);
@@ -1630,7 +1634,7 @@
   line-height: 1.5;
 }
 .pickerNum {
-  font-size: 11.5px;
+  font-size: 12px;
   font-variant-numeric: tabular-nums;
   color: var(--fg-50);
 }

@@ -363,15 +363,28 @@ export default async function FlowerDetailPage(props: PageProps<'/flowers/[slug]
                       {flower.pet.lines.map((line) => (
                         <span key={line}>{line}</span>
                       ))}
+                      {/*
+                        2026-08-16 · 보조 버튼으로 승격. 밑줄 한 줄이던 것을 고스트 필로
+                        세운다 — 독성 정보는 이 페이지에서 사람이 **실제로 확인하러
+                        나가는** 항목인데, 줄 링크는 §1.6 의 44px 터치 타깃을 못 채웠다.
+                        문구는 그대로고, 새 창 고지(P1-6)도 그대로다.
+                      */}
                       {flower.pet.sourceUrl && (
                         <a
-                          className={styles.sourceLink}
+                          className={styles.sourceBtn}
                           href={flower.pet.sourceUrl}
                           target="_blank"
                           rel="noreferrer"
                         >
                           안전 정보의 출처
                           <span className={styles.srOnly}> (새 창)</span>
+                          <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path
+                              d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
                         </a>
                       )}
                     </div>

@@ -30,6 +30,18 @@ export const RELATIONSHIP_TYPES = [
   'colleague',
 ] as const;
 
+/**
+ * 마음 8종. 어휘의 단일 원본은 `src/lib/engine/normalize.ts` 의 INTENTS 이고, 여기는
+ * CSV 쪽 사본이다 — 두 벌이 어긋나면 화면이 아는 값을 시드가 거부하게 된다.
+ *
+ * `other`(§1.5l "직접 쓸게요")는 규칙표에 짝이 없는 값이라 추천 점수는 중립이지만,
+ * **예문은 있어야 한다**: 마음을 `other` 로 고른 사람에게도 폴백 멘트가 나가야 하기
+ * 때문이다(templates.csv 의 tpl-other-*). rules·stories 쪽은 이 값을 쓰지 않는다.
+ *
+ * ⚠ DB CHECK 제약(0001_catalog.sql 의 recommendation_rules·message_templates,
+ *    0005_story_tags.sql 의 flower_stories_intents_vocab)은 아직 7종이다.
+ *    `npm run seed`(dry-run)는 통과하지만 `seed:apply` 전에는 제약을 넓혀야 한다.
+ */
 export const INTENTS = [
   'apology',
   'confession',
@@ -38,6 +50,7 @@ export const INTENTS = [
   'comfort',
   'anniversary',
   'just_because',
+  'other',
 ] as const;
 
 export const TONES = ['plain', 'sincere', 'romantic', 'playful'] as const;

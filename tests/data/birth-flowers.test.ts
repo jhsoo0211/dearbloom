@@ -5,7 +5,11 @@ import {
   birthDateLabel,
   birthDatesLabel,
   birthDaysOf,
+  birthDaysOfName,
   birthFlowerOn,
+  birthFlowersInMonth,
+  birthMonthLabel,
+  birthSpeciesCount,
 } from '@/lib/data/birth-flowers';
 import type { BirthFlower } from '@/lib/data/types';
 
@@ -95,7 +99,82 @@ describe('birthDaysOf (역조회)', () => {
   });
 });
 
+describe('birthDaysOfName (이름 역조회 — 사전 티어)', () => {
+  const rows = [
+    row(9, 5, { nameKo: '튤립' }),
+    row(1, 2, { nameKo: '튤립' }),
+    row(1, 2, { nameKo: '노랑수선화', flowerId: 'narcissus' }),
+    row(3, 3, { nameKo: '수선화', flowerId: 'narcissus' }),
+  ];
+
+  it('366일 중 309일에는 flowerId 가 없다 — 그때 신원은 이름이다', () => {
+    const days = birthDaysOfName(rows, '튤립');
+    expect(days.map((day) => [day.month, day.day])).toEqual([
+      [1, 2],
+      [9, 5],
+    ]);
+  });
+
+  it('이름이 다르면 다른 항목이다 — flowerId 가 같아도 묶지 않는다', () => {
+    // `노랑수선화` 와 `수선화` 는 둘 다 narcissus 로 이어지지만, 사전은 **표가 부른 이름**을
+    // 항목으로 삼는다. 여기서 묶어 버리면 표에 없는 이름이 화면에 생긴다.
+    expect(birthDaysOfName(rows, '노랑수선화')).toHaveLength(1);
+    expect(birthDaysOfName(rows, '수선화')).toHaveLength(1);
+  });
+
+  it('빈 이름은 표 전체를 긁어오지 않는다', () => {
+    expect(birthDaysOfName(rows, '')).toEqual([]);
+  });
+
+  it('원본 배열을 뒤집어 놓지 않는다', () => {
+    const before = rows.map((item) => `${item.month}-${item.day}`);
+    birthDaysOfName(rows, '튤립');
+    expect(rows.map((item) => `${item.month}-${item.day}`)).toEqual(before);
+  });
+});
+
+describe('birthFlowersInMonth (사전이 한 번에 펼치는 단위)', () => {
+  const rows = [row(2, 29), row(1, 5), row(2, 1), row(1, 31), row(2, 14)];
+
+  it('그 달만 일 순으로 세운다', () => {
+    expect(birthFlowersInMonth(rows, 2).map((item) => item.day)).toEqual([1, 14, 29]);
+  });
+
+  it('범위 밖이거나 표에 없는 달은 빈 배열 — 화면이 목록을 세우지 않는다', () => {
+    expect(birthFlowersInMonth(rows, 0)).toEqual([]);
+    expect(birthFlowersInMonth(rows, 13)).toEqual([]);
+    expect(birthFlowersInMonth(rows, 7)).toEqual([]);
+  });
+
+  it('정수가 아닌 입력은 조용히 빈 배열 — 서버 액션 인자가 네트워크에서 온다', () => {
+    expect(birthFlowersInMonth(rows, Number.NaN)).toEqual([]);
+    expect(birthFlowersInMonth(rows, 2.5)).toEqual([]);
+  });
+
+  it('원본 배열을 뒤집어 놓지 않는다', () => {
+    const before = rows.map((item) => `${item.month}-${item.day}`);
+    birthFlowersInMonth(rows, 2);
+    expect(rows.map((item) => `${item.month}-${item.day}`)).toEqual(before);
+  });
+});
+
+describe('birthSpeciesCount', () => {
+  it('같은 이름이 여러 날에 걸려도 한 번만 센다', () => {
+    const rows = [row(1, 2, { nameKo: '튤립' }), row(9, 5, { nameKo: '튤립' }), row(3, 3)];
+    expect(birthSpeciesCount(rows)).toBe(2);
+  });
+
+  it('빈 표는 0 이다', () => {
+    expect(birthSpeciesCount([])).toBe(0);
+  });
+});
+
 describe('날짜 표기', () => {
+  it('birthMonthLabel 은 `3월`', () => {
+    expect(birthMonthLabel(3)).toBe('3월');
+    expect(birthMonthLabel(12)).toBe('12월');
+  });
+
   it('birthDateLabel 은 `3월 21일`', () => {
     expect(birthDateLabel(3, 21)).toBe('3월 21일');
     expect(birthDateLabel(10, 9)).toBe('10월 9일');

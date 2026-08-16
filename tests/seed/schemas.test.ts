@@ -10,6 +10,7 @@ import {
   QuoteRowSchema,
   RuleRowSchema,
   StoryRowSchema,
+  INTENTS,
   SEED_FILE_KEYS,
   SEED_FILE_NAMES,
   SEED_SCHEMAS,
@@ -95,7 +96,8 @@ describe('content/*.csv 실제 데이터', () => {
     expect(dataset.meanings.length).toBeGreaterThanOrEqual(20);
     expect(dataset.stories.length).toBeGreaterThanOrEqual(55);
     expect(dataset.rules.length).toBeGreaterThanOrEqual(6);
-    expect(dataset.templates).toHaveLength(3);
+    // 사과 3톤(유쾌 제외) + 나머지 7마음 × 4톤. 아래 커버리지 테스트가 그 격자를 지킨다.
+    expect(dataset.templates).toHaveLength(31);
     // 편집팀 자작 3행 + §1.5k 문학 발췌 74행(한국·동아시아 43행 + 외국 문학 확장 31행).
     expect(dataset.quotes).toHaveLength(77);
   });
@@ -143,6 +145,80 @@ describe('content/*.csv 실제 데이터', () => {
     expect(foreign.length).toBeGreaterThan(0);
     for (const row of foreign) {
       expect(row.value.translator).toBe('dearbloom');
+    }
+  });
+
+  /*
+   * 예문 격자 — **키 없는 폴백과 정적 데모의 얼굴이다.**
+   *
+   * LLM 키가 없으면(그리고 정적 드롭 데모에서는 언제나) 결과 화면의 멘트는 전부
+   * templates.csv 에서 온다. 한 칸이라도 비면 그 마음을 고른 사람은 그 톤 탭에서
+   * "이 톤의 예문은 아직 모으는 중이에요" 만 보게 되므로, 격자를 여기서 못 박는다.
+   *
+   * 사과만 3칸인 것은 데이터의 결손이 아니라 **화면의 규칙**이다: `buildTones` 가
+   * 사과에서 유쾌 톤을 내린다(§1.5 — "사과 상황에서는 유쾌 톤을 잠시 꺼두었어요").
+   * 그 자리에 행을 만들어 두면 어디에도 안 나가는 죽은 데이터가 된다.
+   */
+  const TONE_KEYS = ['plain', 'romantic', 'sincere', 'playful'] as const;
+
+  /** 그 마음이 화면에 세우는 톤 = 그 마음이 가져야 하는 예문. */
+  function expectedTones(intent: string): readonly string[] {
+    return intent === 'apology' ? TONE_KEYS.filter((tone) => tone !== 'playful') : TONE_KEYS;
+  }
+
+  it('마음 8종 × 화면에 서는 톤 격자가 빠짐없이 찬다 (사과는 유쾌 제외)', () => {
+    const { dataset } = loadDataset();
+    const filled = new Set(dataset.templates.map((row) => `${row.value.intent}/${row.value.tone}`));
+    for (const intent of INTENTS) {
+      for (const tone of expectedTones(intent)) {
+        expect(filled, `${intent}/${tone}`).toContain(`${intent}/${tone}`);
+      }
+    }
+    // 격자 밖의 행(= 화면에 나갈 길이 없는 행)이 생기면 여기서 걸린다.
+    const expected = INTENTS.reduce((sum, intent) => sum + expectedTones(intent).length, 0);
+    expect(filled.size).toBe(expected);
+  });
+
+  it('사과에는 유쾌 톤 예문을 두지 않는다 (화면이 내리는 톤이라 죽은 데이터가 된다)', () => {
+    const { dataset } = loadDataset();
+    const playful = dataset.templates.filter(
+      (row) => row.value.intent === 'apology' && row.value.tone === 'playful',
+    );
+    expect(playful).toEqual([]);
+  });
+
+  it('§1.5l `직접 쓸게요`(other)도 네 톤을 모두 갖는다', () => {
+    const { dataset } = loadDataset();
+    const rows = dataset.templates.filter((row) => row.value.intent === 'other');
+    expect(rows).toHaveLength(4);
+    for (const row of rows) expect(row.value.template_text.trim()).not.toBe('');
+  });
+
+  it('관계를 적어 둔 예문은 기존 사과 2행뿐이다 (나머지는 관계 중립)', () => {
+    const { dataset } = loadDataset();
+    // 관계를 적으면 `buildTones` 가 그 관계의 사람에게만 골라 준다. 관계 없는 행이 모든
+    // 관계의 폴백이 되는 자리이므로, 확장분은 어느 사이에게도 그대로 건넬 수 있어야 한다.
+    const withRelationship = dataset.templates
+      .filter((row) => row.value.relationship_type !== undefined)
+      .map((row) => row.value.template_id);
+    expect(withRelationship).toEqual(['tpl-apology-plain', 'tpl-apology-sincere']);
+  });
+
+  it('예문은 꽃·가격을 말하지 않는다 (3안 어디에 붙어도 성립해야 한다)', () => {
+    const { dataset } = loadDataset();
+    // 예문은 3안(서로 다른 꽃) 아래에 그대로 붙는다. 특정 꽃이나 값을 적으면 나머지 두
+    // 안에서 거짓말이 되고, 가격 언급은 §1.5i 금지선(가격 ∝ 마음)에도 걸린다.
+    for (const row of dataset.templates) {
+      expect(row.value.template_text, row.value.template_id).not.toMatch(
+        /꽃|송이|다발|가격|원어치|만 원/,
+      );
+    }
+  });
+
+  it('예문은 이름 자리표시 없이 그대로 복사할 수 있다', () => {
+    const { dataset } = loadDataset();
+    for (const row of dataset.templates) {
+      expect(row.value.template_text, row.value.template_id).not.toMatch(/[{}[\]]|OO|XX|○○/);
     }
   });
 

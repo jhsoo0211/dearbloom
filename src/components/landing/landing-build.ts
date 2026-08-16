@@ -481,9 +481,13 @@ export function buildLandingData(catalog: Catalog, todayISO: string): LandingDat
     ]),
   ];
 
+  const [, todayMonth, todayDay] = todayISO.split('-');
+
   return {
     todayISO,
     todayLabel: todayISO.replaceAll('-', '.'),
+    // 탄생화 각주와 **같은 함수**로 만든다 — 두 줄이 같은 오늘을 같은 말로 불러야 한다.
+    todayDateLabel: birthDateLabel(Number(todayMonth), Number(todayDay)),
     basis: picked.basis,
     todayReason,
     category: today.category,

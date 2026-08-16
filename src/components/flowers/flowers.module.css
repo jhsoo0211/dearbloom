@@ -97,6 +97,7 @@
 .back:focus-visible,
 .storySum:focus-visible,
 .petSum:focus-visible,
+.sourceBtn:focus-visible,
 .sourceLink:focus-visible {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
@@ -242,7 +243,6 @@
   font-size: 13.5px;
   color: var(--fg-50);
 }
-
 /* ═══ /flowers — 검색 ═════════════════════════════════════════════════ */
 .board {
   padding-bottom: clamp(40px, 7vw, 78px);
@@ -448,6 +448,13 @@
   font-size: 14px;
   color: var(--fg-50);
 }
+/* 고르기 전 안내. `.birthPending` 과 같은 옷이되 이름을 나눠 둔다 — 하나는 "기다리는 중",
+   다른 하나는 "아직 시작 안 함"이라 나중에 갈릴 수 있는 자리다. */
+.birthHint {
+  padding-top: 8px;
+  font-size: 14px;
+  color: var(--fg-50);
+}
 .birthCard {
   max-width: 46ch;
   padding: 18px 20px;
@@ -456,7 +463,7 @@
   background: var(--surface);
 }
 .birthDate {
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.14em;
   color: var(--fg-50);
@@ -520,6 +527,421 @@
 }
 /* 계보 각주 — 지우지 마라(조사 문서 §2·§8). §1.6b 캡션 하한 12px. */
 .birthNote {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--hair);
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--fg-50);
+}
+
+/* ═══ /flowers — 탄생화 사전 (§1.5m ⑤ 2단 티어) ═══════════════════════
+   생일 찾기 **아래**, 하단 CTA **위**. 366일 표를 달 단위로 훑는 구획이다.
+
+   이 블록이 지켜야 하는 것은 하나다 — **두 티어가 눈으로 구별될 것.**
+     · 정식 도감으로 이어지는 줄  = 실사 썸네일 + 액센트 표시(`.dictMarkOn`)
+     · 사전에만 있는 줄            = **빈 액자**(`.dictThumbEmpty`) + 흐린 표시
+   사진 없는 줄에 아이콘이나 색면을 채워 넣지 마라. 빈 자리가 곧 "아직 없다"는 말이고,
+   채우는 순간 두 티어가 같은 무게로 보인다.
+
+   ⚠ 문구 대전제(`docs/birth-flowers-research.md` §2·§8)는 생일 찾기와 같다.
+   ═════════════════════════════════════════════════════════════════════ */
+.dict {
+  padding: clamp(30px, 5vw, 52px) 0;
+  border-top: 1px solid var(--hair);
+}
+/* 구획 머리 오른쪽의 규모 한 줄(`366일 · 303가지 이름`). §1.6b 캡션 하한 12px. */
+.dictCount {
+  font-size: 12.5px;
+  letter-spacing: 0.04em;
+  color: var(--fg-50);
+}
+.dictLead {
+  margin-top: 10px;
+  max-width: 62ch;
+  font-size: 14.5px;
+  color: var(--fg-50);
+}
+/**
+ * 2단 티어 각주(§1.5m ⑤) — 인트로 통계의 두 숫자를 설명하는 한 문단.
+ *
+ * 면(카드·배경)을 주지 않는다. 주면 "안내 박스"가 되는데, 이 문단이 하는 일은 **숫자를
+ * 설명하는 것**이지 그 자체로 읽히는 것이 아니다(랜딩 탄생화 각주와 같은 판단 — §1.5m ②).
+ *
+ * ⚠ **인트로로 되돌리지 마라**(CLS 0 규율, 2026-08-16 실측). 인트로는 `<main>` 위라
+ *   웹폰트 교체로 이 문단의 줄 수가 바뀌면 아래 화면 전체가 밀린다 — 실제로 1280px 에서
+ *   CLS 가 0.005 → 0.17 로 뛰었다. 여기서는 같은 재배치가 첫 화면 밖에서 일어난다.
+ */
+.dictTierNote {
+  margin-top: 10px;
+  max-width: 68ch;
+  font-size: 13px;
+  line-height: 1.75;
+  color: var(--fg-50);
+}
+
+/**
+ * 달 칩 12개 — §1.6b 칩 규격 그대로다(pill · h44 고정 · 1px 보더).
+ * 선택 표현은 **채움 하나뿐**이다(밑줄·점 금지). 390px 에서 세 줄로 접힌다.
+ */
+.dictMonths {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 18px;
+}
+.dictMonth {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 44px;
+  min-width: 60px;
+  padding: 0 15px;
+  border-radius: 9999px;
+  border: 1px solid var(--hair-2);
+  font-size: 14px;
+  color: var(--fg-70);
+  transition:
+    border-color var(--dur) var(--ease),
+    background-color var(--dur) var(--ease),
+    color var(--dur) var(--ease);
+}
+.dictMonth:hover {
+  background: var(--ctrl-hover);
+  color: var(--fg);
+}
+.dictMonth:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.dictMonth[aria-pressed='true'] {
+  background: var(--ctrl-on);
+  border-color: var(--ctrl-on);
+  color: var(--ctrl-on-fg);
+}
+
+/**
+ * 결과 자리. 비어 있어도 높이를 갖는다 — 자리 문구 → "펼치는 중" → 목록으로 바뀔 때
+ * 아래 CTA 가 밀리면 그것이 곧 레이아웃 이동이다(생일 찾기 `.birthPanel` 과 같은 처리).
+ * 목록이 서면 그보다 훨씬 길어지지만, 그 변화는 **사람이 달을 누른 결과**다.
+ */
+.dictPanel {
+  min-height: 96px;
+  margin-top: 16px;
+}
+/**
+ * 상태 한 줄 — 자리 문구 · "펼치는 중" · 실패 · 그달의 규모가 **한 자리**를 나눠 쓴다.
+ * 줄이 늘 하나라 자리 높이가 흔들리지 않고, 낭독기에 들리는 것도 이 줄뿐이다
+ * (목록까지 live region 에 넣으면 달을 고를 때마다 서른한 줄이 통째로 읽힌다).
+ */
+.dictStatus {
+  padding-top: 6px;
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: var(--fg-50);
+}
+
+/**
+ * 31줄을 한 칼럼에 세우면 2,000px 이 넘는다 — 검색 결과(`.results`)와 **같은 분기**로
+ * 접는다(720/1040). 같은 화면에서 목록이 두 가지 방식으로 접히면 그것부터 읽힌다.
+ */
+.dictList {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  margin-top: 12px;
+}
+@media (min-width: 720px) {
+  .dictList {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (min-width: 1040px) {
+  .dictList {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/**
+ * 한 줄 = 날짜 · 썸네일 · 이름/꽃말 · 티어 표시.
+ * 링크(도감)와 버튼(사전 시트)이 같은 클래스를 쓴다 — 겉모습은 같고 **역할만** 갈린다
+ * (스크린리더에는 "링크" / "버튼" 으로 다르게 들린다).
+ */
+.dictRow {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  min-height: 62px;
+  padding: 9px 12px;
+  border: 1px solid var(--hair);
+  border-radius: 14px;
+  background: var(--surface);
+  text-align: left;
+  text-decoration: none;
+  transition:
+    border-color var(--dur) var(--ease),
+    background-color var(--dur) var(--ease);
+}
+.dictRow:hover {
+  border-color: var(--hair-2);
+  background: var(--surface-2);
+}
+.dictRow:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+/* 날짜 — 폭을 고정해 줄마다 이름이 같은 자리에서 시작하게 한다(tabular-nums 로 1↔31 흔들림 제거). */
+.dictDay {
+  flex: none;
+  width: 2.2em;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+  text-align: right;
+  color: var(--fg-50);
+}
+.dictThumb {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  object-fit: cover;
+  /* 폭·높이 속성과 짝이다 — 사진이 늦게 와도 줄이 뛰지 않는다(CLS 0). */
+  background: var(--surface-2);
+}
+/**
+ * 사진이 없는 꽃의 **빈 액자**. 아이콘도 색면도 넣지 않는다 —
+ * 이 빈자리가 "아직 도감에 들이지 못했다"는 말을 목록 차원에서 대신한다.
+ */
+.dictThumbEmpty {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  border: 1px dashed var(--hair-2);
+}
+.dictText {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.dictName {
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--fg);
+  overflow-wrap: anywhere;
+}
+.dictMeaning {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--fg-50);
+  overflow-wrap: anywhere;
+}
+/* 티어 표시 — 칩이 아니다(눌리지 않는 라벨에 보더+필 금지, §1.6b). */
+.dictMark,
+.dictMarkOn {
+  flex: none;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+}
+.dictMark {
+  color: var(--fg-50);
+}
+.dictMarkOn {
+  color: var(--accent);
+}
+
+/* ── 사전 시트 (라이트 상세) ─────────────────────────────────────────
+   `/stories` 의 `StorySheet` 와 **같은 규격**이다(모바일 바텀 시트 → 768px↑ 가운데 카드).
+   코드를 끌어다 쓰지 않고 규격만 지켜 여기서 세운 이유도 그쪽과 같다 — 내용물이 다르다.
+   ───────────────────────────────────────────────────────────────── */
+.dictSheetRoot {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.dictScrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.66);
+  animation: dbDictFade 200ms var(--ease);
+}
+.dictSheet {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 520px;
+  max-height: 88svh;
+  padding-bottom: env(safe-area-inset-bottom);
+  border-radius: 22px 22px 0 0;
+  border-top: 1px solid var(--hair);
+  background: var(--bg-2);
+  box-shadow: 0 -24px 60px rgba(0, 0, 0, 0.45);
+  animation: dbDictUp 240ms var(--ease);
+}
+@keyframes dbDictFade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes dbDictUp {
+  from {
+    transform: translateY(16px);
+    opacity: 0;
+  }
+}
+@media (min-width: 768px) {
+  .dictSheetRoot {
+    align-items: center;
+    padding: 24px;
+  }
+  .dictSheet {
+    max-height: 84svh;
+    border-radius: 20px;
+    border: 1px solid var(--hair);
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55);
+  }
+  .dictGrip {
+    display: none;
+  }
+}
+.dictGrip {
+  width: 40px;
+  height: 4px;
+  margin: 10px auto 0;
+  border-radius: 9999px;
+  background: var(--hair-2);
+}
+.dictSheetHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 22px 6px;
+}
+.dictSheetDate {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: var(--accent);
+}
+/* §1.6b 아이콘 버튼 — 원형 44×44 · 1px 보더 · 스트로크 1.6. */
+.dictClose {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin-left: auto;
+  border-radius: 9999px;
+  border: 1px solid var(--hair);
+  color: var(--fg-70);
+  transition:
+    border-color var(--dur) var(--ease),
+    background-color var(--dur) var(--ease),
+    color var(--dur) var(--ease);
+}
+.dictClose:hover {
+  border-color: var(--hair-2);
+  background: var(--ctrl-hover);
+  color: var(--fg);
+}
+.dictClose:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.dictClose svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+}
+.dictSheetBody {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 6px 22px 26px;
+}
+.dictSheetName {
+  font-family: var(--font-serif);
+  font-size: clamp(24px, 4.4vw, 30px);
+  line-height: 1.3;
+  color: var(--fg);
+}
+.dictSheetName:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+.dictSheetLatin {
+  margin-top: 4px;
+  font-size: 12.5px;
+  letter-spacing: 0.04em;
+  color: var(--fg-50);
+}
+.dictSheetMeaning {
+  margin-top: 14px;
+  font-size: 15.5px;
+  line-height: 1.8;
+  color: var(--fg-70);
+}
+.dictSheetDays {
+  margin-top: 12px;
+  font-size: 13.5px;
+  line-height: 1.75;
+  color: var(--fg-50);
+}
+.dictSheetDaysHead {
+  margin-right: 6px;
+  color: var(--fg-70);
+}
+/**
+ * 티어 고지 — 이 블록이 사전과 정식 도감을 가르는 자리다.
+ * 헤어라인 대신 **면**을 준 유일한 곳인 이유: 여기만은 건너뛰어 읽히면 안 된다
+ * (둘째 줄이 반려동물 안전성 미확인을 말한다 — §1.5h 안전은 직설).
+ */
+.dictSheetTier {
+  margin-top: 18px;
+  padding: 13px 15px;
+  border: 1px solid var(--hair);
+  border-radius: 13px;
+  background: var(--surface);
+}
+.dictSheetTierLine {
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: var(--fg-70);
+}
+.dictSheetTierSub {
+  margin-top: 5px;
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--fg-50);
+}
+.dictSheetSource {
+  margin-top: 16px;
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--fg-50);
+}
+.dictSourceLink {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.dictSourceLink:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+/* 계보 각주 — 지우지 마라(조사 문서 §2·§8). §1.6b 캡션 하한 12px. */
+.dictSheetNote {
   margin-top: 12px;
   padding-top: 10px;
   border-top: 1px solid var(--hair);
@@ -618,7 +1040,7 @@
   gap: 8px;
 }
 .cardCat {
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.1em;
   color: var(--fg-50);
@@ -904,20 +1326,42 @@
   height: 44px;
   padding: 0;
 }
+/**
+ * 안 고른 점의 농도.
+ *
+ * ⚠ 34% 로 두지 마라. 점은 **글자가 아니라 컨트롤**이라 §1.6 의 비텍스트 하한 3:1 이
+ *   걸리는데, 34% 는 전경 8% 트랙 위에서 1.96~2.49:1 이었다(2026-08-16 QA 실측 ·
+ *   5개 테마 전수: 상아빛 1.96 / 나머지 2.47~2.49). 트랙 자체가 전경을 8% 머금은
+ *   면이라, 그 위에 얹는 점은 배경 대비 이득이 없다.
+ *
+ * 55% 는 그 하한을 다섯 테마 모두에서 넘기는 가장 낮은 값이다 — 50% 는 상아빛에서
+ * 2.99:1 로 소수점에 걸린다(계산치). 더 올리면 "안 고른 것"이 고른 것처럼 진해진다.
+ */
 .shotDot span {
   width: 8px;
   height: 8px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--fg) 34%, transparent);
+  background: color-mix(in srgb, var(--fg) 55%, transparent);
   transition:
     background-color var(--dur) var(--ease),
     transform var(--dur) var(--ease);
 }
+/* 기본이 55% 로 올라간 만큼 호버도 함께 올린다 — 60% 로 두면 5%p 차이라 손을 얹어도
+   아무 일도 일어나지 않는 것처럼 보인다(호버는 눈에 보여야 호버다). */
 .shotDot:hover span {
-  background: color-mix(in srgb, var(--fg) 60%, transparent);
+  background: color-mix(in srgb, var(--fg) 82%, transparent);
 }
+/**
+ * 고른 점은 `--accent`(골드)다 — `--ctrl-on`(CTA 짝)이 아니라.
+ *
+ * ⚠ 되돌리지 마라. `--cta-bg` 는 금·와인·보라 테마에서 트랙 대비 1.49~2.58:1 로,
+ *   비활성(55% → 4.22:1)을 올린 순간 **안 고른 점이 고른 점보다 진해지는 반전**이
+ *   일어났다(2026-08-16 QA 실측). 점은 텍스트를 얹는 배경이 아니라 8px 마커라
+ *   §1.4 의 "골드 배경 위 텍스트 금지" 와 무관하고, 골드는 다크 5테마 트랙 위에서
+ *   전부 3:1 을 넘긴다.
+ */
 .shotDotOn span {
-  background: var(--ctrl-on);
+  background: var(--accent);
 }
 .shotDot:focus-visible {
   outline: 2px solid var(--focus);
@@ -1040,7 +1484,7 @@
 }
 .plateCredit {
   margin-top: 10px;
-  font-size: 11.5px;
+  font-size: 12px;
   line-height: 1.6;
   letter-spacing: 0.01em;
   color: var(--fg-50);
@@ -1061,7 +1505,7 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -1195,6 +1639,54 @@
   color: var(--accent);
   text-decoration: underline;
   text-underline-offset: 3px;
+}
+
+/**
+ * 출처로 나가는 **보조 버튼**(고스트 필 h44).
+ *
+ * `.sourceLink`(문장 끝에 붙는 밑줄 링크)와 나누어 둔 이유: 꽃말 출처는 그 꽃말 문장의
+ * 꼬리라 본문 흐름에 있어야 맞지만, **안전 정보 출처는 다르다.** 반려동물 독성은 이
+ * 페이지에서 사람이 실제로 확인하러 나가는 유일한 항목이고, 밑줄 한 줄(312×21)로는
+ * §1.6 의 44px 터치 타깃을 세로로 절반도 못 채웠다(2026-08-16 QA 실측).
+ *
+ * ⚠ 주 CTA(`.btn`)로 올리지 마라 — 이 페이지의 주 행동은 도감을 읽는 것이고, 출처는
+ *   그것을 뒷받침하러 잠깐 나갔다 오는 곁문이다. 고스트가 그 위계다.
+ */
+.sourceBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* `.petLines` 가 세로 플렉스라 그냥 두면 칸 너비만큼 늘어난다 — 글자만큼만 차지한다. */
+  align-self: flex-start;
+  gap: 7px;
+  min-height: 44px;
+  margin-top: 8px;
+  padding: 0 16px;
+  border-radius: 9999px;
+  border: 1px solid var(--ghost-line);
+  background: transparent;
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1;
+  text-decoration: none;
+  color: var(--fg-70);
+  transition:
+    border-color var(--dur) var(--ease),
+    background-color var(--dur) var(--ease),
+    color var(--dur) var(--ease);
+}
+.sourceBtn:hover {
+  border-color: var(--accent-line);
+  background: var(--surface-2);
+  color: var(--fg);
+}
+.sourceBtn svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
 }
 
 /* ── ③ 이야기 전체 ───────────────────────────────────────────────────── */
@@ -1382,7 +1874,7 @@
   background: var(--surface);
 }
 .noteLabel {
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.12em;
   color: var(--fg-50);
@@ -1539,7 +2031,7 @@
 }
 .footPlate {
   margin-top: 14px;
-  font-size: 11.5px;
+  font-size: 12px;
   line-height: 1.7;
   color: var(--fg-50);
 }

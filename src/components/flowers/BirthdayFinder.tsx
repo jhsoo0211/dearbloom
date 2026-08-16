@@ -25,6 +25,7 @@ import Link from 'next/link';
 import { useId, useRef, useState, useTransition } from 'react';
 
 import { lookupBirthFlower } from '@/app/flowers/actions';
+import BirthPhotoCredit from './BirthPhotoCredit';
 import { BIRTH_FINDER_MISS, BIRTH_SOURCE_NOTE } from './birth-copy';
 import styles from './flowers.module.css';
 import type { BirthFlowerView } from './types';
@@ -170,16 +171,50 @@ export default function BirthdayFinder({ calendar }: BirthdayFinderProps) {
 
           {!pending && found && (
             <div className={styles.birthCard}>
-              <p className={styles.birthDate}>{found.dateLabel}</p>
-              <p className={styles.birthName}>{found.nameKo}</p>
-              {(found.nameEn || found.scientificName) && (
-                <p className={styles.birthLatin}>
-                  {[found.nameEn, found.scientificName].filter(Boolean).join(' · ')}
-                </p>
-              )}
+              {/*
+                사진은 **글 왼쪽에 작게** 선다(88px 썸네일). 카드를 덮는 히어로로 키우지 않는
+                이유는 두 가지다: 이 카드는 결과 한 장이라 사진이 커지면 아래 CTA 가 화면
+                밖으로 밀리고, 366일 중 92일에는 사진이 없어 그 날들만 카드 높이가 반토막
+                난다. 작게 두면 있는 날과 없는 날의 차이가 한 칸으로 끝난다.
+                사진 위에 글자를 얹지 않는다 — 크레딧은 아래 디스클로저가 단다.
+              */}
+              <div className={styles.birthCardTop}>
+                {found.photo ? (
+                  /* eslint-disable-next-line @next/next/no-img-element -- 자체 호스팅 정적 파일(`public/birth`). `next/image` 최적화 엔드포인트는 정적 데모(output:'export')에서 서지 않는다. */
+                  <img
+                    className={styles.birthPhoto}
+                    src={found.photo.thumbSrc}
+                    /* 이름이 바로 옆에 있다 — 사진이 이름을 한 번 더 읽으면 카드가 두 번 낭독된다. */
+                    alt=""
+                    width={88}
+                    height={88}
+                    loading="lazy"
+                    decoding="async"
+                    data-testid="birth-finder-photo"
+                  />
+                ) : null}
+
+                <div className={styles.birthCardText}>
+                  <p className={styles.birthDate}>{found.dateLabel}</p>
+                  <p className={styles.birthName}>{found.nameKo}</p>
+                  {(found.nameEn || found.scientificName) && (
+                    <p className={styles.birthLatin}>
+                      {[found.nameEn, found.scientificName].filter(Boolean).join(' · ')}
+                    </p>
+                  )}
+                </div>
+              </div>
+
               <p className={styles.birthMeaning}>
                 꽃말은 ‘{found.meaning}’{found.meaningCopula}.
               </p>
+
+              {/*
+                크레딧 — 사진을 거는 자리는 언제나 이 조각을 함께 세운다.
+                이 카드는 시트가 아니라 **그 자리에서 끝나는 화면**이라, 여기서 달지 않으면
+                CC BY-SA 사본을 출처 없이 거는 셈이 된다(§B 라이선스 의무).
+              */}
+              {found.photo ? <BirthPhotoCredit photo={found.photo} /> : null}
 
               {found.link ? (
                 <Link className={styles.birthLink} href={found.link.href}>

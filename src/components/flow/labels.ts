@@ -543,10 +543,19 @@ export function toxicPartLabel(part: string): string {
  */
 const REGION_PHRASES: Record<string, string> = {
   'near-east': '근동',
+  'middle-east': '중동',
   'south-africa': '남아프리카',
   'north-america': '북아메리카',
   'southeast-asia': '동남아시아',
   'central-asia': '중앙아시아',
+  'east-asia': '동아시아',
+  /* 두 표기가 같은 섬을 가리킨다 — 조사 배치가 달라 slug 가 갈렸다. 화면에서는 한 이름이다. */
+  'saint-helena': '세인트헬레나',
+  'st-helena': '세인트헬레나',
+  'northern-ireland': '북아일랜드',
+  'sapmi-norway': '사프미·노르웨이',
+  'saudi-arabia': '사우디아라비아',
+  'mughal-india': '무굴 인도',
 };
 
 const REGION_WORDS: Record<string, string> = {
@@ -591,9 +600,57 @@ const REGION_WORDS: Record<string, string> = {
   india: '인도',
   philippines: '필리핀',
   indonesia: '인도네시아',
+  /* ── 2026-08-16 확장 (탄생화 이야기 416편 + 기존 표에서 새던 낱말들) ────
+     탄생화 이야기가 82가지 문화권을 들고 왔고, 그중 37가지가 영문 slug 그대로 화면에
+     새고 있었다. 같은 김에 `stories.csv`·`meanings.csv` 가 예전부터 흘리던 낱말도 함께
+     메운다 — 사전이 한 벌뿐이라 어느 표에서 왔든 같은 자리에서 고쳐진다.
+     ⚠ 없는 낱말은 slug 를 그대로 보여 준다(위 폴백). 그건 "깨지지 않는다"는 뜻이지
+       "괜찮다"는 뜻이 아니다 — 표를 늘리면 여기도 함께 늘려라. */
+  britain: '영국',
+  ireland: '아일랜드',
+  wales: '웨일스',
+  switzerland: '스위스',
+  austria: '오스트리아',
+  denmark: '덴마크',
+  sweden: '스웨덴',
+  norway: '노르웨이',
+  finland: '핀란드',
+  poland: '폴란드',
+  hungary: '헝가리',
+  croatia: '크로아티아',
+  serbia: '세르비아',
+  estonia: '에스토니아',
+  latvia: '라트비아',
+  georgia: '조지아',
+  sicily: '시칠리아',
+  anatolia: '아나톨리아',
+  byzantium: '비잔티움',
+  gaul: '갈리아',
+  caucasus: '캅카스',
+  eurasia: '유라시아',
+  alps: '알프스',
+  levant: '레반트',
+  arab: '아랍',
+  arabia: '아라비아',
+  kazakhstan: '카자흐스탄',
+  thailand: '태국',
+  vietnam: '베트남',
+  australia: '오스트레일리아',
+  peru: '페루',
+  chile: '칠레',
+  brazil: '브라질',
+  colombia: '콜롬비아',
+  ecuador: '에콰도르',
+  andes: '안데스',
+  ethiopia: '에티오피아',
+  tanzania: '탄자니아',
+  rwanda: '르완다',
   // 나라가 아닌 값도 데이터에 들어온다 — 꽃말이 어디서 온 말인지를 가리키는 자리다.
   commonwealth: '영연방',
   aztec: '아스텍',
+  navajo: '나바호',
+  ainu: '아이누',
+  norse: '노르드',
   victorian: '빅토리아 영국',
   etymology: '어원',
 };
@@ -645,6 +702,10 @@ const ERA_WORDS: Record<string, string> = {
   victorian: '빅토리아 시대',
   ottoman: '오스만 시대',
   edo: '에도 시대',
+  meiji: '메이지 시대',
+  joseon: '조선',
+  goryeo: '고려',
+  prehistoric: '선사 시대',
   traditional: '전통 시대',
   modern: '오늘날',
   tang: '당나라',
@@ -674,6 +735,13 @@ export function eraLabel(era?: string): string | undefined {
       if (mark) return marks[Number(mark[1])];
       const century = /^(\d{1,2})c$/.exec(token);
       if (century) return `${century[1]}세기`;
+      /*
+       * 연대 표기(`1950s` · `2010s`). 이 갈래가 없어서 **24가지 값이 통째로 감춰지고**
+       * 있었다(`1780s` 부터 `2010s` 까지 — 근현대 이야기의 시대가 전부 여기 걸린다).
+       * `19c` 를 `19세기` 로 옮기는 규칙과 같은 성격이라 사전이 아니라 패턴으로 둔다.
+       */
+      const decade = /^(\d{4})s$/.exec(token);
+      if (decade) return `${decade[1]}년대`;
       return ERA_WORDS[token];
     });
 

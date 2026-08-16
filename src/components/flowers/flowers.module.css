@@ -462,6 +462,31 @@
   border-radius: 16px;
   background: var(--surface);
 }
+/**
+ * 사진 + 글 머리. 사진이 없는 날(92일)에는 `<img>` 자체가 서지 않고 flex 가 글을 그대로
+ * 왼쪽에 붙인다 — 빈 자리를 남기지 않으려고 자리표를 만들지 않는다.
+ */
+.birthCardTop {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+.birthCardText {
+  flex: 1;
+  min-width: 0;
+}
+/**
+ * 결과 카드의 사진 — 320px 사본을 88px 로 건다(3배 DPR 까지 덮는다).
+ * `width`/`height` 속성과 짝이라 사진이 늦게 와도 카드가 뛰지 않는다(CLS 0).
+ */
+.birthPhoto {
+  flex: none;
+  width: 88px;
+  height: 88px;
+  border-radius: 12px;
+  object-fit: cover;
+  background: var(--surface-2);
+}
 .birthDate {
   font-size: 12px;
   font-weight: 600;
@@ -948,6 +973,201 @@
   font-size: 12px;
   line-height: 1.7;
   color: var(--fg-50);
+}
+
+/* ── 사전 시트 ② 사진 ────────────────────────────────────────────────
+   ⚠ **사진 위에 글자를 얹지 마라.** 274장 중 218장이 CC BY / CC BY-SA 이고, 폭만 줄인
+     사본은 이미 파생물이다 — 글자를 합성하면 또 다른 파생물이 된다. 밝은 실사 위
+     아이보리 타이포가 죽는 것은 그 다음 문제다(도판 사용 규칙 3 과 같은 자리).
+   소개 한 줄은 캡션으로 **아래**, 크레딧은 접어서 그 아래.
+   ───────────────────────────────────────────────────────────────── */
+.dictPhotoFigure {
+  margin-top: 14px;
+}
+/**
+ * 비율을 고정하지 않는다. 표의 사진은 세로컷(1280×2028)부터 가로컷(1280×720)까지 섞여
+ * 있어서 한 비율로 잘라 두면 꽃이 화면 밖으로 나가는 컷이 생긴다 — 도감이 아니라 사전이라
+ * 해도 "이 꽃이 어떻게 생겼나"가 이 사진의 유일한 일이다.
+ * 대신 `max-height` 로 세로컷이 시트를 통째로 먹는 것만 막는다.
+ */
+.dictPhoto {
+  display: block;
+  width: 100%;
+  max-height: 52svh;
+  object-fit: contain;
+  border-radius: 14px;
+  background: var(--surface-2);
+}
+.dictPhotoCaption {
+  margin-top: 10px;
+  font-size: 13.5px;
+  line-height: 1.75;
+  color: var(--fg-70);
+}
+
+/* ── 사진 크레딧 디스클로저 (§B 라이선스 의무) ─────────────────────────
+   생일 찾기 카드와 사전 시트가 **같은 조각**을 쓴다(`BirthPhotoCredit`).
+   접혀 있어도 라이선스는 이행된다 — 한 번의 클릭으로 저작자·라벨·원본 링크가 전부 나온다.
+   ───────────────────────────────────────────────────────────────── */
+.credit {
+  margin-top: 10px;
+}
+/* §1.6b — 눌리는 것이라 44px 을 확보하되, 칩(보더+필)은 아니다(면을 주지 않는다). */
+.creditSummary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--fg-50);
+  cursor: pointer;
+  list-style: none;
+  transition: color var(--dur) var(--ease);
+}
+.creditSummary::-webkit-details-marker {
+  display: none;
+}
+/* 펼침 표시는 글자 오른쪽의 작은 화살표 한 개. 열리면 아래를 가리킨다. */
+.creditSummary::after {
+  content: '›';
+  margin-left: 5px;
+  transition: transform var(--dur) var(--ease);
+}
+.credit[open] .creditSummary::after {
+  transform: rotate(90deg);
+}
+.creditSummary:hover {
+  color: var(--fg-70);
+}
+.creditSummary:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+.creditBody {
+  padding: 2px 0 4px;
+}
+.creditLine {
+  font-size: 12px;
+  line-height: 1.8;
+  color: var(--fg-50);
+  overflow-wrap: anywhere;
+}
+/* 라이선스 라벨은 **파일 페이지 표기 그대로**다. 줄여 쓰면 그 순간 크레딧이 부정확해진다. */
+.creditLicense {
+  color: var(--fg-70);
+  letter-spacing: 0.02em;
+}
+.creditNote {
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--fg-50);
+}
+
+/* ── 사전 시트 ③ 이야기 ──────────────────────────────────────────────
+   한 이름에 최대 여섯 편이 붙는다. 전부 펼쳐 두면 시트가 스크롤 벽이 되므로
+   제목 + hook 으로 훑고 읽고 싶은 편만 편다(§1.5i 본문 우선의 사전판).
+   ───────────────────────────────────────────────────────────────── */
+.dictStories {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--hair);
+}
+.dictStoriesTitle {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--fg-70);
+}
+.dictStoriesCount {
+  font-weight: 400;
+  color: var(--fg-50);
+}
+.dictStoryList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+.dictStory {
+  border: 1px solid var(--hair);
+  border-radius: 13px;
+  background: var(--surface);
+}
+.dictStoryDetails {
+  padding: 12px 14px;
+}
+/* 접힌 상태의 카드 전체가 누르는 자리다 — 44px 은 두 줄 텍스트가 이미 넘긴다. */
+.dictStorySummary {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  cursor: pointer;
+  list-style: none;
+}
+.dictStorySummary::-webkit-details-marker {
+  display: none;
+}
+.dictStorySummary:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+  border-radius: 8px;
+}
+.dictStoryTitle {
+  font-family: var(--font-serif);
+  font-size: 16px;
+  line-height: 1.45;
+  color: var(--fg);
+}
+.dictStoryHook {
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--fg-50);
+}
+/* 펼치는 길을 글자로 남긴다 — 카드 전체가 누르는 자리라는 것이 눈으로 보이지 않는다. */
+.dictStoryMore {
+  margin-top: 2px;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+}
+.dictStoryDetails[open] .dictStoryMore {
+  display: none;
+}
+.dictStoryText {
+  margin-top: 12px;
+  font-size: 14.5px;
+  line-height: 1.85;
+  color: var(--fg-70);
+}
+/* 각주 — `/stories` 시트의 `.sheetNote` 와 같은 무게(작은 글씨 한 줄). */
+.dictStoryNote {
+  margin-top: 10px;
+  font-size: 12px;
+  line-height: 1.75;
+  color: var(--fg-50);
+}
+/* §1.5f — 창작 이야기의 갈래 라벨만 액센트로 세운다. 각주로 내려가도 흐려지면 안 된다. */
+.dictStoryNoteOn {
+  color: var(--accent);
+}
+
+/* 사진·이야기를 가져오는 동안(과 실패했을 때). 스피너를 돌리지 않는다. */
+.dictDetailWait {
+  margin-top: 18px;
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: var(--fg-50);
+}
+.dictDetailRetry {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.dictDetailRetry:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
 }
 
 /* ── 결과·그룹 목록 ──────────────────────────────────────────────────── */

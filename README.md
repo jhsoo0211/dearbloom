@@ -38,14 +38,16 @@ npm run stop                          # = .\scripts\stop.ps1 — 3000·3001 의 
 
 꽃 47종(전종 실사 128컷·PD 세밀화 47판·반려동물 안전성 cat/dog 전수) · 꽃말 246행 ·
 이야기 377편(문화권 106종) · 문학 인용 77행(11개 언어권, PD 원문+자체 번역) ·
-탄생화 366일(소스 2곳 대조 · 86일이 도감으로 이어진다). 원장은 `content/*.csv`,
-조사 기록은 `docs/*-research*.md`.
+탄생화 366일(소스 2곳 대조 · 86일이 도감으로 이어진다) — 그 위에 **탄생화 실사 274일분
+(자체 호스팅 248장, 전량 PD/CC0/CC BY/CC BY-SA)** 과 **탄생화 이야기 407편(205가지 이름)** 이
+붙어 있다. 원장은 `content/*.csv`, 조사 기록은 `docs/*-research*.md`.
 
 ## 검증·시드
 
 ```powershell
-npm run test        # vitest — 엔진·콘텐츠 교차검증·화면 계약 (610+)
+npm run test        # vitest — 엔진·콘텐츠 교차검증·화면 계약 (680+)
 npm run seed        # CSV 전수 검증 dry-run (DB 없이)
+npm run birth:photos  # 탄생화 실사 248장을 public/birth/ 로 (없는 것만 채운다)
 npm run build       # 본배포 빌드 (서버 액션 포함)
 npm run build:static  # 정적 드롭 데모 빌드 → out/ (추천·그룹이 브라우저 엔진으로 동작, 멘트는 예문)
 ```
@@ -57,7 +59,7 @@ npm run build:static  # 정적 드롭 데모 빌드 → out/ (추천·그룹이 
 API 키는 리포·zip 에 절대 들어가지 않는다 — 호스팅 환경변수로만.
 
 - **LLM 멘트**: `.env`에 `GEMINI_API_KEY`(1차) — CLOVA·NVIDIA 폴백 체인, 키가 없으면 예문.
-- **Supabase**: 마이그레이션 `db/migrations/0001~0010` + `npm run seed -- --apply` 로 즉시 적재
+- **Supabase**: 마이그레이션 `db/migrations/0001~0011` + `npm run seed -- --apply` 로 즉시 적재
   가능(코드 준비 완료 — [`db/README.md`](db/README.md)).
 
 ## 문서 지도

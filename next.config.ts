@@ -22,7 +22,8 @@ const nextConfig: NextConfig = {
   },
 
   /**
-   * 도판 캐시 — `public/plates/**`(본판 32 + 썸네일 32).
+   * 도판·탄생화 사진 캐시 — `public/plates/**`(본판 47 + 썸네일 47)와
+   * `public/birth/**`(본판 248 + 썸네일 248).
    *
    * `public/` 정적 파일에 Next 가 기본으로 붙이는 값은 `Cache-Control: public, max-age=0` 이라
    * 다시 찾아온 사람이 **매번 32장을 재검증**한다(성능 리뷰 P0-3 실측). 도판은 퍼블릭 도메인
@@ -35,16 +36,20 @@ const nextConfig: NextConfig = {
    * 뒤에서 새로 받아 오게 한다(`stale-while-revalidate`) — 보수적인 값을 택했다.
    */
   async headers() {
+    /**
+     * 두 자산이 **같은 값**을 쓴다 — 성격이 같기 때문이다. 둘 다 우리가 한 번 정규화해 둔
+     * 파일이고, 이름에 내용 해시가 없으며(`/birth/haedanghwa.jpg`), 더 나은 판본을 찾으면
+     * 같은 이름으로 다시 받는다(`npm run birth:photos -- --force`).
+     * 탄생화 쪽이 496장으로 훨씬 많아 이 헤더의 값어치도 그만큼 크다 — 사전 목록 한 달이
+     * 썸네일을 서른한 장 동시에 부르고, 달을 넘길 때마다 그 일이 다시 일어난다.
+     */
+    const assetCache = {
+      key: "Cache-Control",
+      value: "public, max-age=86400, stale-while-revalidate=604800",
+    };
     return [
-      {
-        source: "/plates/:path*",
-        headers: [
-          {
-            key: "Cache-Control",
-            value: "public, max-age=86400, stale-while-revalidate=604800",
-          },
-        ],
-      },
+      { source: "/plates/:path*", headers: [assetCache] },
+      { source: "/birth/:path*", headers: [assetCache] },
     ];
   },
 };

@@ -97,9 +97,19 @@ describe('2단 티어 — 도감으로 건너가는 날과 그러지 못하는 �
     expect(entry?.link?.href).toBe('/flowers/narcissus');
     // 도착지 이름을 함께 싣지 않으면 "다른 꽃으로 보내는 링크"로 읽힌다.
     expect(entry?.link?.nameKo).toBe('수선화');
-    expect(entry?.link?.thumbSrc).toMatch(/^https:\/\/images\.(unsplash|pexels)\.com\//);
+    // 썸네일은 줄에 **한 칸**이다(`entry.thumbSrc`). 도감으로 이어지는 날은 그 자리에
+    // 도감 대표컷이 온다 — 누르고 들어갈 화면과 같은 사진이어야 두 화면이 이어진다.
+    expect(entry?.thumbSrc).toMatch(/^https:\/\/images\.(unsplash|pexels)\.com\//);
     // 카드 규격 폭(640) — 이 화면만 쓰는 폭을 새로 만들지 않는다.
-    expect(entry?.link?.thumbSrc).toContain('w=640');
+    expect(entry?.thumbSrc).toContain('w=640');
+  });
+
+  it('도감에 없어도 사진이 있으면 자체 호스팅 썸네일이 온다 (2026-08-16 격상)', async () => {
+    // 1월 1일 = 스노드롭. 도감에는 없지만 커먼즈 실사를 확보한 274일 중 하나다.
+    const entry = buildBirthMonth(await catalog(), 1)?.entries.find((row) => row.day === 1);
+
+    expect(entry).not.toHaveProperty('link');
+    expect(entry?.thumbSrc).toBe('/birth/thumbs/seunodeurop.jpg');
   });
 
   it('도감에 없는 날은 link 키 자체가 없다 — 사진을 지어내지 않는다', async () => {
@@ -129,7 +139,7 @@ describe('2단 티어 — 도감으로 건너가는 날과 그러지 못하는 �
     for (let month = 1; month <= 12; month += 1) {
       for (const entry of buildBirthMonth(data, month)?.entries ?? []) {
         if (!entry.link) continue;
-        expect(entry.link.thumbSrc, `${month}/${entry.day} ${entry.nameKo}`).toBeTruthy();
+        expect(entry.thumbSrc, `${month}/${entry.day} ${entry.nameKo}`).toBeTruthy();
       }
     }
   });
@@ -240,7 +250,7 @@ describe('워딩 대전제 — 이 표는 전통이 아니다 (§1.5m ①)', () 
 describe('티어 고지 — 지우면 사전이 도감인 척한다 (§1.5m ⑤)', () => {
   it('두 줄이 모두 서 있다', () => {
     expect(copy.BIRTH_DICT_TIER).toBe(
-      '아직 도감에 들이지 못한 꽃이에요 — 이름과 꽃말부터 먼저 건네요.',
+      '아직 도감에 들이지 못한 꽃이에요 — 이름과 꽃말부터 차근차근 채워 가는 중이에요.',
     );
     expect(copy.BIRTH_DICT_TIER_SUB).not.toBe('');
   });
@@ -249,8 +259,29 @@ describe('티어 고지 — 지우면 사전이 도감인 척한다 (§1.5m ⑤)
     // 반려동물 안전성은 §1.5h 가 직설을 요구하는 항목이다. 이 단어가 빠지면 사전 항목이
     // "안전한지 확인된 꽃"으로 오해될 수 있다.
     expect(copy.BIRTH_DICT_TIER_SUB).toContain('반려동물');
-    expect(copy.BIRTH_DICT_TIER_SUB).toContain('이야기');
+    expect(copy.BIRTH_DICT_TIER_SUB).toContain('색깔별 꽃말');
     expect(copy.BIRTH_DICT_TIER_SUB).toMatch(/확인하지 못했어요/);
+  });
+
+  /**
+   * 고지는 **화면과 맞아야** 한다 (2026-08-16 사진·이야기 격상).
+   *
+   * 2026-08-16 이전 문구는 "색깔별 꽃말과 **이야기**, 반려동물 안전성은 아직 확인하지
+   * 못했어요" 였다. 그런데 같은 시트가 바로 위에 그 이름의 이야기를 최대 여섯 편 펼친다 —
+   * 고지가 화면을 부정하는 순간, 사람은 나머지 한 줄(반려동물)까지 함께 흘려 듣는다.
+   * 그래서 고지에서 '이야기'를 뺐고, **다시 넣지 못하게** 여기서 못 박는다.
+   */
+  it('이제는 없는 것만 말한다 — 화면이 펼치는 이야기를 "없다"고 하지 않는다', () => {
+    expect(copy.BIRTH_DICT_TIER_SUB).not.toContain('이야기');
+  });
+
+  /**
+   * 같은 이유로 **생일 찾기 카드**의 문구도 자기 화면을 부정하면 안 된다.
+   * 옛 문구는 "이름과 꽃말만 먼저 건네요" 였는데, 지금 그 카드에는 사진이 함께 선다.
+   */
+  it('생일 찾기 폴백 문구가 "이름과 꽃말만" 이라고 말하지 않는다', () => {
+    expect(copy.BIRTH_FINDER_MISS).not.toContain('꽃말만');
+    expect(copy.BIRTH_FINDER_MISS).toContain('도감에는 아직 없는 꽃이에요');
   });
 
   it('두 티어의 이름이 서로 다른 말이다', () => {

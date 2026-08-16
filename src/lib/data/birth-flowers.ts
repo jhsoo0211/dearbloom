@@ -13,7 +13,7 @@
  *   "전통"·"공식"·"예로부터 정해진" 류 단정을 쓰지 마라.
  */
 
-import type { BirthFlower } from './types';
+import type { BirthFlower, BirthPhoto, BirthStory } from './types';
 
 /**
  * 그 날짜의 탄생화 한 줄. 없는 날짜(2월 30일 등)면 `undefined`.
@@ -73,6 +73,39 @@ export function birthFlowersInMonth(
 ): BirthFlower[] {
   if (!Number.isInteger(month) || month < 1 || month > 12) return [];
   return rows.filter((row) => row.month === month).sort((a, b) => a.day - b.day);
+}
+
+/**
+ * 그 날짜의 사진 한 줄. 표에 그 날이 없거나 **미확보 날이면** `undefined`.
+ *
+ * 사진의 자연키가 날짜인 이유는 `birthFlowerOn` 과 같다 — 같은 이름이 여러 날에 걸리고,
+ * 그 날들이 서로 다른 사진을 들기도 한다(`삼나무` 2/15 는 숲, 9/30 은 열매).
+ * 미확보 행(6일)은 `slug` 가 없다. 그 행을 `undefined` 로 접어 돌려주므로, 호출부는
+ * "사진이 없다"는 한 가지 경우만 다루면 된다 — **다른 꽃 사진을 끌어다 쓰지 않는다.**
+ */
+export function birthPhotoOn(
+  rows: readonly BirthPhoto[],
+  month: number,
+  day: number,
+): BirthPhoto | undefined {
+  if (!Number.isInteger(month) || !Number.isInteger(day)) return undefined;
+  const row = rows.find((photo) => photo.month === month && photo.day === day);
+  return row?.slug ? row : undefined;
+}
+
+/**
+ * 그 **이름**의 이야기들 — CSV 순서 그대로.
+ *
+ * 날짜가 아니라 이름으로 찾는 이유: 이야기는 식물에 붙지 날짜에 붙지 않는다.
+ * `단양쑥부쟁이` 는 표에 세 번(7/1 · 11/5 · 12/11) 서지만 이야기는 네 편이고, 그 네 편은
+ * 세 날 어디서 열어도 같아야 한다.
+ *
+ * 정렬하지 않는 이유도 같다 — CSV 순서가 조사자가 정한 읽기 순서(대표 편이 앞)라,
+ * 여기서 다시 세우면 그 판단이 지워진다(`stories.csv` 를 다루는 방식과 같다).
+ */
+export function birthStoriesOfName(rows: readonly BirthStory[], nameKo: string): BirthStory[] {
+  if (nameKo === '') return [];
+  return rows.filter((story) => story.nameKo === nameKo);
 }
 
 /**

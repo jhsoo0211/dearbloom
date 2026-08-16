@@ -29,6 +29,8 @@ import {
   crossValidate,
   validateFile,
   type BirthFlowerRow,
+  type BirthPhotoRow,
+  type BirthStoryRow,
   type FlowerRow,
   type MeaningRow,
   type PetSafetyRow,
@@ -46,6 +48,8 @@ import type {
 } from '@/lib/engine/types';
 import type {
   BirthFlower,
+  BirthPhoto,
+  BirthStory,
   Catalog,
   CatalogFlower,
   CatalogMeaning,
@@ -260,11 +264,59 @@ function mapBirthFlower(row: BirthFlowerRow): BirthFlower {
   };
 }
 
+/**
+ * birth_photos.csv 한 행 → 화면이 쓰는 사진.
+ *
+ * **`species_note` 는 일부러 옮기지 않는다**(`mapBirthFlower` 의 `editorial_note` 와 같은
+ * 판단). 종 동정 판정 근거는 편집자가 CSV 에서 읽는 값이지 사용자에게 보여 줄 값이 아니다 —
+ * `Catalog` 에 싣지 않으면 실수로 렌더될 길이 없다.
+ *
+ * `direct_url` 은 옮긴다. 화면은 쓰지 않지만(자체 호스팅 사본을 건다) 재다운로드 스크립트가
+ * 이 값을 읽어 파일을 다시 받는다 — 그쪽도 `loadCatalog()` 를 통과해 같은 검증을 받는다.
+ */
+function mapBirthPhoto(row: BirthPhotoRow): BirthPhoto {
+  return {
+    month: row.month,
+    day: row.day,
+    nameKo: row.name_ko,
+    ...(row.slug ? { slug: row.slug } : {}),
+    ...(row.commons_page_url ? { pageUrl: row.commons_page_url } : {}),
+    ...(row.direct_url ? { directUrl: row.direct_url } : {}),
+    ...(row.author ? { author: row.author } : {}),
+    ...(row.license ? { license: row.license } : {}),
+    ...(row.width !== undefined ? { width: row.width } : {}),
+    ...(row.family_line ? { familyLine: row.family_line } : {}),
+  };
+}
+
+/**
+ * birth_stories.csv 한 행 → 화면이 쓰는 이야기.
+ *
+ * `editorial_note` 는 옮기지 않는다(위와 같은 판단). CSV 의 `confidence` 는 여기서
+ * `confidenceLevel` 로 합류한다 — 화면 라벨(`storyConfidenceLabel`)이 카탈로그 이야기와
+ * **같은 함수**를 쓰기 때문이다. 두 표가 다른 이름을 들고 다니면 그 함수가 두 벌이 된다.
+ */
+function mapBirthStory(row: BirthStoryRow): BirthStory {
+  return {
+    nameKo: row.name_ko,
+    storyId: row.story_id,
+    title: row.title,
+    ...(row.hook ? { hook: row.hook } : {}),
+    storyKo: row.story_ko,
+    ...(row.culture_region ? { cultureRegion: row.culture_region } : {}),
+    ...(row.era ? { era: row.era } : {}),
+    storyType: row.story_type,
+    sourceKind: row.source_kind,
+    ...(row.source_url ? { sourceUrl: row.source_url } : {}),
+    confidenceLevel: row.confidence,
+  };
+}
+
 /* ------------------------------------------------------------------ *
  * 로드
  * ------------------------------------------------------------------ */
 
-/** 파일 8종을 읽어 행 스키마 → 교차 검증까지 마친 데이터셋. */
+/** 파일 10종을 읽어 행 스키마 → 교차 검증까지 마친 데이터셋. */
 async function readValidatedDataset(contentDir: string): Promise<SeedDataset> {
   const issues: SeedIssue[] = [];
   const dataset: Partial<Record<SeedFileKey, unknown>> = {};
@@ -335,6 +387,8 @@ function toCatalog(dataset: SeedDataset): Catalog {
     petSafety,
     // CSV 순서(1월 1일 → 12월 31일) 그대로다. 조회는 `@/lib/data/birth-flowers` 가 맡는다.
     birthFlowers: dataset.birth_flowers.map((row) => mapBirthFlower(row.value)),
+    birthPhotos: dataset.birth_photos.map((row) => mapBirthPhoto(row.value)),
+    birthStories: dataset.birth_stories.map((row) => mapBirthStory(row.value)),
   };
 }
 

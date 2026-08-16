@@ -18,10 +18,15 @@ import type {
   Relationship,
   RuleSet,
   Severity,
+  SourceKind,
   Species,
   StoryRow,
+  StoryType,
   Tone,
 } from '@/lib/engine/types';
+
+/** 이야기·꽃말이 공유하는 신뢰 등급. 원본은 `db/seed/schemas.ts` 의 CONFIDENCE_LEVELS. */
+export type ConfidenceLevel = FlowerMeaningRow['confidenceLevel'];
 
 /**
  * 엔진 타입에 없지만 화면이 반드시 쓰는 컬럼만 얹은 확장 3종.
@@ -143,6 +148,76 @@ export interface BirthFlower {
 }
 
 /**
+ * 탄생화 사진 한 줄 (birth_photos.csv) — **주인은 날짜다**(`BirthFlower` 와 같은 자연키).
+ *
+ * 같은 이름이 여러 날에 걸리고 그 날들이 서로 다른 사진을 들기도 한다(`삼나무` 2/15 는 숲,
+ * 9/30 은 열매). 그래서 이름이 아니라 `(month, day)` 가 행을 가른다.
+ *
+ * `slug` 가 없는 행이 6개 있다 — 커먼즈에 검증 가능한 실사가 없었거나, 표의 국명과 영문명이
+ * 다른 식물을 가리켜 무엇을 실을지 정하지 못한 날이다. **그 사실 자체가 조사 결과**라 행을
+ * 지우지 않는다. 화면은 `slug` 유무로 사진 자리를 세울지 정한다(빈 액자를 그대로 둔다).
+ *
+ * `species_note` 는 **일부러 여기 없다**(`Quote.pdBasis` · `BirthFlower.editorialNote` 와 같은
+ * 판단). 종 동정 판정 근거는 편집자가 CSV 에서 읽는 값이지 사용자에게 보여 줄 값이 아니다 —
+ * 타입에 없으면 실수로 렌더할 수도 없다.
+ *
+ * ⚠ 크레딧 세 칸(`author`·`license`·`pageUrl`)은 사진이 있으면 **함께 있다**(시드 교차 검증).
+ *   화면에 거는 것은 폭을 줄여 다시 인코딩한 사본이라 CC BY-SA 에서는 파생물이고, 그 의무는
+ *   저작자·라이선스 라벨·원본 링크를 이미지 단위로 밝혀야 이행된다.
+ */
+export interface BirthPhoto {
+  month: number;
+  day: number;
+  /** 그날 표가 부르는 이름. 표와 **같은 문자열**이어야 한다(시드 교차 검증 6). */
+  nameKo: string;
+  /** 자체 호스팅 파일 이름. 없으면 미확보 행이다. */
+  slug?: string;
+  /** 위키미디어 파일 페이지 — 원본으로 돌아가는 링크이자 라이선스 증빙. */
+  pageUrl?: string;
+  /** 취득 주소(1280px 썸네일). 런타임에 부르지 않는다 — 재다운로드의 입력이다. */
+  directUrl?: string;
+  author?: string;
+  /** 파일 페이지 표기 그대로(`CC BY-SA 4.0`). 우리가 다시 지어내지 않는다. */
+  license?: string;
+  /** 원본 가로 픽셀. 더 큰 사본이 필요할 때 무엇이 가능한지 아는 근거다. */
+  width?: number;
+  /** 그 식물을 한 줄로 소개하는 문장. 사진 **아래** 캡션으로 나간다(위에 합성하지 않는다). */
+  familyLine?: string;
+}
+
+/**
+ * 탄생화 이야기 한 편 (birth_stories.csv) — **주인은 이름이다**(꽃 id 가 아니라).
+ *
+ * `CatalogStory`(stories.csv)와 판박이지만 걸리는 자리가 다르다. 366일 중 도감으로 이어지는
+ * 날은 86일뿐이라 나머지 280일에는 걸어 둘 `flowerId` 가 없고, 없는 id 를 지어내면 도감이
+ * 검증하지 않은 종이 카탈로그에 섞인다. 그래서 표를 나눴다 — 조회는 이름으로 한다
+ * (`birthStoriesOfName`, `@/lib/data/birth-flowers`).
+ *
+ * `moods`·`intents` 가 없는 것도 의도다. 그 두 축은 추천 선별기(`pickStories`)가 쓰는데,
+ * 사전 시트는 그 이름의 이야기를 **전부 순서대로** 펼칠 뿐 고르지 않는다.
+ *
+ * `editorialNote` 는 **일부러 여기 없다** — 편집·감사 기록이라 화면에 나갈 값이 아니다.
+ */
+export interface BirthStory {
+  /** 표가 부르는 이름. 이 값이 사전 시트와 이야기를 잇는 유일한 끈이다. */
+  nameKo: string;
+  storyId: string;
+  title: string;
+  /** 목록에서 먼저 보여 줄 한 줄. 없는 편도 있다. */
+  hook?: string;
+  storyKo: string;
+  cultureRegion?: string;
+  era?: string;
+  /** `stories.csv` 와 **같은 어휘**다(folklore · history · literary · original). */
+  storyType: StoryType;
+  sourceKind: SourceKind;
+  /** 창작(`original`)만 없을 수 있다 — 그 사실이 곧 "지어낸 이야기"라는 표시다(§1.5f). */
+  sourceUrl?: string;
+  /** CSV 컬럼 이름은 `confidence` 지만, 화면 라벨은 이야기 쪽과 같은 함수를 쓴다. */
+  confidenceLevel: ConfidenceLevel;
+}
+
+/**
  * 반려동물 안전성 한 줄 (pet_safety.csv).
  *
  * 꽃별 판정은 `FlowerData.petSafety` 에도 들어가지만, 그쪽에는 대체 꽃 목록이 없다.
@@ -177,4 +252,17 @@ export interface Catalog extends RuleSet {
    * (이 배열을 직접 훑는 코드를 화면마다 새로 쓰지 마라).
    */
   birthFlowers: BirthFlower[];
+  /**
+   * 탄생화 실사 280행(확보 274 · 미확보 6). 날짜로 조회한다(`birthPhotoOn`).
+   * ⚠ **서버에서만 만진다.** 이 배열이 클라이언트로 통째로 건너가면 취득 주소 274벌이
+   *   번들에 실린다 — 화면으로 내려보내는 것은 `birthPhotoView()` 가 좁힌 한 벌뿐이다.
+   */
+  birthPhotos: BirthPhoto[];
+  /**
+   * 탄생화 이야기 407편. **이름으로** 조회한다(`birthStoriesOfName`) — 이 표의 주인은
+   * 날짜도 꽃 id 도 아닌 이름이다.
+   * ⚠ 407편을 클라이언트로 통째로 직렬화하지 마라(`/stories` 가 겪은 성능 리뷰 P1-7).
+   *   사전 시트가 여는 **그 이름의 몇 편**만 서버 액션으로 그때 간다.
+   */
+  birthStories: BirthStory[];
 }

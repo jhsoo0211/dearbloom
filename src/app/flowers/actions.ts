@@ -34,10 +34,16 @@
  * 매번 CSV 를 다시 읽지는 않는다 — 첫 한 번만 디스크를 본다.
  */
 
-import type { BirthFlowerView, BirthMonthView } from '@/components/flowers/types';
-import { birthDateLabel, birthFlowerOn } from '@/lib/data/birth-flowers';
-import { buildBirthMonth } from '@/components/flowers/birth-dict';
-import { hasFinalConsonant } from '@/components/landing/landing-data';
+import type {
+  BirthDictDetail,
+  BirthFlowerView,
+  BirthMonthView,
+} from '@/components/flowers/types';
+import {
+  buildBirthDictDetail,
+  buildBirthFlower,
+  buildBirthMonth,
+} from '@/components/flowers/birth-dict';
 import { loadCatalog } from '@/lib/data/catalog';
 
 /**
@@ -45,30 +51,39 @@ import { loadCatalog } from '@/lib/data/catalog';
  *
  * `null` 을 돌려주고 throw 하지 않는 이유는 `/stories` 의 `loadStoryDetail` 과 같다 —
  * 던지면 클라이언트에는 뭉개진 오류만 남고 사람이 읽을 문장은 남지 않는다.
+ *
+ * 조립 규칙의 원본은 `components/flowers/birth-dict.ts` 다(정적 데모 생성기도 같은 함수를
+ * 부른다 — 두 곳에 베껴 두면 받침 조사 하나가 어긋나는 날 데모에서만 다른 문장이 나온다).
  */
 export async function lookupBirthFlower(month: number, day: number): Promise<BirthFlowerView | null> {
   if (!Number.isInteger(month) || month < 1 || month > 12) return null;
   if (!Number.isInteger(day) || day < 1 || day > 31) return null;
 
   const catalog = await loadCatalog();
-  const row = birthFlowerOn(catalog.birthFlowers, month, day);
-  if (!row) return null;
+  return buildBirthFlower(catalog, month, day);
+}
 
-  // 도감 이름은 표 이름과 다를 수 있다(`노랑수선화` ↔ `수선화`). 링크를 걸 때는 도착지가
-  // 실제로 뭐라고 불리는지 함께 보여 줘야 "다른 꽃으로 보내는 링크"로 읽히지 않는다.
-  const linked = row.flowerId
-    ? catalog.flowers.find((flower) => flower.id === row.flowerId)
-    : undefined;
+/**
+ * 사전 시트가 여는 **그 하루의 사진과 이야기** — 시트를 연 사람만 받는다(§C ①).
+ *
+ * ── 왜 목록에 함께 실어 보내지 않나 ─────────────────────────────────
+ * 이야기 407편의 본문을 달치 목록에 얹으면 한 달 응답이 8~10KB 에서 30KB 안팎으로 뛴다.
+ * 그런데 사전을 여는 사람의 대부분은 목록을 훑기만 하고, 시트는 하루치만 연다 —
+ * `/stories` 가 전문 317편을 첫 응답에 실어 275KB 를 만들었던 그 자리와 같은 모양이라
+ * 같은 답을 쓴다(성능 리뷰 P1-7). 목록이 들고 가는 것은 썸네일 **주소 한 줄**뿐이다.
+ *
+ * 표에 없는 날짜면 `null`. 사진도 이야기도 없는 날은 `{ stories: [] }` 이고, 그때 화면은
+ * 두 구획을 세우지 않는다 — **빈손을 빈손이라고 말하는 것이 이 응답의 정상 값이다.**
+ */
+export async function loadBirthDictDetail(
+  month: number,
+  day: number,
+): Promise<BirthDictDetail | null> {
+  if (!Number.isInteger(month) || month < 1 || month > 12) return null;
+  if (!Number.isInteger(day) || day < 1 || day > 31) return null;
 
-  return {
-    dateLabel: birthDateLabel(row.month, row.day),
-    nameKo: row.nameKo,
-    ...(row.nameEn ? { nameEn: row.nameEn } : {}),
-    ...(row.scientificName ? { scientificName: row.scientificName } : {}),
-    meaning: row.meaningKo,
-    meaningCopula: hasFinalConsonant(row.meaningKo) ? '이에요' : '예요',
-    ...(linked ? { link: { href: `/flowers/${linked.id}`, nameKo: linked.nameKo } } : {}),
-  };
+  const catalog = await loadCatalog();
+  return buildBirthDictDetail(catalog, month, day);
 }
 
 /**

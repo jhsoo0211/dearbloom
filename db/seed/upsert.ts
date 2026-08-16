@@ -137,6 +137,17 @@ export const SEED_TARGETS: Record<string, SeedTarget> = {
     table: 'birth_flowers',
     strategy: { kind: 'upsert', onConflict: 'month,day' },
   },
+  /* 0011 과 짝이다. 사진은 날짜가 자연키이고(같은 이름이 날마다 다른 사진을 든다),
+     이야기는 `story_id` 다 — `stories.csv` 와 같은 규칙이되 **id 공간이 다르다**
+     (교차 검증 7 이 두 표의 id 가 겹치지 않는지 본다). */
+  birth_photos: {
+    table: 'birth_photos',
+    strategy: { kind: 'upsert', onConflict: 'month,day' },
+  },
+  birth_stories: {
+    table: 'birth_stories',
+    strategy: { kind: 'upsert', onConflict: 'story_id' },
+  },
 };
 
 /**

@@ -15,7 +15,11 @@
  * 서버와 같은 함수로 한 번 계산해 굳혔다. 그래서 여기 남은 일은 조회 한 번이다.
  */
 
-import type { BirthFlowerView, BirthMonthView } from '@/components/flowers/types';
+import type {
+  BirthDictDetail,
+  BirthFlowerView,
+  BirthMonthView,
+} from '@/components/flowers/types';
 
 let cached: Promise<Record<string, BirthFlowerView>> | null = null;
 
@@ -73,4 +77,39 @@ export async function listBirthMonth(month: number): Promise<BirthMonthView | nu
 
   const months = await loadMonths();
   return months[String(month)] ?? null;
+}
+
+/**
+ * 사전 시트 상세 번들 — **셋째 덩어리**로 또 따로 지연 로드한다.
+ *
+ * 이 번들이 셋 중 가장 무겁다(사진 크레딧 274벌 + 이야기 407편의 전문). 본배포에서
+ * 시트를 연 사람만 그 하루치를 받는 것과 같은 이치로, 데모에서도 **시트를 한 번이라도
+ * 연 사람만** 이 파일을 받는다. 목록만 훑고 나가는 사람에게는 요청 자체가 없다.
+ */
+let cachedDetails: Promise<Record<string, BirthDictDetail>> | null = null;
+
+function loadDetails(): Promise<Record<string, BirthDictDetail>> {
+  cachedDetails ??= import('./data/birth-details').then(
+    ({ DEMO_BIRTH_DETAILS_JSON }) =>
+      JSON.parse(DEMO_BIRTH_DETAILS_JSON) as Record<string, BirthDictDetail>,
+  );
+  return cachedDetails;
+}
+
+/**
+ * 그 하루의 사진과 이야기. 표에 없는 날짜면 `null`.
+ *
+ * 사진도 이야기도 없는 날은 `{ stories: [] }` 로 **표에 실려 있다** — `null`(그런 날짜가
+ * 없다)과 "그날은 빈손이다"는 다른 말이고, 화면이 그 둘을 다르게 그린다(폴백 문구 / 조용히
+ * 구획 없음). 빈 값이라고 키를 빼면 정적 데모에서만 폴백 문구가 뜬다.
+ */
+export async function loadBirthDictDetail(
+  month: number,
+  day: number,
+): Promise<BirthDictDetail | null> {
+  if (!Number.isInteger(month) || month < 1 || month > 12) return null;
+  if (!Number.isInteger(day) || day < 1 || day > 31) return null;
+
+  const details = await loadDetails();
+  return details[`${month}-${day}`] ?? null;
 }

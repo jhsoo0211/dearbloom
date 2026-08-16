@@ -34,9 +34,11 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { loadCatalog } from '../src/lib/data/catalog.ts';
-import { birthDateLabel } from '../src/lib/data/birth-flowers.ts';
-import { buildBirthMonth } from '../src/components/flowers/birth-dict.ts';
-import { hasFinalConsonant } from '../src/components/landing/landing-data.ts';
+import {
+  buildBirthDictDetail,
+  buildBirthFlower,
+  buildBirthMonth,
+} from '../src/components/flowers/birth-dict.ts';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OUT_DIR = path.join(ROOT, 'src', 'lib', 'demo', 'data');
@@ -101,31 +103,35 @@ function toStoryDetail(story) {
 /**
  * `/flowers` 생일 찾기의 **답을 미리 다 내 둔 표** — `"8-16"` → 화면이 그대로 그리는 값.
  *
- * 366행을 그대로 싣고 화면에서 조립하지 않는 이유: 조립에 필요한 것이
- * `birthDateLabel`(날짜 문구) · `hasFinalConsonant`(받침 조사) · 도감 이름 대조까지
- * 세 곳에 흩어져 있어, 브라우저에서 다시 맞추면 **서버가 만들던 문장과 어긋날 여지**가
- * 생긴다. 여기서 서버와 **같은 함수**로 한 번 계산해 굳혀 두면 그 여지가 0 이다.
- * 모양의 원본은 `components/flowers/types.ts` 의 `BirthFlowerView`,
- * 조립 규칙의 원본은 `app/flowers/actions.ts` 다.
+ * 조립을 손으로 베끼지 않고 `buildBirthFlower` 를 **그대로 부른다.** 예전에는 여기에
+ * 같은 조립을 한 벌 더 적어 두었는데, 그 방식은 서버가 문장을 한 줄 고칠 때마다 데모가
+ * 조용히 뒤처진다(받침 조사·도감 이름 대조·사진 크레딧이 전부 그 대상이다).
+ * 모양의 원본은 `components/flowers/types.ts` 의 `BirthFlowerView` 다.
  */
 function toBirthFlowerTable(catalog) {
   const table = {};
   for (const row of catalog.birthFlowers) {
-    // 도감 이름은 표 이름과 다를 수 있다(`노랑수선화` ↔ `수선화`). 링크를 걸 때는 도착지가
-    // 실제로 뭐라고 불리는지 함께 보여 줘야 "다른 꽃으로 보내는 링크"로 읽히지 않는다.
-    const linked = row.flowerId
-      ? catalog.flowers.find((flower) => flower.id === row.flowerId)
-      : undefined;
+    const view = buildBirthFlower(catalog, row.month, row.day);
+    if (view) table[`${row.month}-${row.day}`] = view;
+  }
+  return table;
+}
 
-    table[`${row.month}-${row.day}`] = {
-      dateLabel: birthDateLabel(row.month, row.day),
-      nameKo: row.nameKo,
-      ...(row.nameEn ? { nameEn: row.nameEn } : {}),
-      ...(row.scientificName ? { scientificName: row.scientificName } : {}),
-      meaning: row.meaningKo,
-      meaningCopula: hasFinalConsonant(row.meaningKo) ? '이에요' : '예요',
-      ...(linked ? { link: { href: `/flowers/${linked.id}`, nameKo: linked.nameKo } } : {}),
-    };
+/**
+ * `/flowers` **사전 시트**가 여는 하루치 — `"9-30"` → 사진 한 장과 그 이름의 이야기들.
+ *
+ * 셋 중 가장 무거운 번들이다(이야기 407편의 전문 + 사진 크레딧 274벌). 그래도 통째로
+ * 굳히는 이유는 본배포와 **같은 지연 경계**를 지킬 수 있기 때문이다 — 이 파일은 시트를
+ * 한 번이라도 연 사람만 받는다(`src/lib/demo/flowers-actions.ts` 의 `loadDetails`).
+ *
+ * 빈손인 날(`{ stories: [] }`)도 키를 만든다. `null`(그런 날짜가 없다)과 "그날은 사진도
+ * 이야기도 없다"는 화면에서 다르게 그려지므로, 키를 빼면 정적 데모에서만 폴백 문구가 뜬다.
+ */
+function toBirthDetailTable(catalog) {
+  const table = {};
+  for (const row of catalog.birthFlowers) {
+    const detail = buildBirthDictDetail(catalog, row.month, row.day);
+    if (detail) table[`${row.month}-${row.day}`] = detail;
   }
   return table;
 }
@@ -189,8 +195,9 @@ async function main() {
    *   · petSafety      — 반려동물 제외 규칙(EX_PET_TOXIC)과 대체 꽃 목록.
    *   · templates      — 데모의 멘트는 전부 이 예문이다(LLM 없음). 745B 밖에 안 된다.
    *   · quotes         — 함께 담을 한 줄(§1.5e) + 문학 속의 이 꽃(§1.5k).
-   * 빼는 것: birthFlowers 는 여기 없다 — 366행을 추천 경로가 한 번도 읽지 않는다.
-   *   `/flowers` 생일 찾기가 쓰는 값이라 **따로** 번들한다(그 화면을 연 사람만 받는다).
+   * 빼는 것: 탄생화 세 표(birthFlowers · birthPhotos · birthStories)는 여기 없다 —
+   *   추천 경로가 한 번도 읽지 않는다. `/flowers` 가 쓰는 값이라 **따로** 번들한다
+   *   (그 화면을, 그중에서도 그 기능을 쓴 사람만 받는다).
    */
   const slim = {
     flowers: catalog.flowers,
@@ -201,11 +208,14 @@ async function main() {
     petSafety: catalog.petSafety,
     stories: slimStories(catalog.stories, args.storiesPerFlower),
     birthFlowers: [],
+    birthPhotos: [],
+    birthStories: [],
   };
 
   const storyDetails = catalog.stories.map(toStoryDetail);
   const birthTable = toBirthFlowerTable(catalog);
   const birthMonths = toBirthMonthTable(catalog);
+  const birthDetails = toBirthDetailTable(catalog);
 
   const files = [
     {
@@ -244,6 +254,15 @@ async function main() {
       ),
       label: `탄생화 사전 (${Object.keys(birthMonths).length}달)`,
     },
+    {
+      name: 'birth-details.ts',
+      text: toModule(
+        'DEMO_BIRTH_DETAILS_JSON',
+        birthDetails,
+        '정적 데모용 탄생화 사전 상세 — 시트가 여는 하루치 사진과 이야기.',
+      ),
+      label: `탄생화 상세 (${Object.keys(birthDetails).length}일 · 이야기 ${catalog.birthStories.length}편 · 사진 ${catalog.birthPhotos.filter((photo) => photo.slug).length}장)`,
+    },
   ];
 
   await mkdir(OUT_DIR, { recursive: true });
@@ -261,7 +280,7 @@ async function main() {
     console.log(`  · ${file.name.padEnd(18)} ${kb(raw).padStart(8)}  (gzip ${kb(gzip)})  — ${file.label}`);
   }
   console.log(`  합계 ${kb(totalRaw)} (gzip ${kb(totalGzip)})`);
-  console.log('  ※ 넷 다 지연 로드다 — 첫 화면이 아니라 그 기능을 처음 쓸 때 받는다.');
+  console.log('  ※ 다섯 다 지연 로드다 — 첫 화면이 아니라 그 기능을 처음 쓸 때 받는다.');
 }
 
 await main();

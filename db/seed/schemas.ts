@@ -133,6 +133,25 @@ export const SOURCE_KINDS = [
 ] as const;
 
 /**
+ * 탄생화 사진에 허용하는 라이선스 — **재배포와 리사이즈가 둘 다 되는 것만**(§B 라이선스 의무).
+ *
+ * 우리가 화면에 거는 것은 원본이 아니라 폭을 줄여 다시 인코딩한 **사본**이다. 그러므로
+ * 필요한 권리는 두 가지다: 우리 도메인에서 서빙할 재배포 권리와, 크기를 바꿀 개작 권리.
+ *
+ *   허용 — `Public domain` · `CC0` · `CC BY {버전}` · `CC BY-SA {버전}` (+ 국가 포팅 접미사)
+ *   금지 — **NC**(비영리)와 **ND**(변경 금지). 앞의 것은 서비스가 상업적이 되는 날 곧바로
+ *          위반이 되고, 뒤의 것은 리사이즈 자체를 막는다. 지금 0장이며 앞으로도 0장이다.
+ *
+ * 포팅 접미사(`CC BY 3.0 us` · `CC BY-SA 2.0 fr`)를 허용하는 이유: 위키미디어 파일 페이지가
+ * 그렇게 표기하고, 우리는 **그 페이지가 말하는 그대로** 화면에 옮긴다(라벨을 우리가 다시
+ * 지어내면 그 자체가 부정확한 크레딧이 된다).
+ */
+export const PHOTO_LICENSE_PATTERN = /^(Public domain|CC0|CC BY(-SA)? \d\.\d( [a-z]{2})?)$/;
+
+/** NC·ND 를 **이름으로** 막는다 — 허용 목록이 이미 거르지만, 거절 사유가 읽히게 남긴다. */
+export const PHOTO_LICENSE_FORBIDDEN = /\bCC BY[- ](?:NC|ND)/i;
+
+/**
  * 탄생화 달력의 길이 — **윤년 기준**이다.
  *
  * 2월 29일에 태어난 사람에게 "그 날은 없습니다" 라고 할 수는 없으므로, 탄생화 표는
@@ -638,6 +657,136 @@ export const BirthFlowerRowSchema = z.object({
   editorial_note: optionalText(),
 });
 
+/**
+ * birth_photos.csv — 날짜별 탄생화의 **실사 한 장**(위키미디어 커먼즈).
+ *
+ * 자연키는 `birth_flowers.csv` 와 같은 `(month, day)` 다. 이름이 아니라 날짜인 이유도 같다 —
+ * 같은 이름이 여러 날에 걸리고(`삼나무` 2/15·9/30), 그 날들이 **서로 다른 사진**을 들기도
+ * 한다(2월은 숲, 9월은 열매). 파일 한 장의 이름은 `slug` 가 정한다
+ * (배정 규칙의 원본은 `src/lib/birth-photos/index.ts` 의 `assignBirthPhotoSlugs`).
+ *
+ * ── 미확보 행을 지우지 않는 이유 ─────────────────────────────────────
+ * 280행 중 6행은 `direct_url` 이 비어 있다. 커먼즈에 검증 가능한 실사가 없거나(단양쑥부쟁이),
+ * 원 표의 국명과 영문명이 다른 식물을 가리켜 무엇을 실을지 정할 수 없었던 날이다(마).
+ * **그 사실 자체가 조사 결과**라, 행을 지우는 대신 `species_note` 에 이유를 남긴다 —
+ * 지워 버리면 다음 사람이 "아직 안 찾아봤다"와 "찾아봤는데 없었다"를 구별하지 못한다.
+ * 그래서 아래 superRefine 은 **전부 있거나 전부 없거나**만 허용한다.
+ *
+ * ⚠ 크레딧 세 칸(`author`·`license`·`commons_page_url`)은 사진이 있으면 **필수**다.
+ *   274장 중 218장이 CC BY / CC BY-SA 이고, 리사이즈본은 파생물이라 저작자·라이선스 라벨·
+ *   원본 링크를 이미지 단위로 밝혀야 의무가 이행된다. 크레딧을 못 다는 사진은 싣지 않는다.
+ */
+export const BirthPhotoRowSchema = z
+  .object({
+    month: requiredInt('month', 1, 12),
+    day: requiredInt('day', 1, 31),
+    name_ko: requiredText('name_ko'),
+    slug: optionalSlug('slug'),
+    commons_page_url: optionalUrl('commons_page_url'),
+    direct_url: optionalUrl('direct_url'),
+    author: optionalText(),
+    license: optionalText().pipe(
+      z
+        .string()
+        .refine((value) => !PHOTO_LICENSE_FORBIDDEN.test(value), {
+          error: 'license: NC(비영리)·ND(변경 금지) 라이선스 사진은 실을 수 없습니다',
+        })
+        .refine((value) => PHOTO_LICENSE_PATTERN.test(value), {
+          error:
+            'license: Public domain · CC0 · CC BY · CC BY-SA 만 허용합니다 (파일 페이지 표기 그대로)',
+        })
+        .optional(),
+    ),
+    width: optionalInt('width', 1, 100_000),
+    species_note: optionalText(),
+    family_line: optionalText(),
+  })
+  .superRefine((row, ctx) => {
+    /** 사진이 있는 행이 반드시 함께 들어야 하는 칸 — 하나라도 비면 화면에 걸 수 없다. */
+    const paired: [keyof typeof row, string][] = [
+      ['slug', '저장 파일 이름'],
+      ['commons_page_url', '파일 페이지(라이선스 증빙)'],
+      ['author', '저작자'],
+      ['license', '라이선스 라벨'],
+      ['width', '원본 가로 픽셀'],
+      ['family_line', '한 줄 소개'],
+    ];
+
+    if (row.direct_url !== undefined) {
+      for (const [key, label] of paired) {
+        if (row[key] === undefined) {
+          ctx.addIssue({
+            code: 'custom',
+            path: [key],
+            message: `direct_url 이 있으면 ${label}(${key})도 있어야 합니다 — 크레딧을 못 다는 사진은 싣지 않습니다`,
+          });
+        }
+      }
+      return;
+    }
+
+    // 미확보 행 — 왜 못 구했는지는 남기고, 나머지 칸은 비운다.
+    if (row.species_note === undefined) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['species_note'],
+        message: 'direct_url 이 없으면 왜 확보하지 못했는지 species_note 에 남겨야 합니다',
+      });
+    }
+    for (const [key, label] of paired) {
+      if (row[key] !== undefined) {
+        ctx.addIssue({
+          code: 'custom',
+          path: [key],
+          message: `direct_url 이 없는 행에는 ${label}(${key})도 있을 수 없습니다`,
+        });
+      }
+    }
+  });
+
+/**
+ * birth_stories.csv — 탄생화 **이름**에 붙는 이야기(사전 시트가 펼친다).
+ *
+ * `stories.csv` 와 판박이지만 **주인이 다르다**: 그쪽은 카탈로그의 꽃(`flower_id`)에 붙고
+ * 이쪽은 표의 **이름**(`name_ko`)에 붙는다. 366일 중 도감으로 이어지는 날은 86일뿐이라,
+ * 나머지 280일의 이야기는 걸어 둘 `flower_id` 가 아예 없다. 그렇다고 표에 없는 꽃 id 를
+ * 지어내면 도감이 검증하지 않은 종이 카탈로그에 섞인다 — 그래서 표를 나눴다.
+ *
+ * 어휘는 `stories.csv` 와 **같은 것을 쓴다**(story_type · source_kind · confidence).
+ * 두 표가 다른 어휘를 쓰면 화면 각주가 같은 말을 두 가지로 하게 된다.
+ * 컬럼 이름만 하나 다르다 — `confidence`(그쪽은 `confidence_level`). CSV 는 조사자가 쓴
+ * 그대로 두고, 카탈로그 타입에서 `confidenceLevel` 로 합류시킨다.
+ *
+ * `moods`·`intents` 는 없다. 그 두 칸은 **추천 선별기**가 쓰는 축인데(`pickStories`),
+ * 사전 시트는 그 이름의 이야기를 전부 순서대로 펼칠 뿐 고르지 않는다 — 쓰지 않을 칸을
+ * 407행에 채워 두면 나중에 그 값이 진짜 선별에 쓰이는 줄 알게 된다.
+ */
+export const BirthStoryRowSchema = z
+  .object({
+    name_ko: requiredText('name_ko'),
+    story_id: requiredText('story_id'),
+    title: requiredText('title'),
+    hook: optionalText(),
+    story_ko: requiredText('story_ko'),
+    culture_region: optionalText(),
+    era: optionalText(),
+    story_type: requiredEnum('story_type', STORY_TYPES),
+    source_kind: requiredEnum('source_kind', SOURCE_KINDS),
+    source_url: optionalUrl('source_url'),
+    confidence: requiredEnum('confidence', CONFIDENCE_LEVELS),
+    editorial_note: optionalText(),
+  })
+  .superRefine((row, ctx) => {
+    // `stories.csv` 와 같은 금지선 — 창작만 출처가 면제된다(§1.5f).
+    if (row.story_type !== 'original' && row.source_url === undefined) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['source_url'],
+        message: 'story_type=original 인 창작 이야기가 아니면 출처 source_url 이 필요합니다',
+      });
+    }
+  });
+
 export type FlowerRow = z.output<typeof FlowerRowSchema>;
 export type MeaningRow = z.output<typeof MeaningRowSchema>;
 export type RuleRow = z.output<typeof RuleRowSchema>;
@@ -646,6 +795,8 @@ export type QuoteRow = z.output<typeof QuoteRowSchema>;
 export type PetSafetyRow = z.output<typeof PetSafetyRowSchema>;
 export type StoryRow = z.output<typeof StoryRowSchema>;
 export type BirthFlowerRow = z.output<typeof BirthFlowerRowSchema>;
+export type BirthPhotoRow = z.output<typeof BirthPhotoRowSchema>;
+export type BirthStoryRow = z.output<typeof BirthStoryRowSchema>;
 
 /* ------------------------------------------------------------------ *
  * 파일 레지스트리
@@ -660,6 +811,8 @@ export const SEED_FILE_KEYS = [
   'quotes',
   'pet_safety',
   'birth_flowers',
+  'birth_photos',
+  'birth_stories',
 ] as const;
 
 export type SeedFileKey = (typeof SEED_FILE_KEYS)[number];
@@ -673,6 +826,8 @@ export const SEED_FILE_NAMES: Record<SeedFileKey, string> = {
   quotes: 'quotes.csv',
   pet_safety: 'pet_safety.csv',
   birth_flowers: 'birth_flowers.csv',
+  birth_photos: 'birth_photos.csv',
+  birth_stories: 'birth_stories.csv',
 };
 
 export const SEED_SCHEMAS = {
@@ -684,6 +839,8 @@ export const SEED_SCHEMAS = {
   quotes: QuoteRowSchema,
   pet_safety: PetSafetyRowSchema,
   birth_flowers: BirthFlowerRowSchema,
+  birth_photos: BirthPhotoRowSchema,
+  birth_stories: BirthStoryRowSchema,
 } as const;
 
 /* ------------------------------------------------------------------ *
@@ -743,6 +900,8 @@ export interface SeedRowMap {
   quotes: QuoteRow;
   pet_safety: PetSafetyRow;
   birth_flowers: BirthFlowerRow;
+  birth_photos: BirthPhotoRow;
+  birth_stories: BirthStoryRow;
 }
 
 /**
@@ -770,6 +929,8 @@ export interface SeedDataset {
   quotes: ParsedRow<QuoteRow>[];
   pet_safety: ParsedRow<PetSafetyRow>[];
   birth_flowers: ParsedRow<BirthFlowerRow>[];
+  birth_photos: ParsedRow<BirthPhotoRow>[];
+  birth_stories: ParsedRow<BirthStoryRow>[];
 }
 
 export interface CrossValidateResult {
@@ -795,6 +956,13 @@ export interface CrossValidateResult {
  *  5. 탄생화 → 카탈로그 연결 — birth_flowers.flower_id 가 flowers 에 있는가.
  *     quotes 처럼 **선택 참조**라 빈 값은 검사 대상이 아니다(카탈로그에 없는 꽃이
  *     정상 값이다). 대신 몇 종·며칠이 도감으로 이어지는지를 리포트에 함께 적는다.
+ *  6. 탄생화 사진 — birth_photos 의 `(month, day)` 가 표에 실재하고 **그날의 이름과 같은가**,
+ *     같은 날이 두 번 나오지 않는가, slug 가 파일 한 장을 유일하게 가리키는가.
+ *     이름 대조가 이 검사의 핵심이다: 표의 이름을 고치면(v2 의 5건이 그랬다) 사진 표도
+ *     따라가야 하는데, 한쪽만 고치면 화면이 **다른 꽃 사진**을 그 날짜에 건다.
+ *  7. 탄생화 이야기 — birth_stories.name_ko 가 표에 있는 이름인가, story_id 가 파일 안에서
+ *     유일하고 **stories.csv 와도 겹치지 않는가**. 두 표의 id 공간을 나누지 않으면
+ *     `/stories` 아카이브와 사전 시트가 같은 id 로 서로 다른 이야기를 부르게 된다.
  */
 export function crossValidate(data: SeedDataset): CrossValidateResult {
   const checks: CrossCheckResult[] = [];
@@ -1037,6 +1205,123 @@ export function crossValidate(data: SeedDataset): CrossValidateResult {
       linkFailures === 0
         ? `${linkedRows}일이 도감으로 이어짐 — 카탈로그 ${flowerIds.size}종 중 ${linkedDays.size}종 · 나머지 ${data.birth_flowers.length - linkedRows}일은 카탈로그에 없는 꽃`
         : `끊어진 참조 ${linkFailures}건`,
+  });
+
+  /* 6. 탄생화 사진 → 표의 날짜·이름 ---------------------------------- */
+  const photoBefore = issues.length;
+  /** `'M/D'` → 그날의 이름. 표가 이름을 고치면 사진 표도 여기서 걸린다. */
+  const nameByDate = new Map<string, string>();
+  for (const row of data.birth_flowers) {
+    nameByDate.set(`${row.value.month}/${row.value.day}`, row.value.name_ko);
+  }
+
+  const photoSeen = new Map<string, number>(); // 'M/D' → 처음 나온 줄
+  const slugOwner = new Map<string, string>(); // slug → 그 slug 를 쓴 이름
+  let photoCount = 0;
+  for (const row of data.birth_photos) {
+    const { month, day, name_ko: nameKo, slug } = row.value;
+    const key = `${month}/${day}`;
+
+    const expected = nameByDate.get(key);
+    if (expected === undefined) {
+      issues.push({
+        file: SEED_FILE_NAMES.birth_photos,
+        line: row.line,
+        column: 'day',
+        message: `birth_flowers.csv 에 없는 날짜입니다: ${month}월 ${day}일`,
+      });
+    } else if (expected !== nameKo) {
+      issues.push({
+        file: SEED_FILE_NAMES.birth_photos,
+        line: row.line,
+        column: 'name_ko',
+        message: `${month}월 ${day}일의 이름이 표와 다릅니다 — 표: ${expected} / 사진: ${nameKo}`,
+      });
+    }
+
+    const first = photoSeen.get(key);
+    if (first !== undefined) {
+      issues.push({
+        file: SEED_FILE_NAMES.birth_photos,
+        line: row.line,
+        column: 'day',
+        message: `${month}월 ${day}일이 두 번 나옵니다 (앞선 행: ${first}번째 줄)`,
+      });
+    } else {
+      photoSeen.set(key, row.line);
+    }
+
+    if (slug === undefined) continue;
+    photoCount += 1;
+    // 같은 slug 는 **같은 이름의 같은 사진**일 때만 정상이다(`삼나무` 2/15·9/30 처럼
+    // 한 이름이 여러 날에 걸리고 사진까지 같은 자리). 이름이 다른데 겹치면 화면이
+    // 다른 꽃 사진을 건다.
+    const owner = slugOwner.get(slug);
+    if (owner !== undefined && owner !== nameKo) {
+      issues.push({
+        file: SEED_FILE_NAMES.birth_photos,
+        line: row.line,
+        column: 'slug',
+        message: `slug 가 다른 이름과 겹칩니다: '${slug}' — ${owner} / ${nameKo}`,
+      });
+    } else {
+      slugOwner.set(slug, nameKo);
+    }
+  }
+  const photoFailures = issues.length - photoBefore;
+  checks.push({
+    name: '탄생화 사진 → 표의 날짜·이름 (slug 유일성 포함)',
+    ok: photoFailures === 0,
+    detail:
+      photoFailures === 0
+        ? `${data.birth_photos.length}행 중 ${photoCount}일이 사진을 갖고(파일 ${slugOwner.size}장), 나머지 ${data.birth_photos.length - photoCount}일은 미확보로 기록됨`
+        : `날짜·이름·slug 불일치 ${photoFailures}건`,
+  });
+
+  /* 7. 탄생화 이야기 → 표의 이름 · id 공간 --------------------------- */
+  const bstoryBefore = issues.length;
+  const birthNames = new Set(data.birth_flowers.map((row) => row.value.name_ko));
+  const catalogStoryIds = new Set(data.stories.map((row) => row.value.story_id));
+  const bstoryIds = new Map<string, number>();
+  for (const row of data.birth_stories) {
+    const { name_ko: nameKo, story_id: storyId } = row.value;
+    if (!birthNames.has(nameKo)) {
+      issues.push({
+        file: SEED_FILE_NAMES.birth_stories,
+        line: row.line,
+        column: 'name_ko',
+        message: `birth_flowers.csv 에 없는 이름입니다: ${nameKo}`,
+      });
+    }
+    const first = bstoryIds.get(storyId);
+    if (first !== undefined) {
+      issues.push({
+        file: SEED_FILE_NAMES.birth_stories,
+        line: row.line,
+        column: 'story_id',
+        message: `story_id 가 두 번 나옵니다: ${storyId} (앞선 행: ${first}번째 줄)`,
+      });
+    } else {
+      bstoryIds.set(storyId, row.line);
+    }
+    if (catalogStoryIds.has(storyId)) {
+      issues.push({
+        file: SEED_FILE_NAMES.birth_stories,
+        line: row.line,
+        column: 'story_id',
+        message: `stories.csv 가 이미 쓰고 있는 story_id 입니다: ${storyId}`,
+      });
+    }
+  }
+  const bstoryFailures = issues.length - bstoryBefore;
+  const bstoryNames = new Set(data.birth_stories.map((row) => row.value.name_ko));
+  checks.push({
+    name: '탄생화 이야기 → 표의 이름 · story_id 공간 (stories.csv 와 분리)',
+    ok: bstoryFailures === 0,
+    detail:
+      bstoryFailures === 0
+        ? `${data.birth_stories.length}편이 표의 ${bstoryNames.size}가지 이름에 붙음 — stories.csv ${catalogStoryIds.size}편과 id 충돌 0`
+        : `이름·id 문제 ${bstoryFailures}건`,
   });
 
   return { checks, issues };

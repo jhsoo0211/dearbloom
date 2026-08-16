@@ -15,7 +15,25 @@
  * 순수 함수만 둔다(types.ts 와 같은 규칙) — 엔진·카탈로그 로더가 브라우저 번들에 섞이지 않게.
  */
 
-import type { ArchiveStory } from './types';
+/**
+ * 각주 줄을 만드는 데 필요한 **최소한**. `ArchiveStory` 가 구조적으로 이것을 만족한다.
+ *
+ * 이야기 카드가 아닌 곳에서도 같은 각주가 필요해서 좁혔다 — 탄생화 사전 시트(§1.5m ⑤)가
+ * 그렇다. 그쪽 이야기는 `flowerId` 도 `moods` 도 없는데(주인이 꽃이 아니라 표의 이름이다),
+ * 각주 순서와 문구는 이야기 시트와 **같아야** 한다. `ArchiveStory` 를 요구하면 쓰지도 않을
+ * 칸을 지어내 채우게 되므로, 함수가 실제로 읽는 다섯 칸만 계약으로 남긴다.
+ */
+export interface MetaNoteSource {
+  /** 문화권(한국어). 비어 있는 행이 있다. */
+  regionLabel?: string;
+  /** 시대(한국어). 사전에 없는 값은 서버가 감춘다. */
+  eraLabel?: string;
+  /** story_type 한국어 라벨. */
+  typeLabel: string;
+  /** §1.5f — 창작만 액센트로 세운다. */
+  isOriginal: boolean;
+  confidenceLabel: string;
+}
 
 export interface MetaNote {
   key: string;
@@ -27,7 +45,7 @@ export interface MetaNote {
   accent?: boolean;
 }
 
-export function metaNotes(story: ArchiveStory): MetaNote[] {
+export function metaNotes(story: MetaNoteSource): MetaNote[] {
   const notes: MetaNote[] = [];
   if (story.regionLabel) notes.push({ key: 'region', text: story.regionLabel });
   if (story.eraLabel) notes.push({ key: 'era', text: story.eraLabel });

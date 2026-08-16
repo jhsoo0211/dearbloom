@@ -62,15 +62,20 @@ const MONTHS = Array.from({ length: 12 }, (_, index) => index + 1);
  * 하나는 "버튼"으로 들려야 어디로 가는지 알 수 있다.
  */
 function DictRow({ entry, onOpen }: { entry: BirthDictEntry; onOpen: (entry: BirthDictEntry) => void }) {
+  /*
+   * 썸네일은 **서버가 이미 골라 뒀다**(`entry.thumbSrc` 한 칸). 도감으로 이어지는 날은
+   * 도감 대표컷, 나머지는 자체 호스팅 320px 사본이고, 둘 다 없는 92일은 값이 없다 —
+   * 그때는 점선 빈 액자를 그대로 둔다. 화면이 두 표를 견주지 않는다.
+   */
   const inner = (
     <>
       <span className={styles.dictDay}>{entry.day}</span>
 
-      {entry.link?.thumbSrc ? (
-        /* eslint-disable-next-line @next/next/no-img-element -- 원격 CDN(Unsplash·Pexels). 승인 URL 을 그대로 쓴다(docs/image-assets.md — 핫링크가 권장 사용법). */
+      {entry.thumbSrc ? (
+        /* eslint-disable-next-line @next/next/no-img-element -- 두 갈래가 섞인다: 원격 CDN(Unsplash·Pexels, 핫링크가 권장 사용법)과 자체 호스팅 정적 파일(`public/birth`). `next/image` 최적화 엔드포인트는 정적 데모(output:'export')에서 서지 않는다. */
         <img
           className={styles.dictThumb}
-          src={entry.link.thumbSrc}
+          src={entry.thumbSrc}
           /* 이름이 바로 옆에 있다 — 사진이 이름을 한 번 더 읽으면 목록이 두 배로 길어진다. */
           alt=""
           width={44}
@@ -162,9 +167,10 @@ export default function BirthDictionary({
           ⚠ 마지막 문장이 워딩 대전제다(§1.5m ①) — "전통"·"예로부터 정해진" 으로 바꾸지 마라.
         */}
         <p className={styles.dictTierNote}>
-          {BIRTH_DICT_CATALOG_TITLE} {catalogCount}종은 색깔별 꽃말과 이야기, 반려동물
-          안전성까지 확인해 실은 꽃이에요. {BIRTH_DICT_TITLE} {dayCount}일은 날짜별 표에 실린{' '}
-          {speciesCount}가지 이름을 꽃말과 함께 먼저 옮겨 둔 것이고요.{' '}
+          {BIRTH_DICT_CATALOG_TITLE} {catalogCount}종은 색깔별 꽃말과 반려동물 안전성까지
+          확인해 실은 꽃이에요. {BIRTH_DICT_TITLE} {dayCount}일은 날짜별 표에 실린{' '}
+          {speciesCount}가지 이름을 꽃말과 함께 옮기고, 확인한 만큼 사진과 이야기를 붙여 둔
+          것이고요.{' '}
           {/* 계보 각주는 **문장을 따로** 세운다 — 앞 문장 뒤에 대시로 이어 붙이면
               각주 안의 대시와 겹쳐 `것이고요 — 널리… — 예로부터…` 가 된다. */}
           {BIRTH_SOURCE_NOTE}
@@ -218,7 +224,21 @@ export default function BirthDictionary({
         </div>
       </div>
 
-      {open && <BirthDictSheet entry={open} onClose={() => setOpen(null)} />}
+      {/*
+        시트는 **자기가 어느 달인지 모른다** — 목록 줄에는 일만 실려 있다(월은 구획 머리가
+        이미 말했다). 사진 본판과 이야기를 다시 물으려면 달이 필요하므로 여기서 함께 넘긴다.
+        `view.month` 를 쓰는 이유: `month` 상태는 누르는 즉시 바뀌지만 `view` 는 응답이
+        도착해야 바뀐다 — 시트가 열려 있는 줄은 언제나 `view` 쪽 달의 것이다.
+        `key` 로 날짜를 물려 다른 날을 열 때 상태(가져온 이야기)가 섞이지 않게 한다.
+      */}
+      {open && view && (
+        <BirthDictSheet
+          key={`${view.month}-${open.day}`}
+          entry={open}
+          month={view.month}
+          onClose={() => setOpen(null)}
+        />
+      )}
     </section>
   );
 }

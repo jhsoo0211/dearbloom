@@ -110,7 +110,7 @@ describe('2단 티어 — 도감으로 건너가는 날과 그러지 못하는 �
     expect(entry).not.toHaveProperty('link');
   });
 
-  it('366일 중 도감으로 이어지는 날은 57일뿐이다 (나머지는 사전 티어)', async () => {
+  it('366일 중 도감으로 이어지는 날은 86일뿐이다 (나머지는 사전 티어)', async () => {
     const data = await catalog();
     let linked = 0;
     let total = 0;
@@ -121,7 +121,7 @@ describe('2단 티어 — 도감으로 건너가는 날과 그러지 못하는 �
     }
 
     expect(total).toBe(366);
-    expect(linked).toBe(57);
+    expect(linked).toBe(86);
   });
 
   it('매칭된 날은 하나도 빠짐없이 썸네일을 갖는다 (반쪽 링크를 만들지 않는다)', async () => {

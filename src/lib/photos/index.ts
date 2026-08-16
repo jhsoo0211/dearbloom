@@ -1,7 +1,7 @@
 /**
- * 꽃별 대표 실사 32종 — "이 꽃이 무슨 꽃인지 보여 주는" 사진의 **단일 원본**.
+ * 꽃별 대표 실사 47종 — "이 꽃이 무슨 꽃인지 보여 주는" 사진의 **단일 원본**.
  *
- * 출처 문서: `docs/image-assets.md` §꽃별 대표 실사 32종 (2026-08-15 확장, 32/32 확보).
+ * 출처 문서: `docs/image-assets.md` §꽃별 대표 실사 32종(2026-08-15) · §도감 확장 배치 1(2026-08-16, +15종).
  * 이 파일은 그 표를 **코드로 옮긴 사본**이다. 컷을 바꾸거나 늘릴 때는 문서를 먼저 고치고
  * 여기로 옮긴다 — 문서가 라이선스·종 동정 근거를 들고 있고, 이 파일은 화면이 쓰는 모양만 갖는다.
  *
@@ -40,7 +40,7 @@
  * 그래서 `src` 는 **파라미터가 없는 순수 원본 주소**만 갖고, 폭·포맷은 `photoSrc()` 가 붙인다.
  *
  * ── 컷이 한 장이 아니다 (2026-08-16 갤러리 라운드) ───────────────────
- * 표가 둘이다. **대표 32장**(`FLOWER_PHOTOS`)과 그 뒤에 붙는 **갤러리 추가컷**
+ * 표가 둘이다. **대표 47장**(`FLOWER_PHOTOS`)과 그 뒤에 붙는 **갤러리 추가컷**
  * (`GALLERY_EXTRAS`, 꽃당 1~3장). 나누어 둔 이유는 자리마다 필요가 다르기 때문이다:
  *   · 한 장만 보여 주는 자리(랜딩 히어로·카드, 결과, 편지)는 `photoFor()` — **대표 하나**.
  *   · 여러 장을 넘겨 보는 자리(도감 상세)는 `photosFor()` — **대표를 첫 장으로** 한 전부.
@@ -96,7 +96,7 @@ const BRIGHT_BACKGROUND = '배경이 밝은 컷 — 카드 다크 오버레이 �
 /** 원본 가로가 3000px 에 못 미치거나 겨우 넘는 컷의 각주(문서 §통합할 때 주의할 것 3). */
 const SMALL_SOURCE = '원본이 작다 — 카드·도감까지가 안전 범위이고, 풀스크린 히어로는 피한다.';
 
-/** 꽃 id → 대표 실사. 카탈로그 32종 전원이 여기 있다(`tests/components/photos.test.ts` 가 지킨다). */
+/** 꽃 id → 대표 실사. 카탈로그 47종 전원이 여기 있다(`tests/components/photos.test.ts` 가 지킨다). */
 export const FLOWER_PHOTOS: Record<string, FlowerPhoto> = {
   'rose-red': {
     flowerId: 'rose-red',
@@ -370,6 +370,141 @@ export const FLOWER_PHOTOS: Record<string, FlowerPhoto> = {
     alt: '노란 화심을 가진 흰 데이지 한 송이',
     width: 7008,
   },
+
+  /* ---------------------------------------------------------------- *
+   * 정식 도감 확장 배치 1 — 15종 (2026-08-16)
+   *
+   * 위 32장과 **같은 규정**을 통과했다(문서 §도감 확장 배치 1). 이번 15종은
+   * 전부 Pexels 다 — Unsplash 검색 API 가 봇 차단(Anubis) 뒤로 들어가 후보를
+   * 모을 수 없었기 때문이고, 취향이 아니라 접근성의 결과다(갤러리 라운드와 같은 사유).
+   * 두 소스를 함께 쓴다는 불변식은 위 32장이 이미 지킨다.
+   *
+   * ⚠ 이번 15종은 **한 장도 밝은 배경이 아니다.** `BRIGHT_BACKGROUND` 명단을 넷으로
+   *   묶어 두기 위해 어두운 배경 컷만 대표로 올렸다 — 밝은 컷이 좋아 보여도 그건
+   *   갤러리(`GALLERY_EXTRAS`) 자리로 보낸다.
+   * ---------------------------------------------------------------- */
+
+  'sweet-pea': {
+    flowerId: 'sweet-pea',
+    src: 'https://images.pexels.com/photos/27978758/pexels-photo-27978758.jpeg',
+    credit: 'Photo: Jakub Pabis / Pexels',
+    alt: '검은 배경 위에 위아래로 벌어진 진분홍 스위트피 두 송이',
+    width: 4000,
+    note: '나비 모양 꽃(기판·익판·용골판)과 덩굴손으로 Lathyrus 를 확인했다.',
+  },
+  gladiolus: {
+    flowerId: 'gladiolus',
+    src: 'https://images.pexels.com/photos/33443321/pexels-photo-33443321.jpeg',
+    credit: 'Photo: Lichtblick800 / Pexels',
+    alt: '어두운 잎을 배경으로 붉은 목이 비치는 노란 글라디올러스',
+    width: 5504,
+    note: '주름진 대형 화피가 한 꽃대에 층층이 붙는 원예 글라디올러스 — 잔꽃이 성기게 달리는 야생종과 다르다.',
+  },
+  dahlia: {
+    flowerId: 'dahlia',
+    src: 'https://images.pexels.com/photos/27545177/pexels-photo-27545177.jpeg',
+    credit: 'Photo: Wolfgang Weiser / Pexels',
+    alt: '어두운 배경 위에 겹겹이 포개진 진분홍 달리아 한 송이',
+    width: 7006,
+  },
+  zinnia: {
+    flowerId: 'zinnia',
+    src: 'https://images.pexels.com/photos/32559587/pexels-photo-32559587.jpeg',
+    credit: 'Photo: Karen F / Pexels',
+    alt: '어두운 배경 위 노란 별 모양 화심을 두른 붉은 백일홍',
+    width: 3808,
+    // 목백일홍(배롱나무, Lagerstroemia)은 나무이고 꽃잎이 주름진 국자 모양이라 형태가 아예 다르다.
+    note: '노란 별 모양 관상화가 도드라지는 Zinnia elegans 형태 — 목백일홍(배롱나무)과 혼동하지 말 것.',
+  },
+  aster: {
+    flowerId: 'aster',
+    src: 'https://images.pexels.com/photos/18116743/pexels-photo-18116743.jpeg',
+    credit: 'Photo: Merlin / Pexels',
+    alt: '어두운 배경 앞에 홀로 핀 청보라 과꽃 한 송이',
+    width: 6000,
+    note: '가느다란 설상화가 겹겹이 들어찬 겹꽃 = 과꽃(Callistephus) 계열 — 노란 화심이 넓게 드러나는 쑥부쟁이·국화와 구분된다.',
+  },
+  calendula: {
+    flowerId: 'calendula',
+    src: 'https://images.pexels.com/photos/32545799/pexels-photo-32545799.jpeg',
+    credit: 'Photo: Brendan Rühli / Pexels',
+    alt: '어두운 배경 위 짙은 화심을 두른 황금빛 금잔화 한 송이',
+    width: 5218,
+    note: '평평한 관상화 원반 + 한 겹 설상화 = 금잔화(Calendula) — 겹겹이 부푼 마리골드(Tagetes)와 다르다.',
+  },
+  cyclamen: {
+    flowerId: 'cyclamen',
+    src: 'https://images.pexels.com/photos/30138673/pexels-photo-30138673.jpeg',
+    credit: 'Photo: Suki Lee / Pexels',
+    alt: '어두운 배경 앞에 뒤로 젖혀진 진분홍 시클라멘 꽃잎 클로즈업',
+    width: 5279,
+    note: '위로 젖혀진 꽃잎 = 시클라멘 — 노란 눈을 가진 평면 꽃의 프리뮬러와 구분된다.',
+  },
+  geranium: {
+    flowerId: 'geranium',
+    src: 'https://images.pexels.com/photos/34533810/pexels-photo-34533810.jpeg',
+    credit: 'Photo: Mustafa Akın / Pexels',
+    alt: '검은 배경 위에 둥글게 모여 핀 붉은 제라늄 꽃차례',
+    width: 3887,
+    note: '우리가 제라늄이라 부르는 것은 Pelargonium 이다 — 둥근 산형 꽃차례와 부채꼴 잎이 그 근거다.',
+  },
+  primula: {
+    flowerId: 'primula',
+    src: 'https://images.pexels.com/photos/38807578/pexels-photo-38807578.jpeg',
+    credit: 'Photo: Leandro Rossi / Pexels',
+    alt: '어두운 배경 앞에 이슬이 맺힌 진분홍 프리뮬러 무리',
+    width: 5661,
+    note: '노란 눈을 가진 평면 다섯 꽃잎 = 프리뮬러 — 꽃잎이 뒤로 젖혀지는 시클라멘과 다르다.',
+  },
+  stock: {
+    flowerId: 'stock',
+    src: 'https://images.pexels.com/photos/14073335/pexels-photo-14073335.jpeg',
+    credit: 'Photo: Suki Lee / Pexels',
+    alt: '검은 배경 위에 층층이 겹꽃이 달린 흰 스토크 꽃대',
+    width: 5184,
+    note: 'Pexels 제목이 "white hoary stock" — hoary stock 은 Matthiola incana 의 영명이다.',
+  },
+  delphinium: {
+    flowerId: 'delphinium',
+    src: 'https://images.pexels.com/photos/38651653/pexels-photo-38651653.jpeg',
+    credit: 'Photo: Oliver Wagenblatt / Pexels',
+    alt: '짙은 화심을 가운데 둔 하늘빛 델피니움 한 송이 매크로',
+    width: 3936,
+    note: '가운데 짙은 「벌」과 뒤로 뻗은 꽃뿔 = 델피니움 — 손바닥 모양 잎에 나비꽃이 촘촘한 루피너스와 다르다.',
+  },
+  amaryllis: {
+    flowerId: 'amaryllis',
+    src: 'https://images.pexels.com/photos/23338646/pexels-photo-23338646.jpeg',
+    credit: 'Photo: Suki Lee / Pexels',
+    alt: '검은 배경 위에 활짝 벌어진 붉은 줄무늬 아마릴리스',
+    width: 7791,
+    note: '원예로 도는 아마릴리스는 Hippeastrum 이다 — 잎과 함께 피는 굵은 꽃대가 그 근거다.',
+  },
+  cornflower: {
+    flowerId: 'cornflower',
+    src: 'https://images.pexels.com/photos/37728656/pexels-photo-37728656.jpeg',
+    credit: 'Photo: Clinton Weaver / Pexels',
+    alt: '어두운 초록을 배경으로 빗방울이 맺힌 파란 수레국화',
+    width: 3024,
+    note: '가장자리가 나팔처럼 갈라진 설상화 + 자홍 관상화 = 수레국화 — 납작한 혀꼴 꽃잎의 치커리와 구분된다.',
+  },
+  crocus: {
+    flowerId: 'crocus',
+    src: 'https://images.pexels.com/photos/35983801/pexels-photo-35983801.jpeg',
+    credit: 'Photo: MrGajowy3 Teodor / Pexels',
+    alt: '어두운 배경 앞에 활짝 벌어진 보라 크로커스와 노란 수술',
+    width: 3648,
+    note: '노란 수술만 보이고 붉은 암술대가 늘어지지 않는다 — 사프란(Crocus sativus)이 아닌 봄 크로커스다.',
+  },
+  'water-lily': {
+    flowerId: 'water-lily',
+    src: 'https://images.pexels.com/photos/6673946/pexels-photo-6673946.jpeg',
+    credit: 'Photo: Pedro Gutierrez / Pexels',
+    alt: '어두운 수면 위에 노란 수술을 드러낸 흰 수련',
+    width: 2592,
+    // 잎·꽃이 수면 위로 솟는 연꽃(Nelumbo)이 수련 검색에 대량으로 섞인다.
+    note: '수면에 붙어 피는 꽃과 물에 뜬 잎 = 수련(Nymphaea) — 연꽃과 다르다. 원본 2592px 라 풀스크린 히어로는 피한다.',
+  },
 };
 
 /* ------------------------------------------------------------------ *
@@ -379,7 +514,7 @@ export const FLOWER_PHOTOS: Record<string, FlowerPhoto> = {
 /**
  * 대표컷의 색 라벨 — **갤러리 첫 장의 캡션**이다.
  *
- * 왜 위 `FLOWER_PHOTOS` 안에 안 넣었나: 대표컷 32장은 랜딩 히어로·결과 카드·편지가
+ * 왜 위 `FLOWER_PHOTOS` 안에 안 넣었나: 대표컷 47장은 랜딩 히어로·결과 카드·편지가
  * 함께 쓰는 자리이고, 사용자가 "홈에서 본 그 사진이 갤러리 첫 장"이라고 못 박은 값이다.
  * 32줄에 손을 대면 그 약속이 눈에 안 보이게 흔들릴 수 있다 — **표를 건드리지 않고
  * 라벨만 옆에 둔다.** `photosFor()` 가 조립할 때만 합쳐진다.
@@ -421,6 +556,23 @@ const PRIMARY_VARIANT: Record<string, string> = {
   pansy: '주황빛',
   poinsettia: '붉은빛',
   daisy: '흰빛',
+
+  /* 정식 도감 확장 배치 1 (2026-08-16) */
+  'sweet-pea': '분홍빛',
+  gladiolus: '노란빛',
+  dahlia: '붉은빛',
+  zinnia: '붉은빛',
+  aster: '푸른빛',
+  calendula: '노란빛',
+  cyclamen: '분홍빛',
+  geranium: '붉은빛',
+  primula: '분홍빛',
+  stock: '흰빛',
+  delphinium: '푸른빛',
+  amaryllis: '붉은빛',
+  cornflower: '푸른빛',
+  crocus: '보랏빛',
+  'water-lily': '흰빛',
 };
 
 /**
@@ -943,6 +1095,286 @@ const GALLERY_EXTRAS: Record<string, readonly FlowerPhoto[]> = {
       alt: '어두운 풀밭을 배경으로 홀로 고개 든 흰 데이지',
       width: 5472,
       variant: '한 송이',
+    },
+  ],
+
+  /* ---------------------------------------------------------------- *
+   * 정식 도감 확장 배치 1 — 15종 × 2컷 (2026-08-16)
+   * 대표까지 합쳐 꽃마다 3컷이고, 열다섯 종 전부 색 라벨이 둘 이상이다.
+   * ---------------------------------------------------------------- */
+
+  'sweet-pea': [
+    {
+      flowerId: 'sweet-pea',
+      src: 'https://images.pexels.com/photos/38449184/pexels-photo-38449184.jpeg',
+      credit: 'Photo: Ali Goode / Pexels',
+      alt: '어두운 잎을 배경으로 덩굴 가득 피어난 분홍 스위트피 무리',
+      width: 5184,
+      // 이 표에서 종명이 문자로 박힌 몇 안 되는 컷이다.
+      note: 'Pexels 설명에 "Lathyrus odoratus" 명기 — 종 근거를 이 컷이 든다.',
+      variant: '한 다발',
+    },
+    {
+      flowerId: 'sweet-pea',
+      src: 'https://images.pexels.com/photos/20091663/pexels-photo-20091663.jpeg',
+      credit: 'Photo: Agnese Lunecka / Pexels',
+      alt: '초록 보케를 배경으로 홀로 벌어진 연보라 스위트피',
+      width: 3264,
+      variant: '연보랏빛',
+    },
+  ],
+  gladiolus: [
+    {
+      flowerId: 'gladiolus',
+      src: 'https://images.pexels.com/photos/29517631/pexels-photo-29517631.jpeg',
+      credit: 'Photo: Lichtblick800 / Pexels',
+      alt: '어두운 배경 앞에 곧게 선 흰 글라디올러스 꽃대',
+      width: 5504,
+      variant: '흰빛',
+    },
+    {
+      flowerId: 'gladiolus',
+      src: 'https://images.pexels.com/photos/32442389/pexels-photo-32442389.jpeg',
+      credit: 'Photo: Andy Lee / Pexels',
+      alt: '짙은 청록 벽을 배경으로 벌어진 연분홍 글라디올러스',
+      width: 4000,
+      variant: '분홍빛',
+    },
+  ],
+  dahlia: [
+    {
+      flowerId: 'dahlia',
+      src: 'https://images.pexels.com/photos/17771981/pexels-photo-17771981.jpeg',
+      credit: 'Photo: Lichtblick800 / Pexels',
+      alt: '검은 배경 위에 방사형으로 펼쳐진 주황 노랑 달리아',
+      width: 5568,
+      variant: '노란빛',
+    },
+    {
+      flowerId: 'dahlia',
+      src: 'https://images.pexels.com/photos/30335283/pexels-photo-30335283.jpeg',
+      credit: 'Photo: Lichtblick800 / Pexels',
+      alt: '검은 배경 위에 모여 놓인 연보라 폼폰 달리아 네 송이',
+      width: 6000,
+      variant: '보랏빛',
+    },
+  ],
+  zinnia: [
+    {
+      flowerId: 'zinnia',
+      src: 'https://images.pexels.com/photos/33390783/pexels-photo-33390783.jpeg',
+      credit: 'Photo: Mike Norris / Pexels',
+      alt: '화면을 가득 채운 진보라 겹백일홍 매크로',
+      width: 9504,
+      variant: '보랏빛',
+    },
+    {
+      flowerId: 'zinnia',
+      src: 'https://images.pexels.com/photos/30002036/pexels-photo-30002036.jpeg',
+      credit: 'Photo: luoqing / Pexels',
+      alt: '어두운 초록을 배경으로 활짝 벌어진 노란 백일홍',
+      width: 8256,
+      variant: '노란빛',
+    },
+  ],
+  aster: [
+    {
+      flowerId: 'aster',
+      src: 'https://images.pexels.com/photos/5848266/pexels-photo-5848266.jpeg',
+      credit: 'Photo: Vladislav Semendyaev / Pexels',
+      alt: '검푸른 배경 앞에 홀로 벌어진 흰 겹과꽃',
+      width: 4288,
+      variant: '흰빛',
+    },
+    {
+      flowerId: 'aster',
+      src: 'https://images.pexels.com/photos/1651040/pexels-photo-1651040.jpeg',
+      credit: 'Photo: Iriser / Pexels',
+      alt: '어두운 배경 위에 공처럼 부푼 진보라 겹과꽃 한 송이',
+      width: 4482,
+      variant: '보랏빛',
+    },
+  ],
+  calendula: [
+    {
+      flowerId: 'calendula',
+      src: 'https://images.pexels.com/photos/12244652/pexels-photo-12244652.jpeg',
+      credit: 'Photo: Diana / Pexels',
+      alt: '어두운 잎을 배경으로 물방울이 맺힌 주황 금잔화',
+      width: 5396,
+      variant: '주황빛',
+    },
+    {
+      flowerId: 'calendula',
+      src: 'https://images.pexels.com/photos/18330767/pexels-photo-18330767.jpeg',
+      credit: 'Photo: Petr Ganaj / Pexels',
+      alt: '검은 배경 앞에서 뒤쪽 총포까지 드러난 금잔화 옆모습',
+      width: 5899,
+      variant: '뒤에서',
+    },
+  ],
+  cyclamen: [
+    {
+      flowerId: 'cyclamen',
+      src: 'https://images.pexels.com/photos/14200154/pexels-photo-14200154.jpeg',
+      credit: 'Photo: Paola Marchesi / Pexels',
+      alt: '어두운 잎 사이로 솟은 자홍빛 시클라멘 꽃대 여럿',
+      width: 4288,
+      variant: '자홍빛',
+    },
+    {
+      flowerId: 'cyclamen',
+      src: 'https://images.pexels.com/photos/15391471/pexels-photo-15391471.jpeg',
+      credit: 'Photo: Ewei2805 / Pexels',
+      alt: '은빛 얼룩이 든 잎 위로 고개 숙인 분홍 시클라멘 봉오리',
+      width: 3648,
+      // 잎의 은빛 얼룩이 프리뮬러와 갈리는 지점이라, 이 컷이 그 근거를 함께 든다.
+      note: 'Pexels 제목에 "Cyclamen persicum" 명기 — 은빛 얼룩 잎도 함께 보인다.',
+      variant: '막 벌어질 때',
+    },
+  ],
+  geranium: [
+    {
+      flowerId: 'geranium',
+      src: 'https://images.pexels.com/photos/27866982/pexels-photo-27866982.jpeg',
+      credit: 'Photo: Mustafa Akın / Pexels',
+      alt: '검은 배경 위에 모여 핀 연분홍 제라늄과 꽃봉오리',
+      width: 5137,
+      variant: '분홍빛',
+    },
+    {
+      flowerId: 'geranium',
+      src: 'https://images.pexels.com/photos/14200539/pexels-photo-14200539.jpeg',
+      credit: 'Photo: David Brown / Pexels',
+      alt: '어두운 배경 앞에 봉오리와 나란히 선 진홍 제라늄 클로즈업',
+      width: 3648,
+      variant: '가까이',
+    },
+  ],
+  primula: [
+    {
+      flowerId: 'primula',
+      src: 'https://images.pexels.com/photos/38857063/pexels-photo-38857063.jpeg',
+      credit: 'Photo: Leandro Rossi / Pexels',
+      alt: '이슬이 촘촘히 맺힌 보라 프리뮬러 꽃잎 매크로',
+      width: 6000,
+      variant: '보랏빛',
+    },
+    {
+      flowerId: 'primula',
+      src: 'https://images.pexels.com/photos/36986758/pexels-photo-36986758.jpeg',
+      credit: 'Photo: Reinis Brūzītis / Pexels',
+      alt: '노란 눈을 가운데 둔 붉은 프리뮬러 꽃잎 매크로',
+      width: 4000,
+      variant: '붉은빛',
+    },
+  ],
+  stock: [
+    {
+      flowerId: 'stock',
+      src: 'https://images.pexels.com/photos/20769210/pexels-photo-20769210.jpeg',
+      credit: 'Photo: Ani Coloca / Pexels',
+      alt: '어두운 초록을 배경으로 자홍빛이 번진 겹스토크 꽃대',
+      width: 3456,
+      variant: '분홍빛',
+    },
+    {
+      flowerId: 'stock',
+      src: 'https://images.pexels.com/photos/32723186/pexels-photo-32723186.jpeg',
+      credit: 'Photo: Mikhail Peace / Pexels',
+      alt: '어두운 초록 보케 앞에 벌어진 연보라 스토크',
+      width: 2581,
+      variant: '보랏빛',
+    },
+  ],
+  delphinium: [
+    {
+      flowerId: 'delphinium',
+      src: 'https://images.pexels.com/photos/37913068/pexels-photo-37913068.jpeg',
+      credit: 'Photo: Ali Goode / Pexels',
+      alt: '검은 배경 위에 크림빛 겹화심을 드러낸 파란 델피니움',
+      width: 4608,
+      variant: '가까이',
+    },
+    {
+      flowerId: 'delphinium',
+      src: 'https://images.pexels.com/photos/38340034/pexels-photo-38340034.jpeg',
+      credit: 'Photo: Suju / Pexels',
+      alt: '봉오리를 층층이 매단 진보라 델피니움 꽃대',
+      width: 5304,
+      variant: '보랏빛',
+    },
+  ],
+  amaryllis: [
+    {
+      flowerId: 'amaryllis',
+      src: 'https://images.pexels.com/photos/13458384/pexels-photo-13458384.jpeg',
+      credit: 'Photo: Chan MK / Pexels',
+      alt: '어두운 배경 앞에 굽은 수술을 드러낸 연분홍 아마릴리스',
+      width: 3024,
+      variant: '분홍빛',
+    },
+    {
+      flowerId: 'amaryllis',
+      src: 'https://images.pexels.com/photos/12203316/pexels-photo-12203316.jpeg',
+      credit: 'Photo: Ornan Velazquez / Pexels',
+      alt: '노란 화심에서 수술이 뻗어 나온 주황빛 아마릴리스 매크로',
+      width: 3456,
+      variant: '가까이',
+    },
+  ],
+  cornflower: [
+    {
+      flowerId: 'cornflower',
+      src: 'https://images.pexels.com/photos/13066410/pexels-photo-13066410.jpeg',
+      credit: 'Photo: Lichtblick800 / Pexels',
+      alt: '어두운 초록을 배경으로 자홍 관상화까지 드러낸 파란 수레국화',
+      width: 5568,
+      variant: '가까이',
+    },
+    {
+      flowerId: 'cornflower',
+      src: 'https://images.pexels.com/photos/29140988/pexels-photo-29140988.jpeg',
+      credit: 'Photo: Kelly / Pexels',
+      alt: '자주 화심을 가운데 둔 흰 수레국화 두 송이',
+      width: 5464,
+      variant: '흰빛',
+    },
+  ],
+  crocus: [
+    {
+      flowerId: 'crocus',
+      src: 'https://images.pexels.com/photos/37935203/pexels-photo-37935203.jpeg',
+      credit: 'Photo: Katerina Makhtadui / Pexels',
+      alt: '검은 배경 위에 이슬을 인 흰 크로커스와 주황 암술',
+      width: 4000,
+      variant: '흰빛',
+    },
+    {
+      flowerId: 'crocus',
+      src: 'https://images.pexels.com/photos/36880006/pexels-photo-36880006.jpeg',
+      credit: 'Photo: Henning Roettger / Pexels',
+      alt: '흐린 배경 앞에 벌어진 연보라 크로커스 한 송이',
+      width: 7952,
+      variant: '연보랏빛',
+    },
+  ],
+  'water-lily': [
+    {
+      flowerId: 'water-lily',
+      src: 'https://images.pexels.com/photos/9559069/pexels-photo-9559069.jpeg',
+      credit: 'Photo: Socorro Simonetti / Pexels',
+      alt: '검은 수면 위에 별처럼 펼쳐진 청보라 수련',
+      width: 2500,
+      variant: '푸른빛',
+    },
+    {
+      flowerId: 'water-lily',
+      src: 'https://images.pexels.com/photos/36833634/pexels-photo-36833634.jpeg',
+      credit: 'Photo: Andromeda99 / Pexels',
+      alt: '어두운 연못의 잎 사이에서 나란히 벌어진 분홍 수련 두 송이',
+      width: 5000,
+      variant: '분홍빛',
     },
   ],
 };

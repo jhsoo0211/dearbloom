@@ -1,7 +1,9 @@
-# dearbloom 세밀화 애셋 — 퍼블릭 도메인 보태니컬 도판 32종
+# dearbloom 세밀화 애셋 — 퍼블릭 도메인 보태니컬 도판 47종
 
 > 이야기(설화·일화) 250편에 개별 이미지를 붙이는 대신, **꽃 단위 빈티지 보태니컬 도판**을 카드·시트·레인 헤더에 얹는다.
 > 원문 기획 §2.3-11 "BHL·Rawpixel 퍼블릭 도메인 세밀화" 방침의 실행 목록이며, 실사 승인 목록인 `docs/image-assets.md`와 **별개로 병행 운용**한다.
+>
+> **⚠ 아래 32종 표 뒤에 [§정식 도감 확장 배치 1 — 도판 (2026-08-16)](#정식-도감-확장-배치-1--도판-2026-08-16) 이 붙어 있다.** 카탈로그가 47종으로 늘면서 15종을 더했고, 그중 12종이 스텝 《Favourite Flowers》 한 판본에서 왔다. 아래 32종은 그때 한 줄도 바뀌지 않았다.
 > 다크 그린(`#141613`~`#1B2C21`) 위에 크림 도판을 **액자처럼 얹는** 것이 전제다(§1.4b). 도판 배경을 누끼로 날리지 않는다 — 종이가 곧 액자다.
 
 ---
@@ -218,3 +220,154 @@ Commons 파일 페이지가 `PD-old-70`을 걸었지만 **작가 Eugène-Jules E
 
 **원자료 제공 기관** — Biodiversity Heritage Library / Missouri Botanical Garden(15) · Internet Archive(6) · Royal Botanic Gardens Kew(4) · Statens Museum for Kunst(1) · Rijksmuseum(1) · 国立国会図書館(1) · 기타(3)
 </content>
+
+---
+
+# 정식 도감 확장 배치 1 — 도판 (2026-08-16)
+
+> 카탈로그가 32종에서 **47종**으로 늘었다. 이 절은 새로 들어온 15종의 세밀화를 정리한 것이다.
+> 위 §조사 개요가 세운 기준(PD/CC0 한정 · 크림 판면 · 종 근거 명시 · 자체 호스팅)을 그대로 따랐다.
+
+## 확정 15종
+
+`sweet-pea` · `gladiolus` · `dahlia` · `zinnia` · `aster` · `calendula` · `cyclamen` ·
+`geranium` · `primula` · `stock` · `delphinium` · `amaryllis` · `cornflower` · `crocus` · `water-lily`
+
+## 조사 개요
+
+| 항목 | 내용 |
+|---|---|
+| 조사일 | 2026-08-16 |
+| 확보 | **15/15** (미확보 0종) |
+| 호스팅 출처 | Wikimedia Commons 15종 |
+| 검증 | 15종 전부 ① Commons API `extmetadata` 로 라이선스·작가·연도 확인 ② 도판 실물을 컨택트 시트로 육안 확인 ③ **판면 하단 캡션을 잘라 확대해 학명과 판 번호를 문자로 판독** ④ 직접 URL `HTTP 200` + `image/*` 실측 |
+| 종 정확도 | 종 일치 **8종** · 같은 속 다른 종/이명 **7종** · 속 불명 0종 |
+| 배경톤 | 크림·아이보리 고전 판면 **13종** · 흰 판면 1종(delphinium) · 회녹색 판면 1종(cornflower — 기존 corn-poppy·daisy 와 같은 책) |
+| 라이선스 | **15/15 Public domain** — Commons 파일 페이지에서 개별 확인 |
+
+## 판본을 한 곳으로 몰아 골랐다
+
+15종 중 **12종이 《Favourite Flowers of Garden and Greenhouse》**(Edward Step / Frederick Warne,
+1896–97) 한 판본에서 왔다. 우연이 아니라 위 §출처 분포가 적어 둔 방침
+("상위 판본을 우선 쓰면 세트 일관성이 자연스럽게 확보된다")을 그대로 따른 결과다. 이득이 셋이다.
+
+1. **크레딧이 합쳐진다.** 꽃이 15종 늘어도 푸터 크레딧 줄은 그만큼 늘지 않는다
+   (`plateCredits()` 가 판본 단위로 접는다).
+2. **화풍·종이색이 어긋나지 않는다.** 이미 8종(peony·carnation·ranunculus·forget-me-not·
+   violet·marigold·babys-breath·cosmos)이 같은 책이라, 도감 레인에 47줄이 서도 톤이 튀지 않는다.
+3. **종 동정이 문자로 확인된다.** 이 판본은 판면 하단에 영문명과 학명을 활자로 인쇄한다 —
+   아래 15종 중 12종의 종 근거가 "형태 추정"이 아니라 **판면에 찍힌 글자**다.
+
+나머지 셋은 이렇게 갈렸다.
+
+| flower_id | 판본 | 왜 이 판본인가 |
+|---|---|---|
+| `delphinium` | Witte *Flora* Pl.24 | 스텝판 델피니움 두 장(Pl.10·11)이 **모두 색이 바랜 스캔**이라 "색 생동" 기준에 걸렸다. 비테판은 짙푸른 꽃대가 또렷하고, 이미 6종이 쓰는 판본이라 세트에서 겉돌지 않는다 |
+| `cornflower` | Step *Wayside and Woodland Blossoms* Pl.67 | 같은 저자(Edward Step)의 야생화 책. `corn-poppy`·`daisy` 와 **같은 책·같은 기관**이라 크레딧이 합쳐지고, 판면에 `Centaurea cyanus` 가 활자로 찍혀 있다 |
+| `amaryllis` | Curtis *The Botanical Magazine* Pl.129 | 스텝판에 아마릴리스 판이 없다. 커티스는 이미 4종(gerbera·lisianthus·magnolia·poinsettia)이 쓰는 판본이라 **새 이름을 만들지 않았다** |
+
+## 채택 도판 15종
+
+`직접 URL` 은 위키미디어 표준 1280px 썸네일이다. `해상도` 는 **원본** 픽셀이다.
+`판면 활자` 는 도판 하단에 실제로 인쇄된 문자열이다 — 종 근거의 1차 자료다.
+
+| flower_id | 판면 활자(종 근거) | 종 일치 여부 | 페이지 URL | 출처 작품(연도) | 라이선스 | 해상도 | 비고 |
+|---|---|---|---|---|---|---|---|
+| `sweet-pea` | `SWEET PEA (LATHYRUS ODORATUS) PL. 71` | **종 일치** | https://commons.wikimedia.org/wiki/File:Favourite_flowers_of_garden_and_greenhouse_(Pl._71)_(7789123758).jpg | Step, *Favourite Flowers* Pl.71 (1896) — BHL | `Public domain` | 1885×3200 | 자주·연분홍·크림 세 색이 한 판에. 덩굴손까지 그려 종 형태가 분명하다 |
+| `gladiolus` | `GHENT CORN-FLAG (GLADIOLUS GANDAVENSIS) PL. 258` | **같은 속·교잡종** (카탈로그는 원예 글라디올러스) | https://commons.wikimedia.org/wiki/File:Favourite_flowers_of_garden_and_greenhouse_(8346028424).jpg | Step, *Favourite Flowers* Pl.258 (1897) — BHL | `Public domain` | 1973×3200 | ***G. gandavensis* 는 현대 원예 글라디올러스의 모태 교잡종**이라 대체가 정당하다. 구근까지 함께 그렸다 |
+| `dahlia` | `SINGLE DAHLIA (DAHLIA VARIABILIS) PL. 141` | **종 일치(이명)** — *D. variabilis* = *D. pinnata* 계열 | https://commons.wikimedia.org/wiki/File:Favourite_flowers_of_garden_and_greenhouse_(10574940876).jpg | Step, *Favourite Flowers* Pl.141 (1897) — BHL | `Public domain` | 1987×3200 | ⚠ **홑달리아**다. 요즘 꽃집의 겹달리아와 모양이 다르니 `note` 로 밝혔다. 연노랑·진홍·주황·흰빛 네 색을 한 판에 담아 CSV `colors` 를 넓게 덮는다 |
+| `zinnia` | `YOUTH AND AGE (ZINNIA ELEGANS, vars.) PL. 138` | **종 일치** | https://commons.wikimedia.org/wiki/File:Favourite_flowers_of_garden_and_greenhouse_(10574885715).jpg | Step, *Favourite Flowers* Pl.138 (1897) — BHL | `Public domain` | 1987×3200 | 연분홍·주홍·노랑·진홍이 한 판에. 영문 속명 "Youth and Age" 가 이 꽃의 옛 별명이다 |
+| `aster` | `CHINA ASTERS (CALLISTEPHUS SINENSIS, vars.) PL. 132` | **종 일치(이명)** — *C. sinensis* = *C. chinensis* | https://commons.wikimedia.org/wiki/File:Favourite_flowers_of_garden_and_greenhouse_(10575130263).jpg | Step, *Favourite Flowers* Pl.132 (1897) — BHL | `Public domain` | 1891×3200 | **과꽃(China aster)** 판이다. 같은 책 Pl.139 는 쑥부쟁이(`MICHAELMAS DAISIES`)라 혼동 주의 — 아래 §제외 참조 |
+| `calendula` | `MARIGOLD (CALENDULA OFFICINALIS) PL. 155` | **종 일치** | https://commons.wikimedia.org/wiki/File:Favourite_flowers_of_garden_and_greenhouse_(10575241163).jpg | Step, *Favourite Flowers* Pl.155 (1897) — BHL | `Public domain` | 2011×3200 | 영문명이 `MARIGOLD` 지만 **학명이 *Calendula officinalis* 로 함께 찍혀 있어** 마리골드(*Tagetes*)와의 혼동을 판면 자체가 해소한다 |
+| `cyclamen` | `PERSIAN CYCLAMEN (CYCLAMEN PERSICUM) PL. 176` | **종 일치** | https://commons.wikimedia.org/wiki/File:Favourite_flowers_of_garden_and_greenhouse_(10593586076).jpg | Step, *Favourite Flowers* Pl.176 (1897) — BHL | `Public domain` | 2007×3200 | 알뿌리와 하트 모양 잎을 함께 그려 프리뮬러와 갈리는 지점이 눈에 보인다 |
+| `geranium` | `ZONAL GERANIUM 1.(PELARGONIUM ZONALE) 2 & 3. HYBRIDS PL. 54` | **종 일치(속)** — 카탈로그의 원예 제라늄과 같은 무리 | https://commons.wikimedia.org/wiki/File:Pelargonium_zonal_flickr.jpg | Step, *Favourite Flowers* Pl.54 (1896) — BHL | `Public domain` | 1916×3200 | ⚠ **Commons 파일의 작가 칸이 틀렸다** — 아래 §근거를 다시 세운 1종 참조. 잎의 고리 무늬(zonal)까지 그려 이름의 유래가 보인다 |
+| `primula` | `CHINESE PRIMROSE (PRIMULA SINENSIS) PL. 175` | **같은 속·다른 종** (카탈로그는 정원 프리뮬러) | https://commons.wikimedia.org/wiki/File:Favourite_flowers_of_garden_and_greenhouse_(10593580946).jpg | Step, *Favourite Flowers* Pl.175 (1897) — BHL | `Public domain` | 2007×3200 | 같은 책의 다른 후보 둘(*P. japonica* Pl.174 · *P. auricula* Pl.176)보다 **화분에서 보는 프리뮬러 모습에 가깝다** — 주름진 잎 로제트 위로 평면 다섯 꽃잎이 핀다 |
+| `stock` | `TEN-WEEK STOCK (MATHIOLA ANNUA) PL. 22` | **종 일치(이명·계통)** — *M. annua* = *M. incana* 의 한해살이 계통 | https://commons.wikimedia.org/wiki/File:Favourite_flowers_of_garden_and_greenhouse_(Pl._22)_(7789042742).jpg | Step, *Favourite Flowers* Pl.22 (1896) — BHL | `Public domain` | 2055×3120 | 연분홍·크림·검붉은 겹꽃대가 한 판에. 같은 책 Pl.27 은 **버지니아 스토크**(*Malcolmia*)라 속이 다르다 — 아래 §제외 |
+| `delphinium` | `DELPHINIUM FORMOSUM PL. 24` | **같은 속·다른 종** (카탈로그는 원예 델피니움) | https://commons.wikimedia.org/wiki/File:WitteHeinrichFlora1868-024-Delphinium_formosum.png | A.J. Wendel / Witte *Flora* Pl.24 (1868) | `Public domain` | 3369×4651 | ***D. formosum* 은 원예 델피니움의 모종 계열**이라 대체가 정당하다. 짙푸른 꽃대가 이 세트에서 가장 선명하다 |
+| `amaryllis` | (판면에 학명 없음 — Commons 분류가 *Hippeastrum vittatum*) | **같은 속·모종** (카탈로그는 원예 아마릴리스) | https://commons.wikimedia.org/wiki/File:The_Botanical_Magazine,_Plate_129_(Volume_4,_1791).png | William Curtis, *The Botanical Magazine* Pl.129 v.4 (1791) — BHL | `PD-old-100` + `PD-scan` + `CC-PD-Mark` | 1845×3185 | ***H. vittatum* 은 현대 원예 아마릴리스의 모종**이다. 흰 바탕에 붉은 줄무늬가 이번 실사 대표컷(줄무늬 아마릴리스)과 정확히 겹쳐 **도판과 사진이 같은 꽃을 가리킨다** |
+| `cornflower` | `Cornflower. Blue-bottle. Centaurea cyanus. — COMPOSITÆ. —` | **종 일치** | https://commons.wikimedia.org/wiki/File:Wayside_and_woodland_blossoms_(Pl._67)_(8747773790).jpg | Step, *Wayside and Woodland Blossoms* Pl.67 (1895) — BHL | `Public domain` | 2020×2996 | `corn-poppy`·`daisy` 와 **같은 책·같은 해·같은 기관**이라 크레딧이 합쳐진다. 회녹색 판면도 그 둘과 같은 톤이다 |
+| `crocus` | `(A) YELLOW CROCUS (CROCUS AUREUS) (B) SPRING CROCUS (CROCUS VERNUS) PL. 256` | **종 일치** — *C. vernus* 가 봄 크로커스의 기준종 | https://commons.wikimedia.org/wiki/File:Favourite_flowers_of_garden_and_greenhouse_(8346027178).jpg | Step, *Favourite Flowers* Pl.256 (1897) — BHL | `Public domain` | 1973×3200 | **노랑과 자주를 한 판에** 담아 CSV `colors` 를 한 장으로 덮는다. 알뿌리까지 그려 사프란(가을에 피는 *C. sativus*)과 다른 꽃임이 드러난다 |
+| `water-lily` | `EGYPTIAN WATER-LILY (NYMPHÆA LOTUS — var. rubra) PL. 16` | **같은 속·다른 종** (카탈로그는 수련속 원예종) | https://commons.wikimedia.org/wiki/File:Favourite_flowers_of_garden_and_greenhouse_(Pl._16)_(7789031322).jpg | Step, *Favourite Flowers* Pl.16 (1896) — BHL | `Public domain` | 1953×3200 | 붉은 수련 한 송이와 봉오리를 **둥근 뜬잎**과 함께 그려, 잎이 물 위로 솟는 연꽃과 갈리는 지점이 판면에 있다 |
+
+## 근거를 다시 세운 1종 — `geranium`
+
+`Pelargonium zonal flickr.jpg` 는 **Commons 파일의 작가 칸이 잘못돼 있다.** 업로더가
+`Chromolithographie, France, 19e siècle`(19세기 프랑스 크로모리소그래프)이라고 적어 두었는데,
+판면은 영어 활자다. 스텝 판본이라는 근거는 셋이다.
+
+1. **판면 활자.** `ZONAL GERANIUM / 1. (PELARGONIUM ZONALE) 2 & 3. HYBRIDS / ⅔ Nat. size / PL. 54` —
+   서체·배치·`Nat. size` 표기까지 이 세트의 다른 12장과 완전히 같다.
+2. **BHL 플리커 연번.** Commons 의 출처 칸이 가리키는 원본은 `flickr.com/photos/biodivlibrary/7789096990`.
+   같은 책 Pl.53(*Geranium ibericum*)이 `7789095372` 이고, **Pl.54 가 바로 그다음 번호**다.
+3. **판 번호의 정합.** Pl.53 이 진짜 *Geranium*(쥐손이풀속), Pl.54 가 *Pelargonium* — 원서가
+   두 속을 나란히 실은 순서와 맞는다.
+
+그래서 코드는 이 도판을 **Step, *Favourite Flowers* Pl.54, 1896 / BHL** 로 표기한다.
+라이선스 판정(Public domain)에는 어느 쪽 해석으로도 영향이 없다 — 1896년 간행물이든
+19세기 크로모리소그래프든 저작권은 소멸했다.
+
+## 검토했으나 제외한 것
+
+| 대상 | 제외 사유 |
+|---|---|
+| Step *Favourite Flowers* Pl.53 `BROAD-PETALED CRANE'S BILL (GERANIUM IBERICUM)` | **진짜 *Geranium*(쥐손이풀속)** — 우리가 제라늄이라 부르는 *Pelargonium* 과 다른 속이다. 제라늄 검색이 가장 크게 걸려 넘어지는 지점 |
+| Step *Favourite Flowers* Pl.27 `VIRGINIAN STOCK (MALCOLMIA MARITIMA)` | **속이 다르다**(*Malcolmia*). 이름만 stock |
+| Step *Favourite Flowers* Pl.104 `EVENING PRIMROSES (OENOTHERA)` | **달맞이꽃** — 프리뮬러와 속이 다르다 |
+| Step *Favourite Flowers* Pl.139 `MICHAELMAS DAISIES (ASTER AMELLUS · A. NOVAE-ANGLIAE)` | **쑥부쟁이 계열** — 과꽃(*Callistephus*)과 다르다. `aster` 검색이 이 판을 먼저 내놓는다 |
+| Step *Wayside* Pl.106 `Yellow Waterlily. Nuphar luteum.` | **개연꽃(*Nuphar*)** — 수련속(*Nymphaea*)이 아니다 |
+| Step *Wayside* Pl.2 `Cowslip. Paigle. Primula veris.` | 프리뮬러속은 맞지만 **앵초(cowslip)** 라 화분에서 보는 프리뮬러와 모습이 다르다. Pl.175 에 열세 |
+| Step *Favourite Flowers* Pl.174 (*P. japonica*) · Pl.176 (*P. auricula*) | 같은 사유 — 층층이 피는 일본앵초·오리큘라는 정원 프리뮬러의 모습이 아니다 |
+| Step *Favourite Flowers* Pl.10 · Pl.11 (larkspur / hybrid larkspur) | 종은 맞지만 **스캔이 바래 회올리브빛**이다 — 색 생동 기준 미달. 비테판으로 대체했다 |
+| Witte *Flora* Pl.64 `DAHLIA VARIABILIS` | 종·화질 모두 양호하나 **스텝판 Pl.141 이 색을 넷 담아** CSV `colors` 를 더 넓게 덮는다 |
+| Witte *Flora* Pl.65 `LATHYRUS LATIFOLIUS` | **넓은잎연리초** — 향기 없는 여러해살이라 스위트피(*L. odoratus*)와 다르다 |
+| Witte *Flora* Pl.79 `Cyclamen hederifolium` | 같은 속이나 스텝판 *C. persicum* 이 카탈로그 종과 정확히 맞는다 |
+| Curtis *Botanical Magazine* Pl.20 · 95 · 148 · 165 · 201 · 240 · 261 · 309 (Pelargonium 다수) | 전부 야생 *Pelargonium* 원종 — 꽃이 성기고 잎이 갈라져 **우리가 아는 제라늄 모습이 아니다** |
+| *Flore des serres* v14 137a · v15 085a (Pelargonium zonale) | 종·화질 최상급이나 **바탕이 올리브브라운·회백색**이라 크림 판면 세트에서 튄다. 새 판본이라 크레딧도 합쳐지지 않는다 |
+| Rawpixel 계열 Redouté *Les Liliacées* 스캔 | Rawpixel 이 "digitally enhanced" 를 근거로 `CC BY-SA 4.0` 주장 — 기존 방침대로 배제 |
+| `Ethel May Dixie` 등 20세기 화가 도판 | 사후 70년 미경과 — PD 아님(기존 방침과 동일) |
+
+## 코드에 반영한 것
+
+| 문서가 말한 것 | 코드가 한 일 | 자리 |
+|---|---|---|
+| 도판 15종 | `FLOWER_PLATES` 에 15줄 추가 — 표는 32 → **47** | `src/lib/plates/index.ts` |
+| 판본 이름 재사용 | `STEP_FAVOURITE`(12) · `WITTE`(1) · `STEP_WAYSIDE`(1) · `CURTIS`(1) 상수를 **그대로 재사용**했다. 커티스판을 위해 새 이름을 만들지 않았다 — 같은 잡지이므로 두 이름이 서 있으면 크레딧이 갈린다 | 〃 |
+| 종 불일치는 정직한 한 줄 | 종이 어긋나는 7종에 `note` 를 달았다(글라디올러스·달리아·과꽃 이명·프리뮬러·스토크 이명·델피니움·아마릴리스·수련). 화면 각주로 그대로 나간다 | 〃 |
+| 자체 호스팅 | `node scripts/fetch-plates.mjs` 실행 — 15종 본판 + 썸네일을 새로 만들었다. 실패 0건 | `public/plates/` · `public/plates/thumbs/` |
+| 배치 가시화 | 15종 id 를 이름으로 적고 **12종이 한 판본**임을 단언하는 테스트를 세웠다 | `tests/components/plates.test.ts` |
+| 크레딧 합치기 상한 | `credits.length < ids.length` → `< ids.length / 2`. 꽃이 47종인데 크레딧 줄이 그 절반을 넘으면 판본 몰아 고르기가 깨진 것이다 | 〃 |
+
+## 용량
+
+| 항목 | 이전(32종) | 이후(47종) |
+|---|---|---|
+| 본판 합계 | 7.38 MB | **11.59 MB** (신규 15장 4.21 MB · 평균 281 KB) |
+| 썸네일 합계 | 약 245 KB | **359 KB** (테스트 상한 512 KB 안) |
+| 본판 최대 | 354 KB (carnation) | 354 KB (변동 없음 — 신규 최대는 aster 352 KB) |
+
+정규화 규격은 그대로다(폭 ≤1100px · 알파 흰 배경 flatten · JPEG q82 mozjpeg · 썸네일 160px).
+위키미디어 PNG 판본 둘(delphinium 3.59 MB · amaryllis 5.30 MB)이 이 단계에서 각각
+170 KB · 332 KB 로 줄었다 — 정규화가 없었다면 이 배치만으로 리포에 9 MB 가 더 쌓였다.
+
+## 검증
+
+| 항목 | 결과 |
+|---|---|
+| 취득 URL 15건 | HTTP 200 · `image/jpeg` 13건 · `image/png` 2건 |
+| 라이선스 | Commons `extmetadata` 로 15/15 **Public domain** 확인 |
+| 종 근거 | 15장 중 **12장은 판면 활자를 확대 판독**해 학명을 문자로 확인. 나머지 셋은 Commons 파일명·분류(delphinium·cornflower·amaryllis) |
+| 다운로드 | `node scripts/fetch-plates.mjs` — 정규화 15 · 그대로 둠 32 · **실패 0** |
+| 파일 확인 | 15장을 컨택트 시트로 다시 열어 **파일 이름과 그림이 어긋나지 않았음**을 눈으로 확인 |
+| `npm run lint` · `npm run typecheck` | exit 0 |
+| `npx vitest run tests/components/plates.test.ts` | 통과(신규 1건 포함) |
+
+## 남은 판단 (Advisor 몫)
+
+1. **`aster` 를 과꽃(*Callistephus chinensis*)으로 전제했다.** 실사와 같은 전제다 —
+   `content/flowers.csv` 의 학명이 *Aster* 속이면 같은 책 Pl.139(`MICHAELMAS DAISIES`)로
+   갈아 끼우면 된다. 판본·크레딧은 그대로 유지된다.
+2. **`dahlia` 가 홑달리아 판면이다.** 스텝·비테 두 판본 모두 홑꽃만 있고, PD 범위에서
+   겹달리아 채색 도판을 찾지 못했다. `note` 로 밝혀 두었으나, 도감 본문이 겹달리아를
+   전제한다면 문구를 맞출 필요가 있다.
+3. **`geranium` 도판의 Commons 작가 칸이 틀렸다**(§근거를 다시 세운 1종).
+   장기적으로는 Commons 파일 페이지를 우리가 고치는 것이 가장 깨끗하다 — 후속 과제로 남긴다.

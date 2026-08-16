@@ -361,7 +361,9 @@ describe('photosFor — 도감 갤러리', () => {
       (flower) =>
         photosFor(flower.id).filter((cut) => (cut.variant ?? '').endsWith('빛')).length >= 2,
     );
-    expect(colorful.length).toBeGreaterThanOrEqual(20);
+    // 2026-08-16 갤러리 라운드에서 32종 중 20종 → 확장 배치 1 의 15종이 전부 색 라벨 둘
+    // 이상이라 35종. 하한을 같이 올려야 새 꽃이 앵글 라벨만 달고 들어오는 것을 막는다.
+    expect(colorful.length).toBeGreaterThanOrEqual(35);
   });
 
   it('갤러리 컷도 두 소스를 함께 쓴다 — 확장이 조용히 되돌려지지 않았다', async () => {
@@ -370,6 +372,43 @@ describe('photosFor — 도감 갤러리', () => {
       catalog.flowers.flatMap((flower) => photosFor(flower.id).map((cut) => photoSource(cut))),
     );
     expect([...used].sort()).toEqual(['pexels', 'unsplash']);
+  });
+
+  /**
+   * 정식 도감 확장 배치 1(2026-08-16)의 15종.
+   *
+   * 위 테스트들은 전부 카탈로그를 돌기 때문에, **CSV 에서 꽃이 빠지면 함께 조용히 초록**이
+   * 된다. 이 배치는 실사·도판·본문이 서로 다른 작업으로 들어왔으므로, 15종이 실제로
+   * 붙어 있다는 사실만큼은 이름을 적어 못 박아 둔다.
+   */
+  const BATCH_ONE = [
+    'sweet-pea',
+    'gladiolus',
+    'dahlia',
+    'zinnia',
+    'aster',
+    'calendula',
+    'cyclamen',
+    'geranium',
+    'primula',
+    'stock',
+    'delphinium',
+    'amaryllis',
+    'cornflower',
+    'crocus',
+    'water-lily',
+  ] as const;
+
+  it('확장 배치 1 의 15종이 전부 대표컷 + 갤러리를 갖는다', () => {
+    for (const id of BATCH_ONE) {
+      const primary = photoFor(id);
+      expect(primary, `${id} — 대표컷이 없다`).toBeDefined();
+      // 이번 배치는 전부 Pexels 다(Unsplash 검색이 봇 차단 뒤로 들어갔다 — 모듈 주석 참조).
+      expect(photoSource(primary as never), id).toBe('pexels');
+      // 대표를 어두운 배경으로만 고른 결과다 — 밝은 컷 명단이 넷에서 늘지 않아야 한다.
+      expect(needsDarkOverlay(primary as never), `${id} — 밝은 컷 명단이 늘었다`).toBe(false);
+      expect(photosFor(id).length, `${id} — 컷이 3장이 아니다`).toBe(3);
+    }
   });
 
   it('제비꽃 갤러리가 종 확실성을 되찾았다 — 대표컷은 속까지만이었다', () => {

@@ -104,7 +104,7 @@ describe('도감 상세 — 이 꽃이 탄생화로 놓인 날', () => {
     expect(peony?.birthDays).toBeUndefined();
   });
 
-  it('표에 걸린 24종 전부가 한 줄을 갖는다', async () => {
+  it('표에 걸린 38종 전부가 한 줄을 갖는다', async () => {
     const data = await catalog();
     const linkedIds = new Set(
       data.birthFlowers
@@ -112,7 +112,7 @@ describe('도감 상세 — 이 꽃이 탄생화로 놓인 날', () => {
         .filter((id): id is string => id !== undefined),
     );
 
-    expect(linkedIds.size).toBe(24);
+    expect(linkedIds.size).toBe(38);
     for (const id of linkedIds) {
       expect(buildFlowerDetail(data, id)?.birthDays, `${id} 의 탄생화 줄`).toBeTruthy();
     }

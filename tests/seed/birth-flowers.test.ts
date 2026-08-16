@@ -219,14 +219,14 @@ describe('birth_flowers.csv 도감 연결', () => {
     }
   });
 
-  it('빈 flower_id 가 다수다 — 366일은 카탈로그 32종보다 훨씬 넓다', () => {
+  it('빈 flower_id 가 다수다 — 366일은 카탈로그 47종보다 훨씬 넓다', () => {
     const { birth_flowers: rows } = loadBirthFlowers();
     const linked = rows.filter((row) => row.value.flower_id !== undefined);
     expect(linked.length).toBeGreaterThan(0);
     expect(linked.length).toBeLessThan(rows.length);
   });
 
-  it('카탈로그 32종 중 절반 이상이 어느 날짜엔가 걸린다', () => {
+  it('카탈로그 47종 중 절반 이상이 어느 날짜엔가 걸린다', () => {
     const { flowers, birth_flowers: rows } = loadBirthFlowers();
     const linked = new Set(
       rows.map((row) => row.value.flower_id).filter((id): id is string => id !== undefined),
@@ -262,9 +262,30 @@ describe('birth_flowers.csv 도감 연결', () => {
     expect(at(6, 5)?.editorial_note).toContain('Calendula');
     // 이름만 겹치는 꽃은 이어 붙이지 않는다.
     expect(at(3, 19)?.flower_id).toBeUndefined(); // 치자나무(Cape Jasmine)
-    expect(at(4, 27)?.flower_id).toBeUndefined(); // 수련(Water Lily)
     expect(at(8, 17)?.flower_id).toBeUndefined(); // 튤립나무(Tulip-Tree)
-    expect(at(8, 24)?.flower_id).toBeUndefined(); // 금잔화(Calendula)
+    // 사프란(Crocus sativus)·콜키쿰은 봄 크로커스와 종이 달라 잇지 않는다.
+    expect(at(1, 24)?.flower_id).toBeUndefined(); // 가을에 피는 사프란(Saffron-Crocus)
+    expect(at(9, 21)?.flower_id).toBeUndefined(); // 사프란(Autumn Crocus)
+    // 같은 표가 종 이름으로 따로 세워 둔 앵초 친척들도 잇지 않는다.
+    expect(at(5, 1)?.flower_id).toBeUndefined(); // 카우슬립 앵초(Primula veris)
+    expect(at(5, 18)?.flower_id).toBeUndefined(); // 옥슬립 앵초(Primula elatior)
+    expect(at(6, 21)?.flower_id).toBeUndefined(); // 달맞이꽃(Evening Primrose — 과가 다르다)
+  });
+
+  /*
+   * seed-v6 에서 도감이 47종으로 늘며 **비연결이 연결로 뒤집힌 두 날**이다.
+   * 그 전까지 이 두 행은 "이름만 겹치는 꽃"의 사례였다(수련≠백합 · 금잔화≠만수국).
+   * 카탈로그가 그 꽃 자체를 갖게 되었으므로, 이제는 이어져 있어야 맞다.
+   */
+  it('도감이 늘면서 이어진 두 날은 그 사실을 메모에 남긴다 (seed-v6)', () => {
+    const { birth_flowers: rows } = loadBirthFlowers();
+    const at = (month: number, day: number) =>
+      rows.find((row) => row.value.month === month && row.value.day === day)?.value;
+
+    expect(at(4, 27)?.flower_id).toBe('water-lily'); // 수련(Water Lily)
+    expect(at(4, 27)?.editorial_note).toContain('seed-v6');
+    expect(at(8, 24)?.flower_id).toBe('calendula'); // 금잔화(Calendula)
+    expect(at(8, 24)?.editorial_note).toContain('seed-v6');
   });
 });
 

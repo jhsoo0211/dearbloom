@@ -52,7 +52,7 @@ export const CATEGORY_THEMES: Record<ThemeCategory, CategoryTheme> = {
 };
 
 /**
- * 명시 배정 1순위 (§1.4c v3.2 "현 9종 배정" + seed-v4 신규 14종).
+ * 명시 배정 1순위 (§1.4c v3.2 "현 9종 배정" + seed-v4 14종 · seed-v5 1종 · seed-v6 15종).
  *
  * 배정 기준은 폴백과 같다 — **대표색(`colors[0]`)**. 폴백에 맡겨도 같은 값이 나오는 꽃까지
  * 여기 적어 두는 이유는, 흰색 계열 세 종(`jasmine` `babys-breath` `magnolia`)을 폴백의
@@ -101,6 +101,34 @@ const CATEGORY_BY_FLOWER: Record<string, ThemeCategory> = {
    * 크림·화이트 스튜디오보다 숲빛 쪽 결에 가깝다.
    */
   daisy: 'forest',
+  /* ── 확장 배치 1 (2026-08-16, flowers.csv seed-v6 15종) ───────────────────
+   * 열다섯 줄 전부 **폴백과 같은 값**이다(대표색 규칙 그대로). 그래도 적어 두는 이유는
+   * 위 데이지 주석과 같다 — 명시 표가 이미 스물넷 줄이라, 빠진 꽃은 "배정을 빠뜨린 것"으로
+   * 읽힌다. 색이 카테고리를 정한다는 사실을 이 표가 눈으로 확인시켜 주는 편이 낫다. */
+  // 빨강·분홍 대표색
+  'sweet-pea': 'wine',
+  gladiolus: 'wine',
+  dahlia: 'wine',
+  zinnia: 'wine',
+  cyclamen: 'wine',
+  geranium: 'wine',
+  amaryllis: 'wine',
+  // 노랑 대표색
+  calendula: 'gold',
+  primula: 'gold',
+  // 파랑·보라 대표색
+  aster: 'dusk',
+  delphinium: 'dusk',
+  cornflower: 'dusk',
+  crocus: 'dusk',
+  /**
+   * 흰·크림 대표색이지만 **`ivory` 로 옮기지 않는다** — 데이지와 같은 판단이다.
+   * `ivory` 를 채운 목적(라이트 테마 배정 2 → 5종)은 이미 이뤄졌고, 두 꽃 다
+   * 밝은 스튜디오보다 어두운 물·밤 화단 쪽 결이 어울린다(수련은 검은 수면 위의 흰 꽃,
+   * 스토크는 나머지 색이 분홍·보라인 겹꽃 수상화서다).
+   */
+  stock: 'forest',
+  'water-lily': 'forest',
 };
 
 /** 미배정 신규 꽃의 폴백 — 대표색(colors[0]) 규칙. */

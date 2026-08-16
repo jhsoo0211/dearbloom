@@ -1,7 +1,7 @@
 /**
- * 꽃 세밀화 도판 32종 — 퍼블릭 도메인 보태니컬 도판의 **단일 원본**.
+ * 꽃 세밀화 도판 47종 — 퍼블릭 도메인 보태니컬 도판의 **단일 원본**.
  *
- * 출처 문서: `docs/illustration-assets.md` (2026-08-15 조사 31종 + 같은 날 데이지 1종 = 32/32).
+ * 출처 문서: `docs/illustration-assets.md` (2026-08-15 조사 32종 + 2026-08-16 확장 배치 1 15종 = 47/47).
  * 이 파일은 그 표를 **코드로 옮긴 사본**이다. 도판을 바꾸거나 늘릴 때는 문서를 먼저 고치고
  * 여기로 옮긴다 — 문서가 라이선스 근거를 들고 있고, 이 파일은 화면이 쓰는 모양만 갖는다.
  *
@@ -19,20 +19,20 @@
  *     plantillustrations.org 는 안정성을 신뢰할 수 없다(문서 §미확보 B).
  *
  * ── 라이선스 ────────────────────────────────────────────────────────
- * 32종 전부 퍼블릭 도메인 또는 CC0 다. 표기 의무는 없지만 **표기를 기본값으로 운용**한다
+ * 47종 전부 퍼블릭 도메인 또는 CC0 다. 표기 의무는 없지만 **표기를 기본값으로 운용**한다
  * (BHL→Flickr 경유 파일 16종에 `CC BY 2.0` 상자가 기계적으로 붙어 있는 이슈를 한 번에 덮는
  * 가장 싼 보험이고, "야간 식물 아카이브" 라는 톤에도 출처 표기가 어울린다).
  * 표기 형식은 문서 사용 규칙 4 그대로 — `Plate: {작품명}, {연도} / {소장·제공 기관}`.
  *
  * ── 자체 호스팅 (문서 배포 규칙 1, 2026-08-15 적용 완료) ──────────────
- * `src` 는 전부 **우리 `public/plates/` 사본**이다. 32종이 전부 PD/CC0 라 재배포에 제약이
+ * `src` 는 전부 **우리 `public/plates/` 사본**이다. 47종이 전부 PD/CC0 라 재배포에 제약이
  * 없고, 위키미디어는 핫링크 연속 요청에 `HTTP 429` 를 돌려주기 때문이다(문서 배포 규칙 2 —
  * 레인 32줄이 한 화면에서 동시에 요청하면 그 상태가 곧바로 재현된다).
  *   · 취득 주소는 `remoteSrc` 에 그대로 남겨 둔다 — 재다운로드의 입력이자 출처 증빙이다.
  *   · 파일을 다시 받는 방법: `node scripts/fetch-plates.mjs`(`--force` 로 덮어쓰기,
  *     `--reencode` 로 재다운로드 없이 다시 정규화). 저장 경로는 이 파일의 `src` 가 정한다 —
  *     스크립트가 `src` 를 읽어 그 자리에 쓴다.
- *   · **32종 전부 `.jpg` 다** — 확장자를 원본대로 두지 않고 한 규격으로 정규화한다.
+ *   · **47종 전부 `.jpg` 다** — 확장자를 원본대로 두지 않고 한 규격으로 정규화한다.
  *     스크립트가 `sharp` 로 폭 ≤1100px · 알파는 흰 배경 flatten · JPEG q82(mozjpeg) 로
  *     **다시 인코딩해** 저장하므로, 파일 바이트 자체가 JPEG 다(이름만 바꾼 게 아니다).
  *     그래서 정적 서버가 말하는 `Content-Type: image/jpeg` 가 사실과 맞는다.
@@ -108,7 +108,7 @@ const STEP = 'Edward Step';
 const COMMONS = 'Wikimedia Commons';
 const BHL = 'Biodiversity Heritage Library';
 
-/** 꽃 id → 도판. 카탈로그 32종 전원이 여기 있다(`tests/components/plates.test.ts` 가 지킨다). */
+/** 꽃 id → 도판. 카탈로그 47종 전원이 여기 있다(`tests/components/plates.test.ts` 가 지킨다). */
 export const FLOWER_PLATES: Record<string, FlowerPlate> = {
   'rose-red': {
     flowerId: 'rose-red',
@@ -555,6 +555,242 @@ export const FLOWER_PLATES: Record<string, FlowerPlate> = {
     plateNo: 'Pl.1',
     year: '1895',
     institution: BHL,
+  },
+
+  /* ---------------------------------------------------------------- *
+   * 정식 도감 확장 배치 1 — 15종 (2026-08-16)
+   *
+   * 15종 중 12종이 **《Favourite Flowers of Garden and Greenhouse》 한 판본**에서 왔다.
+   * 우연이 아니라 의도다 — 문서 §출처 분포가 "상위 판본을 우선 쓰면 세트 일관성이
+   * 자연스럽게 확보된다" 고 적어 둔 방침을 그대로 따랐다. 판면 하단에 학명이 활자로
+   * 찍혀 있어 **종 동정이 문자로 확인되는 것**도 이 판본을 우선한 이유다.
+   * 나머지 셋: 델피니움(비테 《플로라》) · 수레국화(스텝 《길가와 숲의 꽃》) ·
+   * 아마릴리스(커티스 《보태니컬 매거진》 — 기존 네 종과 같은 판본이라 새 이름이 필요 없다).
+   *
+   * 라이선스는 15종 전부 Commons 파일 페이지에서 **개별 확인**했다(전부 Public domain).
+   * ---------------------------------------------------------------- */
+
+  'sweet-pea': {
+    flowerId: 'sweet-pea',
+    src: '/plates/sweet-pea.jpg',
+    remoteSrc:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Favourite_flowers_of_garden_and_greenhouse_%28Pl._71%29_%287789123758%29.jpg/1280px-Favourite_flowers_of_garden_and_greenhouse_%28Pl._71%29_%287789123758%29.jpg',
+    pageUrl:
+      'https://commons.wikimedia.org/wiki/File:Favourite_flowers_of_garden_and_greenhouse_(Pl._71)_(7789123758).jpg',
+    alt: '자주·연분홍·크림빛 스위트피가 덩굴손과 함께 뻗은 세밀화',
+    artist: STEP,
+    work: STEP_FAVOURITE,
+    plateNo: 'Pl.71',
+    year: '1896',
+    institution: BHL,
+  },
+  gladiolus: {
+    flowerId: 'gladiolus',
+    src: '/plates/gladiolus.jpg',
+    remoteSrc:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/7/70/Favourite_flowers_of_garden_and_greenhouse_%288346028424%29.jpg/1280px-Favourite_flowers_of_garden_and_greenhouse_%288346028424%29.jpg',
+    pageUrl:
+      'https://commons.wikimedia.org/wiki/File:Favourite_flowers_of_garden_and_greenhouse_(8346028424).jpg',
+    alt: '주홍과 연분홍 글라디올러스 꽃대를 구근까지 함께 그린 세밀화',
+    artist: STEP,
+    work: STEP_FAVOURITE,
+    plateNo: 'Pl.258',
+    year: '1897',
+    institution: BHL,
+    note: '도판은 현대 원예 글라디올러스의 모태가 된 교잡종 Gladiolus gandavensis 예요.',
+  },
+  dahlia: {
+    flowerId: 'dahlia',
+    src: '/plates/dahlia.jpg',
+    remoteSrc:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f7/Favourite_flowers_of_garden_and_greenhouse_%2810574940876%29.jpg/1280px-Favourite_flowers_of_garden_and_greenhouse_%2810574940876%29.jpg',
+    pageUrl:
+      'https://commons.wikimedia.org/wiki/File:Favourite_flowers_of_garden_and_greenhouse_(10574940876).jpg',
+    alt: '붉은빛·주황빛·연노랑 홑달리아를 한 판에 모은 세밀화',
+    artist: STEP,
+    work: STEP_FAVOURITE,
+    plateNo: 'Pl.141',
+    year: '1897',
+    institution: BHL,
+    note: '도판은 꽃잎이 한 겹인 홑달리아라, 요즘 꽃집에서 보는 겹달리아와 모양이 달라요.',
+  },
+  zinnia: {
+    flowerId: 'zinnia',
+    src: '/plates/zinnia.jpg',
+    remoteSrc:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Favourite_flowers_of_garden_and_greenhouse_%2810574885715%29.jpg/1280px-Favourite_flowers_of_garden_and_greenhouse_%2810574885715%29.jpg',
+    pageUrl:
+      'https://commons.wikimedia.org/wiki/File:Favourite_flowers_of_garden_and_greenhouse_(10574885715).jpg',
+    alt: '연분홍·주홍·노랑·진홍 백일홍을 잎과 함께 한 판에 모은 세밀화',
+    artist: STEP,
+    work: STEP_FAVOURITE,
+    plateNo: 'Pl.138',
+    year: '1897',
+    institution: BHL,
+  },
+  aster: {
+    flowerId: 'aster',
+    src: '/plates/aster.jpg',
+    remoteSrc:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/7/73/Favourite_flowers_of_garden_and_greenhouse_%2810575130263%29.jpg/1280px-Favourite_flowers_of_garden_and_greenhouse_%2810575130263%29.jpg',
+    pageUrl:
+      'https://commons.wikimedia.org/wiki/File:Favourite_flowers_of_garden_and_greenhouse_(10575130263).jpg',
+    alt: '연분홍·진홍·흰빛 겹과꽃을 한 다발로 모은 세밀화',
+    artist: STEP,
+    work: STEP_FAVOURITE,
+    plateNo: 'Pl.132',
+    year: '1897',
+    institution: BHL,
+    note: '판면 활자는 옛 이름 Callistephus sinensis 예요 — 지금 쓰는 이름은 C. chinensis 로, 같은 꽃이에요.',
+  },
+  calendula: {
+    flowerId: 'calendula',
+    src: '/plates/calendula.jpg',
+    remoteSrc:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/c/ce/Favourite_flowers_of_garden_and_greenhouse_%2810575241163%29.jpg/1280px-Favourite_flowers_of_garden_and_greenhouse_%2810575241163%29.jpg',
+    pageUrl:
+      'https://commons.wikimedia.org/wiki/File:Favourite_flowers_of_garden_and_greenhouse_(10575241163).jpg',
+    alt: '주황과 붉은 테가 도는 금잔화 세 송이와 잎을 그린 세밀화',
+    artist: STEP,
+    work: STEP_FAVOURITE,
+    plateNo: 'Pl.155',
+    year: '1897',
+    institution: BHL,
+  },
+  cyclamen: {
+    flowerId: 'cyclamen',
+    src: '/plates/cyclamen.jpg',
+    remoteSrc:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7c/Favourite_flowers_of_garden_and_greenhouse_%2810593586076%29.jpg/1280px-Favourite_flowers_of_garden_and_greenhouse_%2810593586076%29.jpg',
+    pageUrl:
+      'https://commons.wikimedia.org/wiki/File:Favourite_flowers_of_garden_and_greenhouse_(10593586076).jpg',
+    alt: '연분홍 시클라멘과 하트 모양 잎을 알뿌리까지 그린 세밀화',
+    artist: STEP,
+    work: STEP_FAVOURITE,
+    plateNo: 'Pl.176',
+    year: '1897',
+    institution: BHL,
+  },
+  geranium: {
+    flowerId: 'geranium',
+    src: '/plates/geranium.jpg',
+    // ⚠ Commons 파일의 작가 칸이 "Chromolithographie, France, 19e siècle" 로 잘못 적혀 있다.
+    //   판면 활자(`ZONAL GERANIUM … PL. 54`)와 BHL 플리커 연번(Pl.53 = 7789095372 바로 다음이
+    //   이 파일의 7789096990)이 스텝 판본임을 함께 가리킨다. 문서 §확장 배치 1 에 근거를 적어 두었다.
+    remoteSrc:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/Pelargonium_zonal_flickr.jpg/1280px-Pelargonium_zonal_flickr.jpg',
+    pageUrl: 'https://commons.wikimedia.org/wiki/File:Pelargonium_zonal_flickr.jpg',
+    alt: '주홍과 연분홍 제라늄 꽃차례와 고리 무늬가 든 둥근 잎 세밀화',
+    artist: STEP,
+    work: STEP_FAVOURITE,
+    plateNo: 'Pl.54',
+    year: '1896',
+    institution: BHL,
+    note: '판면 활자가 알려 주듯, 제라늄이라 불리는 이 꽃의 학명은 Pelargonium 이에요.',
+  },
+  primula: {
+    flowerId: 'primula',
+    src: '/plates/primula.jpg',
+    remoteSrc:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Favourite_flowers_of_garden_and_greenhouse_%2810593580946%29.jpg/1280px-Favourite_flowers_of_garden_and_greenhouse_%2810593580946%29.jpg',
+    pageUrl:
+      'https://commons.wikimedia.org/wiki/File:Favourite_flowers_of_garden_and_greenhouse_(10593580946).jpg',
+    alt: '흰빛과 주홍빛 프리뮬러가 주름진 잎과 함께 핀 세밀화',
+    artist: STEP,
+    work: STEP_FAVOURITE,
+    plateNo: 'Pl.175',
+    year: '1897',
+    institution: BHL,
+    note: '도판은 같은 속의 중국앵초(Primula sinensis)예요.',
+  },
+  stock: {
+    flowerId: 'stock',
+    src: '/plates/stock.jpg',
+    remoteSrc:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/7/71/Favourite_flowers_of_garden_and_greenhouse_%28Pl._22%29_%287789042742%29.jpg/1280px-Favourite_flowers_of_garden_and_greenhouse_%28Pl._22%29_%287789042742%29.jpg',
+    pageUrl:
+      'https://commons.wikimedia.org/wiki/File:Favourite_flowers_of_garden_and_greenhouse_(Pl._22)_(7789042742).jpg',
+    alt: '연분홍·크림빛·검붉은 겹스토크 꽃대를 모은 세밀화',
+    artist: STEP,
+    work: STEP_FAVOURITE,
+    plateNo: 'Pl.22',
+    year: '1896',
+    institution: BHL,
+    note: '판면 활자는 옛 이름 Matthiola annua 예요 — 절화로 도는 Matthiola incana 의 한해살이 계통이에요.',
+  },
+  delphinium: {
+    flowerId: 'delphinium',
+    src: '/plates/delphinium.jpg',
+    remoteSrc:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/WitteHeinrichFlora1868-024-Delphinium_formosum.png/1280px-WitteHeinrichFlora1868-024-Delphinium_formosum.png',
+    pageUrl:
+      'https://commons.wikimedia.org/wiki/File:WitteHeinrichFlora1868-024-Delphinium_formosum.png',
+    alt: '짙푸른 델피니움 꽃이 촘촘히 달린 꽃대 세밀화',
+    artist: WENDEL,
+    work: WITTE,
+    plateNo: 'Pl.24',
+    year: '1868',
+    institution: COMMONS,
+    note: '도판은 원예 델피니움의 모종 계열인 Delphinium formosum 이에요.',
+  },
+  amaryllis: {
+    flowerId: 'amaryllis',
+    src: '/plates/amaryllis.jpg',
+    remoteSrc:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/The_Botanical_Magazine%2C_Plate_129_%28Volume_4%2C_1791%29.png/1280px-The_Botanical_Magazine%2C_Plate_129_%28Volume_4%2C_1791%29.png',
+    pageUrl:
+      'https://commons.wikimedia.org/wiki/File:The_Botanical_Magazine,_Plate_129_(Volume_4,_1791).png',
+    alt: '흰 바탕에 붉은 줄무늬가 든 아마릴리스 두 송이와 굵은 꽃대 세밀화',
+    artist: 'William Curtis',
+    work: CURTIS,
+    plateNo: 'Pl.129',
+    year: '1791',
+    institution: BHL,
+    note: '도판은 원예 아마릴리스의 모종인 Hippeastrum vittatum 이에요.',
+  },
+  cornflower: {
+    flowerId: 'cornflower',
+    src: '/plates/cornflower.jpg',
+    remoteSrc:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Wayside_and_woodland_blossoms_%28Pl._67%29_%288747773790%29.jpg/1280px-Wayside_and_woodland_blossoms_%28Pl._67%29_%288747773790%29.jpg',
+    pageUrl:
+      'https://commons.wikimedia.org/wiki/File:Wayside_and_woodland_blossoms_(Pl._67)_(8747773790).jpg',
+    alt: '가느다란 잎 위로 파란 수레국화 한 송이가 선 세밀화',
+    artist: STEP,
+    work: STEP_WAYSIDE,
+    plateNo: 'Pl.67',
+    year: '1895',
+    institution: BHL,
+  },
+  crocus: {
+    flowerId: 'crocus',
+    src: '/plates/crocus.jpg',
+    remoteSrc:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Favourite_flowers_of_garden_and_greenhouse_%288346027178%29.jpg/1280px-Favourite_flowers_of_garden_and_greenhouse_%288346027178%29.jpg',
+    pageUrl:
+      'https://commons.wikimedia.org/wiki/File:Favourite_flowers_of_garden_and_greenhouse_(8346027178).jpg',
+    alt: '노란 크로커스와 자주 크로커스를 알뿌리까지 나란히 그린 세밀화',
+    artist: STEP,
+    work: STEP_FAVOURITE,
+    plateNo: 'Pl.256',
+    year: '1897',
+    institution: BHL,
+    note: '봄에 피는 노란 크로커스와 자주 크로커스를 함께 그린 판이에요 — 가을에 피는 사프란과는 다른 꽃이에요.',
+  },
+  'water-lily': {
+    flowerId: 'water-lily',
+    src: '/plates/water-lily.jpg',
+    remoteSrc:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/5/57/Favourite_flowers_of_garden_and_greenhouse_%28Pl._16%29_%287789031322%29.jpg/1280px-Favourite_flowers_of_garden_and_greenhouse_%28Pl._16%29_%287789031322%29.jpg',
+    pageUrl:
+      'https://commons.wikimedia.org/wiki/File:Favourite_flowers_of_garden_and_greenhouse_(Pl._16)_(7789031322).jpg',
+    alt: '붉은 수련 한 송이와 봉오리를 둥근 잎과 함께 그린 세밀화',
+    artist: STEP,
+    work: STEP_FAVOURITE,
+    plateNo: 'Pl.16',
+    year: '1896',
+    institution: BHL,
+    note: '도판은 같은 속의 붉은 이집트수련(Nymphaea lotus var. rubra)이에요.',
   },
 };
 

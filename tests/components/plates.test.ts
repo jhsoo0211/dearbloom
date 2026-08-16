@@ -103,7 +103,7 @@ describe('FLOWER_PLATES', () => {
    * 이 `/plates/thumbs/…` 를 가리키므로 **그 파일이 실제로 있어야** 한다 —
    * 모듈만 고치고 `node scripts/fetch-plates.mjs` 를 잊으면 32칸이 전부 404 가 된다.
    */
-  it('썸네일이 32종 전부 있고, 본판보다 확실히 가볍다', () => {
+  it('썸네일이 카탈로그 전종에 있고, 본판보다 확실히 가볍다', () => {
     /** 썸네일 한 장의 상한. 160px q82 라면 실제로는 4~13KB 사이에 든다. */
     const MAX_THUMB_BYTES = 40 * 1024;
     let totalThumb = 0;
@@ -215,14 +215,49 @@ describe('FLOWER_PLATES', () => {
       // `Plate: {작품명}, {연도} / {소장·제공 기관}`
       expect(line).toMatch(/^Plate: .+, .+ \/ .+$/);
     }
-    // 31종이 14개 판본에서 왔다 — 줄 수가 꽃 수만큼이면 합치기가 깨진 것이다.
+    // 47종이 15개 판본에서 왔다 — 줄 수가 꽃 수만큼이면 합치기가 깨진 것이다.
+    // 확장 배치 1(2026-08-16)의 15종 중 12종이 스텝 《Favourite Flowers》 한 판본이라,
+    // 꽃이 15종 늘어도 크레딧 줄은 그만큼 늘지 않는다 — 그게 판본을 몰아 고른 이유다.
     expect(credits.length).toBeGreaterThan(0);
-    expect(credits.length).toBeLessThan(ids.length);
+    expect(credits.length).toBeLessThan(ids.length / 2);
     expect([...new Set(credits)]).toHaveLength(credits.length);
 
     const one = plateFor('anemone');
     if (!one) throw new Error('도판 상수가 비었다');
     expect(plateCredit(one)).toBe('Plate: Witte, Flora, 1868 / Wikimedia Commons');
+  });
+
+  /**
+   * 정식 도감 확장 배치 1(2026-08-16)의 15종.
+   *
+   * 위 테스트는 전부 카탈로그를 돌기 때문에 **CSV 에서 꽃이 빠지면 함께 조용히 초록**이 된다.
+   * 판본을 한 곳으로 몰아 고른 것이 이 배치의 설계 결정이므로, 그 사실을 이름으로 못 박는다.
+   */
+  it('확장 배치 1 의 15종이 전부 도판을 갖고, 열두 종이 한 판본에서 왔다', () => {
+    const batch = [
+      'sweet-pea',
+      'gladiolus',
+      'dahlia',
+      'zinnia',
+      'aster',
+      'calendula',
+      'cyclamen',
+      'geranium',
+      'primula',
+      'stock',
+      'delphinium',
+      'amaryllis',
+      'cornflower',
+      'crocus',
+      'water-lily',
+    ];
+
+    for (const id of batch) expect(plateFor(id), `${id} — 도판이 없다`).toBeDefined();
+
+    const step = batch.filter(
+      (id) => plateFor(id)?.work === 'Step, Favourite Flowers of Garden and Greenhouse',
+    );
+    expect(step).toHaveLength(12);
   });
 
   it('시트 각주 한 줄에 작가·연도·기관이 모두 있다', () => {

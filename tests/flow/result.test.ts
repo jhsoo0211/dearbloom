@@ -247,7 +247,11 @@ describe('결과 화면 대표 실사 (#14)', () => {
       .filter(needsDarkOverlay)
       .map((photo) => photo.flowerId)
       .sort();
-    expect(bright).toEqual(['babys-breath', 'lavender', 'lily-of-the-valley', 'violet']);
+    // 2026-08-16 실사 품질 재검토에서 명단이 한 칸 바뀌었다(수는 그대로 넷).
+    //   · `violet` 제외 — 새 컷(Tom Fisk)이 어두운 초록 보케 배경이다.
+    //   · `forget-me-not` 편입 — 새 컷(Nancy Hughes)은 밝은 풀잎이 화면 오른쪽을 채운다.
+    // 명단의 정본은 `src/lib/photos` 의 `BRIGHT_BACKGROUND` 각주다.
+    expect(bright).toEqual(['babys-breath', 'forget-me-not', 'lavender', 'lily-of-the-valley']);
   });
 });
 

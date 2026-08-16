@@ -936,20 +936,135 @@
   color: var(--fg-50);
 }
 
-/* ── 데스크톱: 앱 프레임 ─────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════════════
+   웹사이트 레이아웃 (768px↑) — 폰 프레임을 버린다
+
+   여기까지 이 화면의 데스크톱은 **말 그대로 폰이었다** — 430px 캔버스에 radius 40px
+   과 네 겹 그림자를 둘러 화면 한가운데 띄워 두었다. 사용자 피드백("여러 분께를 누르면
+   웹에서 앱 화면으로 바뀐다")이 가리킨 자리가 정확히 여기다.
+
+   그래서 추천 플로우(`flow.module.css` 768/1024 블록)가 이미 쓰고 있는 문법을 그대로
+   가져온다 — 다크 그린 워시 + 그레인, 상단바 = 사이트 헤더, 1120px 중앙 칼럼.
+   1024px↑ 에서는 **왼쪽에 입력(마음·명단), 오른쪽에 결과 패널**을 세운다: 이 화면은
+   "적고 → 눌러서 → 아래에 나온 것을 본다" 가 아니라 **적으면서 결과를 함께 보는**
+   화면이고, 세로로만 쌓으면 명단이 길어질수록 결과가 화면 밖으로 밀려난다.
+
+   규칙이 파일 끝에 몰려 있는 이유는 순서 때문이다 — 같은 명시도면 뒤가 이긴다.
+   위쪽 본문(모바일)을 건드리지 않고 덮어쓰려면 여기여야 한다.
+   ═════════════════════════════════════════════════════════════════════ */
 @media (min-width: 768px) {
   .shell {
-    padding: 26px 0;
+    --gut: 30px;
+    /* 페이지 바탕 — 추천 플로우 `.frame` 과 같은 워시(그레인은 `.grain` 이 공통) */
+    background:
+      radial-gradient(
+        118% 66% at 50% -6%,
+        color-mix(in srgb, var(--bg-3) 62%, transparent),
+        transparent 58%
+      ),
+      radial-gradient(
+        88% 58% at 4% 102%,
+        color-mix(in srgb, var(--stem) 34%, transparent),
+        transparent 62%
+      ),
+      var(--bg);
   }
+
+  /* 폰 캔버스 해체. 배경을 지우는 것이 핵심이다 — 셸의 워시가 그대로 비쳐야
+     "가운데 떠 있는 판" 이 아니라 페이지 한 장으로 읽힌다. */
   .page {
-    min-height: calc(100dvh - 52px);
-    border-radius: 40px;
-    box-shadow: 0 0 0 1px var(--hair), 0 12.5px 10px rgba(0, 0, 0, 0.09),
-      0 41.8px 33.4px rgba(0, 0, 0, 0.15), 0 100px 80px rgba(0, 0, 0, 0.36);
+    max-width: none;
+    min-height: 100dvh;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+    padding-bottom: 40px;
   }
+
+  /* ── 상단바 = 사이트 헤더 ─────────────────────────────────────────── */
   .bar {
-    top: 26px;
-    border-radius: 40px 40px 0 0;
+    top: 0;
+    min-height: 66px;
+    padding: 0 clamp(24px, 4vw, 48px);
+    gap: 14px;
+    border-radius: 0;
+  }
+
+  /* ── 본문 — 1120px 중앙 칼럼 ─────────────────────────────────────── */
+  .page > main {
+    width: 100%;
+    max-width: calc(1120px + var(--gut) * 2);
+    margin-inline: auto;
+    padding-inline: var(--gut);
+  }
+  /* 칼럼이 좌우 여백을 가졌으니 안쪽 조각의 거터는 접는다(추천 플로우와 같은 처리). */
+  .page > main :where(.head, .sect, .foot) {
+    padding-left: 0;
+    padding-right: 0;
+  }
+  .head {
+    padding-top: 52px;
+  }
+  .head h1 {
+    font-size: clamp(34px, 3.2vw, 44px);
+  }
+  .headLead {
+    font-size: 16px;
+    max-width: 62ch;
+  }
+  .sect {
+    margin-top: clamp(38px, 4vw, 54px);
+  }
+  /* 주 CTA·보조 버튼이 칼럼 폭만큼 늘어나면 안 된다. */
+  .formFoot .btn,
+  .resultCol .btn {
+    width: auto;
+    min-width: 268px;
+  }
+  .formNote,
+  .ctaNote {
+    text-align: left;
+  }
+  /* 세그먼트는 트랙이 칼럼 전체로 늘어나면 토글로 안 읽힌다. */
+  .seg {
+    max-width: 380px;
+  }
+}
+
+/* ── 입력 ↔ 결과 2단 (1024px↑) ───────────────────────────────────────
+   `<main>` 의 직계 자식만 배치한다 — 폼 **안쪽**의 `.sect`(마음·받는 사람)는
+   왼쪽 단 안에서 예전처럼 세로로 쌓이고, 오른쪽 단에는 `.resultCol` 하나가 선다.
+   `align-items: start` 라 두 단의 높이는 서로를 끌고 다니지 않는다. */
+@media (min-width: 1024px) {
+  .page > main {
+    display: grid;
+    grid-template-columns: minmax(0, 43%) minmax(0, 1fr);
+    column-gap: 0;
+    align-items: start;
+  }
+  .page > main > .head,
+  .page > main > .foot {
+    grid-column: 1 / -1;
+  }
+  .page > main > form {
+    grid-column: 1;
+  }
+  /* 오른쪽 단 — 두 단을 가르는 헤어라인은 **이 래퍼 하나**가 그린다. */
+  .resultCol {
+    grid-column: 2;
+    min-width: 0;
+    margin-top: clamp(38px, 4vw, 54px);
+    margin-left: clamp(32px, 3.6vw, 56px);
+    padding-left: clamp(32px, 3.6vw, 56px);
+    padding-bottom: 16px;
+    border-left: 1px solid var(--hair);
+  }
+  /* 래퍼가 이미 위 여백을 들고 있으니 첫 섹션은 어깨를 맞춘다. */
+  .resultCol > .sect:first-child {
+    margin-top: 0;
+  }
+  .page > main > .foot {
+    margin-top: clamp(56px, 6vw, 84px);
   }
 }
 

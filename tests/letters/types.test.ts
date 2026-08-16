@@ -107,11 +107,11 @@ describe('길이 상한', () => {
 });
 
 describe('편지 번호', () => {
-  it('4~8자 영문·숫자만 통과한다', () => {
-    for (const good of ['ABCD', 'HANBIT', 'A1B2C3D4', '2468']) {
+  it('4~12자 영문·숫자만 통과한다', () => {
+    for (const good of ['ABCD', 'HANBIT', 'A1B2C3D4', '2468', 'A1B2C3D4E5F6']) {
       expect(letterCodeSchema.safeParse(good).success, good).toBe(true);
     }
-    for (const bad of ['ABC', 'ABCDEFGHI', '한빛하나', 'AB CD', 'ABC-12', '']) {
+    for (const bad of ['ABC', 'A1B2C3D4E5F67', '한빛하나', 'AB CD', 'ABC-12', '']) {
       expect(letterCodeSchema.safeParse(bad).success, bad).toBe(false);
     }
   });
@@ -121,15 +121,15 @@ describe('편지 번호', () => {
     expect(normalizeLetterCode(' hanbit ')).toBe('HANBIT');
   });
 
-  it('만들어 준 번호는 언제나 스키마를 통과한다', () => {
+  it('만들어 준 번호는 언제나 스키마를 통과한다 — 기본 10자리(맞히기 어렵게)', () => {
     for (let i = 0; i < 200; i += 1) {
       const code = createLetterCode();
       expect(letterCodeSchema.safeParse(code).success, code).toBe(true);
-      expect(code).toHaveLength(6);
+      expect(code).toHaveLength(10);
     }
   });
 
-  it('자릿수는 4~8 안으로 끌어당긴다 — 만든 번호가 스키마에서 떨어지지 않는다', () => {
+  it('자릿수는 4~12 안으로 끌어당긴다 — 만든 번호가 스키마에서 떨어지지 않는다', () => {
     expect(createLetterCode(1)).toHaveLength(LETTER_LIMITS.codeMin);
     expect(createLetterCode(99)).toHaveLength(LETTER_LIMITS.codeMax);
     expect(createLetterCode(Number.NaN)).toHaveLength(LETTER_LIMITS.codeMin);

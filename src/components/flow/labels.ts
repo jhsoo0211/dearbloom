@@ -29,7 +29,7 @@ import type { ChoiceOption, ColorChoice, FlowerForm } from './types';
  * 관계 · 마음
  * ------------------------------------------------------------------ */
 
-/** design-spec §1.5 ② 의 6종 그대로. */
+/** design-spec §1.5 ② 의 6종 + §1.5l `직접 쓸게요`. */
 export const RELATIONSHIP_LABELS: Record<Relationship, { label: string; desc: string }> = {
   lover: { label: '연인', desc: '사귀는 사이예요' },
   spouse: { label: '배우자', desc: '결혼한 사이예요' },
@@ -37,9 +37,16 @@ export const RELATIONSHIP_LABELS: Record<Relationship, { label: string; desc: st
   friend: { label: '친구', desc: '편한 사이예요' },
   family: { label: '가족', desc: '부모님, 형제자매' },
   colleague: { label: '동료·선후배', desc: '일과 배움으로 만난 사이' },
+  // §1.5l — 여섯 갈래에 없는 사이. 고르면 한 줄로 직접 적을 수 있다(적지 않아도 된다).
+  other: { label: '직접 쓸게요', desc: '위에 없는 사이예요' },
 };
 
-/** 조사가 붙은 형태. 결과 상단 맥락 칩에 쓴다(`연인에게`). */
+/**
+ * 조사가 붙은 형태. 결과 상단 맥락 칩에 쓴다(`연인에게`).
+ *
+ * `other` 는 **사용자가 적어 준 말이 있으면 그 말이 이 자리를 대신한다**(actions.ts).
+ * 여기 값은 한 줄을 비워 둔 사람에게만 보이는 폴백이다 — 마음(`other`)과 같은 규칙이다.
+ */
 export const RELATIONSHIP_TO_LABELS: Record<Relationship, string> = {
   lover: '연인에게',
   spouse: '배우자에게',
@@ -47,7 +54,16 @@ export const RELATIONSHIP_TO_LABELS: Record<Relationship, string> = {
   friend: '친구에게',
   family: '가족에게',
   colleague: '동료·선후배에게',
+  other: '직접 적은 사이에게',
 };
+
+/**
+ * §1.5l `직접 쓸게요`(관계) 한 줄의 길이 상한.
+ * 화면 `maxLength` · 서버 자르기 · LLM 계약(`relationship_detail`)이 같은 값을 쓴다.
+ * 마음 쪽(`INTENT_DETAIL_MAX_CHARS`)과 같은 값이지만, 두 입력은 서로 다른 문이라
+ * 상수도 따로 세운다 — 한쪽 상한이 바뀔 때 다른 쪽이 조용히 따라가지 않게.
+ */
+export const RELATIONSHIP_DETAIL_MAX_CHARS = 80;
 
 /**
  * 마음 7종. 설명은 §1.5d 톤 — 직설적인 지시("사과해야 해요") 대신
@@ -243,16 +259,40 @@ export const EPISODE_HINTS: ChoiceOption[] = [
   { value: 'worn-out', label: '많이 지쳐 보여요' },
   { value: 'good-news', label: '축하할 일이 생겼어요' },
   { value: 'far-apart', label: '멀리 떨어져 지내요' },
+  // §1.5l — 여섯 갈래에 없는 사이. 마음(`other`)과 같은 문법이다: 고르면 한 줄이 열린다.
+  { value: 'other', label: '기타 · 직접 적을게요' },
 ];
 
-/** 상황 칩 slug → 한국어 라벨. 사전 밖 값은 버린다(칩 목록도 서버가 만든다). */
-export function episodeHintLabels(values: readonly string[]): string[] {
+/** 상황 칩의 `기타`. 어휘 원본은 위 `EPISODE_HINTS` 다. */
+export const EPISODE_HINT_OTHER = 'other';
+
+/**
+ * §1.5l 상황 칩 `기타` 한 줄의 길이 상한.
+ * 마음·관계와 같은 값이되, 세 입력은 서로 다른 문이라 상수를 따로 세운다.
+ */
+export const EPISODE_HINT_DETAIL_MAX_CHARS = 80;
+
+/**
+ * 상황 칩 slug → 한국어 라벨. 사전 밖 값은 버린다(칩 목록도 서버가 만든다).
+ *
+ * `기타` 를 고르고 한 줄을 적어 주었으면 **그 원문이 라벨 자리를 대신한다** — 마음의
+ * `other` 와 같은 규칙이다(§1.5l). `기타 · 직접 적을게요` 라는 선택지 이름이 결과 칩과
+ * 프롬프트에 그대로 서 있으면, 정작 사용자가 말해 준 사이가 어디에도 남지 않는다.
+ * ⚠ 원문은 자유 서술과 같은 취급이다 — 추천·멘트에만 쓰고 저장하지 않는다(§1.5j).
+ */
+export function episodeHintLabels(values: readonly string[], detail = ''): string[] {
+  const trimmed = detail.trim();
   const seen = new Set<string>();
   const labels: string[] = [];
   for (const value of values) {
     const hit = EPISODE_HINTS.find((hint) => hint.value === value.trim());
     if (!hit || seen.has(hit.value)) continue;
     seen.add(hit.value);
+    if (hit.value === EPISODE_HINT_OTHER) {
+      // 적지 않았으면 라벨도 세우지 않는다 — "기타" 세 글자는 아무것도 말해 주지 않는다.
+      if (trimmed !== '') labels.push(trimmed);
+      continue;
+    }
     labels.push(hit.label);
   }
   return labels;
@@ -307,11 +347,31 @@ export interface BudgetChoice {
 }
 
 export const BUDGET_CHOICES: BudgetChoice[] = [
+  /*
+   * `1~2만 원대` 는 `3만 원 미만` 과 **같은 band 1** 로 떨어진다(max < 30000).
+   * 그래도 따로 세우는 이유는 고르는 사람의 말이 다르기 때문이다 — "3만 원 미만" 은
+   * 상한을 말하고 "1~2만 원대" 는 실제로 쥔 돈을 말한다. 엔진이 가를 수 없는 구간을
+   * 화면이 갈라 두는 것이므로, **추천 결과가 같아도 그것이 버그가 아니다.**
+   * (price_band 가 1·2·3 뿐인 한 이 아래를 더 쪼개도 고를 수 있는 꽃은 늘지 않는다.)
+   */
+  { value: 'under20', label: '1~2만 원대', desc: '한 송이나 작은 다발로', max: 20000 },
   { value: 'under30', label: '3만 원 미만', desc: '가볍게 건네고 싶어요', max: 29000 },
   { value: '30to50', label: '3~5만 원', desc: '가장 많이 고르는 범위예요', min: 30000, max: 50000 },
   { value: '50to100', label: '5~10만 원', desc: '조금 넉넉하게', min: 50000, max: 100000 },
   { value: 'over100', label: '10만 원 이상', desc: '특별한 자리예요', min: 100000 },
+  /*
+   * §1.5l `기타` — 아직 정하지 않았거나 직접 적고 싶은 경우.
+   * min·max 가 **없다**: 예산 필터를 걸지 않는다는 뜻이고(`allowedPriceBands` 는 전 구간을
+   * 허용한다), 서버는 이 값에 `budgetKrw` 자체를 세우지 않는다.
+   */
+  { value: 'other', label: '기타 · 직접 적을게요', desc: '아직 정하지 않았거나, 따로 적고 싶어요' },
 ];
+
+/** 예산 목록의 `기타`. 어휘 원본은 위 `BUDGET_CHOICES` 다. */
+export const BUDGET_OTHER = 'other';
+
+/** §1.5l 예산 `기타` 한 줄의 길이 상한. */
+export const BUDGET_DETAIL_MAX_CHARS = 80;
 
 export function budgetChoice(key: string): BudgetChoice | undefined {
   return BUDGET_CHOICES.find((b) => b.value === key);

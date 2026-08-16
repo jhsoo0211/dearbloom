@@ -2,16 +2,17 @@ import { describe, expect, it } from 'vitest';
 
 import { recommend } from '@/lib/engine';
 import { REASON_TEXTS } from '@/lib/engine/explain';
-import { INTENTS, normalizeInput } from '@/lib/engine/normalize';
+import { INTENTS, RELATIONSHIPS, normalizeInput } from '@/lib/engine/normalize';
 import { scoreCandidate } from '@/lib/engine/score';
 import type { RecommendationRuleRow } from '@/lib/engine/types';
 import { DEFAULT_WEIGHTS } from '@/lib/engine/weights';
 import { makeInput, testFlowers, testRuleSetWithMeanings, testRules } from './fixtures';
 
 /**
- * §1.5l 추천 입력 개편이 엔진에 들여온 두 신호.
- *   ① intent `other` — 직접 쓴 마음. 상황 가점을 **중립(0)** 으로 둔다.
- *   ② fragrancePreference — `향기를 좋아해요` 칩. A(미적) 안의 향 신호로 들어간다.
+ * §1.5l 추천 입력 개편이 엔진에 들여온 신호들.
+ *   ① intent `other` — 직접 쓴 마음. 상황 가점(I)을 **중립(0)** 으로 둔다.
+ *   ② relationship `other` — 직접 쓴 사이. 관계 가점(R)을 같은 규칙으로 중립에 둔다.
+ *   ③ fragrancePreference — `향기를 좋아해요` 칩. A(미적) 안의 향 신호로 들어간다.
  */
 
 function flowerById(id: string) {
@@ -77,6 +78,71 @@ describe("intent 'other' — 직접 쓴 마음", () => {
     );
     expect(score.parts.I).toBeCloseTo(0.95, 5);
     expect(score.matched).toContain('SC_INTENT');
+  });
+});
+
+describe("relationship 'other' — 직접 쓴 사이", () => {
+  it('어휘에 들어 있어 정규화를 통과한다', () => {
+    expect(RELATIONSHIPS).toContain('other');
+    expect(normalizeInput(makeInput({ relationship: 'other' })).relationship).toBe('other');
+  });
+
+  it('규칙표에 other 행이 있어도 관계 가점(R)은 0이다', () => {
+    // 마음의 other 와 같은 약속이다 — 실수로 규칙이 들어와도 중립이 유지된다.
+    const rulesWithOther: RecommendationRuleRow[] = [
+      ...testRules,
+      { ruleId: 'SC_RELATIONSHIP', relationship: 'other', flowerId: 'rose-red', fitScore: 99 },
+    ];
+
+    const score = scoreCandidate(
+      flowerById('rose-red'),
+      makeInput({ relationship: 'other', intent: 'confession' }),
+      rulesWithOther,
+      DEFAULT_WEIGHTS,
+    );
+
+    expect(score.parts.R).toBe(0);
+    expect(score.matched).not.toContain('SC_RELATIONSHIP');
+    // 마음·제철 같은 나머지 신호는 그대로 산다.
+    expect(score.parts.I).toBeGreaterThan(0);
+    expect(score.parts.S).toBe(1);
+  });
+
+  it('사이와 마음을 둘 다 직접 썼으면 규칙표 가점이 하나도 남지 않는다', () => {
+    const score = scoreCandidate(
+      flowerById('rose-red'),
+      makeInput({ relationship: 'other', intent: 'other' }),
+      testRules,
+      DEFAULT_WEIGHTS,
+    );
+
+    expect(score.parts.I).toBe(0);
+    expect(score.parts.R).toBe(0);
+    expect(score.matched).not.toContain('SC_INTENT');
+    expect(score.matched).not.toContain('SC_RELATIONSHIP');
+
+    // 그래도 추천은 나온다 — 색·제철·분위기만으로 고른다는 것이 §1.5l 의 약속이다.
+    const results = recommend(
+      makeInput({ relationship: 'other', intent: 'other' }),
+      testRuleSetWithMeanings,
+    );
+    expect(results.length).toBeGreaterThan(0);
+    for (const result of results) {
+      expect(result.reasons).not.toContain('SC_RELATIONSHIP');
+      expect(result.reasons).not.toContain('SC_INTENT');
+      for (const ruleId of result.reasons) expect(Object.keys(REASON_TEXTS)).toContain(ruleId);
+    }
+  });
+
+  it('여섯 갈래는 예전 그대로 관계 가점을 받는다 (중립이 other 에만 걸린다)', () => {
+    const score = scoreCandidate(
+      flowerById('rose-red'),
+      makeInput({ relationship: 'lover', intent: 'confession' }),
+      testRules,
+      DEFAULT_WEIGHTS,
+    );
+    expect(score.parts.R).toBeGreaterThan(0);
+    expect(score.matched).toContain('SC_RELATIONSHIP');
   });
 });
 

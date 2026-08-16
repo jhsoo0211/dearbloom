@@ -19,18 +19,23 @@
  *     서비스 톤이 "야간 식물 아카이브"에서 "로맨스"로 넘어간다. 코드 가드는 `canLeadHero()`.
  *
  * ── 라이선스 ────────────────────────────────────────────────────────
- * 32장 전부 Unsplash 정규 무료 라이선스다(`images.unsplash.com/photo-…` 경로만 채택 —
- * `premium_photo-` · `plus.unsplash.com` 은 유료 Unsplash+ 라 전량 배제했다).
- * 표기 의무는 없지만 **표기를 기본값으로 운용**한다(문서 §사용 규칙 2).
- * 표기 형식은 `Photo: {작가} / Unsplash` 고정 — `credit` 에 그 완성된 한 줄이 들어 있다.
+ * 두 소스만 쓴다(2026-08-16 품질 재검토에서 확장, 문서 §확장 소스 풀):
+ *   · **Unsplash** — `images.unsplash.com/photo-…` 경로만. `premium_photo-` · `plus.unsplash.com`
+ *     은 유료 Unsplash+ 라 전량 배제한다.
+ *   · **Pexels** — `images.pexels.com/photos/…` 경로. Pexels License 도 상업적 사용 무료·표기 선택이다.
+ * 표기 의무는 어느 쪽도 없지만 **표기를 기본값으로 운용**한다(문서 §사용 규칙 2).
+ * 표기 형식은 `Photo: {작가} / {소스}` 고정 — `credit` 에 그 완성된 한 줄이 들어 있다.
+ *
+ * Wikimedia Commons 도 승인된 소스지만 **이번 라운드 채택분은 0장**이다. 이유는 라이선스가
+ * 아니라 배달 방식이다 — 아래 `PHOTO_SOURCES` 의 위키미디어 주석을 보라.
  *
  * ── 핫링크 (플레이트와 다른 점) ──────────────────────────────────────
- * 도판(`src/lib/plates`)은 우리 `public/plates/` 로 **받아 두지만**, 사진은 **Unsplash CDN 을
+ * 도판(`src/lib/plates`)은 우리 `public/plates/` 로 **받아 두지만**, 사진은 **소스 CDN 을
  * 그대로 부른다.** 두 가지 이유다:
  *   ① 도판 31종은 전부 PD/CC0 라 재배포에 제약이 없고 위키미디어는 핫링크를 만류한다
- *      (연속 요청에 HTTP 429). Unsplash 는 반대다 — 자기네 CDN(imgix)을 통한 핫링크가
+ *      (연속 요청에 HTTP 429). Unsplash·Pexels 는 반대다 — 자기네 이미지 CDN 을 통한 핫링크가
  *      권장 사용법이고, 폭·포맷 파라미터로 응답을 깎아 주는 것도 그 CDN 이다.
- *   ② Unsplash License 는 "사진 파일 자체의 재배포"를 금지한다(문서 §라이선스 요약).
+ *   ② 두 라이선스 모두 "사진 파일 자체의 재배포"를 금지한다(문서 §라이선스 요약).
  *      원본 바이트를 우리 도메인에 복사해 서빙하는 것은 그 조항에 가까이 간다.
  * 그래서 `src` 는 **파라미터가 없는 순수 원본 주소**만 갖고, 폭·포맷은 `photoSrc()` 가 붙인다.
  *
@@ -45,7 +50,7 @@ export interface FlowerPhoto {
    * 화면이 쓰는 주소는 `photoSrc(photo, 폭)` 이 만든다(용도별 해상도를 한 자리에서 정한다).
    */
   src: string;
-  /** `Photo: {작가} / Unsplash` — 표기 형식 고정(문서 §사용 규칙 2). */
+  /** `Photo: {작가} / {소스}` — 표기 형식 고정(문서 §사용 규칙 2). 소스는 `photoSource()` 가 안다. */
   credit: string;
   /** 사진이 실제로 무엇을 보여 주는지. 꽃 이름이 헤딩에 이미 있어도 여기서는 종을 말한다. */
   alt: string;
@@ -60,8 +65,12 @@ export interface FlowerPhoto {
  *
  * 이 넷은 어두운 배경 후보가 전부 저채도·모션블러·흑백뿐이라 밝고 선명한 컷을 택한 결과다
  * (문서 §선정 기준 3). 검정 배경 컷과 카드 그리드에 나란히 놓이면 톤이 튀므로 **컴포넌트
- * 쪽에서** 다크 오버레이로 밝기 차를 흡수한다(문서 §통합할 때 주의할 것 4 — "이건 이미지가
+ * 쪽에서** 다크 오버레이로 밝기 차를 흡수한다(문서 §통합할 것 4 — "이건 이미지가
  * 아니라 컴포넌트 쪽에서 풀 문제다").
+ *
+ * ⚠ **명단이 2026-08-16 재검토에서 한 칸 바뀌었다**(수는 그대로 넷).
+ *   · `violet` **제외** — 새 컷(Tom Fisk)은 어두운 초록 보케 배경이라 오버레이가 필요 없다.
+ *   · `forget-me-not` **편입** — 새 컷(Nancy Hughes)은 밝은 풀잎이 화면 오른쪽을 채운다.
  */
 const BRIGHT_BACKGROUND = '배경이 밝은 컷 — 카드 다크 오버레이 필요(문서 §주의 4).';
 
@@ -88,10 +97,13 @@ export const FLOWER_PHOTOS: Record<string, FlowerPhoto> = {
   },
   freesia: {
     flowerId: 'freesia',
-    src: 'https://images.unsplash.com/photo-1612168829364-7cbd22935ab1',
-    credit: 'Photo: MARIOLA GROBELSKA / Unsplash',
-    alt: '안쪽에 주황빛이 번지는 노란 프리지아 꽃송이',
-    width: 5184,
+    // 2026-08-16 교체. 옛 컷(MARIOLA GROBELSKA)은 주황·노랑만 남은 **추상 매크로**라
+    // 무슨 꽃인지 읽히지 않았다 — 도감 대표컷의 존재 이유를 정면으로 어긴다.
+    src: 'https://images.pexels.com/photos/12224117/pexels-photo-12224117.jpeg',
+    credit: 'Photo: Gintare Baradinske / Pexels',
+    alt: '검은 배경 위에 한쪽으로 휜 꽃대를 따라 피어난 연보라 프리지아',
+    width: 3747,
+    note: 'Pexels 제목이 "Freesia Flower in Bloom in Black Background" — 종이 문자로 확인된다.',
   },
   'lily-asiatic': {
     flowerId: 'lily-asiatic',
@@ -116,10 +128,13 @@ export const FLOWER_PHOTOS: Record<string, FlowerPhoto> = {
   },
   hellebore: {
     flowerId: 'hellebore',
-    src: 'https://images.unsplash.com/photo-1774093125643-893c3c1f1bd4',
-    credit: 'Photo: Theo Lonic / Unsplash',
-    alt: '초록 잎 사이에서 고개를 든 짙은 분홍 헬레보어 두 송이',
-    width: 6000,
+    // 2026-08-16 교체. 옛 컷(Theo Lonic)은 갈빛이 도는 탁한 분홍에 배경 하이라이트가 날아가
+    // "거무칙칙 금지" 기준에 걸렸다. 새 컷은 흰 바탕에 자주 반점이 또렷하다.
+    src: 'https://images.pexels.com/photos/6580045/pexels-photo-6580045.jpeg',
+    credit: 'Photo: Gordon Bishop / Pexels',
+    alt: '자주색 반점이 번진 흰 헬레보어 한 송이 클로즈업',
+    width: 4333,
+    note: 'Pexels 제목이 "Close-up Photo of a White Hellebore Flower" — 속이 문자로 확인된다.',
   },
   hyacinth: {
     flowerId: 'hyacinth',
@@ -144,10 +159,13 @@ export const FLOWER_PHOTOS: Record<string, FlowerPhoto> = {
   },
   lavender: {
     flowerId: 'lavender',
-    src: 'https://images.unsplash.com/photo-1687878267753-cb6421710196',
-    credit: 'Photo: Michelle Tresemer / Unsplash',
-    alt: '보랏빛 이삭이 빽빽하게 선 라벤더 밭',
-    width: 8256,
+    // 2026-08-16 교체. 옛 컷(Michelle Tresemer)은 **밭 원경**이라 이번 라운드 1번 기준
+    // (꽃송이가 화면의 주인공)에 걸렸다. 새 컷은 이삭 하나의 잔꽃까지 보이는 매크로다.
+    src: 'https://images.unsplash.com/photo-1783094674172-90ca237a47f3',
+    credit: 'Photo: Mia Brzeskot / Unsplash',
+    alt: '보라색 잔꽃이 촘촘히 달린 라벤더 이삭 매크로',
+    width: 6720,
+    // 배경 보케에 흰·주황 밝은 띠가 남아 밝은 컷 판정은 그대로 유지한다.
     note: BRIGHT_BACKGROUND,
   },
   sunflower: {
@@ -166,11 +184,13 @@ export const FLOWER_PHOTOS: Record<string, FlowerPhoto> = {
   },
   lisianthus: {
     flowerId: 'lisianthus',
-    src: 'https://images.unsplash.com/photo-1779911533677-ac22845be7f4',
-    credit: 'Photo: Blu / Unsplash',
-    alt: '검은 배경 위 부드럽게 벌어진 분홍 리시안셔스 한 송이',
-    width: 3032,
-    note: '태그 `eustoma` 로 속까지만 확인됐다(CSV 학명 Eustoma grandiflorum 과 속 일치).',
+    // 2026-08-16 교체. 옛 컷(Blu)은 꽃잎 가장자리가 갈변해 **시드는 꽃**으로 읽혔다.
+    // 새 컷은 문서 §대체안이 이미 검증해 둔 보라 컷이다(Advisor 승인 범위 안).
+    src: 'https://images.unsplash.com/photo-1783835697342-7c0ccffcfe12',
+    credit: 'Photo: Pedro Vit / Unsplash',
+    alt: '검은 배경 위에 나란히 벌어진 진보라 리시안셔스 세 송이',
+    width: 4606,
+    note: '속(Eustoma)까지 확인 — 겹꽃잎·가시 없는 매끈한 줄기로 장미와 구분된다.',
   },
   ranunculus: {
     flowerId: 'ranunculus',
@@ -203,19 +223,25 @@ export const FLOWER_PHOTOS: Record<string, FlowerPhoto> = {
   },
   'forget-me-not': {
     flowerId: 'forget-me-not',
-    src: 'https://images.unsplash.com/photo-1685802315667-0a738e574558',
-    credit: 'Photo: Dear Sunflower / Unsplash',
-    alt: '어두운 배경 위 노란 화심을 가진 작고 푸른 물망초',
-    // 32장 중 유일하게 3000px 미달. 종은 설명에 학명(Myosotis sylvatica)까지 적혀 있어 확실하다.
-    width: 2981,
-    note: SMALL_SOURCE,
+    // 2026-08-16 교체. 옛 컷(Dear Sunflower)은 잎이 올리브빛으로 죽고 꽃이 화면의 15% 도
+    // 못 차지했으며 32장 중 유일하게 3000px 미달이었다 — 세 가지 결함을 한 번에 턴다.
+    // 새 컷은 문서 §대체안이 "가로 3000px 이상이 필요할 때"로 이미 세워 둔 컷이다.
+    src: 'https://images.unsplash.com/photo-1650634693805-4ca42ddc1af5',
+    credit: 'Photo: Nancy Hughes / Unsplash',
+    alt: '노란 화심을 가진 하늘색 물망초가 다발로 모여 핀 클로즈업',
+    width: 3996,
+    // 종은 확실하지만(설명에 학명 명기) 배경 풀잎이 밝아 오버레이 대상으로 새로 편입됐다.
+    note: BRIGHT_BACKGROUND,
   },
   'cherry-blossom': {
     flowerId: 'cherry-blossom',
-    src: 'https://images.unsplash.com/photo-1776356829303-072ac14b63e5',
-    credit: 'Photo: Chris Weiher / Unsplash',
-    alt: '밤하늘을 배경으로 흐드러진 분홍 벚꽃 가지',
-    width: 3812,
+    // 2026-08-16 교체 — **사용자 지적 컷**. 옛 컷(Chris Weiher)은 나무 전체를 올려다본
+    // 원경이라 건물 모서리까지 들어왔다. 새 컷은 꽃송이 몇 개가 화면을 채우는 클로즈업이다.
+    src: 'https://images.unsplash.com/photo-1671042512616-41e6f8ade6e0',
+    credit: 'Photo: Ricky LK / Unsplash',
+    alt: '어두운 배경 앞에서 활짝 벌어진 분홍 벚꽃 무리 클로즈업',
+    width: 4654,
+    note: '제목이 "pink cherry blossom" — 끝이 갈라진 꽃잎과 긴 수술로 벚나무를 확인했다.',
   },
   camellia: {
     flowerId: 'camellia',
@@ -228,17 +254,22 @@ export const FLOWER_PHOTOS: Record<string, FlowerPhoto> = {
   },
   violet: {
     flowerId: 'violet',
-    src: 'https://images.unsplash.com/photo-1651348864532-03a607500ba0',
-    credit: 'Photo: Alexandra Marta / Unsplash',
-    alt: '초록 들판에 낮게 핀 보라 제비꽃',
-    width: 3676,
-    note: BRIGHT_BACKGROUND,
+    // 2026-08-16 교체. 옛 컷(Alexandra Marta)은 화면 위 절반을 풀·씨방이 덮어 꽃이 주인공이
+    // 아니었고 색도 바랬다. 새 컷은 어두운 초록 보케 위 두 송이 클로즈업이다.
+    src: 'https://images.pexels.com/photos/12556024/pexels-photo-12556024.jpeg',
+    credit: 'Photo: Tom Fisk / Pexels',
+    alt: '어두운 초록 배경 앞에 홀로 핀 자주색 제비꽃 클로즈업',
+    width: 8640,
+    // ⚠ 종 근거가 한 단계 내려갔다 — 옛 컷은 제목이 "Sweet violets"(= V. odorata) 였다.
+    note: '속(Viola)까지 확인 — 제목이 "Violet Flower" 이고 V. odorata 여부는 문자로 없다.',
   },
   iris: {
     flowerId: 'iris',
-    src: 'https://images.unsplash.com/photo-1779286341675-8e3fa558d9c5',
+    // 2026-08-16 교체. 같은 촬영분의 다른 컷(문서 §대체안)이다 — 옛 컷은 꽃이 화면 오른쪽에
+    // 몰려 4:5 카드에서 잘릴 위험이 있었다. 종 근거·작가·톤은 그대로 두고 구도만 고쳤다.
+    src: 'https://images.unsplash.com/photo-1779286341675-be412c1448f9',
     credit: 'Photo: Lisa Siefert / Unsplash',
-    alt: '검정 배경 위 초록 잎과 함께 선 보라 아이리스',
+    alt: '검정 배경 위에 곧게 선 보라 아이리스 한 송이',
     width: 6000,
   },
   marigold: {
@@ -260,11 +291,13 @@ export const FLOWER_PHOTOS: Record<string, FlowerPhoto> = {
   },
   jasmine: {
     flowerId: 'jasmine',
-    src: 'https://images.unsplash.com/photo-1760036268954-7e21f3eef3e8',
-    credit: 'Photo: Zayed Ahmed Zadu / Unsplash',
-    alt: '짙은 초록 잎 사이에서 홀로 핀 흰 재스민 한 송이',
-    width: 4512,
-    note: 'Jasminum 속까지만 확인됐다(sambac 여부는 문자로 없음).',
+    // 2026-08-16 교체. 옛 컷(Zayed Ahmed Zadu)은 꽃이 화면 오른쪽 위 구석에 **2% 남짓**
+    // 걸려 있고 나머지는 거의 검은 잎이었다 — 32장 중 근접도 최악이었다.
+    src: 'https://images.pexels.com/photos/34677052/pexels-photo-34677052.jpeg',
+    credit: 'Photo: Louis Tran / Pexels',
+    alt: '검은 배경 위에 모여 핀 흰 겹꽃 재스민 클로즈업',
+    width: 4624,
+    note: 'Jasminum 속까지 확인 — 겹꽃 로제트는 J. sambac 겹꽃 계열 형태다(품종은 형태 근거).',
   },
   'babys-breath': {
     flowerId: 'babys-breath',
@@ -276,18 +309,24 @@ export const FLOWER_PHOTOS: Record<string, FlowerPhoto> = {
   },
   cosmos: {
     flowerId: 'cosmos',
-    src: 'https://images.unsplash.com/photo-1763047329472-2849ebd6c507',
-    credit: 'Photo: Arya Arjun / Unsplash',
-    alt: '어두운 배경 속에 홀로 선 분홍 코스모스와 꽃봉오리',
-    width: 3998,
+    // 2026-08-16 교체. 옛 컷(Arya Arjun)은 꽃이 화면 위쪽 10% 에 걸리고 아래 절반이 빈
+    // 어둠·줄기였다 — 4:5 카드로 자르면 꽃이 잘려 나간다.
+    src: 'https://images.unsplash.com/photo-1704265586510-f09575135f35',
+    credit: 'Photo: William Warby / Unsplash',
+    alt: '노란 화심을 가운데 두고 활짝 펼쳐진 자홍 코스모스 매크로',
+    width: 3648,
+    // 주황 노랑코스모스(C. sulphureus)는 CSV 학명과 달라 이번에도 전량 배제했다.
+    note: '분홍 설상화 + 노란 관상화 = C. bipinnatus 계열(CSV 학명과 일치).',
   },
   magnolia: {
     flowerId: 'magnolia',
-    src: 'https://images.unsplash.com/photo-1773953942162-a63e82051318',
-    credit: 'Photo: Bernd Dittrich / Unsplash',
-    alt: '해질 무렵 어두운 맨가지 위에 핀 흰 목련',
+    // 2026-08-16 교체. 옛 컷(Bernd Dittrich)은 해질녘 나뭇가지 덤불 원경이라 꽃 한 송이도
+    // 또렷하지 않았다 — 벚꽃과 같은 실패다.
+    src: 'https://images.unsplash.com/photo-1713727747459-2c5774698437',
+    credit: 'Photo: Ronin / Unsplash',
+    alt: '어두운 맨가지 위에 겹겹이 벌어진 흰 목련 한 송이',
     width: 3024,
-    note: '잎 없는 맨가지 = CSV 의 "잎보다 꽃이 먼저" 서술과 맞는다(M. kobus 계열).',
+    note: '제목 "Star Magnolia" = M. stellata(M. kobus 와 같은 절). 맨가지 개화가 CSV 서술과 맞는다.',
   },
   pansy: {
     flowerId: 'pansy',
@@ -324,14 +363,80 @@ export const FLOWER_PHOTOS: Record<string, FlowerPhoto> = {
  */
 export type PhotoWidth = 640 | 1080 | 1600 | 2560;
 
+/** 채택 소스의 식별자. `credit` 꼬리표와 폭 치환 규칙이 여기에 묶인다. */
+export type PhotoSourceId = 'unsplash' | 'pexels' | 'wikimedia';
+
+interface PhotoSourceRule {
+  readonly id: PhotoSourceId;
+  /** 이 소스인지 가리는 주소 접두사. */
+  readonly prefix: string;
+  /** `credit` 문자열의 꼬리표 — `Photo: {작가} / {label}`. */
+  readonly label: string;
+  /**
+   * 그 폭의 주소를 만든다. **`null` 이면 이 소스는 임의 폭을 못 받는다** —
+   * 그때는 원본 주소 한 벌만 쓴다(아래 위키미디어 주석).
+   */
+  readonly sized: ((src: string, width: number) => string) | null;
+}
+
 /**
- * 그 폭의 이미지 주소 — `?auto=format&fit=crop&w={폭}&q=80`.
- * `auto=format` 이 브라우저에 따라 WebP/AVIF 를 대신 내준다(문서 §채택 이미지 머리말).
- * 아는 호스트(Unsplash)만 파라미터를 붙이고, 모르는 주소는 **그대로 돌려준다**(깨뜨리지 않는다).
+ * 소스별 폭 치환 규칙 — **여기가 유일한 자리**다. 새 소스를 늘릴 때 이 표에만 줄을 더한다.
+ *
+ * 세 소스의 CDN 이 서로 다르게 동작한다는 것이 이 표가 있는 이유다:
+ *   · **Unsplash**(imgix) — 임의 폭 + `auto=format` 으로 WebP/AVIF 자동 협상까지 해 준다.
+ *   · **Pexels** — 임의 폭은 받지만 포맷 협상 키가 다르다(`auto=compress&cs=tinysrgb`).
+ *     `fm=` 같은 imgix 키는 없다 — 그래서 `q=` 도 넣지 않는다(무시되고 캐시 키만 갈라진다).
+ *   · **Wikimedia Commons** — **임의 폭을 못 받는다.** 썸네일은 미리 정해진 폭에만 존재하고
+ *     그 밖의 폭은 `HTTP 400` 이다(2026-08-16 실측: 같은 파일이 1280px 는 200, 640·1080·
+ *     1600·2560px 는 전부 400). 우리가 쓰는 네 폭 중 **하나도 통과하지 못한다.** 게다가
+ *     위키미디어는 핫링크 자체를 만류한다(연속 요청에 429 — 도판을 내려받아 두는 이유).
+ *     그래서 규칙은 `null` 이고, 이번 라운드 채택분도 0장이다(문서 §확장 소스 풀).
+ */
+const PHOTO_SOURCES: readonly PhotoSourceRule[] = [
+  {
+    id: 'unsplash',
+    prefix: 'https://images.unsplash.com/',
+    label: 'Unsplash',
+    sized: (src, width) => `${src}?auto=format&fit=crop&w=${width}&q=80`,
+  },
+  {
+    id: 'pexels',
+    prefix: 'https://images.pexels.com/',
+    label: 'Pexels',
+    sized: (src, width) => `${src}?auto=compress&cs=tinysrgb&fit=crop&w=${width}`,
+  },
+  {
+    id: 'wikimedia',
+    prefix: 'https://upload.wikimedia.org/',
+    label: 'Wikimedia Commons',
+    sized: null,
+  },
+];
+
+function ruleFor(src: string): PhotoSourceRule | undefined {
+  return PHOTO_SOURCES.find((rule) => src.startsWith(rule.prefix));
+}
+
+/** 이 컷이 어느 소스에서 왔는가. 모르는 주소면 undefined. */
+export function photoSource(photo: FlowerPhoto): PhotoSourceId | undefined {
+  return ruleFor(photo.src)?.id;
+}
+
+/** `credit` 이 달아야 하는 꼬리표(`Photo: {작가} / {label}`). 모르는 주소면 undefined. */
+export function photoSourceLabel(photo: FlowerPhoto): string | undefined {
+  return ruleFor(photo.src)?.label;
+}
+
+/**
+ * 그 폭의 이미지 주소.
+ *
+ * 폭 파라미터의 모양은 소스마다 다르다 — `PHOTO_SOURCES` 가 그 차이를 들고 있다.
+ * 폭을 못 받는 소스(위키미디어)와 모르는 주소는 **원본을 그대로 돌려준다**(깨뜨리지 않는다).
  */
 export function photoSrc(photo: FlowerPhoto, width: PhotoWidth = 1080): string {
-  if (!photo.src.startsWith('https://images.unsplash.com/')) return photo.src;
-  return `${photo.src}?auto=format&fit=crop&w=${width}&q=80`;
+  const rule = ruleFor(photo.src);
+  if (!rule?.sized) return photo.src;
+  return rule.sized(photo.src, width);
 }
 
 /**
@@ -348,11 +453,18 @@ export function photoSrc(photo: FlowerPhoto, width: PhotoWidth = 1080): string {
  *     · 도감 상세 히어로 (셸 폭) → `(max-width: 900px) 100vw, 900px`
  *
  * 폭 목록은 `photoSrc()` 를 그대로 통과시키므로 CDN 캐시 키가 갈라지지 않는다.
+ *
+ * ⚠ **폭을 못 받는 소스**(위키미디어)와 모르는 주소는 후보가 한 벌뿐이다. 그때 `640w, 1080w`
+ *   를 붙이면 **같은 그림에 거짓 폭을 신고**하는 꼴이라, 브라우저가 640 자리에 원본을 받아
+ *   놓고 1080 이 필요해지면 또 받는다. 그래서 그 경우에는 **디스크립터 없이 한 줄만** 낸다
+ *   (`srcset="…jpg"` 는 1x 후보 하나로 유효하다).
  */
 export function photoSrcSet(
   photo: FlowerPhoto,
   widths: readonly PhotoWidth[] = [640, 1080],
 ): string {
+  const rule = ruleFor(photo.src);
+  if (!rule?.sized) return photo.src;
   return widths.map((width) => `${photoSrc(photo, width)} ${width}w`).join(', ');
 }
 
@@ -395,7 +507,8 @@ export function photoFor(flowerId: string): FlowerPhoto | undefined {
 
 /**
  * 배경이 밝아 **카드에서 다크 오버레이가 필요한** 컷인가(문서 §주의 4).
- * 지금은 `lavender` `babys-breath` `lily-of-the-valley` `violet` 넷이다.
+ * 지금은 `lavender` `babys-breath` `lily-of-the-valley` `forget-me-not` 넷이다
+ * (2026-08-16 재검토에서 `violet` 이 빠지고 `forget-me-not` 이 들어왔다 — `BRIGHT_BACKGROUND` 주석).
  */
 export function needsDarkOverlay(photo: FlowerPhoto): boolean {
   return photo.note === BRIGHT_BACKGROUND;
@@ -411,7 +524,7 @@ export function canLeadHero(flowerId: string): boolean {
   return flowerId !== 'rose-red';
 }
 
-/** 크레딧 한 줄 — 이미 `Photo: {작가} / Unsplash` 형식으로 완성돼 있다. */
+/** 크레딧 한 줄 — 이미 `Photo: {작가} / {소스}` 형식으로 완성돼 있다(소스는 Unsplash·Pexels). */
 export function photoCredit(photo: FlowerPhoto): string {
   return photo.credit;
 }

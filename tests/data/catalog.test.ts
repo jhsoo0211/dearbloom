@@ -18,6 +18,8 @@ import type { Catalog } from '@/lib/data/types';
 
 const EXPECTED_FLOWERS = 32;
 const EXPECTED_STORIES = 317;
+/** 윤년 366일. 하루라도 비면 그 날 태어난 사람에게 보여 줄 것이 없다. */
+const EXPECTED_BIRTH_DAYS = 366;
 
 async function load(): Promise<Catalog> {
   return loadCatalog();
@@ -28,7 +30,7 @@ beforeEach(() => {
 });
 
 describe('loadCatalog', () => {
-  it('content/*.csv 7종을 모두 읽어 카탈로그를 만든다', async () => {
+  it('content/*.csv 8종을 모두 읽어 카탈로그를 만든다', async () => {
     const catalog = await load();
 
     expect(catalog.flowers).toHaveLength(EXPECTED_FLOWERS);
@@ -39,6 +41,49 @@ describe('loadCatalog', () => {
     expect(catalog.quotes.length).toBeGreaterThan(0);
     // 꽃 32종 × cat·dog = 64행 (교차 검증이 강제하는 커버리지)
     expect(catalog.petSafety).toHaveLength(EXPECTED_FLOWERS * 2);
+    expect(catalog.birthFlowers).toHaveLength(EXPECTED_BIRTH_DAYS);
+  });
+
+  it('탄생화 표를 화면용 필드로 옮기고, editorial_note 는 옮기지 않는다', async () => {
+    const catalog = await load();
+
+    // 학명만 있는 날 · 영문명만 있는 날 · 도감으로 이어지는 날이 각각 살아 있어야 한다.
+    const jan2 = catalog.birthFlowers.find((row) => row.month === 1 && row.day === 2);
+    expect(jan2).toMatchObject({
+      nameKo: '노랑수선화',
+      scientificName: 'Narcissus jonquilla',
+      flowerId: 'narcissus',
+      meaningKo: '사랑에 답하여',
+    });
+    // 표가 영문명을 안 적어 둔 날은 **키 자체가 없다**(빈 문자열로 메우지 않는다).
+    expect(jan2).not.toHaveProperty('nameEn');
+
+    const jan1 = catalog.birthFlowers.find((row) => row.month === 1 && row.day === 1);
+    expect(jan1).toMatchObject({ nameKo: '스노드롭', nameEn: 'Snow Drop', meaningKo: '희망' });
+    // 카탈로그에 없는 꽃이 정상 값이다 — 309일이 여기에 해당한다.
+    expect(jan1).not.toHaveProperty('flowerId');
+
+    // 편집·감사용 메모는 화면에 나갈 값이 아니다(조사 문서 §8-4 · pd_basis 와 같은 판단).
+    for (const row of catalog.birthFlowers) {
+      expect(row).not.toHaveProperty('editorialNote');
+      expect(row).not.toHaveProperty('editorial_note');
+      // 출처 없는 표는 싣지 않는다(꽃말·일화와 같은 원칙).
+      expect(row.sourceUrl).toMatch(/^https?:\/\//);
+      expect(row.meaningKo).not.toBe('');
+    }
+  });
+
+  it('탄생화의 flower_id 는 전부 카탈로그 안에 있다 (링크가 404 로 새지 않게)', async () => {
+    const catalog = await load();
+    const ids = new Set(catalog.flowers.map((flower) => flower.id));
+
+    const linked = catalog.birthFlowers.filter((row) => row.flowerId !== undefined);
+    // 조사 결과: 57일이 도감으로 이어지고 카탈로그 32종 중 24종이 걸린다.
+    expect(linked).toHaveLength(57);
+    expect(new Set(linked.map((row) => row.flowerId)).size).toBe(24);
+    for (const row of linked) {
+      expect(ids, `${row.month}/${row.day} 의 flower_id`).toContain(row.flowerId);
+    }
   });
 
   it('문학 발췌를 화면용 필드로 옮기고, pd_basis 는 옮기지 않는다 (§1.5k)', async () => {

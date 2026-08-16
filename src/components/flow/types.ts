@@ -67,6 +67,7 @@ export interface PresetOption {
 export interface WizardOptions {
   /** §1.5l 시작 프리셋 8종. */
   presets: PresetOption[];
+  /** 사이 7종(6종 + `other` = 직접 쓸게요). */
   relationships: ChoiceOption[];
   /** 마음 8종(7종 + `other` = 직접 쓸게요). */
   intents: ChoiceOption[];
@@ -81,6 +82,11 @@ export interface WizardOptions {
 /** 질문 화면이 서버 액션에 보내는 답변. 검증·정규화는 전부 서버가 한다. */
 export interface WizardSubmission {
   relationship: string;
+  /**
+   * §1.5l 사이가 `other` 일 때 직접 적은 한 줄(선택, 80자).
+   * ⚠ `intentDetail` 과 같은 취급이다 — 추천·멘트에만 쓰고 저장하지 않는다.
+   */
+  relationshipDetail: string;
   intent: string;
   /**
    * §1.5l 마음이 `other` 일 때 직접 적은 한 줄(선택, 80자).
@@ -99,7 +105,21 @@ export interface WizardSubmission {
   episode: string;
   /** §1.5l 상황 칩. 자유 글과 별개 필드이며 멘트 재료로만 쓴다. */
   episodeHints: string[];
+  /**
+   * §1.5l 상황 칩에서 `기타` 를 고를 때 직접 적은 한 줄(선택, 80자).
+   * ⚠ 자유 서술과 같은 취급 — 저장하지 않는다.
+   */
+  episodeHintDetail: string;
   budgetKey: string;
+  /**
+   * §1.5l 예산이 `기타` 일 때 직접 적은 한 줄(선택, 80자).
+   *
+   * ⚠ 이 값은 **멘트 생성에 넘기지 않는다.** 프롬프트 절대 규칙 3 이 "가격을 문장에 쓰지
+   * 않는다" 이므로, 금액이 적힌 글을 <자료> 에 실어 보내는 것은 모델을 금지된 자리로
+   * 끌어들이는 미끼가 된다(반려동물·향 민감 칩을 `messageNotes` 에서 빼는 것과 같은 판단).
+   * 쓰임은 결과 화면 맥락 칩 하나뿐이고, 저장하지 않는다.
+   */
+  budgetDetail: string;
   dateISO: string;
 }
 
@@ -320,13 +340,15 @@ export interface ResultPayload {
    */
   episodeText?: string;
   /**
-   * §1.5l `직접 쓸게요` 로 적어 준 한 줄의 **원문**.
+   * §1.5l `직접 쓸게요`·`기타` 로 적어 준 한 줄들의 **원문**(사이·마음·요즘 사이·예산).
    *
-   * 맥락 칩이 `직접 쓸게요` 라는 빈 라벨 대신 사용자가 쓴 말을 그대로 세우기 위한 값이다
-   * (그 자리에 `직접 쓸게요` 가 서 있으면 우리가 무엇을 들었는지 화면이 못 보여 준다).
+   * 맥락 칩이 `직접 쓸게요` 라는 빈 라벨 대신 사용자가 쓴 말을 그대로 세우기 위한 값이고
+   * (그 자리에 `직접 쓸게요` 가 서 있으면 우리가 무엇을 들었는지 화면이 못 보여 준다),
+   * 화면은 이 목록에 든 칩에만 말줄임 규격을 건다 — 우리가 지은 라벨은 길이를 우리가
+   * 정했지만 사용자의 말은 그렇지 않기 때문이다.
    * ⚠ `episodeText` 와 같은 취급이다 — 클라이언트 상태로만 살아 있고 로그·DB 에 남기지 않는다.
    */
-  intentDetail?: string;
+  ownWords: string[];
   /** 이야기 목록의 결 필터 칩(전체 + 6종). 화면은 실제로 있는 결만 골라 세운다. */
   storyMoodFilters: StoryMoodFilter[];
 }

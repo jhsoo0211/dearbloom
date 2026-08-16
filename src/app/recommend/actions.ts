@@ -30,6 +30,7 @@ import type { Intent, RecoInput, RecoResult, Relationship, StoryRow, Tone } from
 import {
   INTENT_DETAIL_MAX_CHARS,
   MEMORY_CONTEXT_MAX_CHARS,
+  RELATIONSHIP_DETAIL_MAX_CHARS,
   RESPONSE_TONE_COUNT,
 } from '@/lib/llm/contracts';
 import type { GenerateRequest } from '@/lib/llm/contracts';
@@ -39,8 +40,11 @@ import { needsDarkOverlay, photoFor, photoSrc } from '@/lib/photos';
 import { withParticle } from '@/lib/text';
 import {
   AVAILABILITY_LABELS,
+  BUDGET_DETAIL_MAX_CHARS,
+  BUDGET_OTHER,
   CARD_LINE_NOTES,
   CONFIDENCE_LABELS,
+  EPISODE_HINT_DETAIL_MAX_CHARS,
   FALLBACK_QUOTE,
   FRAGRANCE_LABELS,
   INTENT_LABELS,
@@ -286,13 +290,24 @@ function generationRules(intent: Intent): string[] {
  * 자유 서술(memoryContext)과 달리 **서비스 어휘**라 원문 그대로 실어도 안전하다.
  */
 interface MessageExtras {
+  /** 사이가 `other` 일 때 직접 적은 한 줄. 잘라 낸 뒤의 값이다. */
+  relationshipDetail: string;
   /** 마음이 `other` 일 때 직접 적은 한 줄. 잘라 낸 뒤의 값이다. */
   intentDetail: string;
   /** 특징 칩 라벨(반려동물·향 민감 칩은 빠져 있다 — 프롬프트 절대 규칙 3). */
   recipientNotes: string[];
-  /** 상황 칩 라벨. */
+  /** 상황 칩 라벨. `기타` 를 골랐다면 그 자리에 사용자가 적은 원문이 서 있다. */
   episodeHints: string[];
 }
+
+/*
+ * ⚠ 예산은 `MessageExtras` 에 **없다.**
+ *
+ * §1.5l 이 예산 `기타` 에 자유 한 줄을 열었지만, 그 값은 프롬프트로 가지 않는다 —
+ * 절대 규칙 3 이 "가격을 문장에 쓰지 않는다" 이고, 금액이 적힌 글을 <자료> 에 실으면
+ * 모델을 그 금지선 앞으로 데려다 놓는 셈이 된다. 반려동물·향 민감 칩을 `messageNotes`
+ * 에서 빼 두는 것과 같은 판단이다. 예산 한 줄의 쓰임은 결과 맥락 칩 하나뿐이다.
+ */
 
 /**
  * 멘트 조립 — LLM 을 한 번 부르고, 못 받으면 템플릿 그대로 둔다.
@@ -318,8 +333,17 @@ async function buildToneViews(
   const views = buildTones(catalog, intent, relationship);
 
   // 심각한 상황은 생성 호출 **전에** 차단한다(기획안 v2 후퇴 금지선).
-  // 직접 적은 마음도 사용자가 쓴 글이라 같은 문을 통과해야 한다.
-  if (isBlockedForGeneration([memoryContext, extras.intentDetail])) return views;
+  // 직접 적은 사이·마음·상황도 사용자가 쓴 글이라 모두 같은 문을 통과해야 한다.
+  if (
+    isBlockedForGeneration([
+      memoryContext,
+      extras.relationshipDetail,
+      extras.intentDetail,
+      ...extras.episodeHints,
+    ])
+  ) {
+    return views;
+  }
 
   const flower = flowerBriefFor(catalog, pick);
   if (!flower) return views;
@@ -331,6 +355,7 @@ async function buildToneViews(
   const rules = generationRules(intent);
   if (rules.length > 0) request.rules = rules;
   if (memoryContext !== '') request.memory_context = memoryContext;
+  if (extras.relationshipDetail !== '') request.relationship_detail = extras.relationshipDetail;
   if (extras.intentDetail !== '') request.intent_detail = extras.intentDetail;
   if (extras.recipientNotes.length > 0) request.recipient_traits = extras.recipientNotes;
   if (extras.episodeHints.length > 0) request.episode_hints = extras.episodeHints;
@@ -662,6 +687,7 @@ function freeTextField(max: number) {
  */
 const wizardSubmissionSchema = z.object({
   relationship: slugField,
+  relationshipDetail: freeTextField(RELATIONSHIP_DETAIL_MAX_CHARS),
   intent: slugField,
   intentDetail: freeTextField(INTENT_DETAIL_MAX_CHARS),
   recipientChips: z.array(slugField).max(CHIP_LIST_MAX),
@@ -669,7 +695,9 @@ const wizardSubmissionSchema = z.object({
   recipientNote: freeTextField(RECIPIENT_NOTE_MAX_CHARS),
   episode: freeTextField(EPISODE_MAX_CHARS),
   episodeHints: z.array(slugField).max(CHIP_LIST_MAX),
+  episodeHintDetail: freeTextField(EPISODE_HINT_DETAIL_MAX_CHARS),
   budgetKey: slugField,
+  budgetDetail: freeTextField(BUDGET_DETAIL_MAX_CHARS),
   dateISO: z.string().max(SLUG_MAX_CHARS).transform((value) => value.trim()),
 });
 
@@ -720,9 +748,15 @@ export async function submitRecommendation(
   // 단서 추론은 **자유 글에만** 건다(§1.5l) — 상황 칩은 이미 어휘라 읽어 낼 것이 없다.
   const inferred = inferCuesFromTexts([recipientNote, episode]);
 
-  // §1.5l 직접 쓴 마음 한 줄. 자유 서술과 같은 취급이라 길이만 잘라 넘기고 저장하지 않는다.
+  /*
+   * §1.5l 직접 쓴 한 줄들(사이 · 마음 · 요즘 사이 · 예산).
+   * 넷 다 자유 서술과 같은 취급이라 길이만 잘라 넘기고 어디에도 저장하지 않는다.
+   * `기타` 를 고른 상황 칩은 라벨 자리에 원문이 들어간다(`episodeHintLabels`).
+   */
+  const relationshipDetail = answers.relationshipDetail;
   const intentDetail = answers.intentDetail;
-  const hints = episodeHintLabels(answers.episodeHints);
+  const budgetDetail = answers.budgetDetail;
+  const hints = episodeHintLabels(answers.episodeHints, answers.episodeHintDetail);
 
   /*
    * §1.5l — 특징 칩 한 줄을 엔진 입력의 제 자리로 나눈다.
@@ -743,7 +777,13 @@ export async function submitRecommendation(
     fragrancePreference: chips.fragrancePreference,
     personalCues: [recipientNote, episode, ...inferred.personalCues].filter((v) => v !== ''),
   };
-  if (budget) {
+  /*
+   * §1.5l `기타` 예산은 금액이 없다(min·max 둘 다 undefined). 그때는 `budgetKrw` 를
+   * **세우지 않는다** — 빈 객체를 넘겨도 `allowedPriceBands` 는 전 구간을 허용하지만,
+   * "예산을 말하지 않았다" 와 "예산을 빈 객체로 말했다" 는 다른 문장이고 뒤엣것은 나중에
+   * 이 값을 읽는 코드를 헷갈리게 한다.
+   */
+  if (budget && (budget.min !== undefined || budget.max !== undefined)) {
     input.budgetKrw = {};
     if (budget.min !== undefined) input.budgetKrw.min = budget.min;
     if (budget.max !== undefined) input.budgetKrw.max = budget.max;
@@ -787,23 +827,56 @@ export async function submitRecommendation(
 
   const whenChip = dateChip(answers.dateISO);
   /*
-   * §1.5l `직접 쓸게요` 의 맥락 칩 — **라벨 대신 사용자가 쓴 말**을 세운다.
+   * §1.5l `직접 쓸게요`·`기타` 의 맥락 칩 — **라벨 대신 사용자가 쓴 말**을 세운다.
    * `직접 쓸게요` 는 질문 화면에서는 선택지 이름이라 맞지만, 결과 화면의 맥락 칩은
    * "우리가 무엇을 듣고 골랐는가" 를 되비추는 자리다. 거기 선택지 이름이 서 있으면
    * 정작 사용자가 적어 준 상황("유학 떠나는 조카를 배웅해요")이 화면 어디에도 없다.
+   * 네 자리(사이·마음·요즘 사이·예산)가 같은 규칙을 쓴다.
    * ⚠ 자유 서술과 같은 취급 — 여기서 화면으로만 건너가고 어디에도 저장하지 않는다.
    */
+  const relationshipChip =
+    relationship === 'other' && relationshipDetail !== ''
+      ? relationshipDetail
+      : RELATIONSHIP_TO_LABELS[relationship];
   const intentChip =
     intent === 'other' && intentDetail !== '' ? intentDetail : INTENT_LABELS[intent].label;
+  /*
+   * 예산 `기타` — 적어 준 말이 있으면 그 말이, 없으면 칩 자체를 세우지 않는다.
+   * "기타 · 직접 적을게요" 라는 선택지 이름은 조건이 아니라 우리 화면의 사정이라
+   * 결과의 맥락 칩 자리에 설 이유가 없다.
+   */
+  const budgetChip =
+    budget === undefined
+      ? undefined
+      : budget.value === BUDGET_OTHER
+        ? budgetDetail !== ''
+          ? budgetDetail
+          : undefined
+        : budget.label;
   const contextChips: string[] = [
-    RELATIONSHIP_TO_LABELS[relationship],
+    relationshipChip,
     intentChip,
     // 특징 칩은 고른 라벨을 그대로 세운다 — 화면과 결과가 같은 말을 쓰게(§1.5l).
     ...chips.labels,
     ...answers.colorPrefs.map((slug) => `${colorChoice(slug).label} 선호`),
     ...hints,
-    ...(budget ? [budget.label] : []),
+    ...(budgetChip ? [budgetChip] : []),
     ...(whenChip ? [whenChip] : []),
+  ];
+
+  /*
+   * 그중 **사용자의 말 그대로인 칩**. 화면은 이 목록에 든 칩에만 말줄임 규격을 건다
+   * (우리가 지은 라벨은 길이를 우리가 정했지만, 사용자의 말은 그렇지 않다).
+   * `기타` 상황 칩의 원문은 `hints` 안에 이미 섞여 있어 여기서 다시 골라 담는다.
+   */
+  const episodeHintDetail = answers.episodeHintDetail;
+  const ownWords = [
+    ...(relationshipChip === relationshipDetail && relationshipDetail !== ''
+      ? [relationshipDetail]
+      : []),
+    ...(intentChip === intentDetail && intentDetail !== '' ? [intentDetail] : []),
+    ...(episodeHintDetail !== '' && hints.includes(episodeHintDetail) ? [episodeHintDetail] : []),
+    ...(budgetChip !== undefined && budgetChip === budgetDetail ? [budgetDetail] : []),
   ];
 
   /*
@@ -817,6 +890,7 @@ export async function submitRecommendation(
     .join('\n')
     .slice(0, MEMORY_CONTEXT_MAX_CHARS);
   const tones = await buildToneViews(catalog, intent, relationship, picks[0], memoryContext, {
+    relationshipDetail,
     intentDetail,
     recipientNotes: chips.messageNotes,
     episodeHints: hints,
@@ -846,12 +920,12 @@ export async function submitRecommendation(
     messageSource,
     messageNote: MESSAGE_NOTES[messageSource],
     storyCues: cueChips(inferred),
+    // 어떤 칩이 사용자의 원문인지 — 화면은 이 목록으로 그 칩에만 말줄임 규격을 건다.
+    ownWords,
     storyMoodFilters: STORY_MOOD_FILTERS,
   };
 
   if (episode !== '') payload.episodeText = episode;
-  // 칩 하나가 사용자의 원문이라는 표시 — 화면은 이 값으로 그 칩만 말줄임 규격을 건다.
-  if (intent === 'other' && intentDetail !== '') payload.intentDetail = intentDetail;
 
   if (intent === 'apology') payload.toneOffNote = '사과 상황에서는 유쾌 톤을 잠시 꺼두었어요.';
 

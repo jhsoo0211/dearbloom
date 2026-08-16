@@ -204,7 +204,8 @@ declare
 begin
   -- Shape check first: a malformed code never reaches crypt(), so garbage costs
   -- us nothing. The pattern mirrors LETTER_CODE_PATTERN in the app.
-  if v_code !~ '^[A-Z0-9]{4,8}$' then
+  -- {4,12}: 2026-08-16 생성 기본이 10자리로 늘며 앱 상한이 12가 됐다(LETTER_LIMITS.codeMax).
+  if v_code !~ '^[A-Z0-9]{4,12}$' then
     return;
   end if;
 

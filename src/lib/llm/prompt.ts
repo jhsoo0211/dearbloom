@@ -30,6 +30,8 @@ const RELATIONSHIP_KO: Record<string, string> = {
   friend: '친구',
   family: '가족',
   colleague: '동료·선후배',
+  // §1.5l — 여섯 갈래에 없는 사이. 실제 관계는 relationship_detail 한 줄이 말한다.
+  other: '사용자가 직접 적은 사이',
 };
 
 const INTENT_KO: Record<string, string> = {
@@ -106,8 +108,20 @@ export function buildUserPrompt(req: GenerateRequest): string {
   const lines = [
     '<자료>',
     `관계: ${relationship}`,
-    `전하려는 마음: ${intent}`,
   ];
+
+  /*
+   * §1.5l — 관계의 'other' 역시 우리 어휘로는 아무것도 말해 주지 않는 값이다.
+   * 말투 규칙("연인·친구·썸이면 편한 말, 가족·동료·선후배면 예의를 갖춘 말")이 기댈
+   * 근거가 이 한 줄뿐이라, 관계 바로 아래에 붙여 둔다.
+   * (자유 서술과 마찬가지로 **자료**이지 지시가 아니다 — 절대 규칙 4 가 시스템 쪽에 있다.)
+   */
+  const relationshipDetail = req.relationship_detail?.trim() ?? '';
+  if (req.relationship === 'other' && relationshipDetail !== '') {
+    lines.push(`직접 적어 주신 사이: ${relationshipDetail}`);
+  }
+
+  lines.push(`전하려는 마음: ${intent}`);
 
   /*
    * §1.5l — 'other' 는 우리 어휘로는 아무것도 말해 주지 않는 값이다.

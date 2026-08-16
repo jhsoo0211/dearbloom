@@ -12,6 +12,17 @@ import { photoFor, photoSrc } from '@/lib/photos';
  * (실사 상수 자체의 그물은 `tests/components/photos.test.ts` 가 따로 든다.)
  */
 
+/**
+ * `Photo: {작가} / {소스}` — 꼬리표는 **실제로 쓰는 소스만** 받는다.
+ *
+ * 2026-08-16 품질 재검토로 Unsplash 단일 소스에서 Unsplash + Pexels 로 늘었다
+ * (문서 `docs/image-assets.md` §확장 소스 풀). 승인 풀에는 Wikimedia Commons 도 있지만
+ * 채택분이 0장이라 **여기 넣지 않는다** — 쓰지도 않는 소스를 미리 허용하면 오타로 들어온
+ * 꼬리표를 이 그물이 놓친다. 소스를 실제로 늘리는 날 이 목록에 함께 줄을 더한다.
+ * (주소 호스트와 꼬리표가 서로 맞는지는 `photos.test.ts` 가 별도로 대조한다.)
+ */
+const CREDIT_LINE = /^Photo: .+ \/ (Unsplash|Pexels)$/;
+
 describe('buildLetterFlowers', () => {
   it('카탈로그 전종을 카탈로그 순서 그대로 담는다', async () => {
     const catalog = await loadCatalog();
@@ -31,7 +42,7 @@ describe('buildLetterFlowers', () => {
       expect(option.thumbSrc.startsWith('https://'), option.flowerId).toBe(true);
       expect(option.thumbSrcSet, option.flowerId).toContain('640w');
       expect(option.alt.length, option.flowerId).toBeGreaterThan(0);
-      expect(option.credit, option.flowerId).toMatch(/^Photo: .+ \/ Unsplash$/);
+      expect(option.credit, option.flowerId).toMatch(CREDIT_LINE);
     }
   });
 
@@ -57,7 +68,9 @@ describe('buildLetterFlowers', () => {
       .map((option) => option.flowerId)
       .sort();
 
-    expect(bright).toEqual(['babys-breath', 'lavender', 'lily-of-the-valley', 'violet']);
+    // 2026-08-16 재검토에서 `violet`(어두운 컷으로 교체) 이 빠지고 `forget-me-not`(밝은
+    // 풀밭 배경) 이 들어왔다. 명단의 정본은 `src/lib/photos` 의 `BRIGHT_BACKGROUND` 각주다.
+    expect(bright).toEqual(['babys-breath', 'forget-me-not', 'lavender', 'lily-of-the-valley']);
   });
 
   it('도판은 썸네일 경로로 온다(편지지 위 소품이라 본판을 물지 않는다)', async () => {

@@ -4,7 +4,22 @@
  * 순수 TS만 사용한다 — Next/React/DB/fetch 의존 금지.
  */
 
-export type Relationship = 'lover' | 'spouse' | 'crush' | 'friend' | 'family' | 'colleague';
+export type Relationship =
+  | 'lover'
+  | 'spouse'
+  | 'crush'
+  | 'friend'
+  | 'family'
+  | 'colleague'
+  /**
+   * 위 여섯 갈래에 없는 사이 — 사용자가 직접 적는다(design-spec §1.5l).
+   *
+   * intent 의 `other` 와 **같은 문법이고 같은 약속**이다: 규칙표(recommendation_rules)에
+   * 이 값을 가진 행이 없고, 있더라도 점수로 세지 않는다(score.ts 가 명시적으로 0 으로 둔다).
+   * 관계 가점 없이 색·제철·분위기 신호만으로 고른다는 뜻이다 — 모르는 사이에 아는 척하는
+   * 가점을 주는 것보다 중립이 정직하다.
+   */
+  | 'other';
 export type Intent =
   | 'apology'
   | 'confession'

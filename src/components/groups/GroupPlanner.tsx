@@ -266,83 +266,92 @@ export function GroupPlanner() {
         </section>
       </form>
 
-      {/* ── 결과 ────────────────────────────────────────────────── */}
-      <section className={styles.sect} aria-labelledby={`${uid}-result`}>
-        {/* tabIndex={-1} — 결과가 생기면 포커스가 여기로 온다(마우스로는 눌리지 않는다). */}
-        <p className={styles.overline} id={`${uid}-result`} tabIndex={-1} ref={resultHeadRef}>
-          No.&nbsp;02 <span className={styles.ko}>{MODE_OVERLINES[mode]}</span>
-        </p>
-
-        <div className={styles.seg} role="tablist" aria-label="전달 방식 선택">
-          <span
-            className={styles.segThumb}
-            aria-hidden="true"
-            style={{ '--i': mode } as React.CSSProperties}
-          />
-          {MODE_LABELS.map((label, index) => (
-            <button
-              key={label}
-              type="button"
-              role="tab"
-              id={`${uid}-tab-${index}`}
-              className={styles.segBtn}
-              aria-controls={`${uid}-panel-${index}`}
-              aria-selected={mode === index}
-              tabIndex={mode === index ? 0 : -1}
-              ref={(node) => {
-                tabRefs.current[index] = node;
-              }}
-              onClick={() => setMode(index as 0 | 1)}
-              onKeyDown={(event) => onTabKeyDown(event, index)}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-
-        {MODE_LABELS.map((label, index) => (
-          <div
-            key={label}
-            className={styles.panel}
-            id={`${uid}-panel-${index}`}
-            role="tabpanel"
-            aria-labelledby={`${uid}-tab-${index}`}
-            tabIndex={0}
-            hidden={mode !== index}
-          >
-            {view === null ? (
-              <div className={styles.empty}>
-                <p className={styles.emptyTitle}>{MODE_LEADS[index]}</p>
-                <p className={styles.emptyText}>
-                  받는 사람을 적고 <b>꽃 고르기</b>를 눌러 주세요. 처음이라면{' '}
-                  <b>예시로 먼저 보기</b>로 네 명짜리 예시를 그대로 볼 수 있어요.
-                </p>
-              </div>
-            ) : index === 0 ? (
-              <IndividualPanel view={view} />
-            ) : (
-              <BouquetPanel view={view} />
-            )}
-          </div>
-        ))}
-      </section>
-
       {/*
-        ── CTA (아직 열지 않은 길) ─────────────────────────────────
-        `href="#"` 링크는 눌러도 아무 데도 가지 않으면서 **갈 수 있는 것처럼 보인다** —
-        키보드로 오는 사람에게는 특히 그렇다(포커스를 받고, 눌리고, 페이지 맨 위로 튄다).
-        그래서 링크가 아니라 잠긴 버튼으로 세우고, 왜 잠겼는지 바로 아래에 적어 둔다.
+        ── 결과 ────────────────────────────────────────────────────
+        데스크톱(1024px↑)에서 이 래퍼가 오른쪽 단이 된다 — 왼쪽에 입력(마음·명단),
+        오른쪽에 결과. 세로로만 쌓으면 명단이 길어질수록 결과가 화면 밖으로 밀린다.
+        두 섹션을 하나로 감싸는 이유는 단을 가르는 **헤어라인이 한 줄이어야** 하기
+        때문이다(섹션마다 보더를 걸면 사이가 끊어진 선 두 개로 보인다).
+        모바일에서는 그냥 블록이라 DOM 순서 = 지금까지의 한 칼럼 순서 그대로다.
       */}
-      <section className={styles.sect} aria-label="카드에 담기">
-        <button type="button" className={`${styles.btn} ${styles.btnPrimary}`} disabled>
-          카드에 담기
-          <IconArrowRight />
-        </button>
-        <p className={styles.ctaNote}>{MODE_CTA_NOTES[mode]}</p>
-        <p className={styles.ctaNote}>
-          카드로 만드는 일은 아직 준비하고 있어요. 다 되면 이 자리에서 열어 드릴게요.
-        </p>
-      </section>
+      <div className={styles.resultCol}>
+        <section className={styles.sect} aria-labelledby={`${uid}-result`}>
+          {/* tabIndex={-1} — 결과가 생기면 포커스가 여기로 온다(마우스로는 눌리지 않는다). */}
+          <p className={styles.overline} id={`${uid}-result`} tabIndex={-1} ref={resultHeadRef}>
+            No.&nbsp;02 <span className={styles.ko}>{MODE_OVERLINES[mode]}</span>
+          </p>
+
+          <div className={styles.seg} role="tablist" aria-label="전달 방식 선택">
+            <span
+              className={styles.segThumb}
+              aria-hidden="true"
+              style={{ '--i': mode } as React.CSSProperties}
+            />
+            {MODE_LABELS.map((label, index) => (
+              <button
+                key={label}
+                type="button"
+                role="tab"
+                id={`${uid}-tab-${index}`}
+                className={styles.segBtn}
+                aria-controls={`${uid}-panel-${index}`}
+                aria-selected={mode === index}
+                tabIndex={mode === index ? 0 : -1}
+                ref={(node) => {
+                  tabRefs.current[index] = node;
+                }}
+                onClick={() => setMode(index as 0 | 1)}
+                onKeyDown={(event) => onTabKeyDown(event, index)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {MODE_LABELS.map((label, index) => (
+            <div
+              key={label}
+              className={styles.panel}
+              id={`${uid}-panel-${index}`}
+              role="tabpanel"
+              aria-labelledby={`${uid}-tab-${index}`}
+              tabIndex={0}
+              hidden={mode !== index}
+            >
+              {view === null ? (
+                <div className={styles.empty}>
+                  <p className={styles.emptyTitle}>{MODE_LEADS[index]}</p>
+                  <p className={styles.emptyText}>
+                    받는 사람을 적고 <b>꽃 고르기</b>를 눌러 주세요. 처음이라면{' '}
+                    <b>예시로 먼저 보기</b>로 네 명짜리 예시를 그대로 볼 수 있어요.
+                  </p>
+                </div>
+              ) : index === 0 ? (
+                <IndividualPanel view={view} />
+              ) : (
+                <BouquetPanel view={view} />
+              )}
+            </div>
+          ))}
+        </section>
+
+        {/*
+          ── CTA (아직 열지 않은 길) ─────────────────────────────────
+          `href="#"` 링크는 눌러도 아무 데도 가지 않으면서 **갈 수 있는 것처럼 보인다** —
+          키보드로 오는 사람에게는 특히 그렇다(포커스를 받고, 눌리고, 페이지 맨 위로 튄다).
+          그래서 링크가 아니라 잠긴 버튼으로 세우고, 왜 잠겼는지 바로 아래에 적어 둔다.
+        */}
+        <section className={styles.sect} aria-label="카드에 담기">
+          <button type="button" className={`${styles.btn} ${styles.btnPrimary}`} disabled>
+            카드에 담기
+            <IconArrowRight />
+          </button>
+          <p className={styles.ctaNote}>{MODE_CTA_NOTES[mode]}</p>
+          <p className={styles.ctaNote}>
+            카드로 만드는 일은 아직 준비하고 있어요. 다 되면 이 자리에서 열어 드릴게요.
+          </p>
+        </section>
+      </div>
     </>
   );
 }

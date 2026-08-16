@@ -31,6 +31,7 @@ const { submitRecommendation } = await import('@/app/recommend/actions');
 function submission(overrides: Partial<WizardSubmission> = {}): WizardSubmission {
   return {
     relationship: 'friend',
+    relationshipDetail: '',
     intent: 'gratitude',
     intentDetail: '',
     recipientChips: [],
@@ -38,7 +39,9 @@ function submission(overrides: Partial<WizardSubmission> = {}): WizardSubmission
     recipientNote: '',
     episode: '',
     episodeHints: [],
+    episodeHintDetail: '',
     budgetKey: '',
+    budgetDetail: '',
     dateISO: '2026-08-16',
     ...overrides,
   };
@@ -178,6 +181,56 @@ describe('submitRecommendation — LLM 계약을 정말로 지킨다', () => {
     expect(generateRequestSchema.safeParse(request).success).toBe(true);
   });
 
+  it('직접 쓴 사이 한 줄도 계약 상한(80자) 안으로 들어간다', async () => {
+    await submitRecommendation(
+      submission({ relationship: 'other', relationshipDetail: '라'.repeat(120) }),
+    );
+
+    const request = lastRequest();
+    expect(request).toBeDefined();
+    expect(request!.relationship).toBe('other');
+    expect(request!.relationship_detail).toHaveLength(80);
+    expect(generateRequestSchema.safeParse(request).success).toBe(true);
+  });
+
+  it('사이를 직접 고르면 상세 줄은 실리지 않는다', async () => {
+    await submitRecommendation(
+      submission({ relationship: 'friend', relationshipDetail: '어쩌다 남은 값' }),
+    );
+
+    // 화면이 이미 지우고 보내지만, 서버 경로에서도 `other` 일 때만 실려야 한다.
+    const request = lastRequest();
+    expect(request).toBeDefined();
+    expect(request!.relationship_detail).toBe('어쩌다 남은 값');
+    // 프롬프트가 `other` 가 아닌 관계에서는 이 줄을 세우지 않는다(contracts.test.ts).
+    expect(generateRequestSchema.safeParse(request).success).toBe(true);
+  });
+
+  it('상황 칩 `기타` 는 선택지 이름 대신 사용자의 원문이 실린다', async () => {
+    await submitRecommendation(
+      submission({
+        episodeHints: ['quarrel', 'other'],
+        episodeHintDetail: '서로 바빠서 자주 못 봐요',
+      }),
+    );
+
+    const request = lastRequest();
+    expect(request).toBeDefined();
+    expect(request!.episode_hints).toEqual(['최근에 다퉜어요', '서로 바빠서 자주 못 봐요']);
+  });
+
+  it('예산 한 줄은 어떤 경로로도 프롬프트에 실리지 않는다 (절대 규칙 3 — 가격 금지)', async () => {
+    await submitRecommendation(
+      submission({ budgetKey: 'other', budgetDetail: '5만 원쯤 생각하고 있어요' }),
+    );
+
+    const request = lastRequest();
+    expect(request).toBeDefined();
+    const serialized = JSON.stringify(request);
+    expect(serialized).not.toContain('5만 원');
+    expect(serialized).not.toContain('예산');
+  });
+
   it('심각한 신호가 섞이면 어댑터를 아예 부르지 않는다 (후퇴 금지선)', async () => {
     const response = await submitRecommendation(
       submission({ episode: '요즘 자해를 한다고 들었어요' }),
@@ -185,5 +238,109 @@ describe('submitRecommendation — LLM 계약을 정말로 지킨다', () => {
 
     expect(response.ok).toBe(true);
     expect(generateMessages).not.toHaveBeenCalled();
+  });
+
+  it('직접 쓴 사이·상황 칩에 심각한 신호가 있어도 같은 문에서 막힌다', async () => {
+    generateMessages.mockClear();
+    await submitRecommendation(
+      submission({ relationship: 'other', relationshipDetail: '요즘 자해를 한다고 들었어요' }),
+    );
+    expect(generateMessages).not.toHaveBeenCalled();
+
+    generateMessages.mockClear();
+    await submitRecommendation(
+      submission({
+        episodeHints: ['other'],
+        episodeHintDetail: '요즘 자해를 한다고 들었어요',
+      }),
+    );
+    expect(generateMessages).not.toHaveBeenCalled();
+  });
+});
+
+describe('submitRecommendation — §1.5l 맥락 칩은 사용자의 말을 되비춘다', () => {
+  it('사이·마음·요즘 사이·예산의 직접 쓴 한 줄이 칩 자리에 그대로 선다', async () => {
+    const response = await submitRecommendation(
+      submission({
+        relationship: 'other',
+        relationshipDetail: '10년째 같은 밴드에서 합주하는 사이예요',
+        intent: 'other',
+        intentDetail: '유학 떠나는 조카를 배웅해요',
+        episodeHints: ['other'],
+        episodeHintDetail: '서로 바빠서 자주 못 봐요',
+        budgetKey: 'other',
+        budgetDetail: '아직 못 정했어요',
+      }),
+    );
+
+    expect(response.ok).toBe(true);
+    if (!response.ok) return;
+    const chips = response.payload.contextChips;
+
+    expect(chips).toContain('10년째 같은 밴드에서 합주하는 사이예요');
+    expect(chips).toContain('유학 떠나는 조카를 배웅해요');
+    expect(chips).toContain('서로 바빠서 자주 못 봐요');
+    expect(chips).toContain('아직 못 정했어요');
+    // 선택지 이름은 결과 화면에 서지 않는다 — 우리 화면의 사정일 뿐이다.
+    expect(chips).not.toContain('직접 쓸게요');
+    expect(chips).not.toContain('기타 · 직접 적을게요');
+    expect(chips).not.toContain('직접 적은 사이에게');
+
+    // 화면이 말줄임을 걸 자리 — 네 줄 전부가 "사용자의 말" 로 표시된다.
+    expect(response.payload.ownWords).toEqual([
+      '10년째 같은 밴드에서 합주하는 사이예요',
+      '유학 떠나는 조카를 배웅해요',
+      '서로 바빠서 자주 못 봐요',
+      '아직 못 정했어요',
+    ]);
+  });
+
+  it('한 줄을 비워 두면 폴백 라벨이 서고, 예산 칩은 아예 서지 않는다', async () => {
+    const response = await submitRecommendation(
+      submission({ relationship: 'other', intent: 'other', budgetKey: 'other' }),
+    );
+
+    expect(response.ok).toBe(true);
+    if (!response.ok) return;
+    const chips = response.payload.contextChips;
+
+    expect(chips).toContain('직접 적은 사이에게');
+    expect(chips).toContain('직접 쓸게요');
+    // "기타 · 직접 적을게요" 는 조건이 아니라 선택지 이름이라 결과에 세우지 않는다.
+    expect(chips).not.toContain('기타 · 직접 적을게요');
+    expect(response.payload.ownWords).toEqual([]);
+  });
+
+  it('예산 `기타` 는 가격대 필터를 걸지 않는다 (band 1~3 전부 후보)', async () => {
+    const [free, cheap] = await Promise.all([
+      submitRecommendation(submission({ budgetKey: 'other' })),
+      submitRecommendation(submission({ budgetKey: 'under20' })),
+    ]);
+
+    expect(free.ok).toBe(true);
+    expect(cheap.ok).toBe(true);
+    if (!free.ok || !cheap.ok) return;
+
+    // 저가 구간은 band 1 만 남고, `기타` 는 그보다 넓은 후보에서 고른다.
+    expect(cheap.payload.options.every((option) => option.priceBand === 1)).toBe(true);
+    expect(free.payload.options.some((option) => option.priceBand > 1)).toBe(true);
+  });
+
+  it('`1~2만 원대` 와 `3만 원 미만` 은 같은 band 로 떨어진다 (라벨만 세분)', async () => {
+    const [under20, under30] = await Promise.all([
+      submitRecommendation(submission({ budgetKey: 'under20' })),
+      submitRecommendation(submission({ budgetKey: 'under30' })),
+    ]);
+
+    expect(under20.ok).toBe(true);
+    expect(under30.ok).toBe(true);
+    if (!under20.ok || !under30.ok) return;
+
+    expect(under20.payload.options.map((o) => o.flowerId)).toEqual(
+      under30.payload.options.map((o) => o.flowerId),
+    );
+    // 칩만 다르다 — 사용자가 고른 말이 그대로 남는다.
+    expect(under20.payload.contextChips).toContain('1~2만 원대');
+    expect(under30.payload.contextChips).toContain('3만 원 미만');
   });
 });

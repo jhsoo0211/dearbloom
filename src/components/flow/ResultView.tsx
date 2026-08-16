@@ -564,8 +564,8 @@ export default function ResultView({ payload, onRestart }: ResultViewProps) {
                     <li
                       key={chipText}
                       /* §1.5l — 사용자가 직접 쓴 한 줄만 말줄임 규격을 탄다(칩 높이는 그대로). */
-                      className={chipText === payload.intentDetail ? styles.ctxOwn : undefined}
-                      title={chipText === payload.intentDetail ? chipText : undefined}
+                      className={payload.ownWords.includes(chipText) ? styles.ctxOwn : undefined}
+                      title={payload.ownWords.includes(chipText) ? chipText : undefined}
                     >
                       {chipText}
                     </li>

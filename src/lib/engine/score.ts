@@ -74,7 +74,8 @@ function bestFit(rows: RecommendationRuleRow[]): number {
  *      한 가지만 입력되면 그쪽이 100%, 아무것도 없으면 신호 없음 → 0.
  *   P: 개인화 스텁. personalCues/메모리 기반 점수는 후속 작업이라 지금은 항상 0.
  *
- * intent 가 'other'(직접 쓴 마음)이면 I 는 규칙표를 보지 않고 0 이다 — §1.5l.
+ * intent 가 'other'(직접 쓴 마음)이면 I 는, relationship 이 'other'(직접 쓴 사이)이면 R 은
+ * 규칙표를 보지 않고 0 이다 — §1.5l.
  * D(다양성) 가중치는 여기서 쓰지 않고 diversity 단계에서 반영한다.
  */
 export function scoreCandidate(
@@ -98,9 +99,15 @@ export function scoreCandidate(
   const I = bestFit(intentRows);
   if (I > 0) matched.push('SC_INTENT');
 
-  const relationshipRows = rows.filter(
-    (r) => r.relationship !== undefined && r.relationship === input.relationship,
-  );
+  /*
+   * §1.5l — 관계의 'other' 도 마음의 'other' 와 같은 약속이다(바로 위 주석 참고).
+   * 사용자가 직접 적은 사이라 규칙표에 짝이 될 행이 없고, 나중에 other 행이 들어와도
+   * 관계 가점이 살아나지 않게 여기서 못박는다.
+   */
+  const relationshipRows =
+    input.relationship === 'other'
+      ? []
+      : rows.filter((r) => r.relationship !== undefined && r.relationship === input.relationship);
   const R = bestFit(relationshipRows);
   if (R > 0) matched.push('SC_RELATIONSHIP');
 

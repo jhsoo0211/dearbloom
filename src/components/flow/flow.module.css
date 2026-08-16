@@ -2538,3 +2538,111 @@
     margin-bottom: 16px;
   }
 }
+
+/* ── 질문 2단 (1024px↑) — 폰 프레임의 마지막 잔상까지 걷어낸다 ────────
+   768px 에서 이미 폰 캔버스는 사라졌지만, 화면은 여전히 **앱 위저드**로 읽혔다:
+   묻는 말과 고르는 칸이 한 줄로 쌓여 좁은 기둥 하나가 가운데 떠 있었기 때문이다
+   (사용자 피드백 — "추천 시작을 누르면 웹에서 앱 화면으로 바뀐다").
+
+   그래서 결과 화면이 이미 쓰고 있는 문법을 그대로 가져온다 — 1120px 칼럼 · 좌단
+   sticky · 헤어라인 한 줄로 나뉜 2단. 좌단은 **묻는 말**(오버라인·제목·리드)이
+   붙어 있고, 우단만 스크롤하며 **답**을 받는다. 두 장면(질문·결과)이 같은 자리에
+   같은 폭으로 서면, 눌렀을 때 화면이 갈아 끼워지는 것이 아니라 페이지가 이어진다.
+
+   우단 폭은 1120 − 320 − (gap×2) ≈ 690~710px 이다. 읽기 좋은 한 단이면서 칩·프리셋 줄이
+   모바일보다 훨씬 넓게 펴진다(430px 에서 네 줄이던 특징 칩이 세 줄로 줄어든다).
+   ═══════════════════════════════════════════════════════════════════ */
+@media (min-width: 1024px) {
+  .flow {
+    /* 좌단(묻는 말) 폭과 두 단 사이 간격. **푸터 버튼도 이 값으로 우단에 맞춘다** —
+       버튼이 답의 아래가 아니라 페이지 왼쪽 끝에 서면 2단이 도로 무너져 보인다. */
+    --q-rail: 320px;
+    --q-gap: clamp(32px, 3.6vw, 56px);
+  }
+
+  /* 결과와 같은 1120px 칼럼. 좌우 여백은 여기서 한 번만 주고, 안쪽 조각들의
+     거터는 아래에서 접는다(결과 2단이 `.two :where(...)` 로 하는 것과 같다). */
+  .qmain {
+    max-width: calc(var(--col-r) + var(--gut) * 2);
+    padding-inline: var(--gut);
+  }
+  .phoneQuestion {
+    padding-top: calc(var(--bar-h) + 64px);
+  }
+
+  .qtwo {
+    display: grid;
+    grid-template-columns: minmax(0, var(--q-rail)) minmax(0, 1fr);
+  }
+  /* 좌단 칸은 우단 높이만큼 늘어난다(그리드 기본 align-self: stretch).
+     그 높이가 안쪽 sticky 가 따라다닐 수 있는 거리다 — 여기서 높이를 내용에
+     맞추면 스티키가 한 뼘도 못 움직인다(결과 좌단과 같은 이유). */
+  .qcolA {
+    position: relative;
+    min-width: 0;
+  }
+  .qcolAInner {
+    position: sticky;
+    top: calc(var(--bar-h) + 40px);
+  }
+  .qcolB {
+    min-width: 0;
+    margin-left: var(--q-gap);
+    padding-left: var(--q-gap);
+    padding-bottom: 8px;
+    border-left: 1px solid var(--hair);
+  }
+  /* 첫 조각의 위 여백은 좌단 제목과 어깨를 맞추기 위해 접는다. */
+  .qcolB > :first-child {
+    margin-top: 0;
+  }
+
+  .qtwo :where(.qhead, .group, .rels) {
+    padding-left: 0;
+    padding-right: 0;
+  }
+  .qtwo :where(.rels, .summary, .error, .presetDivider, .qnote) {
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  /* 좌단에는 묻는 말 하나뿐이라 제목이 rail 폭(300px) 안에서 숨 쉴 만큼만 크다.
+     768px 의 clamp(36~46px)를 그대로 두면 세 글자에 한 줄씩 끊긴다. */
+  .qcolA .qhead h1 {
+    font-size: clamp(29px, 2.4vw, 36px);
+    line-height: 1.34;
+  }
+  .qcolA .lede {
+    margin-top: 14px;
+    font-size: 15px;
+    max-width: none;
+  }
+  /* 오버라인의 꼬리 헤어라인은 좁은 rail 에서 제목을 밀어낸다 — 여기서만 접는다. */
+  .qcolA .overline::after {
+    display: none;
+  }
+
+  /* 우단은 넓어졌지만 카드가 지나치게 길어지지 않게 두 열을 유지한다. */
+  .qcolB .rels {
+    margin-top: 4px;
+    gap: 12px;
+  }
+  .qcolB .group:first-of-type {
+    margin-top: 0;
+  }
+  /* 자유 서술은 우단 폭을 다 쓰면 한 줄이 너무 길어진다 — 읽기 폭으로 묶는다. */
+  .qcolB .fieldArea,
+  .qcolB .field {
+    max-width: 62ch;
+  }
+
+  /*
+   * 푸터 버튼 — 답의 바로 아래(= 우단 시작점)에 선다.
+   * `1px` 은 우단의 헤어라인 보더 몫이다(선 위에 버튼이 걸치지 않게).
+   */
+  .footbar {
+    max-width: calc(var(--col-r) + var(--gut) * 2);
+    padding-top: 30px;
+    padding-left: calc(var(--gut) + var(--q-rail) + var(--q-gap) * 2 + 1px);
+  }
+}

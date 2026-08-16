@@ -1,17 +1,36 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  BUDGET_CHOICES,
+  BUDGET_DETAIL_MAX_CHARS,
+  BUDGET_OTHER,
   EPISODE_HINTS,
+  EPISODE_HINT_DETAIL_MAX_CHARS,
+  EPISODE_HINT_OTHER,
   INTENT_DETAIL_MAX_CHARS,
   INTENT_LABELS,
   PRESET_MOMENTS,
   RECIPIENT_CHIPS,
+  RELATIONSHIP_DETAIL_MAX_CHARS,
+  RELATIONSHIP_LABELS,
+  RELATIONSHIP_TO_LABELS,
+  budgetChoice,
   episodeHintLabels,
   presetMoment,
   splitRecipientChips,
 } from '@/components/flow/labels';
-import { INTENTS, RECIPIENT_TRAITS, RELATIONSHIPS, SPECIES, recommend } from '@/lib/engine';
-import { INTENT_DETAIL_MAX_CHARS as CONTRACT_INTENT_DETAIL_MAX } from '@/lib/llm/contracts';
+import {
+  INTENTS,
+  RECIPIENT_TRAITS,
+  RELATIONSHIPS,
+  SPECIES,
+  allowedPriceBands,
+  recommend,
+} from '@/lib/engine';
+import {
+  INTENT_DETAIL_MAX_CHARS as CONTRACT_INTENT_DETAIL_MAX,
+  RELATIONSHIP_DETAIL_MAX_CHARS as CONTRACT_RELATIONSHIP_DETAIL_MAX,
+} from '@/lib/llm/contracts';
 import { makeInput, testRuleSetWithMeanings } from '../engine/fixtures';
 
 /**
@@ -163,9 +182,9 @@ describe('특징 칩 → 엔진 입력 (§1.5l)', () => {
 });
 
 describe('상황 칩 (§1.5l)', () => {
-  it('6종이며 값·라벨이 겹치지 않는다', () => {
-    expect(EPISODE_HINTS).toHaveLength(6);
-    expect(new Set(EPISODE_HINTS.map((h) => h.value)).size).toBe(6);
+  it('6종 + 기타 = 7종이며 값·라벨이 겹치지 않는다', () => {
+    expect(EPISODE_HINTS).toHaveLength(7);
+    expect(new Set(EPISODE_HINTS.map((h) => h.value)).size).toBe(7);
     expect(EPISODE_HINTS.map((h) => h.label)).toEqual([
       '오랜만에 연락해요',
       '최근에 다퉜어요',
@@ -173,7 +192,10 @@ describe('상황 칩 (§1.5l)', () => {
       '많이 지쳐 보여요',
       '축하할 일이 생겼어요',
       '멀리 떨어져 지내요',
+      '기타 · 직접 적을게요',
     ]);
+    // `기타` 는 목록의 **맨 끝**이다 — 갈래를 먼저 보여 주고 마지막에 빠져나갈 길을 연다.
+    expect(EPISODE_HINTS.at(-1)?.value).toBe(EPISODE_HINT_OTHER);
   });
 
   it('slug 를 라벨로 옮기고 사전 밖 값·중복은 버린다', () => {
@@ -183,5 +205,84 @@ describe('상황 칩 (§1.5l)', () => {
     ]);
     expect(episodeHintLabels(['quarrel', 'quarrel', '아무말'])).toEqual(['최근에 다퉜어요']);
     expect(episodeHintLabels([])).toEqual([]);
+  });
+
+  it('`기타` 는 선택지 이름 대신 사용자가 적어 준 원문이 라벨 자리에 선다', () => {
+    expect(episodeHintLabels(['quarrel', 'other'], '  서로 바빠서 자주 못 봐요  ')).toEqual([
+      '최근에 다퉜어요',
+      '서로 바빠서 자주 못 봐요',
+    ]);
+  });
+
+  it('`기타` 를 골라도 한 줄이 비어 있으면 라벨을 세우지 않는다', () => {
+    // "기타" 세 글자는 프롬프트에도 결과 칩에도 아무것도 말해 주지 않는다.
+    expect(episodeHintLabels(['other'])).toEqual([]);
+    expect(episodeHintLabels(['other', 'worn-out'], '   ')).toEqual(['많이 지쳐 보여요']);
+  });
+
+  it('한 줄 입력의 길이 상한이 다른 `직접 쓸게요` 들과 같다', () => {
+    expect(EPISODE_HINT_DETAIL_MAX_CHARS).toBe(80);
+  });
+});
+
+describe("사이 'other' 표기 (§1.5l)", () => {
+  it('관계 어휘 7종 전부에 라벨이 있고 other 문구가 스펙 그대로다', () => {
+    expect(RELATIONSHIPS).toHaveLength(7);
+    for (const relationship of RELATIONSHIPS) {
+      expect(RELATIONSHIP_LABELS[relationship].label.trim()).not.toBe('');
+      expect(RELATIONSHIP_TO_LABELS[relationship].trim()).not.toBe('');
+    }
+
+    expect(RELATIONSHIP_LABELS.other).toEqual({
+      label: '직접 쓸게요',
+      desc: '위에 없는 사이예요',
+    });
+  });
+
+  it('한 줄 입력의 길이 상한을 화면·서버·계약이 같은 값으로 쓴다', () => {
+    expect(RELATIONSHIP_DETAIL_MAX_CHARS).toBe(80);
+    expect(CONTRACT_RELATIONSHIP_DETAIL_MAX).toBe(RELATIONSHIP_DETAIL_MAX_CHARS);
+  });
+
+  it('`other` 는 목록의 맨 끝이다 — 갈래를 먼저 보여 주고 마지막에 길을 연다', () => {
+    expect(RELATIONSHIPS.at(-1)).toBe('other');
+  });
+});
+
+describe('예산 선택지 (§1.5l)', () => {
+  it('6종이며 값·라벨이 겹치지 않고 낮은 값부터 선다', () => {
+    expect(BUDGET_CHOICES).toHaveLength(6);
+    expect(new Set(BUDGET_CHOICES.map((b) => b.value)).size).toBe(6);
+    expect(BUDGET_CHOICES.map((b) => b.label)).toEqual([
+      '1~2만 원대',
+      '3만 원 미만',
+      '3~5만 원',
+      '5~10만 원',
+      '10만 원 이상',
+      '기타 · 직접 적을게요',
+    ]);
+  });
+
+  it('`1~2만 원대` 는 `3만 원 미만` 과 같은 band 1 로 떨어진다 (라벨 세분이 목적)', () => {
+    const under20 = budgetChoice('under20');
+    const under30 = budgetChoice('under30');
+    expect(under20?.max).toBeLessThan(30_000);
+    expect(under30?.max).toBeLessThan(30_000);
+    // price_band 가 1·2·3 뿐이라 두 선택지가 고를 수 있는 꽃은 같다 — 그것이 버그가 아니다.
+    expect(allowedPriceBands(under20?.max)).toEqual(allowedPriceBands(under30?.max));
+    expect(allowedPriceBands(under20?.max)).toEqual([1]);
+  });
+
+  it('`기타` 는 금액이 없어 예산 필터가 걸리지 않는다', () => {
+    const other = budgetChoice(BUDGET_OTHER);
+    expect(other).toBeDefined();
+    expect(other?.min).toBeUndefined();
+    expect(other?.max).toBeUndefined();
+    // 값을 말하지 않은 것과 같은 자리 — 전 구간이 후보로 남는다.
+    expect(allowedPriceBands(undefined)).toEqual([1, 2, 3]);
+  });
+
+  it('한 줄 입력의 길이 상한이 다른 `직접 쓸게요` 들과 같다', () => {
+    expect(BUDGET_DETAIL_MAX_CHARS).toBe(80);
   });
 });

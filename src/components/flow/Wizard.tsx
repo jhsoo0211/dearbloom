@@ -3,10 +3,10 @@
 /**
  * 질문 5문항 — 한 화면에 한 질문(확정 시안 `design/app-v3/question.html` 문법).
  *
- *   ① 어떤 사이인가요        (시작 프리셋 8종 + 관계 6종 · 필수)
+ *   ① 어떤 사이인가요        (시작 프리셋 8종 + 관계 7종 · 필수 — `직접 쓸게요` 는 한 줄 입력)
  *   ② 어떤 마음을 전하나요   (마음 8종 · 필수 — `직접 쓸게요` 를 고르면 한 줄 입력)
- *   ③ 받는 분은 어떤 분인가요 (특징 칩 한 그룹 · 좋아하는 색 · 상황 칩 + 자유 서술 2필드)
- *   ④ 현실 조건              (예산 · 전하는 날)
+ *   ③ 받는 분은 어떤 분인가요 (특징 칩 한 그룹 · 좋아하는 색 · 상황 칩 7종 + 자유 서술 2필드)
+ *   ④ 현실 조건              (예산 6종 · 전하는 날 — 예산 `기타` 도 한 줄 입력)
  *   ⑤ 확인하고 추천받기
  *
  * 선택지 값(slug)은 전부 서버가 엔진 어휘에서 만들어 props 로 내려준다 —
@@ -35,8 +35,21 @@ const TOTAL_STEPS = 5;
 /** 마음 목록에서 `직접 쓸게요` 를 가리키는 값. 어휘 원본은 엔진 INTENTS 다. */
 const INTENT_OTHER = 'other';
 
-/** §1.5l 직접 쓴 마음 한 줄의 길이 상한(서버 `INTENT_DETAIL_MAX_CHARS` 와 같은 값). */
-const INTENT_DETAIL_MAX = 80;
+/** 사이 목록에서 `직접 쓸게요` 를 가리키는 값. 어휘 원본은 엔진 RELATIONSHIPS 다. */
+const RELATIONSHIP_OTHER = 'other';
+
+/** 상황 칩에서 `기타` 를 가리키는 값. 어휘 원본은 서버 `EPISODE_HINTS` 다. */
+const EPISODE_HINT_OTHER = 'other';
+
+/** 예산 목록에서 `기타` 를 가리키는 값. 어휘 원본은 서버 `BUDGET_CHOICES` 다. */
+const BUDGET_OTHER = 'other';
+
+/**
+ * §1.5l 직접 쓴 한 줄의 길이 상한 — 사이·마음·요즘 사이·예산이 모두 80자다.
+ * 서버의 네 상수(`RELATIONSHIP_DETAIL_MAX_CHARS` · `INTENT_DETAIL_MAX_CHARS` ·
+ * `EPISODE_HINT_DETAIL_MAX_CHARS` · `BUDGET_DETAIL_MAX_CHARS`)와 같은 값이다.
+ */
+const DETAIL_MAX = 80;
 
 /**
  * 진행 표기를 우리말로 — `5문항 중 3번째` 는 설문지의 말이지 이야기의 말이 아니다.
@@ -304,6 +317,8 @@ export interface WizardProps {
 export default function Wizard({ options, defaultDateISO, action, onResult }: WizardProps) {
   const [step, setStep] = useState(1);
   const [relationship, setRelationship] = useState('');
+  // §1.5l 사이 `직접 쓸게요` 한 줄. 마음 쪽과 같은 규칙이다 — 비워도 진행된다.
+  const [relationshipDetail, setRelationshipDetail] = useState('');
   const [intent, setIntent] = useState('');
   // §1.5l `직접 쓸게요` 한 줄. 비워도 진행된다 — 고르는 것 자체가 이미 답이다.
   const [intentDetail, setIntentDetail] = useState('');
@@ -315,7 +330,11 @@ export default function Wizard({ options, defaultDateISO, action, onResult }: Wi
   const [recipientNote, setRecipientNote] = useState('');
   const [episode, setEpisode] = useState('');
   const [episodeHints, setEpisodeHints] = useState<string[]>([]);
+  // §1.5l 상황 칩 `기타` 한 줄. 칩을 끄면 아래 toggleEpisodeHint 가 함께 지운다.
+  const [episodeHintDetail, setEpisodeHintDetail] = useState('');
   const [budgetKey, setBudgetKey] = useState('');
+  // §1.5l 예산 `기타` 한 줄. 엔진에는 가지 않고 결과 맥락 칩에만 선다.
+  const [budgetDetail, setBudgetDetail] = useState('');
   const [dateISO, setDateISO] = useState(defaultDateISO);
   const [pending, startSubmit] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -360,6 +379,7 @@ export default function Wizard({ options, defaultDateISO, action, onResult }: Wi
   function applyPreset(option: PresetOption) {
     setPreset(option.value);
     setRelationship(option.relationship);
+    setRelationshipDetail('');
     setIntent(option.intent);
     setIntentDetail('');
     setStep(3);
@@ -369,12 +389,28 @@ export default function Wizard({ options, defaultDateISO, action, onResult }: Wi
   function chooseRelationship(next: string) {
     setRelationship(next);
     setPreset('');
+    // 다른 사이로 옮기면 직접 쓴 한 줄은 남겨 둘 자리가 없다(요약이 거짓말하지 않게).
+    if (next !== RELATIONSHIP_OTHER) setRelationshipDetail('');
   }
 
   function chooseIntent(next: string) {
     setIntent(next);
     setPreset('');
     if (next !== INTENT_OTHER) setIntentDetail('');
+  }
+
+  function chooseBudget(next: string) {
+    setBudgetKey(next);
+    if (next !== BUDGET_OTHER) setBudgetDetail('');
+  }
+
+  /** 상황 칩 토글. `기타` 를 끄면 그 아래 한 줄도 함께 지운다. */
+  function toggleEpisodeHint(value: string) {
+    const next = toggle(episodeHints, value);
+    setEpisodeHints(next);
+    if (value === EPISODE_HINT_OTHER && !next.includes(EPISODE_HINT_OTHER)) {
+      setEpisodeHintDetail('');
+    }
   }
 
   /**
@@ -388,6 +424,7 @@ export default function Wizard({ options, defaultDateISO, action, onResult }: Wi
       try {
         const response = await action({
           relationship,
+          relationshipDetail: relationship === RELATIONSHIP_OTHER ? relationshipDetail : '',
           intent,
           intentDetail: intent === INTENT_OTHER ? intentDetail : '',
           recipientChips,
@@ -395,7 +432,9 @@ export default function Wizard({ options, defaultDateISO, action, onResult }: Wi
           recipientNote,
           episode,
           episodeHints,
+          episodeHintDetail: episodeHints.includes(EPISODE_HINT_OTHER) ? episodeHintDetail : '',
           budgetKey,
+          budgetDetail: budgetKey === BUDGET_OTHER ? budgetDetail : '',
           dateISO,
         });
         if (response.ok) onResult(response.payload);
@@ -491,293 +530,388 @@ export default function Wizard({ options, defaultDateISO, action, onResult }: Wi
 
       <div className={`${styles.phone} ${styles.phoneQuestion}`}>
         <main className={styles.qmain}>
-          <div className={styles.qhead}>
-            <p className={styles.overline}>
-              {head.overline} <span className={styles.ko}>{stepPhrase(step)}</span>
-            </p>
-            {/* tabIndex={-1} — 단계가 바뀔 때 포커스를 받는 자리다(마우스로는 눌리지 않는다). */}
-            <h1 id="q-title" tabIndex={-1} ref={titleRef}>
-              {head.title}
-            </h1>
-            <p className={styles.lede}>{head.lede}</p>
-          </div>
-
-          {step === 1 ? (
-            <>
-              {/*
-                #20 — 여러 명에게 주는 경우는 **이 위저드가 다루지 않는다.**
-                랜딩 내비에 `여러 명에게` 를 따로 세워 두었더니 두 갈래가 첫 화면에서
-                갈려 버렸고("추천 시작"과 "여러 명에게" 중 무엇이 본류인지 알 수 없다),
-                묶음 추천은 질문 자체가 다르다(누구누구인지·몇 다발인지). 그래서 진입은
-                하나로 모으고 갈림길만 여기 한 줄로 둔다 — 고르면 기존 그룹 플로우로
-                건너간다. 위저드를 둘로 나누거나 합치지 않는다.
-              */}
-              <div className={styles.group}>
-                <p className={styles.groupHead} id="q-count">
-                  몇 분께 드리나요?
-                </p>
-                <div className={styles.chips} role="group" aria-labelledby="q-count">
-                  <button
-                    type="button"
-                    className={`${styles.chip} ${styles.chipOn}`}
-                    aria-pressed={true}
-                  >
-                    한 분께
-                  </button>
-                  <Link
-                    className={`${styles.chip} ${styles.chipLink}`}
-                    href="/groups"
-                    prefetch={false}
-                  >
-                    여러 분께
-                  </Link>
-                </div>
-                <p className={styles.groupNote}>
-                  여러 분께 드릴 거라면 받는 분마다 꽃을 따로 골라드릴게요. 지금은 한 분께 드리는
-                  길이에요.
-                </p>
-              </div>
-
-              {/* §1.5l 시작 프리셋 — 자주 오는 순간 8가지. 1·2번을 한 번에 채운다. */}
-              <div className={styles.group}>
-                <p className={styles.groupHead} id="q-presets">
-                  이런 순간이신가요?
-                </p>
-                <p className={styles.groupNote}>
-                  고르면 두 질문을 건너뛰어요. 다음 화면에서 언제든 되돌아와 바꿀 수 있어요.
-                </p>
-                <div className={styles.chips} role="group" aria-labelledby="q-presets">
-                  {options.presets.map((option) => (
-                    <button
-                      key={option.value}
-                      type="button"
-                      className={styles.chip}
-                      onClick={() => applyPreset(option)}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <p className={styles.presetDivider}>또는 직접 고를게요</p>
-
-              <ChoiceList
-                name="relationship"
-                labelledBy="q-title"
-                options={options.relationships}
-                value={relationship}
-                onChange={chooseRelationship}
-              />
-            </>
-          ) : null}
-
-          {step === 2 ? (
-            <>
-              <ChoiceList
-                name="intent"
-                labelledBy="q-title"
-                options={options.intents}
-                value={intent}
-                onChange={chooseIntent}
-              />
-
-              {/* §1.5l — 목록에 없는 마음. 적어 주면 멘트가 그 상황을 직접 다룬다. */}
-              {intent === INTENT_OTHER ? (
-                <div className={styles.group}>
-                  <label className={styles.fieldLabel} htmlFor="q-intent-detail">
-                    어떤 마음인지 한 줄로 적어 주세요
-                  </label>
-                  <input
-                    id="q-intent-detail"
-                    className={styles.field}
-                    type="text"
-                    maxLength={INTENT_DETAIL_MAX}
-                    placeholder="예: 유학 떠나는 조카를 배웅해요"
-                    value={intentDetail}
-                    onChange={(e) => setIntentDetail(e.target.value)}
-                  />
-                  <p className={styles.fieldNote}>
-                    비워 두셔도 괜찮아요. 적어주신 내용은 추천과 멘트에만 쓰고, 저장하지 않아요.
+          {/*
+            데스크톱(1024px↑)은 결과 화면과 같은 2단이다 — 좌단(질문)이 sticky 로 붙어 있고
+            우단(답)만 스크롤한다. 모바일에서는 이 래퍼들이 그냥 블록이라 **DOM 순서 =
+            지금까지의 한 칼럼 순서** 그대로다. 폰 프레임을 흉내 낸 좁은 캔버스가 아니라
+            사이트의 한 페이지로 읽히게 하는 것이 이 골격의 목적이다(§1.5l ⑥).
+          */}
+          <div className={styles.qtwo}>
+            <div className={styles.qcolA}>
+              <div className={styles.qcolAInner}>
+                <div className={styles.qhead}>
+                  <p className={styles.overline}>
+                    {head.overline} <span className={styles.ko}>{stepPhrase(step)}</span>
                   </p>
+                  {/* tabIndex={-1} — 단계가 바뀔 때 포커스를 받는 자리다(마우스로는 눌리지 않는다). */}
+                  <h1 id="q-title" tabIndex={-1} ref={titleRef}>
+                    {head.title}
+                  </h1>
+                  <p className={styles.lede}>{head.lede}</p>
                 </div>
-              ) : null}
-            </>
-          ) : null}
+              </div>
+            </div>
 
-          {step === 3 ? (
-            <>
-              {/*
-                §1.5l — 분위기·향·반려동물을 한 그룹으로 합쳤다. 묻는 것이 결국 같은
-                질문이라 위계를 셋으로 나눌 이유가 없다. 반려동물 안전 제외는 칩이
-                그대로 이어받는다(서버가 pets 로 나눈다).
-              */}
-              <fieldset className={styles.group}>
-                {/* 이 단계의 제목이 이미 `받는 분은 어떤 분인가요?` 다 — 여기서 되풀이하지 않는다. */}
-                <legend className={styles.groupHead}>어떤 분인가요</legend>
-                <p className={styles.groupNote}>
-                  여러 개 골라도 좋아요. 반려동물을 알려주시면 위험한 꽃은 미리 빼드려요.
-                </p>
-                <ToggleChips
-                  options={options.recipientChips}
-                  values={recipientChips}
-                  onToggle={(v) => setRecipientChips(toggle(recipientChips, v))}
-                />
-              </fieldset>
+            <div className={styles.qcolB}>
+              {step === 1 ? (
+                <>
+                  {/*
+                    #20 — 여러 명에게 주는 경우는 **이 위저드가 다루지 않는다.**
+                    랜딩 내비에 `여러 명에게` 를 따로 세워 두었더니 두 갈래가 첫 화면에서
+                    갈려 버렸고("추천 시작"과 "여러 명에게" 중 무엇이 본류인지 알 수 없다),
+                    묶음 추천은 질문 자체가 다르다(누구누구인지·몇 다발인지). 그래서 진입은
+                    하나로 모으고 갈림길만 여기 한 줄로 둔다 — 고르면 기존 그룹 플로우로
+                    건너간다. 위저드를 둘로 나누거나 합치지 않는다.
+                  */}
+                  <div className={styles.group}>
+                    <p className={styles.groupHead} id="q-count">
+                      몇 분께 드리나요?
+                    </p>
+                    <div className={styles.chips} role="group" aria-labelledby="q-count">
+                      <button
+                        type="button"
+                        className={`${styles.chip} ${styles.chipOn}`}
+                        aria-pressed={true}
+                      >
+                        한 분께
+                      </button>
+                      <Link
+                        className={`${styles.chip} ${styles.chipLink}`}
+                        href="/groups"
+                        prefetch={false}
+                      >
+                        여러 분께
+                      </Link>
+                    </div>
+                    <p className={styles.groupNote}>
+                      여러 분께 드릴 거라면 받는 분마다 꽃을 따로 골라드릴게요. 지금은 한 분께 드리는
+                      길이에요.
+                    </p>
+                  </div>
 
-              <fieldset className={styles.group}>
-                <legend className={styles.groupHead}>좋아하는 색</legend>
-                <p className={styles.groupNote}>그 사람이 자주 고르는 색이 있다면 알려주세요.</p>
-                <ColorChips
-                  options={options.colors}
-                  values={colorPrefs}
-                  onToggle={(v) => setColorPrefs(toggle(colorPrefs, v))}
-                />
-              </fieldset>
+                  {/* §1.5l 시작 프리셋 — 자주 오는 순간 8가지. 1·2번을 한 번에 채운다. */}
+                  <div className={styles.group}>
+                    <p className={styles.groupHead} id="q-presets">
+                      이런 순간이신가요?
+                    </p>
+                    <p className={styles.groupNote}>
+                      고르면 두 질문을 건너뛰어요. 다음 화면에서 언제든 되돌아와 바꿀 수 있어요.
+                    </p>
+                    <div className={styles.chips} role="group" aria-labelledby="q-presets">
+                      {options.presets.map((option) => (
+                        <button
+                          key={option.value}
+                          type="button"
+                          className={styles.chip}
+                          onClick={() => applyPreset(option)}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
 
-              {/* §1.5j — 이야기로 적어 주면 그 안에서 분위기·색·꽃 단서를 읽어 낸다. */}
-              <fieldset className={styles.group}>
-                <legend className={styles.groupHead}>들려주고 싶은 이야기</legend>
-                <p className={styles.groupNote}>전부 선택이에요. 한 줄이면 충분해요.</p>
+                  <p className={styles.presetDivider}>또는 직접 고를게요</p>
 
-                <label className={styles.fieldLabel} htmlFor="q-recipient-note">
-                  그 사람은 어떤 사람인가요?
-                </label>
-                <textarea
-                  id="q-recipient-note"
-                  className={`${styles.field} ${styles.fieldArea}`}
-                  rows={2}
-                  maxLength={200}
-                  placeholder="예: 조용한 카페에서 책 읽는 걸 좋아해요"
-                  value={recipientNote}
-                  onChange={(e) => setRecipientNote(e.target.value)}
-                />
-
-                {/* §1.5l 상황 칩 — 빈 칸 앞에서 멈추지 않도록 고를 수도 있게 열어 둔 길. */}
-                <p className={styles.fieldLabel} id="q-episode-hints">
-                  요즘 두 분 사이는 어떤가요?
-                </p>
-                <div className={styles.hintChips} role="group" aria-labelledby="q-episode-hints">
-                  <ToggleChips
-                    options={options.episodeHints}
-                    values={episodeHints}
-                    onToggle={(v) => setEpisodeHints(toggle(episodeHints, v))}
+                  <ChoiceList
+                    name="relationship"
+                    labelledBy="q-title"
+                    options={options.relationships}
+                    value={relationship}
+                    onChange={chooseRelationship}
                   />
-                </div>
 
-                <label className={styles.fieldLabel} htmlFor="q-episode">
-                  함께한 기억이나 에피소드가 있나요?
-                </label>
-                <textarea
-                  id="q-episode"
-                  className={`${styles.field} ${styles.fieldArea}`}
-                  rows={3}
-                  maxLength={400}
-                  placeholder="예: 작년 봄에 같이 튤립 축제에 갔어요"
-                  value={episode}
-                  onChange={(e) => setEpisode(e.target.value)}
-                />
+                  {/* §1.5l — 목록에 없는 사이. 적어 주면 멘트가 그 말투로 쓰인다. */}
+                  {relationship === RELATIONSHIP_OTHER ? (
+                    <div className={styles.group}>
+                      <label className={styles.fieldLabel} htmlFor="q-relationship-detail">
+                        어떤 사이인지 한 줄로 적어 주세요
+                      </label>
+                      <input
+                        id="q-relationship-detail"
+                        className={styles.field}
+                        type="text"
+                        maxLength={DETAIL_MAX}
+                        placeholder="예: 10년째 같은 밴드에서 합주하는 사이예요"
+                        value={relationshipDetail}
+                        onChange={(e) => setRelationshipDetail(e.target.value)}
+                      />
+                      <p className={styles.fieldNote}>
+                        비워 두셔도 괜찮아요. 적어주신 내용은 추천과 멘트에만 쓰고, 저장하지 않아요.
+                      </p>
+                    </div>
+                  ) : null}
+                </>
+              ) : null}
 
-                <p className={styles.fieldNote}>
-                  적어주신 이야기는 추천과 멘트에만 쓰고, 저장하지 않아요.
+              {step === 2 ? (
+                <>
+                  <ChoiceList
+                    name="intent"
+                    labelledBy="q-title"
+                    options={options.intents}
+                    value={intent}
+                    onChange={chooseIntent}
+                  />
+
+                  {/* §1.5l — 목록에 없는 마음. 적어 주면 멘트가 그 상황을 직접 다룬다. */}
+                  {intent === INTENT_OTHER ? (
+                    <div className={styles.group}>
+                      <label className={styles.fieldLabel} htmlFor="q-intent-detail">
+                        어떤 마음인지 한 줄로 적어 주세요
+                      </label>
+                      <input
+                        id="q-intent-detail"
+                        className={styles.field}
+                        type="text"
+                        maxLength={DETAIL_MAX}
+                        placeholder="예: 유학 떠나는 조카를 배웅해요"
+                        value={intentDetail}
+                        onChange={(e) => setIntentDetail(e.target.value)}
+                      />
+                      <p className={styles.fieldNote}>
+                        비워 두셔도 괜찮아요. 적어주신 내용은 추천과 멘트에만 쓰고, 저장하지 않아요.
+                      </p>
+                    </div>
+                  ) : null}
+                </>
+              ) : null}
+
+              {step === 3 ? (
+                <>
+                  {/*
+                    §1.5l — 분위기·향·반려동물을 한 그룹으로 합쳤다. 묻는 것이 결국 같은
+                    질문이라 위계를 셋으로 나눌 이유가 없다. 반려동물 안전 제외는 칩이
+                    그대로 이어받는다(서버가 pets 로 나눈다).
+                  */}
+                  <fieldset className={styles.group}>
+                    {/* 이 단계의 제목이 이미 `받는 분은 어떤 분인가요?` 다 — 여기서 되풀이하지 않는다. */}
+                    <legend className={styles.groupHead}>어떤 분인가요</legend>
+                    <p className={styles.groupNote}>
+                      여러 개 골라도 좋아요. 반려동물을 알려주시면 위험한 꽃은 미리 빼드려요.
+                    </p>
+                    <ToggleChips
+                      options={options.recipientChips}
+                      values={recipientChips}
+                      onToggle={(v) => setRecipientChips(toggle(recipientChips, v))}
+                    />
+                  </fieldset>
+
+                  <fieldset className={styles.group}>
+                    <legend className={styles.groupHead}>좋아하는 색</legend>
+                    <p className={styles.groupNote}>그 사람이 자주 고르는 색이 있다면 알려주세요.</p>
+                    <ColorChips
+                      options={options.colors}
+                      values={colorPrefs}
+                      onToggle={(v) => setColorPrefs(toggle(colorPrefs, v))}
+                    />
+                  </fieldset>
+
+                  {/* §1.5j — 이야기로 적어 주면 그 안에서 분위기·색·꽃 단서를 읽어 낸다. */}
+                  <fieldset className={styles.group}>
+                    <legend className={styles.groupHead}>들려주고 싶은 이야기</legend>
+                    <p className={styles.groupNote}>전부 선택이에요. 한 줄이면 충분해요.</p>
+
+                    <label className={styles.fieldLabel} htmlFor="q-recipient-note">
+                      그 사람은 어떤 사람인가요?
+                    </label>
+                    <textarea
+                      id="q-recipient-note"
+                      className={`${styles.field} ${styles.fieldArea}`}
+                      rows={2}
+                      maxLength={200}
+                      placeholder="예: 조용한 카페에서 책 읽는 걸 좋아해요"
+                      value={recipientNote}
+                      onChange={(e) => setRecipientNote(e.target.value)}
+                    />
+
+                    {/* §1.5l 상황 칩 — 빈 칸 앞에서 멈추지 않도록 고를 수도 있게 열어 둔 길. */}
+                    <p className={styles.fieldLabel} id="q-episode-hints">
+                      요즘 두 분 사이는 어떤가요?
+                    </p>
+                    <div className={styles.hintChips} role="group" aria-labelledby="q-episode-hints">
+                      <ToggleChips
+                        options={options.episodeHints}
+                        values={episodeHints}
+                        onToggle={toggleEpisodeHint}
+                      />
+                    </div>
+
+                    {/* §1.5l `기타` — 여섯 갈래에 없는 사이. 마음·관계와 같은 문법이다. */}
+                    {episodeHints.includes(EPISODE_HINT_OTHER) ? (
+                      <>
+                        <label className={styles.fieldLabel} htmlFor="q-episode-hint-detail">
+                          요즘 어떤 사이인지 한 줄로 적어 주세요
+                        </label>
+                        <input
+                          id="q-episode-hint-detail"
+                          className={styles.field}
+                          type="text"
+                          maxLength={DETAIL_MAX}
+                          placeholder="예: 서로 바빠서 자주 못 보지만 마음은 그대로예요"
+                          value={episodeHintDetail}
+                          onChange={(e) => setEpisodeHintDetail(e.target.value)}
+                        />
+                      </>
+                    ) : null}
+
+                    <label className={styles.fieldLabel} htmlFor="q-episode">
+                      함께한 기억이나 에피소드가 있나요?
+                    </label>
+                    <textarea
+                      id="q-episode"
+                      className={`${styles.field} ${styles.fieldArea}`}
+                      rows={3}
+                      maxLength={400}
+                      placeholder="예: 작년 봄에 같이 튤립 축제에 갔어요"
+                      value={episode}
+                      onChange={(e) => setEpisode(e.target.value)}
+                    />
+
+                    <p className={styles.fieldNote}>
+                      적어주신 이야기는 추천과 멘트에만 쓰고, 저장하지 않아요.
+                    </p>
+                  </fieldset>
+                </>
+              ) : null}
+
+              {step === 4 ? (
+                <>
+                  <ChoiceList
+                    name="budget"
+                    labelledBy="q-title"
+                    options={options.budgets}
+                    value={budgetKey}
+                    onChange={chooseBudget}
+                  />
+
+                  {/*
+                    §1.5l 예산 `기타` — 아직 정하지 않았거나 직접 적고 싶은 경우.
+                    ⚠ 이 한 줄은 **멘트로 넘어가지 않는다**(프롬프트 절대 규칙 3: 가격 금지).
+                       그래서 안내 문구도 "멘트에 쓴다" 고 말하지 않는다.
+                  */}
+                  {budgetKey === BUDGET_OTHER ? (
+                    <div className={styles.group}>
+                      <label className={styles.fieldLabel} htmlFor="q-budget-detail">
+                        생각하시는 값이 있다면 한 줄로 적어 주세요
+                      </label>
+                      <input
+                        id="q-budget-detail"
+                        className={styles.field}
+                        type="text"
+                        maxLength={DETAIL_MAX}
+                        placeholder="예: 아직 못 정했어요 / 받는 분이 부담 없을 만큼만"
+                        value={budgetDetail}
+                        onChange={(e) => setBudgetDetail(e.target.value)}
+                      />
+                      <p className={styles.fieldNote}>
+                        비워 두셔도 괜찮아요. 값을 정하지 않으면 모든 가격대의 꽃을 함께
+                        보여드릴게요. 적어주신 내용은 저장하지 않아요.
+                      </p>
+                    </div>
+                  ) : null}
+
+                  <fieldset className={styles.group}>
+                    <legend className={styles.groupHead}>전하는 날</legend>
+                    <p className={styles.groupNote}>그날 제철인 꽃을 먼저 보여드릴게요.</p>
+                    <input
+                      className={styles.field}
+                      type="date"
+                      value={dateISO}
+                      onChange={(e) => setDateISO(e.target.value)}
+                      aria-label="꽃을 전하는 날"
+                    />
+                  </fieldset>
+                </>
+              ) : null}
+
+              {step === 5 ? (
+                <dl className={styles.summary}>
+                  {/* 프리셋으로 시작했다면 그 사실부터 — 관계·마음이 어디서 왔는지 보이게. */}
+                  {preset !== '' ? (
+                    <div className={styles.row}>
+                      <dt>고른 순간</dt>
+                      <dd>{labelOf(options.presets, preset)}</dd>
+                    </div>
+                  ) : null}
+                  <div className={styles.row}>
+                    <dt>사이</dt>
+                    <dd>
+                      {labelOf(options.relationships, relationship)}
+                      {relationship === RELATIONSHIP_OTHER && relationshipDetail.trim() !== ''
+                        ? ` — ${relationshipDetail.trim()}`
+                        : ''}
+                    </dd>
+                  </div>
+                  <div className={styles.row}>
+                    <dt>마음</dt>
+                    <dd>
+                      {labelOf(options.intents, intent)}
+                      {intent === INTENT_OTHER && intentDetail.trim() !== ''
+                        ? ` — ${intentDetail.trim()}`
+                        : ''}
+                    </dd>
+                  </div>
+                  <div className={styles.row}>
+                    <dt>받는 분</dt>
+                    <dd>{labelsOf(options.recipientChips, recipientChips) || '고르지 않았어요'}</dd>
+                  </div>
+                  <div className={styles.row}>
+                    <dt>좋아하는 색</dt>
+                    <dd>{labelsOf(options.colors, colorPrefs) || '고르지 않았어요'}</dd>
+                  </div>
+                  <div className={styles.row}>
+                    <dt>예산</dt>
+                    <dd>
+                      {budgetKey ? labelOf(options.budgets, budgetKey) : '정하지 않았어요'}
+                      {budgetKey === BUDGET_OTHER && budgetDetail.trim() !== ''
+                        ? ` — ${budgetDetail.trim()}`
+                        : ''}
+                    </dd>
+                  </div>
+                  <div className={styles.row}>
+                    <dt>전하는 날</dt>
+                    <dd>{dateISO ? dateLabel(dateISO) : '정하지 않았어요'}</dd>
+                  </div>
+                  {recipientNote.trim() !== '' ? (
+                    <div className={styles.row}>
+                      <dt>어떤 분</dt>
+                      <dd>{recipientNote.trim()}</dd>
+                    </div>
+                  ) : null}
+                  {episodeHints.length > 0 ? (
+                    <div className={styles.row}>
+                      <dt>요즘 사이</dt>
+                      <dd>
+                        {labelsOf(options.episodeHints, episodeHints)}
+                        {episodeHints.includes(EPISODE_HINT_OTHER) && episodeHintDetail.trim() !== ''
+                          ? ` — ${episodeHintDetail.trim()}`
+                          : ''}
+                      </dd>
+                    </div>
+                  ) : null}
+                  {episode.trim() !== '' ? (
+                    <div className={styles.row}>
+                      <dt>함께한 기억</dt>
+                      <dd>{episode.trim()}</dd>
+                    </div>
+                  ) : null}
+                </dl>
+              ) : null}
+
+              {error ? (
+                <p className={styles.error} role="alert">
+                  {error}
                 </p>
-              </fieldset>
-            </>
-          ) : null}
-
-          {step === 4 ? (
-            <>
-              <ChoiceList
-                name="budget"
-                labelledBy="q-title"
-                options={options.budgets}
-                value={budgetKey}
-                onChange={setBudgetKey}
-              />
-              <fieldset className={styles.group}>
-                <legend className={styles.groupHead}>전하는 날</legend>
-                <p className={styles.groupNote}>그날 제철인 꽃을 먼저 보여드릴게요.</p>
-                <input
-                  className={styles.field}
-                  type="date"
-                  value={dateISO}
-                  onChange={(e) => setDateISO(e.target.value)}
-                  aria-label="꽃을 전하는 날"
-                />
-              </fieldset>
-            </>
-          ) : null}
-
-          {step === 5 ? (
-            <dl className={styles.summary}>
-              {/* 프리셋으로 시작했다면 그 사실부터 — 관계·마음이 어디서 왔는지 보이게. */}
-              {preset !== '' ? (
-                <div className={styles.row}>
-                  <dt>고른 순간</dt>
-                  <dd>{labelOf(options.presets, preset)}</dd>
-                </div>
               ) : null}
-              <div className={styles.row}>
-                <dt>사이</dt>
-                <dd>{labelOf(options.relationships, relationship)}</dd>
-              </div>
-              <div className={styles.row}>
-                <dt>마음</dt>
-                <dd>
-                  {labelOf(options.intents, intent)}
-                  {intent === INTENT_OTHER && intentDetail.trim() !== ''
-                    ? ` — ${intentDetail.trim()}`
-                    : ''}
-                </dd>
-              </div>
-              <div className={styles.row}>
-                <dt>받는 분</dt>
-                <dd>{labelsOf(options.recipientChips, recipientChips) || '고르지 않았어요'}</dd>
-              </div>
-              <div className={styles.row}>
-                <dt>좋아하는 색</dt>
-                <dd>{labelsOf(options.colors, colorPrefs) || '고르지 않았어요'}</dd>
-              </div>
-              <div className={styles.row}>
-                <dt>예산</dt>
-                <dd>{budgetKey ? labelOf(options.budgets, budgetKey) : '정하지 않았어요'}</dd>
-              </div>
-              <div className={styles.row}>
-                <dt>전하는 날</dt>
-                <dd>{dateISO ? dateLabel(dateISO) : '정하지 않았어요'}</dd>
-              </div>
-              {recipientNote.trim() !== '' ? (
-                <div className={styles.row}>
-                  <dt>어떤 분</dt>
-                  <dd>{recipientNote.trim()}</dd>
-                </div>
-              ) : null}
-              {episodeHints.length > 0 ? (
-                <div className={styles.row}>
-                  <dt>요즘 사이</dt>
-                  <dd>{labelsOf(options.episodeHints, episodeHints)}</dd>
-                </div>
-              ) : null}
-              {episode.trim() !== '' ? (
-                <div className={styles.row}>
-                  <dt>함께한 기억</dt>
-                  <dd>{episode.trim()}</dd>
-                </div>
-              ) : null}
-            </dl>
-          ) : null}
 
-          {error ? (
-            <p className={styles.error} role="alert">
-              {error}
-            </p>
-          ) : null}
-
-          <p className={styles.qnote}>
-            <span className={styles.seal} aria-hidden="true" />
-            꽃말은 시대와 나라를 건너며 조금씩 다른 이야기가 돼요. dearbloom은 그 갈래를 함께
-            들려드려요.
-          </p>
+              <p className={styles.qnote}>
+                <span className={styles.seal} aria-hidden="true" />
+                꽃말은 시대와 나라를 건너며 조금씩 다른 이야기가 돼요. dearbloom은 그 갈래를 함께
+                들려드려요.
+              </p>
+            </div>
+          </div>
         </main>
       </div>
 

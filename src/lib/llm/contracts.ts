@@ -17,8 +17,11 @@ const flowerBriefSchema = z.object({
   meaning_source_id: z.string().min(1),
 });
 
-/** §1.5l `직접 쓸게요` 한 줄의 길이 상한. 화면·서버·계약이 같은 값을 쓴다. */
+/** §1.5l `직접 쓸게요`(마음) 한 줄의 길이 상한. 화면·서버·계약이 같은 값을 쓴다. */
 export const INTENT_DETAIL_MAX_CHARS = 80;
+
+/** §1.5l `직접 쓸게요`(관계) 한 줄의 길이 상한. 마음 쪽과 같은 값이되 문이 다르므로 따로 둔다. */
+export const RELATIONSHIP_DETAIL_MAX_CHARS = 80;
 
 /**
  * §1.5j 자유 서술 두 필드를 이어 붙인 `memory_context` 의 상한.
@@ -34,6 +37,11 @@ export const MEMORY_CONTEXT_MAX_CHARS = 600;
 
 export const generateRequestSchema = z.object({
   relationship: relationshipSchema,
+  /**
+   * §1.5l — relationship 이 'other' 일 때 사용자가 직접 적은 사이 한 줄.
+   * 여섯 갈래에 없는 사이라 이 값이 곧 관계 설명이다(프롬프트가 말투를 여기에 맞춘다).
+   */
+  relationship_detail: z.string().max(RELATIONSHIP_DETAIL_MAX_CHARS).optional(),
   intent: intentSchema,
   /**
    * §1.5l — intent 가 'other' 일 때 사용자가 직접 적은 상황 한 줄.

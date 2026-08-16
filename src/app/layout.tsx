@@ -82,6 +82,8 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
         <link rel="preconnect" href="https://cdn.jsdelivr.net" crossOrigin="" />
         <link rel="preconnect" href="https://hangeul.pstatic.net" crossOrigin="" />
         <link rel="preconnect" href="https://images.unsplash.com" crossOrigin="" />
+        {/* 실사 4종이 Pexels 에서 온다(2026-08-16 사진 재검토) — Unsplash 와 같은 대접. */}
+        <link rel="preconnect" href="https://images.pexels.com" crossOrigin="" />
         <link
           rel="stylesheet"
           href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css"

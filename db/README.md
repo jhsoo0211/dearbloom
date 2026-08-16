@@ -14,14 +14,16 @@ Supabase Postgres schema for dearbloom. Target: **Postgres 15+** (`gen_random_uu
 | `migrations/0006_story_type.sql` | `flower_stories.story_type` (`folklore` / `history` / `literary` / `original`) and the source rule that hangs off it |
 | `migrations/0007_source_kind.sql` | `flower_stories.source_kind` — what *kind* of source backs the story, which is what splits the on-screen confidence wording |
 | `migrations/0008_quotes_literature.sql` | `quotes.flower_id` / `.excerpt_type` / `.text_original` / `.translator` / `.caveat` / `.pd_basis` — the literature-excerpt columns behind the result screen's "문학 속의 이 꽃" block |
-| `seed/` | CSV → SQL seed data (loaded after the migrations) |
+| `migrations/0009_letters.sql` | `letters` (code-locked private letters) — `code_hash`, owner-only RLS, and the `open_letter(code)` security-definer read path |
+| `migrations/0010_birth_flowers.sql` | `birth_flowers` (366-day birth-flower table) with public-read RLS and an optional FK into `flowers` |
+| `seed/` | CSV → SQL seed data (loaded after the migrations; `npm run seed -- --apply` upserts every table) |
 
 ## How to apply
 
 No Supabase CLI wiring yet — apply by hand:
 
 1. Supabase Dashboard → **SQL Editor** → New query.
-2. Paste and run **`0001_catalog.sql`**, then **`0002_results_share.sql`**, then **`0003_rls.sql`**, then **`0004_stories.sql`**, then **`0005_story_tags.sql`**, then **`0006_story_type.sql`**, then **`0007_source_kind.sql`**, then **`0008_quotes_literature.sql`**. The order matters: 0002 has no FK into 0001, but 0003 references tables from both, 0004 has an FK into `flowers` (0001) and carries its own RLS policy, 0005, 0006, and 0007 all alter the table 0004 creates, and 0008 alters `quotes` (0001) with an FK back into `flowers` (0001).
+2. Paste and run **`0001_catalog.sql`**, then **`0002_results_share.sql`**, then **`0003_rls.sql`**, then **`0004_stories.sql`**, then **`0005_story_tags.sql`**, then **`0006_story_type.sql`**, then **`0007_source_kind.sql`**, then **`0008_quotes_literature.sql`**, then **`0009_letters.sql`**, then **`0010_birth_flowers.sql`**. The order matters: 0002 has no FK into 0001, but 0003 references tables from both, 0004 has an FK into `flowers` (0001) and carries its own RLS policy, 0005, 0006, and 0007 all alter the table 0004 creates, 0008 alters `quotes` (0001) with an FK back into `flowers` (0001), and 0010 has an optional FK into `flowers` (0001).
 3. Load `seed/` afterwards. Seeding runs as `service_role`/owner, which bypasses RLS, so it is unaffected by 0003.
 4. Once the seed has filled `flower_stories.moods` on every row, run the one line left at the bottom of 0005: `alter table flower_stories validate constraint flower_stories_moods_not_empty;`. It is added `not valid` because rows that predate the migration carry the `'{}'` default and would fail validation on the spot.
 

@@ -9,6 +9,8 @@ export const RELATIONSHIPS = [
   'friend',
   'family',
   'colleague',
+  // §1.5l — "직접 쓸게요". 규칙표에 짝이 없는 값이라 점수는 중립이다(score.ts).
+  'other',
 ] as const satisfies readonly Relationship[];
 
 export const INTENTS = [

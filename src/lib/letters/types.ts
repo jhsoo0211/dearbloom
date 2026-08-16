@@ -58,7 +58,9 @@ export const LETTER_LIMITS = {
   body: 1000,
   signature: 20,
   codeMin: 4,
-  codeMax: 8,
+  /* 12 — 사용자 요청(2026-08-16)으로 8에서 확장. 직접 정하는 짧은 번호(4자~)는 남겨 두되,
+     '만들어 줘'가 주는 난수는 10자리다(아래 createLetterCode 기본값). */
+  codeMax: 12,
 } as const;
 
 /* ------------------------------------------------------------------ *
@@ -70,7 +72,7 @@ export const LETTER_LIMITS = {
  *
  * 이 번호는 화면에서 읽어 입으로 전하거나 메시지로 옮겨 적는 값이다. `0`/`O`,
  * `1`/`I`/`L` 이 섞이면 "한 글자씩 다시 봐 주세요" 라는 안내가 사용자 잘못이 아닌 일로
- * 반복된다. 자릿수(31^6 ≈ 8.9억)는 그 넷을 뺀 뒤에도 충분하다.
+ * 반복된다. 생성 기본 10자리면 31^10 ≈ 8.2×10^14 — 다섯 글자를 빼고도 넉넉하다.
  */
 export const LETTER_CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 
@@ -204,12 +206,13 @@ function secureRandomInt(max: number): number {
 /**
  * 편지 번호를 만들어 준다(스튜디오의 `만들어 줘` 버튼).
  *
- * @param length 자릿수. 상한 밖 값은 4~8 안으로 끌어당긴다 — 만들어 준 번호가
+ * @param length 자릿수. 상한 밖 값은 4~12 안으로 끌어당긴다 — 만들어 준 번호가
  *               스키마에서 떨어지는 일은 있어서는 안 된다.
+ *               기본 10자리 = 맞히기 어렵게(사용자 요청 2026-08-16). 직접 입력은 여전히 4자부터.
  * @param randomInt 테스트가 난수를 고정할 때만 넘긴다.
  */
 export function createLetterCode(
-  length: number = 6,
+  length: number = 10,
   randomInt: (max: number) => number = secureRandomInt,
 ): string {
   const size = Math.min(

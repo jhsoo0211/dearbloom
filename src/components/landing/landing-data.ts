@@ -178,6 +178,30 @@ export interface HeroImage extends SlideImage {
   srcSetMobile?: string;
 }
 
+/**
+ * 오늘 날짜의 탄생화 — 리드 아래 **각주 한 줄**(§1.5e 절제 원칙).
+ *
+ * 밴드도 박스도 만들지 않는다. 오늘의 꽃(추천 엔진이 고른 주인공)과 탄생화(날짜 표에서
+ * 온 곁가지)는 다른 축이라, 둘을 같은 위계로 세우면 "오늘의 꽃"이 무엇인지 흐려진다.
+ *
+ * ⚠ 문구에서 **"전통"·"공식"·"예로부터 정해진" 류 단정을 쓰지 마라.** 이 표는 전통적으로
+ *   정해진 탄생화가 아니라 널리 통하게 된 목록이다(`docs/birth-flowers-research.md` §2).
+ */
+export interface BirthFlowerLine {
+  /** `8월 16일`. `todayLabel`(`2026.08.16`)과 표기가 달라 따로 만든다. */
+  dateLabel: string;
+  /** 그 날 표가 부르는 이름(카탈로그 이름과 다를 수 있다). */
+  name: string;
+  meaning: string;
+  /**
+   * 꽃말 뒤에 붙는 서술격 조사(`이에요` / `예요`).
+   * 따옴표가 끼어 `withParticle` 을 그대로 쓸 수 없는 자리라 서버가 정해 내려보낸다.
+   */
+  meaningCopula: string;
+  /** 카탈로그에 그 꽃이 있을 때만 — 도감 상세 경로. 309일은 없는 것이 정상이다. */
+  href?: string;
+}
+
 export interface LandingData {
   /** KST 기준 오늘(YYYY-MM-DD). */
   todayISO: string;
@@ -191,6 +215,8 @@ export interface LandingData {
   categoryLabel: string;
   hero: HeroImage;
   today: SlideView;
+  /** 오늘 날짜의 탄생화 각주. 표는 366일 전수라 실제로는 언제나 채워진다. */
+  birthFlower?: BirthFlowerLine;
   /** 카탈로그 전종. 오늘의 꽃이 맨 앞. */
   slides: SlideView[];
   /** 푸터 크레딧(중복 제거). */
@@ -239,14 +265,25 @@ export const SECTION_IMAGES = {
 } as const;
 
 /**
+ * 낱말에 받침이 있는가.
+ *
+ * `withParticle` 이 쓰는 판정을 따로 내보내는 이유: 낱말 **뒤에 따옴표·괄호가 끼는 자리**
+ * (`꽃말은 ‘희망’이에요`)에서는 조사를 붙여 돌려주는 함수를 쓸 수 없다. 그런 자리는
+ * 조사만 골라 써야 하는데, 판정을 두 벌 두면 한쪽만 고쳐지는 날이 온다.
+ */
+export function hasFinalConsonant(word: string): boolean {
+  const last = word.trim().slice(-1);
+  const code = last.charCodeAt(0);
+  const isHangul = code >= 0xac00 && code <= 0xd7a3;
+  return isHangul && (code - 0xac00) % 28 !== 0;
+}
+
+/**
  * 한국어 조사 — 받침 유무로 갈린다.
  * 꽃 이름이 데이터에서 오므로 "프리지아이에요" 같은 문장이 나오지 않게 여기서 맞춘다.
  */
 export function withParticle(word: string, kind: 'topic' | 'subject' | 'copula'): string {
-  const last = word.trim().slice(-1);
-  const code = last.charCodeAt(0);
-  const isHangul = code >= 0xac00 && code <= 0xd7a3;
-  const hasFinal = isHangul && (code - 0xac00) % 28 !== 0;
+  const hasFinal = hasFinalConsonant(word);
   if (kind === 'topic') return `${word}${hasFinal ? '은' : '는'}`;
   if (kind === 'subject') return `${word}${hasFinal ? '이' : '가'}`;
   return `${word}${hasFinal ? '이에요' : '예요'}`;

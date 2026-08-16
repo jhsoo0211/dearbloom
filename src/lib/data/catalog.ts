@@ -28,6 +28,7 @@ import {
   SEED_FILE_NAMES,
   crossValidate,
   validateFile,
+  type BirthFlowerRow,
   type FlowerRow,
   type MeaningRow,
   type PetSafetyRow,
@@ -44,6 +45,7 @@ import type {
   RecommendationRuleRow,
 } from '@/lib/engine/types';
 import type {
+  BirthFlower,
   Catalog,
   CatalogFlower,
   CatalogMeaning,
@@ -234,11 +236,35 @@ function mapQuote(row: QuoteRow): Quote {
   };
 }
 
+/**
+ * birth_flowers.csv 한 행 → 화면이 쓰는 탄생화.
+ *
+ * **`editorial_note` 는 일부러 옮기지 않는다**(`mapQuote` 의 `pd_basis` 와 같은 판단).
+ * 158행에 붙어 있는 메모는 두 표의 표기 차이·철자 교정 같은 **편집·감사 기록**이라
+ * 사용자에게 보여 줄 값이 아니다(조사 문서 §8-4). 여기서 떨어뜨리면 `Catalog` 어디에도
+ * 실려 가지 않아 실수로 렌더될 길이 없다.
+ *
+ * 선택 컬럼은 빈 문자열로 메우지 않고 **키 자체를 만들지 않는다** — `''` 를 넣으면
+ * 화면이 "영문명이 있는데 비어 있다"와 "영문명이 없다"를 구별하지 못한다.
+ */
+function mapBirthFlower(row: BirthFlowerRow): BirthFlower {
+  return {
+    month: row.month,
+    day: row.day,
+    nameKo: row.name_ko,
+    ...(row.name_en ? { nameEn: row.name_en } : {}),
+    ...(row.scientific_name ? { scientificName: row.scientific_name } : {}),
+    ...(row.flower_id ? { flowerId: row.flower_id } : {}),
+    meaningKo: row.meaning_ko,
+    sourceUrl: row.source_url,
+  };
+}
+
 /* ------------------------------------------------------------------ *
  * 로드
  * ------------------------------------------------------------------ */
 
-/** 파일 7종을 읽어 행 스키마 → 교차 검증까지 마친 데이터셋. */
+/** 파일 8종을 읽어 행 스키마 → 교차 검증까지 마친 데이터셋. */
 async function readValidatedDataset(contentDir: string): Promise<SeedDataset> {
   const issues: SeedIssue[] = [];
   const dataset: Partial<Record<SeedFileKey, unknown>> = {};
@@ -307,6 +333,8 @@ function toCatalog(dataset: SeedDataset): Catalog {
     templates: dataset.templates.map((row) => mapTemplate(row.value)),
     quotes: dataset.quotes.map((row) => mapQuote(row.value)),
     petSafety,
+    // CSV 순서(1월 1일 → 12월 31일) 그대로다. 조회는 `@/lib/data/birth-flowers` 가 맡는다.
+    birthFlowers: dataset.birth_flowers.map((row) => mapBirthFlower(row.value)),
   };
 }
 

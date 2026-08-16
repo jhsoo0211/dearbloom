@@ -650,6 +650,31 @@ body.db-nav-compact .db-nav {
   line-height: 1.78;
   color: var(--fg-70);
 }
+/**
+ * 탄생화 각주 (§1.5e 절제) — 리드보다 한 단 작고 한 단 흐리다.
+ * 면(배경·보더)을 주지 않는 이유가 곧 이 줄의 규격이다: 박스를 두르는 순간 카드가 되고,
+ * 카드가 되면 오늘의 꽃과 위계가 같아진다. 14px 은 §1.6b 캡션 하한(12px) 위이면서
+ * 리드(15.5px)와는 눈에 띄게 갈리는 값이다.
+ */
+.db-today-birth {
+  margin-top: clamp(9px, 1.2vw, 13px);
+  font-size: 14px;
+  line-height: 1.72;
+  color: var(--fg-50);
+}
+.db-today-birth a {
+  color: var(--fg-70);
+  text-decoration: underline;
+  text-decoration-color: var(--hair-2);
+  text-underline-offset: 3px;
+  transition: color var(--ctrl-t) var(--ease),
+    text-decoration-color var(--ctrl-t) var(--ease);
+}
+.db-today-birth a:hover,
+.db-today-birth a:focus-visible {
+  color: var(--fg);
+  text-decoration-color: currentColor;
+}
 
 /* 캐러셀 ------------------------------------------------------------- */
 .db-carousel {

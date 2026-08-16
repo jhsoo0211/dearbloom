@@ -19,6 +19,7 @@
  *   새로 만들지 마라 — 그 순간 클라이언트가 이 파일을 import 하게 된다.
  */
 
+import { birthDateLabel, birthFlowerOn } from '@/lib/data/birth-flowers';
 import type { Catalog, CatalogFlower, CatalogStory } from '@/lib/data/types';
 import { pickStories } from '@/lib/engine/stories';
 import { todayFlower } from '@/lib/engine/today';
@@ -36,6 +37,8 @@ import {
   CATEGORY_THEMES,
   SECTION_IMAGES,
   categoryOf,
+  hasFinalConsonant,
+  type BirthFlowerLine,
   type HeroImage,
   type LandingData,
   type SlideImage,
@@ -232,6 +235,35 @@ function toSlide(flower: CatalogFlower, catalog: Catalog, isToday: boolean): Sli
   };
 }
 
+/* ------------------------------------------------------------------ *
+ * 탄생화 각주 (§1.5e 절제)
+ * ------------------------------------------------------------------ */
+
+/**
+ * 오늘 날짜의 탄생화 한 줄.
+ *
+ * 날짜는 **`todayISO` 문자열에서 쪼갠다** — `new Date(todayISO)` 로 되돌리면 UTC 로 파싱돼
+ * 서버 시간대에 따라 하루가 밀린다(`seoulTodayISO` 가 애써 맞춰 놓은 서울 달력이 무너진다).
+ *
+ * 도감 링크는 **`flowerId` 가 실제로 카탈로그에 있을 때만** 건다. 시드 교차 검증이 이미
+ * 참조 무결성을 보고 있지만, 링크는 끊기면 404 로 곧장 드러나는 자리라 화면 쪽에서도 확인한다.
+ */
+function birthFlowerLine(catalog: Catalog, todayISO: string): BirthFlowerLine | undefined {
+  const [, monthText, dayText] = todayISO.split('-');
+  const row = birthFlowerOn(catalog.birthFlowers, Number(monthText), Number(dayText));
+  if (!row) return undefined;
+
+  const linked = row.flowerId && catalog.flowers.some((flower) => flower.id === row.flowerId);
+
+  return {
+    dateLabel: birthDateLabel(row.month, row.day),
+    name: row.nameKo,
+    meaning: row.meaningKo,
+    meaningCopula: hasFinalConsonant(row.meaningKo) ? '이에요' : '예요',
+    ...(linked ? { href: `/flowers/${row.flowerId}` } : {}),
+  };
+}
+
 /** KST 기준 오늘 날짜(YYYY-MM-DD). 서버 시간대와 무관하게 서울 달력을 쓴다. */
 export function seoulTodayISO(now: Date = new Date()): string {
   return new Intl.DateTimeFormat('en-CA', {
@@ -254,6 +286,7 @@ export function buildLandingData(catalog: Catalog, todayISO: string): LandingDat
     catalog.flowers.find((flower) => flower.id === picked.flower.id) ?? catalog.flowers[0];
 
   const today = toSlide(todayCatalogFlower, catalog, true);
+  const birthFlower = birthFlowerLine(catalog, todayISO);
   const rest = catalog.flowers
     .filter((flower) => flower.id !== todayCatalogFlower.id)
     .map((flower) => toSlide(flower, catalog, false));
@@ -316,6 +349,7 @@ export function buildLandingData(catalog: Catalog, todayISO: string): LandingDat
     categoryLabel: categoryTheme.label,
     hero,
     today,
+    ...(birthFlower ? { birthFlower } : {}),
     slides,
     credits,
   };

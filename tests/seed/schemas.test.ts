@@ -81,9 +81,10 @@ function failedColumns(result: SafeParseLike): string[] {
  * ------------------------------------------------------------------ */
 
 describe('content/*.csv 실제 데이터', () => {
-  it('7개 파일이 모두 행 스키마를 통과한다', () => {
+  it('8개 파일이 모두 행 스키마를 통과한다', () => {
     const { issues } = loadDataset();
     expect(issues.map(formatIssue)).toEqual([]);
+    expect(SEED_FILE_KEYS).toHaveLength(8);
   });
 
   it('기대한 행 수를 갖는다 (flowers 32, pet_safety 64)', () => {
@@ -153,11 +154,12 @@ describe('content/*.csv 실제 데이터', () => {
     }
   });
 
-  it('교차 검증 3종을 모두 통과한다', () => {
+  it('교차 검증 5종을 모두 통과한다', () => {
     const { dataset } = loadDataset();
     const { checks, issues } = crossValidate(dataset);
     expect(issues.map(formatIssue)).toEqual([]);
-    expect(checks).toHaveLength(3);
+    // 참조 무결성 · 반려동물 커버리지 · 공유 어휘 · 탄생화 366일 · 탄생화 도감 연결
+    expect(checks).toHaveLength(5);
     expect(checks.every((check) => check.ok)).toBe(true);
   });
 

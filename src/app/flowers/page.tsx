@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
+import BirthdayFinder from '@/components/flowers/BirthdayFinder';
 import FlowerSearch from '@/components/flowers/FlowerSearch';
 import { buildFlowerIndex } from '@/components/flowers/data';
 import styles from '@/components/flowers/flowers.module.css';
@@ -17,6 +18,8 @@ import { loadCatalog } from '@/lib/data/catalog';
  *   클라이언트는 라벨 사전도 엔진도 갖지 않고, 문자열 색인에 `includes` 만 한다.
  * · `revalidate = 3600` — `content/*.csv` 는 배포에 고정된 읽기 전용 데이터다(/stories 와 같은 판단).
  * · 셸(헤더·인트로·CTA·푸터)은 상태가 없어 서버에서 그대로 렌더하고, 검색만 클라이언트가 맡는다.
+ * · **생일 꽃 찾기**는 예외적으로 값을 미리 내려보내지 않는다 — 탄생화 366행은
+ *   실제로 하루치만 읽히므로 서버 액션으로 그때 가져온다(`actions.ts` 주석에 근거).
  */
 
 export const revalidate = 3600;
@@ -29,7 +32,7 @@ export const metadata: Metadata = {
 
 export default async function FlowersPage() {
   const catalog = await loadCatalog();
-  const { flowers, groups, meaningCount, storyCount } = buildFlowerIndex(catalog);
+  const { flowers, groups, meaningCount, storyCount, birthCalendar } = buildFlowerIndex(catalog);
 
   return (
     <div className={styles.page}>
@@ -76,7 +79,14 @@ export default async function FlowersPage() {
       <main>
         <FlowerSearch flowers={flowers} groups={groups} />
 
-        {/* ── 3. 하단 CTA ──────────────────────────────────────── */}
+        {/* ── 3. 생일 꽃 찾기 ──────────────────────────────────────
+            이름 검색이 "아는 꽃"으로 들어가는 문이라면 여기는 **"내 날짜"로** 들어가는 문이다.
+            검색 뒤에 두는 이유: 도감의 본 기능은 이름으로 찾는 것이고, 이쪽은 곁문이다.
+            표 366행은 클라이언트로 내려보내지 않는다 — 일 셀렉트가 필요로 하는 달력
+            12개 숫자만 넘기고, 고른 하루는 서버 액션이 가져온다(`app/flowers/actions.ts`). */}
+        <BirthdayFinder calendar={birthCalendar} />
+
+        {/* ── 4. 하단 CTA ──────────────────────────────────────── */}
         <section className={styles.cta} aria-labelledby="flowers-cta-title">
           <div className={styles.wrap}>
             <span className={styles.eyebrow}>Next</span>
@@ -94,7 +104,7 @@ export default async function FlowersPage() {
         </section>
       </main>
 
-      {/* ── 4. 푸터 ─────────────────────────────────────────────── */}
+      {/* ── 5. 푸터 ─────────────────────────────────────────────── */}
       <footer className={styles.siteFoot}>
         <div className={styles.wrap}>
           <p className={styles.footSay}>

@@ -592,14 +592,43 @@ export default function LandingPage({ data }: { data: LandingData }) {
                   No.&nbsp;01 <span className="db-ko">오늘의 꽃</span>
                 </p>
                 {/* §1.5d — 스펙 언어(카드 안만 바뀌고…) 금지. 테마 이름도 여기서는 부르지 않는다
-                    (카드가 이미 말해 준다). 리드는 세 문장 리듬: 오늘의 꽃 → 화면 분위기 → 넘기기 안내. */}
+                    (카드가 이미 말해 준다). 리드는 네 문장 리듬: 오늘의 꽃 → 고른 이유 → 화면 분위기 → 넘기기 안내.
+                    고른 이유는 엔진의 선정 근거(basis — 제철 우선 로직)를 사람의 말로 옮긴 것이다(사용자 요청 2026-08-16). */}
                 <h2 className="db-today-title" id="db-today-title" data-db-split>
                   오늘 꺼내 온 한 송이, 그리고 이어지는 이야기들
                 </h2>
                 <p className="db-today-lede" data-db-reveal>
-                  {data.todayLabel}, 오늘의 꽃은 {withParticle(today.name, 'copula')}. 화면의 빛깔도
-                  이 꽃의 분위기를 닮아 있어요. 카드를 옆으로 넘기면 다른 꽃들의 이야기가 이어져요.
+                  {data.todayLabel}, 오늘의 꽃은 {withParticle(today.name, 'copula')}.{' '}
+                  {data.basis === 'in_season'
+                    ? '요즘이 한창 피는 철이라 오늘의 자리에 세웠어요.'
+                    : data.basis === 'adjacent'
+                      ? '곧 철을 맞는 꽃이라 먼저 인사를 건네요.'
+                      : '철을 가리지 않고 오래 사랑받아 온 꽃이에요.'}{' '}
+                  화면의 빛깔도 이 꽃의 분위기를 닮아 있어요. 카드를 옆으로 넘기면 다른 꽃들의
+                  이야기가 이어져요.
                 </p>
+                {/*
+                  탄생화 각주 (§1.5e 절제 — 밴드도 박스도 만들지 않는다).
+                  오늘의 꽃은 엔진이 제철로 고른 주인공이고 탄생화는 날짜 표에서 온 곁가지라,
+                  둘을 같은 위계로 세우면 "오늘의 꽃"이 무엇인지 흐려진다. 그래서 리드 아래
+                  한 줄이 전부다.
+
+                  ⚠ **"전통"·"공식"·"예로부터 정해진" 이라고 쓰지 마라.** 이 표는 전통적으로
+                    정해진 탄생화가 아니라, 하루 한 종씩 꽃을 소개하던 페이지에서 퍼져 널리
+                    통하게 된 목록이다(`docs/birth-flowers-research.md` §2). 계보를 풀어 적는
+                    자리는 도감(`/flowers` 생일 꽃 찾기)이고, 여기서는 단정만 하지 않으면 된다.
+                */}
+                {data.birthFlower && (
+                  <p className="db-today-birth" data-db-reveal>
+                    오늘 {data.birthFlower.dateLabel}의 탄생화는{' '}
+                    {data.birthFlower.href ? (
+                      <Link href={data.birthFlower.href}>{data.birthFlower.name}</Link>
+                    ) : (
+                      data.birthFlower.name
+                    )}{' '}
+                    — 꽃말은 ‘{data.birthFlower.meaning}’{data.birthFlower.meaningCopula}.
+                  </p>
+                )}
               </div>
 
               {/*

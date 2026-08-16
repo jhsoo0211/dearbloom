@@ -396,6 +396,22 @@ export default async function FlowerDetailPage(props: PageProps<'/flowers/[slug]
                 <p className={styles.noteValue}>{flower.priceLine}</p>
               </div>
             </div>
+
+            {/*
+              탄생화 각주 — 표에 걸린 꽃(32종 중 24종)만 한 줄. 카드가 아니라 각주인 이유는
+              이것이 그 꽃의 성질이 아니라 **날짜 표가 그 꽃을 어디에 놓았는가**여서다.
+
+              ⚠ **"전통"·"공식"·"예로부터 정해진" 이라고 쓰지 마라.** 이 표는 전통적으로
+                정해진 탄생화가 아니라, 하루 한 종씩 꽃을 소개하던 페이지에서 퍼져 널리
+                통하게 된 목록이다(`docs/birth-flowers-research.md` §2). "놓인 날" 이라는
+                말과 뒤따르는 출처 한 마디가 그 사실을 지키고 있다 — 줄여 쓰지 마라.
+            */}
+            {flower.birthDays && (
+              <p className={styles.birthDays}>
+                이 꽃이 탄생화로 놓인 날 — {flower.birthDays}
+                <span className={styles.birthDaysNote}>널리 통하는 탄생화 표에서 가져왔어요.</span>
+              </p>
+            )}
           </div>
         </section>
 

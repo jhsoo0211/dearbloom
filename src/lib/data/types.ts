@@ -111,6 +111,38 @@ export interface Quote {
 }
 
 /**
+ * 탄생화 한 줄 (birth_flowers.csv) — **행의 주인은 꽃이 아니라 날짜다.**
+ *
+ * 366일이 카탈로그 32종보다 훨씬 많은 종을 부르고, 반대로 한 종이 여러 날에 걸리기도 한다
+ * (장미 10일 · 국화 4일). 그래서 자연키는 `(month, day)` 이고 `flowerId` 는 **도감으로
+ * 건너가는 선택 다리**다 — 비어 있는 것이 정상 값이며(309일이 그렇다) "아직 안 정했다"가
+ * 아니라 "카탈로그에 그 꽃이 없다"는 뜻이다.
+ *
+ * ⚠ 이 표는 **전통적으로 정해진 탄생화가 아니다.** 하루에 한 종씩 꽃을 소개하던 페이지에서
+ *   퍼져 널리 통하게 된 목록이다(`docs/birth-flowers-research.md` §2). 화면 문구에서
+ *   "전통"·"공식"·"예로부터 정해진" 류 단정을 쓰면 안 된다.
+ *
+ * `editorial_note` 는 **일부러 여기 없다**(`Quote.pdBasis` 와 같은 판단). 158행에 붙어 있는
+ * 메모는 전부 편집·감사용이라 화면에 나갈 값이 아니다 — 타입에 없으면 실수로 렌더할 수도 없다
+ * (조사 문서 §8-4).
+ */
+export interface BirthFlower {
+  /** 1~12. */
+  month: number;
+  /** 1~31. 달력 유효성(2/30 금지·366일 전수)은 시드 교차 검증이 본다. */
+  day: number;
+  /** 그 날 표가 부르는 이름. 카탈로그 이름과 다를 수 있다(`노랑수선화` ↔ `수선화`). */
+  nameKo: string;
+  nameEn?: string;
+  scientificName?: string;
+  /** 카탈로그에 그 꽃이 있을 때만. 없는 것이 정상 값이다. */
+  flowerId?: string;
+  /** 스키마가 필수로 잡고 있어 항상 있다(꽃말 없는 탄생화는 싣지 않는다). */
+  meaningKo: string;
+  sourceUrl: string;
+}
+
+/**
  * 반려동물 안전성 한 줄 (pet_safety.csv).
  *
  * 꽃별 판정은 `FlowerData.petSafety` 에도 들어가지만, 그쪽에는 대체 꽃 목록이 없다.
@@ -140,4 +172,9 @@ export interface Catalog extends RuleSet {
   templates: MessageTemplate[];
   quotes: Quote[];
   petSafety: PetSafetyRecord[];
+  /**
+   * 366일 탄생화 달력. 조회는 `@/lib/data/birth-flowers` 의 순수 함수로 한다
+   * (이 배열을 직접 훑는 코드를 화면마다 새로 쓰지 마라).
+   */
+  birthFlowers: BirthFlower[];
 }

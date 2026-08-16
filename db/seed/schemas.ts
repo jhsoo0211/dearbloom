@@ -119,6 +119,18 @@ export const SOURCE_KINDS = [
   'other',
 ] as const;
 
+/**
+ * 탄생화 달력의 길이 — **윤년 기준**이다.
+ *
+ * 2월 29일에 태어난 사람에게 "그 날은 없습니다" 라고 할 수는 없으므로, 탄생화 표는
+ * 365일이 아니라 366일이어야 한다. 실제로 조사한 두 표가 여기서 갈렸다
+ * (순천만 365일 · 로얄플라워 366일 — `docs/birth-flowers-research.md` §4).
+ */
+export const DAYS_IN_MONTH = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31] as const;
+
+/** 윤년 하루 수(366). `DAYS_IN_MONTH` 와 따로 세지 않도록 여기서 한 번만 더한다. */
+export const LEAP_YEAR_DAYS = DAYS_IN_MONTH.reduce((sum, days) => sum + days, 0);
+
 export type RelationshipType = (typeof RELATIONSHIP_TYPES)[number];
 export type Intent = (typeof INTENTS)[number];
 export type Tone = (typeof TONES)[number];
@@ -583,6 +595,36 @@ export const StoryRowSchema = z
     }
   });
 
+/**
+ * birth_flowers.csv — 날짜별 탄생화(366일 달력).
+ *
+ * **행의 주인은 꽃이 아니라 날짜다.** 366일이 카탈로그 32종보다 훨씬 많은 종을 부르고,
+ * 반대로 한 종이 여러 날에 걸리기도 한다(장미 10일 · 국화 4일). 그래서 (month, day) 가
+ * 자연키이고 `flower_id` 는 **도감으로 건너가는 선택 다리**다 — 비어 있는 것이 정상 값이며
+ * "아직 안 정했다"는 뜻이 아니라 "카탈로그에 그 꽃이 없다"는 뜻이다.
+ * (DB 쪽 같은 판단: `0010_birth_flowers.sql` 의 `flower_id … on delete set null`)
+ *
+ * 날짜 자체의 유효성은 여기서 보지 않는다. `month` 1~12 · `day` 1~31 만 막고,
+ * **2/30 같은 조합과 366일 전수 여부는 교차 검증**(`crossValidate`)이 달력으로 본다 —
+ * 한 행만 보고는 "2월은 29일까지" 를 알 수 없기 때문이다.
+ *
+ * DB 보다 두 칸을 더 조인다:
+ *   meaning_ko — 0010 은 null 을 허용하지만 CSV 에서는 필수다. 꽃말 없는 탄생화는
+ *                화면에 올릴 것이 이름뿐이라, 조용히 빈 채로 실리는 쪽을 막는다.
+ *   source_url — 꽃말·일화와 같은 원칙. 출처 없는 표는 싣지 않는다.
+ */
+export const BirthFlowerRowSchema = z.object({
+  month: requiredInt('month', 1, 12),
+  day: requiredInt('day', 1, 31),
+  name_ko: requiredText('name_ko'),
+  name_en: optionalText(),
+  scientific_name: optionalText(),
+  flower_id: optionalSlug('flower_id'),
+  meaning_ko: requiredText('meaning_ko'),
+  source_url: requiredUrl('source_url'),
+  editorial_note: optionalText(),
+});
+
 export type FlowerRow = z.output<typeof FlowerRowSchema>;
 export type MeaningRow = z.output<typeof MeaningRowSchema>;
 export type RuleRow = z.output<typeof RuleRowSchema>;
@@ -590,6 +632,7 @@ export type TemplateRow = z.output<typeof TemplateRowSchema>;
 export type QuoteRow = z.output<typeof QuoteRowSchema>;
 export type PetSafetyRow = z.output<typeof PetSafetyRowSchema>;
 export type StoryRow = z.output<typeof StoryRowSchema>;
+export type BirthFlowerRow = z.output<typeof BirthFlowerRowSchema>;
 
 /* ------------------------------------------------------------------ *
  * 파일 레지스트리
@@ -603,6 +646,7 @@ export const SEED_FILE_KEYS = [
   'templates',
   'quotes',
   'pet_safety',
+  'birth_flowers',
 ] as const;
 
 export type SeedFileKey = (typeof SEED_FILE_KEYS)[number];
@@ -615,6 +659,7 @@ export const SEED_FILE_NAMES: Record<SeedFileKey, string> = {
   templates: 'templates.csv',
   quotes: 'quotes.csv',
   pet_safety: 'pet_safety.csv',
+  birth_flowers: 'birth_flowers.csv',
 };
 
 export const SEED_SCHEMAS = {
@@ -625,6 +670,7 @@ export const SEED_SCHEMAS = {
   templates: TemplateRowSchema,
   quotes: QuoteRowSchema,
   pet_safety: PetSafetyRowSchema,
+  birth_flowers: BirthFlowerRowSchema,
 } as const;
 
 /* ------------------------------------------------------------------ *
@@ -683,6 +729,7 @@ export interface SeedRowMap {
   templates: TemplateRow;
   quotes: QuoteRow;
   pet_safety: PetSafetyRow;
+  birth_flowers: BirthFlowerRow;
 }
 
 /**
@@ -709,6 +756,7 @@ export interface SeedDataset {
   templates: ParsedRow<TemplateRow>[];
   quotes: ParsedRow<QuoteRow>[];
   pet_safety: ParsedRow<PetSafetyRow>[];
+  birth_flowers: ParsedRow<BirthFlowerRow>[];
 }
 
 export interface CrossValidateResult {
@@ -728,6 +776,12 @@ export interface CrossValidateResult {
  *     그리고 stories 의 moods·intents·story_type·source_kind 가 어휘 안에 있는가.
  *     행 스키마가 이미 enum 으로 막지만, 어휘가 늘어날 때 파일마다 따로 새지 않도록
  *     "모든 파일이 같은 어휘를 쓴다"는 사실을 여기서 한 번 더 못 박는다.
+ *  4. 탄생화 366일 커버리지 — 윤년 달력의 366칸이 **빠짐없이, 한 번씩** 채워졌는가.
+ *     날짜가 하나라도 비면 그 생일에는 화면에 보여 줄 것이 없다. 한 행만 봐서는
+ *     2/30 같은 조합을 알 수 없으므로 달력을 아는 이곳에서 본다.
+ *  5. 탄생화 → 카탈로그 연결 — birth_flowers.flower_id 가 flowers 에 있는가.
+ *     quotes 처럼 **선택 참조**라 빈 값은 검사 대상이 아니다(카탈로그에 없는 꽃이
+ *     정상 값이다). 대신 몇 종·며칠이 도감으로 이어지는지를 리포트에 함께 적는다.
  */
 export function crossValidate(data: SeedDataset): CrossValidateResult {
   const checks: CrossCheckResult[] = [];
@@ -889,6 +943,87 @@ export function crossValidate(data: SeedDataset): CrossValidateResult {
       vocabFailures === 0
         ? `rules ${data.rules.length}행 · templates ${data.templates.length}행 · stories ${data.stories.length}행 · quotes ${data.quotes.length}행 모두 어휘 안에 있음`
         : `어휘 밖의 값 ${vocabFailures}건`,
+  });
+
+  /* 4. 탄생화 366일 커버리지 ---------------------------------------- */
+  const calendarBefore = issues.length;
+  const filled = new Map<string, number>(); // 'M/D' → 처음 채운 CSV 줄 번호
+  for (const row of data.birth_flowers) {
+    const { month, day } = row.value;
+    const limit = DAYS_IN_MONTH[month - 1];
+    if (day > limit) {
+      issues.push({
+        file: SEED_FILE_NAMES.birth_flowers,
+        line: row.line,
+        column: 'day',
+        message: `${month}월은 ${limit}일까지입니다 (2월은 윤년 기준 29일)`,
+      });
+      continue;
+    }
+    const key = `${month}/${day}`;
+    const first = filled.get(key);
+    if (first !== undefined) {
+      issues.push({
+        file: SEED_FILE_NAMES.birth_flowers,
+        line: row.line,
+        column: 'day',
+        message: `${month}월 ${day}일이 두 번 나옵니다 (앞선 행: ${first}번째 줄)`,
+      });
+      continue;
+    }
+    filled.set(key, row.line);
+  }
+  const missingDates: string[] = [];
+  for (let month = 1; month <= 12; month += 1) {
+    for (let day = 1; day <= DAYS_IN_MONTH[month - 1]; day += 1) {
+      if (!filled.has(`${month}/${day}`)) missingDates.push(`${month}/${day}`);
+    }
+  }
+  if (missingDates.length > 0) {
+    // 파일 전체의 문제라 행을 짚을 수 없다(빠진 날짜에는 행이 없다).
+    issues.push({
+      file: SEED_FILE_NAMES.birth_flowers,
+      line: null,
+      column: 'month.day',
+      message: `탄생화가 없는 날짜 ${missingDates.length}일: ${missingDates.slice(0, 10).join(', ')}${missingDates.length > 10 ? ' …' : ''}`,
+    });
+  }
+  const calendarFailures = issues.length - calendarBefore;
+  checks.push({
+    name: '탄생화 366일 커버리지 (2/29 포함 · 중복 0)',
+    ok: calendarFailures === 0,
+    detail:
+      calendarFailures === 0
+        ? `${data.birth_flowers.length}행이 윤년 366일을 빠짐없이 한 번씩 채움`
+        : `달력 결손·중복 ${calendarFailures}건 (채워진 날짜 ${filled.size}/${LEAP_YEAR_DAYS}일)`,
+  });
+
+  /* 5. 탄생화 → 카탈로그 연결 --------------------------------------- */
+  const linkBefore = issues.length;
+  const linkedDays = new Map<string, number>(); // flower_id → 며칠에 걸리는가
+  for (const row of data.birth_flowers) {
+    const flowerId = row.value.flower_id;
+    if (flowerId === undefined) continue; // 카탈로그에 없는 꽃 — 정상 값
+    if (!flowerIds.has(flowerId)) {
+      issues.push({
+        file: SEED_FILE_NAMES.birth_flowers,
+        line: row.line,
+        column: 'flower_id',
+        message: `flowers.csv 에 없는 꽃 id 입니다: ${flowerId}`,
+      });
+      continue;
+    }
+    linkedDays.set(flowerId, (linkedDays.get(flowerId) ?? 0) + 1);
+  }
+  const linkedRows = [...linkedDays.values()].reduce((sum, count) => sum + count, 0);
+  const linkFailures = issues.length - linkBefore;
+  checks.push({
+    name: '탄생화 → 카탈로그 연결 (선택 참조)',
+    ok: linkFailures === 0,
+    detail:
+      linkFailures === 0
+        ? `${linkedRows}일이 도감으로 이어짐 — 카탈로그 ${flowerIds.size}종 중 ${linkedDays.size}종 · 나머지 ${data.birth_flowers.length - linkedRows}일은 카탈로그에 없는 꽃`
+        : `끊어진 참조 ${linkFailures}건`,
   });
 
   return { checks, issues };

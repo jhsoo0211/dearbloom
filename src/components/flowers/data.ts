@@ -38,6 +38,7 @@ import { categoryOf } from '@/components/landing/landing-data';
 import { storyCategoryLabel } from '@/components/stories/categories';
 import { metaNotes } from '@/components/stories/meta';
 import type { ArchiveStory } from '@/components/stories/types';
+import { birthCalendar, birthDatesLabel, birthDaysOf } from '@/lib/data/birth-flowers';
 import type { Catalog, CatalogFlower, CatalogMeaning, CatalogStory } from '@/lib/data/types';
 import { pickStories } from '@/lib/engine';
 import { photoFor, photoSrc } from '@/lib/photos';
@@ -130,6 +131,14 @@ export function buildFlowerIndex(catalog: Catalog): FlowerIndexData {
     groups: buildGroups(flowers),
     meaningCount: catalog.meanings.length,
     storyCount: catalog.stories.length,
+    /**
+     * 생일 꽃 찾기의 일 셀렉트가 쓸 달력 12개 숫자.
+     *
+     * **탄생화 표 366행 자체는 내려보내지 않는다** — 실제로 읽히는 것은 고른 하루뿐이라
+     * 서버 액션(`lookupBirthFlower`)이 가져온다(근거는 `app/flowers/actions.ts` 주석).
+     * 여기 실리는 것은 그 셀렉트가 마운트 시점에 필요로 하는 것뿐이다.
+     */
+    birthCalendar: birthCalendar(catalog.birthFlowers),
   };
 }
 
@@ -356,6 +365,8 @@ export function buildFlowerDetail(catalog: Catalog, slug: string): FlowerDetailD
   const plate = plateFor(flower.id);
   const meaningGroups = buildMeaningGroups(flower, catalog.meanings);
   const meaningCount = meaningGroups.reduce((sum, group) => sum + group.items.length, 0);
+  // 탄생화 역조회 — 표에 안 걸린 꽃은 빈 문자열이라 아래에서 키 자체를 만들지 않는다.
+  const birthDays = birthDatesLabel(birthDaysOf(catalog.birthFlowers, flower.id));
 
   return {
     slug: flower.id,
@@ -388,6 +399,7 @@ export function buildFlowerDetail(catalog: Catalog, slug: string): FlowerDetailD
     pet: buildPetNote(flower),
     seasonLine: buildSeasonLine(flower),
     priceLine: PRICE_LABELS[flower.priceBand],
+    ...(birthDays ? { birthDays } : {}),
   };
 }
 

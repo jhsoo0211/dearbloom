@@ -145,6 +145,23 @@ export interface FlowerStory {
   featured: boolean;
 }
 
+/**
+ * 히어로 갤러리의 한 컷 — 서버가 주소·폭 후보까지 다 만들어 내려보낸다.
+ *
+ * `srcSet` 이 함께 오는 이유: 이 자리는 폰에서 화면 폭 전부를, 데스크톱에서는 셸의
+ * 절반쯤을 쓴다. 한 폭만 내려보내면 둘 중 하나는 반드시 틀린다
+ * (`photoSrcSet()` 주석의 `sizes` 권장값이 짝이다).
+ */
+export interface DetailPhoto {
+  src: string;
+  /** 같은 컷의 여러 폭 후보. 폭 치환이 안 되는 소스면 주소 한 줄만 온다. */
+  srcSet: string;
+  alt: string;
+  credit: string;
+  /** `흰빛` `분홍빛` `뒤에서` … 이웃 컷과 견줘 이 장이 무엇인지(없을 수도 있다). */
+  variant?: string;
+}
+
 /** 최하단 참고 블록의 반려동물 칸(§1.5h — 배지 1곳 + 상세는 접힘). */
 export interface PetNote {
   safe: boolean;
@@ -164,13 +181,19 @@ export interface FlowerDetailData {
   categoryLabel: string;
   categoryHint: string;
   /**
-   * 히어로 맨 위에 거는 **대표 실사** — 원본은 `@/lib/photos`(Unsplash CDN 주소가 온다).
+   * 히어로 갤러리가 넘겨 보는 **실사 여러 컷** — 원본은 `@/lib/photos`(원격 CDN 주소).
    *
    * 도감이 먼저 답해야 하는 질문은 "이 꽃이 어떻게 생겼나"다. 19세기 세밀화는 그 답을
    * 아름답게는 하지만 정확하게는 못 한다(판본에 따라 종이 다르고, 겹꽃 변종이 섞인다).
    * 그래서 **실사가 앞이고 도판이 보조**다 — 도판은 아래 `plate` 로 액자에 남는다.
+   *
+   * ⚠ **`[0]` 은 랜딩·결과·편지가 쓰는 그 대표컷이다**(`photosFor()` 가 구조로 보장한다).
+   *   카드를 누르고 들어온 사람이 방금 본 사진이 첫 장이어야 두 화면이 이어진다.
+   *   나머지는 같은 꽃의 색 변형이나 다른 앵글이고, `variant` 가 그것을 한 마디로 말한다.
+   *
+   * 컷이 없는 꽃이면 **빈 배열**이다 — 화면은 갤러리 자리를 세우지 않는다.
    */
-  photo?: { src: string; alt: string; credit: string };
+  photos: DetailPhoto[];
   /**
    * 히어로 액자에 거는 세밀화 — 원본은 `@/lib/plates`(자체 호스팅 사본 주소가 온다).
    * `note` 는 종이 다르거나 판면에 손댄 도판의 **정직한 한 줄**이다(없는 꽃이 더 많다).

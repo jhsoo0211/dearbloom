@@ -21,6 +21,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
+import Link from 'next/link';
 
 import type { Letter } from '@/lib/letters/types';
 import LetterSheet from './LetterSheet';
@@ -52,9 +53,23 @@ export interface LetterRevealProps {
   onClose: () => void;
   /** 만든 사람이 자기 편지를 미리 열어 보는 경우. 안내 한 줄이 달라진다. */
   ownPreview?: boolean;
+  /**
+   * 내장 예시 편지(`sample.ts`)를 열어 보는 경우 — `ownPreview` 와 **함께 쓰지 않는다.**
+   *
+   * 연출·편지지는 진짜 편지와 **한 글자도 다르지 않다.** 다른 것은 두 가지뿐이다:
+   * 위 안내 줄이 예시라고 밝히고, 아래에 쓰러 가는 길이 하나 선다. 예시를 알아보게 하려고
+   * 편지지에 딱지를 붙이면 "이렇게 열려요" 를 보여 준다는 목적 자체가 무너진다.
+   */
+  sample?: boolean;
 }
 
-export default function LetterReveal({ letter, flower, onClose, ownPreview }: LetterRevealProps) {
+export default function LetterReveal({
+  letter,
+  flower,
+  onClose,
+  ownPreview,
+  sample,
+}: LetterRevealProps) {
   const rootRef = useRef<HTMLDivElement>(null);
 
   /**
@@ -132,7 +147,22 @@ export default function LetterReveal({ letter, flower, onClose, ownPreview }: Le
   }
 
   const heading = letter.title?.trim() ?? '';
-  const label = heading !== '' ? `${heading} — 편지` : `${letter.recipientName}에게 온 편지`;
+  /* 낭독기에게는 예시라는 사실이 **먼저** 와야 한다 — 눈으로 보는 사람은 각주 한 줄을
+     지나 편지를 만나지만, 낭독기는 대화상자 이름부터 듣는다. */
+  const label = sample
+    ? heading !== ''
+      ? `${heading} — 예시 편지`
+      : '예시 편지'
+    : heading !== ''
+      ? `${heading} — 편지`
+      : `${letter.recipientName}에게 온 편지`;
+
+  /** 위 안내 한 줄 — 누가 보고 있는가에 따라 셋 중 하나다. */
+  const hint = sample
+    ? '예시 편지예요 — 직접 쓰시면 이 자리에 그 마음이 앉아요.'
+    : ownPreview
+      ? '받는 분에게는 이렇게 보여요.'
+      : '조용한 자리에서 읽어 보세요.';
 
   return (
     <div
@@ -149,8 +179,8 @@ export default function LetterReveal({ letter, flower, onClose, ownPreview }: Le
       <span className={styles.revealScrim} aria-hidden="true" />
 
       <div className={styles.revealBar}>
-        <p className={styles.revealHint}>
-          {ownPreview ? '받는 분에게는 이렇게 보여요.' : '조용한 자리에서 읽어 보세요.'}
+        <p className={styles.revealHint} data-testid="reveal-hint">
+          {hint}
         </p>
         <button type="button" className={styles.iconBtn} onClick={onClose} aria-label="편지 닫기">
           <IconClose />
@@ -187,6 +217,12 @@ export default function LetterReveal({ letter, flower, onClose, ownPreview }: Le
       </div>
 
       <div className={`${styles.revealBar} ${styles.revealBarEnd}`}>
+        {/* 예시를 다 본 사람에게 남는 일은 하나뿐이다 — 자기 편지를 쓰는 것. */}
+        {sample ? (
+          <Link className={styles.btn} href="/letter/studio" data-testid="sample-to-studio">
+            나도 써 볼래요
+          </Link>
+        ) : null}
         {/* 연출이 없는 사람에게는 되돌려 볼 것도 없다(위 ①). */}
         {animates && phase === 'open' ? (
           <button type="button" className={styles.ghost} onClick={replay}>

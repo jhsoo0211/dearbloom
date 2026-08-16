@@ -9,9 +9,10 @@
 
 import { useState } from 'react';
 
+import { submitRecommendation } from '@/app/recommend/actions';
 import ResultView from './ResultView';
 import Wizard from './Wizard';
-import type { FlowResponse, ResultPayload, WizardOptions, WizardSubmission } from './types';
+import type { ResultPayload, WizardOptions } from './types';
 import styles from './flow.module.css';
 
 /**
@@ -25,10 +26,19 @@ export interface RecommendFlowProps {
   options: WizardOptions;
   /** 전하는 날의 기본값(서버가 정한 "내일"). 서버·화면이 같은 값을 그려야 한다. */
   defaultDateISO: string;
-  action: (submission: WizardSubmission) => Promise<FlowResponse>;
 }
 
-export default function RecommendFlow({ options, defaultDateISO, action }: RecommendFlowProps) {
+/*
+ * 제출 함수를 **props 로 받지 않고 여기서 import 한다.**
+ *
+ * 이 화면의 형제들(`GroupPlanner` · `StorySheet` · `BirthdayFinder`)이 전부 그렇게 하고
+ * 있어서 모양을 맞춘 것이기도 하지만, 실질적인 이유는 정적 드롭 데모다:
+ * `NEXT_PUBLIC_STATIC_DEMO=1` 빌드는 `@/app/recommend/actions` 를 브라우저용 어댑터로
+ * 바꿔치기하는데(next.config.ts 의 `resolveAlias`), 서버 컴포넌트가 함수를 props 로
+ * 건네는 구조에서는 그 바꿔치기가 성립하지 않는다 — 함수는 RSC 경계를 건널 수 없고,
+ * 건널 수 있는 것은 "서버 액션"이라는 참조뿐이기 때문이다.
+ */
+export default function RecommendFlow({ options, defaultDateISO }: RecommendFlowProps) {
   const [payload, setPayload] = useState<ResultPayload | null>(null);
 
   /*
@@ -66,7 +76,7 @@ export default function RecommendFlow({ options, defaultDateISO, action }: Recom
         <Wizard
           options={options}
           defaultDateISO={defaultDateISO}
-          action={action}
+          action={submitRecommendation}
           onResult={showResult}
         />
       )}

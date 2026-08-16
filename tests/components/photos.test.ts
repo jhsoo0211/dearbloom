@@ -14,6 +14,7 @@ import {
   photoSourceLabel,
   photoSrc,
   photoSrcSet,
+  photosFor,
 } from '@/lib/photos';
 
 /**
@@ -222,6 +223,162 @@ describe('FLOWER_PHOTOS', () => {
   });
 });
 
+/**
+ * 도감 갤러리(`photosFor`) — 2026-08-16 다중 사진 라운드.
+ *
+ * 여기서 꼭 잡아야 하는 것은 **첫 장이 대표컷이라는 약속**이다. 랜딩 카드를 누르고 들어온
+ * 사람이 방금 본 사진을 상세에서 다시 만나야 두 화면이 한 꽃을 가리킨다는 게 읽힌다
+ * (사용자 확정). 지금은 `photosFor()` 가 구조로 지키지만, 표 둘을 하나로 합치려는 다음
+ * 사람이 순서를 잃기 쉬운 자리라 그물을 따로 둔다.
+ *
+ * 추가컷도 대표컷과 **같은 규정**을 통과해야 한다 — 승인 소스·무료 경로·쿼리 없는 주소·
+ * 크레딧 꼬리표 일치·원본 가로 2400px 하한. 갤러리라고 기준이 헐거워지면 대표 32장을
+ * 두 번에 걸쳐 다시 고른 일이 무의미해진다.
+ */
+describe('photosFor — 도감 갤러리', () => {
+  /**
+   * 색이 아닌 변형(같은 색의 다른 앵글·상태)에 허용한 어휘.
+   * 색 라벨은 `…빛` 으로 끝난다 — 둘 중 하나가 아니면 아래 테스트가 잡는다.
+   * 새 어휘를 쓰고 싶으면 **여기 먼저 적어라.** 캡션이 제각각이 되는 것을 막는 자리다.
+   */
+  const ANGLE_LABELS = new Set([
+    '가까이',
+    '뒤에서',
+    '위에서',
+    '한 송이',
+    '한 다발',
+    '잎 사이',
+    '잎까지',
+    '가지 위',
+    '겹꽃 속',
+    '어둠 속',
+    '막 벌어질 때',
+    '검붉은 무늬',
+    '자주 테두리',
+    '붉은 테두리',
+  ]);
+
+  it('첫 장은 언제나 대표컷이다 — 홈에서 본 그 사진', async () => {
+    const catalog = await loadCatalog();
+    for (const flower of catalog.flowers) {
+      const primary = photoFor(flower.id);
+      const gallery = photosFor(flower.id);
+      if (!primary) throw new Error(`${flower.id} 대표컷이 없다`);
+
+      const first = gallery[0];
+      expect(first?.src, `${flower.id} — 첫 장이 대표컷이 아니다`).toBe(primary.src);
+      expect(first?.credit, flower.id).toBe(primary.credit);
+      expect(first?.alt, flower.id).toBe(primary.alt);
+      expect(first?.width, flower.id).toBe(primary.width);
+      // 대표 상수 자체는 갤러리 라벨을 갖지 않는다 — 한 장만 보여 주는 자리에서는 뜻이 없다.
+      expect(primary.variant, `${flower.id} — 대표 상수에 variant 가 새어 들어갔다`).toBeUndefined();
+    }
+  });
+
+  it('컷이 없는 꽃은 빈 배열이다 — photoFor 의 undefined 와 짝을 맞춘다', () => {
+    expect(photosFor('없는-꽃')).toEqual([]);
+    expect(photoFor('없는-꽃')).toBeUndefined();
+  });
+
+  it('꽃마다 2~4장이고, 같은 컷을 두 번 싣지 않는다', async () => {
+    const catalog = await loadCatalog();
+    for (const flower of catalog.flowers) {
+      const cuts = photosFor(flower.id);
+      expect(cuts.length, `${flower.id} — 컷 수가 2~4장을 벗어났다`).toBeGreaterThanOrEqual(2);
+      expect(cuts.length, `${flower.id} — 컷 수가 2~4장을 벗어났다`).toBeLessThanOrEqual(4);
+
+      const srcs = cuts.map((cut) => cut.src);
+      expect(new Set(srcs).size, `${flower.id} — 같은 주소가 두 번 실렸다`).toBe(srcs.length);
+      // flowerId 가 어긋나면 갤러리가 남의 꽃을 보여 준다.
+      for (const cut of cuts) expect(cut.flowerId, cut.src).toBe(flower.id);
+    }
+  });
+
+  it('추가컷도 대표컷과 같은 규정을 통과한다 — 소스·무료 경로·쿼리·크레딧·해상도', async () => {
+    const catalog = await loadCatalog();
+    for (const flower of catalog.flowers) {
+      for (const cut of photosFor(flower.id)) {
+        expect(cut.src, `${cut.src} — 유료 경로다`).not.toContain('premium_photo-');
+        expect(cut.src, `${cut.src} — 유료 호스트다`).not.toContain('plus.unsplash.com');
+        // 폭·포맷은 `photoSrc()` 한 곳에서만 붙인다(상수에 붙으면 두 번 붙는다).
+        expect(cut.src, `${cut.src} — 쿼리가 붙어 있다`).not.toContain('?');
+
+        const source = photoSource(cut);
+        expect(source, `${cut.src} — 승인되지 않은 소스다`).toBeDefined();
+        expect(cut.src, `${cut.src} — ${source} 주소 모양이 아니다`).toMatch(
+          SOURCE_PATTERNS[source as string],
+        );
+
+        expect(cut.credit, cut.src).toMatch(CREDIT_LINE);
+        expect(
+          cut.credit.endsWith(` / ${photoSourceLabel(cut)}`),
+          `${cut.src} — 꼬리표가 주소의 소스와 다르다`,
+        ).toBe(true);
+
+        expect(cut.width, `${cut.src} — width 가 없다`).toBeDefined();
+        expect(cut.width as number, `${cut.src} — 원본이 너무 작다`).toBeGreaterThanOrEqual(2400);
+      }
+    }
+  });
+
+  it('alt 는 한국어 한 줄이고, 포인세티아는 갤러리에서도 "꽃잎"이라 말하지 않는다', async () => {
+    const catalog = await loadCatalog();
+    for (const flower of catalog.flowers) {
+      for (const cut of photosFor(flower.id)) {
+        expect(cut.alt, cut.src).toMatch(/[가-힣]/);
+        expect(cut.alt, cut.src).not.toContain('\n');
+      }
+    }
+    // 붉은 부분은 포엽(잎)이다 — 컷이 늘어도 이 사실은 변하지 않는다(문서 §주의 2).
+    for (const cut of photosFor('poinsettia')) {
+      expect(cut.alt, cut.src).not.toContain('꽃잎');
+      expect(cut.alt, cut.src).toContain('포엽');
+    }
+  });
+
+  it('변형 라벨은 정해진 어휘를 쓰고, 한 꽃 안에서 겹치지 않는다', async () => {
+    const catalog = await loadCatalog();
+    for (const flower of catalog.flowers) {
+      const cuts = photosFor(flower.id);
+      const labels = cuts.map((cut) => cut.variant);
+
+      for (const label of labels) {
+        expect(label, `${flower.id} — 라벨 없는 컷이 있다`).toBeTruthy();
+        const ok = (label as string).endsWith('빛') || ANGLE_LABELS.has(label as string);
+        expect(ok, `${flower.id} — "${label}" 은 허용된 어휘가 아니다`).toBe(true);
+        // §1.6b 캡션 하한 12px 자리에 서는 한 줄이라 길면 액자 위에서 접힌다.
+        expect((label as string).length, `${flower.id} — "${label}" 이 너무 길다`).toBeLessThanOrEqual(8);
+      }
+
+      expect(new Set(labels).size, `${flower.id} — 같은 라벨이 두 번 붙었다`).toBe(labels.length);
+    }
+  });
+
+  it('색 변형이 실제로 들어와 있다 — "색상이 여러 가지" 라는 요청의 알맹이', async () => {
+    const catalog = await loadCatalog();
+    // 색 라벨(`…빛`)이 둘 이상인 꽃 = 갤러리가 색 변형을 보여 주는 꽃.
+    const colorful = catalog.flowers.filter(
+      (flower) =>
+        photosFor(flower.id).filter((cut) => (cut.variant ?? '').endsWith('빛')).length >= 2,
+    );
+    expect(colorful.length).toBeGreaterThanOrEqual(20);
+  });
+
+  it('갤러리 컷도 두 소스를 함께 쓴다 — 확장이 조용히 되돌려지지 않았다', async () => {
+    const catalog = await loadCatalog();
+    const used = new Set(
+      catalog.flowers.flatMap((flower) => photosFor(flower.id).map((cut) => photoSource(cut))),
+    );
+    expect([...used].sort()).toEqual(['pexels', 'unsplash']);
+  });
+
+  it('제비꽃 갤러리가 종 확실성을 되찾았다 — 대표컷은 속까지만이었다', () => {
+    // 문서 §남은 판단 1: 대표컷(Tom Fisk)은 제목이 "Violet Flower" 라 Viola 속까지만이다.
+    const odorata = photosFor('violet').find((cut) => cut.note?.includes('viola odorata'));
+    expect(odorata, '제비꽃 갤러리에 Viola odorata 명시 컷이 없다').toBeDefined();
+  });
+});
+
 describe('랜딩 — 오늘의 꽃과 화면 일치(#5) · 전 카드 사진(#4)', () => {
   it('히어로는 오늘의 꽃 본인의 실사다', async () => {
     const catalog = await loadCatalog();
@@ -316,20 +473,36 @@ describe('도감 상세 — 실사 우선, 세밀화는 보조', () => {
     const catalog = await loadCatalog();
     for (const flower of catalog.flowers) {
       const detail = buildFlowerDetail(catalog, flower.id);
-      expect(detail?.photo, `${flower.id} — 상세에 실사가 없다`).toBeDefined();
+      expect(detail?.photos.length, `${flower.id} — 상세에 실사가 없다`).toBeGreaterThan(0);
       expect(detail?.plate, `${flower.id} — 상세에 도판이 없다`).toBeDefined();
     }
   });
 
-  it('상세의 실사는 아카이브·랜딩과 같은 컷이고, 상세용 폭으로 온다', async () => {
+  it('상세 갤러리의 첫 장은 아카이브·랜딩과 같은 컷이고, 상세용 폭으로 온다', async () => {
     const catalog = await loadCatalog();
     for (const slug of ['daisy', 'rose-red', 'lavender']) {
       const detail = buildFlowerDetail(catalog, slug);
       const photo = photoFor(slug);
       if (!detail || !photo) throw new Error(`${slug} 가 비었다`);
-      expect(detail.photo?.src).toBe(photoSrc(photo, 1600));
-      expect(detail.photo?.alt).toBe(photo.alt);
-      expect(detail.photo?.credit).toBe(photo.credit);
+      const first = detail.photos[0];
+      expect(first?.src).toBe(photoSrc(photo, 1600));
+      expect(first?.alt).toBe(photo.alt);
+      expect(first?.credit).toBe(photo.credit);
+    }
+  });
+
+  it('상세 갤러리는 컷마다 srcSet 과 상세용 폭을 함께 낸다', async () => {
+    const catalog = await loadCatalog();
+    const detail = buildFlowerDetail(catalog, 'tulip-white');
+    if (!detail) throw new Error('흰 튤립 상세가 비었다');
+
+    for (const cut of detail.photos) {
+      // `sizes` 없이 srcset 만 주면 브라우저가 늘 최대 후보를 고른다 — 폭 후보는 셋이다.
+      expect(cut.srcSet).toContain('640w');
+      expect(cut.srcSet).toContain('1080w');
+      expect(cut.srcSet).toContain('1600w');
+      // 화면에 거는 기본 주소는 상세 히어로 폭이다.
+      expect(cut.src).toContain('w=1600');
     }
   });
 

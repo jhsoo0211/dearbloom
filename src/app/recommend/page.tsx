@@ -16,7 +16,11 @@ import type { ColorChoice, WizardOptions } from '@/components/flow/types';
 import { loadCatalog } from '@/lib/data/catalog';
 import { INTENTS, RELATIONSHIPS } from '@/lib/engine';
 
-import { submitRecommendation } from './actions';
+/**
+ * 정적 드롭 데모(`npm run build:static`)인가.
+ * 기본 빌드에서는 이 값이 항상 거짓이라 아래 분기는 서지 않는다.
+ */
+const STATIC_DEMO = process.env.NEXT_PUBLIC_STATIC_DEMO === '1';
 
 export const metadata: Metadata = {
   title: 'dearbloom — 45초 만에 추천받기',
@@ -46,9 +50,14 @@ function tomorrowInSeoul(): string {
  * `connection()` 으로 요청 시점 렌더를 명시한다 — 기본 날짜가 "내일"이라 빌드 때 미리
  * 만들어 두면 배포 다음 날부터 지난 날짜를 보여 주기 때문이다. 서버가 정한 날짜를 그대로
  * 내려보내야 하이드레이션도 어긋나지 않는다(화면에서 effect 로 채우면 그때 값이 튄다).
+ *
+ * ⚠ 정적 드롭 데모에서는 `connection()` 을 부르지 않는다. 요청 시점이라는 것이 없는
+ *   빌드라(`output: 'export'`) 부르면 빌드가 그 자리에서 실패한다. 대신 기본 날짜가
+ *   **빌드한 날의 다음 날**로 굳는다 — 데모의 알려진 한계이고, 사용자가 날짜를 직접
+ *   고치는 길은 그대로 열려 있다(deploy/README.md 의 표에 적어 두었다).
  */
 export default async function RecommendPage() {
-  await connection();
+  if (!STATIC_DEMO) await connection();
   const catalog = await loadCatalog();
 
   const present = new Set(catalog.flowers.flatMap((flower) => flower.colors));
@@ -86,11 +95,5 @@ export default async function RecommendPage() {
     })),
   };
 
-  return (
-    <RecommendFlow
-      options={options}
-      defaultDateISO={tomorrowInSeoul()}
-      action={submitRecommendation}
-    />
-  );
+  return <RecommendFlow options={options} defaultDateISO={tomorrowInSeoul()} />;
 }

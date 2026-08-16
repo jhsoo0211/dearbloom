@@ -41,7 +41,7 @@ import type { ArchiveStory } from '@/components/stories/types';
 import { birthCalendar, birthDatesLabel, birthDaysOf } from '@/lib/data/birth-flowers';
 import type { Catalog, CatalogFlower, CatalogMeaning, CatalogStory } from '@/lib/data/types';
 import { pickStories } from '@/lib/engine';
-import { photoFor, photoSrc } from '@/lib/photos';
+import { photoSrc, photoSrcSet, photosFor } from '@/lib/photos';
 import { plateCredit, plateFor } from '@/lib/plates';
 import { CATEGORY_HINT, CATEGORY_ORDER, normalizeQuery } from './category';
 import type {
@@ -357,9 +357,11 @@ export function buildFlowerDetail(catalog: Catalog, slug: string): FlowerDetailD
   if (!flower) return undefined;
 
   const category = categoryOf(flower);
-  // 실사 상수의 단일 원본은 `@/lib/photos` 다(랜딩 카드와 **같은 컷**을 쓴다).
-  // 상세 히어로는 도감에서 사진이 가장 크게 서는 자리라 1600px 을 부른다.
-  const photo = photoFor(flower.id);
+  // 실사 상수의 단일 원본은 `@/lib/photos` 다. 상세만 **여러 컷**을 받는다 —
+  // 그리고 `photosFor()` 의 첫 원소가 랜딩 카드가 쓰는 바로 그 대표컷이라,
+  // 카드를 누르고 들어온 사람이 방금 본 사진을 갤러리 첫 장에서 다시 만난다.
+  // 히어로는 도감에서 사진이 가장 크게 서는 자리라 기본 폭으로 1600px 을 부른다.
+  const photos = photosFor(flower.id);
   // 도판 상수의 단일 원본은 `@/lib/plates` 다(`/stories` 레인·시트와 **같은 그림**을 쓴다).
   // 화면에는 액자가 필요로 하는 것만 내려보낸다 — 주소·설명·크레딧, 그리고 있을 때만 각주.
   const plate = plateFor(flower.id);
@@ -376,9 +378,15 @@ export function buildFlowerDetail(catalog: Catalog, slug: string): FlowerDetailD
     category,
     categoryLabel: storyCategoryLabel(category),
     categoryHint: CATEGORY_HINT[category],
-    ...(photo
-      ? { photo: { src: photoSrc(photo, 1600), alt: photo.alt, credit: photo.credit } }
-      : {}),
+    photos: photos.map((photo) => ({
+      src: photoSrc(photo, 1600),
+      // 폰은 화면 폭 전부, 데스크톱은 셸의 절반쯤을 쓴다 — 한 폭만 주면 둘 중 하나가 틀린다.
+      // `sizes` 는 화면 쪽(`FlowerGallery`)이 들고 있다(`photoSrcSet()` 주석의 권장값).
+      srcSet: photoSrcSet(photo, [640, 1080, 1600]),
+      alt: photo.alt,
+      credit: photo.credit,
+      ...(photo.variant ? { variant: photo.variant } : {}),
+    })),
     ...(plate
       ? {
           plate: {

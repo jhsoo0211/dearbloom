@@ -12,6 +12,14 @@ import { SITE_URL } from '@/lib/site';
  * ⚠ 배포 도메인이 정해지면 `NEXT_PUBLIC_SITE_URL` 만 넣으면 된다(`@/lib/site`).
  *   그 전에는 sitemap 주소가 localhost 로 나오는데, 로컬에서만 보이는 값이라 문제되지 않는다.
  */
+/**
+ * 이 파일은 원래도 **빌드 때 한 번** 만들어져 그대로 나가는 정적 산출물이다
+ * (빌드 로그의 `○ /robots.txt`). 그 사실을 명시로 적어 둔다 — 기본 빌드에서는 값이
+ * 바뀌지 않는 한 줄이지만, 정적 export(`npm run build:static`)는 이 선언이 없으면
+ * "이 라우트가 정적인지 확신할 수 없다"며 빌드를 멈춘다.
+ */
+export const dynamic = 'force-static';
+
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: [

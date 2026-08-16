@@ -20,6 +20,7 @@ import Link from 'next/link';
 import { LETTER_LIMITS, type Letter } from '@/lib/letters/types';
 import { createLocalLetterStore } from '@/lib/letters/store';
 import LetterReveal from './LetterReveal';
+import { SAMPLE_LETTER } from './sample';
 import { letterThemeLabel } from './themes';
 import styles from './letter.module.css';
 import type { LetterFlowerOption } from './types';
@@ -62,7 +63,17 @@ export default function LetterEntrance({ flowers }: LetterEntranceProps) {
   const [shownCodes, setShownCodes] = useState<Record<string, string>>({});
   const [pendingDelete, setPendingDelete] = useState<string | null>(null);
 
-  const [opened, setOpened] = useState<{ letter: Letter; own: boolean } | null>(null);
+  /**
+   * 지금 열려 있는 편지.
+   *
+   * `sample` 이면 내장 예시(`sample.ts`)다 — **저장소를 거치지 않고** 이 자리로 곧장 온다.
+   * 예시는 목록에도 저장소에도 남지 않는다(그래서 `refresh()` 도 부르지 않는다).
+   */
+  const [opened, setOpened] = useState<{
+    letter: Letter;
+    own: boolean;
+    sample?: boolean;
+  } | null>(null);
 
   const refresh = useCallback(async () => {
     setMine(await store.list());
@@ -190,6 +201,23 @@ export default function LetterEntrance({ flowers }: LetterEntranceProps) {
             다시 봐 주시겠어요?
           </p>
         ) : null}
+
+        {/*
+          번호 없이 들어와 본 사람에게 남기는 조용한 한 줄.
+          번호 칸 **아래** 에 두어 위계를 뺏지 않는다 — 이 화면의 주인은 편지를 받은 사람이다.
+          예시는 저장소를 거치지 않고 곧장 열람 연출로 간다(`sample.ts` 머리말).
+        */}
+        <p className={styles.sampleLine}>
+          어떤 모습으로 열리는지 궁금하시면 —{' '}
+          <button
+            type="button"
+            className={styles.textBtn}
+            data-testid="open-sample"
+            onClick={() => setOpened({ letter: SAMPLE_LETTER, own: false, sample: true })}
+          >
+            예시 편지 먼저 열어 보세요
+          </button>
+        </p>
       </section>
 
       {/* ── 편지 만들기 · 내가 만든 편지 ───────────────────────────── */}
@@ -303,6 +331,7 @@ export default function LetterEntrance({ flowers }: LetterEntranceProps) {
           letter={opened.letter}
           {...(openedFlower ? { flower: openedFlower } : {})}
           {...(opened.own ? { ownPreview: true } : {})}
+          {...(opened.sample ? { sample: true } : {})}
           onClose={() => setOpened(null)}
         />
       ) : null}

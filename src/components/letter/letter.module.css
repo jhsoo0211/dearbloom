@@ -86,6 +86,7 @@
 .input:focus-visible,
 .textarea:focus-visible,
 .codeInput:focus-visible,
+.textBtn:focus-visible,
 .rowOpen:focus-visible,
 /* 꽃 카드는 라디오를 `.srOnly` 로 품고 있어 **카드가 대신** 링을 받는다(FlowerChoice 머리말). */
 .flowerCard:focus-within {
@@ -575,6 +576,37 @@
 }
 .waitNum {
   font-variant-numeric: tabular-nums;
+}
+
+/* ── 예시 편지로 가는 조용한 한 줄 ───────────────────────────────────────
+   번호 칸 아래에 헤어라인 하나를 두고 낮은 목소리로 선다. 고스트 pill 을 쓰지 않는 이유는
+   위계다 — 이 패널의 주인공은 번호를 들고 온 사람이고, 예시는 "궁금하면" 이다.
+   대신 §1.6b 의 44px 은 지킨다(패딩으로 벌어 둔 높이 = 12+21+12 ≈ 45px). */
+.sampleLine {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--hair);
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: var(--fg-50);
+}
+.textBtn {
+  display: inline-block;
+  /* 위아래 패딩이 터치 타깃을 벌린다. 줄 사이가 벌어지지 않게 세로 여백은 음수로 되돌린다. */
+  margin: -12px 0;
+  padding: 12px 2px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.5;
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-color: var(--accent-line);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 5px;
+  transition: text-decoration-color var(--dur) var(--ease);
+}
+.textBtn:hover {
+  text-decoration-color: var(--accent);
 }
 
 /* ── 내가 만든 편지 목록 ─────────────────────────────────────────────── */

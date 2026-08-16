@@ -151,7 +151,9 @@
 > 위 16장은 **분위기용 배경·장식컷**이다. 이 섹션은 그와 별개로, 카탈로그 31종 + 신규 데이지 = **32종 각각의 "이 꽃이 무슨 꽃인지 보여 주는" 대표 실사**를 하나씩 확보한 것이다.
 > 랜딩 히어로 / 결과 카드 / 도감 어디에 걸어도 되도록 원본 해상도와 종 동정을 모두 확인했다.
 >
-> **⚠ 아래 두 표는 2026-08-16 품질 재검토를 반영해 갱신된 정본이다.** 32종 중 11종이 그날 교체됐고, 표의 해당 줄에는 `2026-08-16 교체` 가 달려 있다. 교체 사유·채점 근거·확장된 소스 규정은 문서 맨 뒤 [§실사 품질 재검토 (2026-08-16)](#실사-품질-재검토-2026-08-16) 에 있다.
+> **⚠ 아래 두 표는 2026-08-16 품질 재검토를 반영해 갱신된 정본이다.** 32종 중 11종이 그날 교체됐고, 표의 해당 줄에는 `2026-08-16 교체` 가 달려 있다. 교체 사유·채점 근거·확장된 소스 규정은 [§실사 품질 재검토 (2026-08-16)](#실사-품질-재검토-2026-08-16) 에 있다.
+>
+> **⚠ 이 32장은 "대표컷"이고, 도감 상세는 그 뒤에 컷을 더 건다.** 같은 날 늦게 [§도감 갤러리 컷 (2026-08-16)](#도감-갤러리-컷-2026-08-16) 에서 꽃마다 1~3장을 더했다(총 2~4장, 색 변형 우선). **아래 32장은 그때 한 장도 바뀌지 않았고**, 갤러리의 첫 장이 곧 이 표의 컷이다 — 랜딩·결과·편지가 쓰는 것도 여전히 이 표뿐이다.
 
 ## 조사 개요
 
@@ -206,7 +208,7 @@
 | `marigold` | `https://images.unsplash.com/photo-1620005807545-2e08850d6591` | Photo: Julia Kwiek / Unsplash | 짙은 초록 잎을 배경으로 뭉쳐 핀 주황 마리골드 | 설명 "A cluster of marigold flowers, contrasting with the juniper green leaves" — 종 명시 | 어두운 초록 배경 + 주황. 다크 팔레트와 잘 맞는 대비 |
 | `corn-poppy` | `https://images.unsplash.com/photo-1606952460453-3b7edc2f67a7` | Photo: Eduardo Goody / Unsplash | 어두운 배경 위 붉은 개양귀비 한 송이 | 설명 "A-Poppy. Single Vibrant Red Poppy Flower on Dark Background", `papaver rhoeas corn poppy` 검색 상위. 구겨진 듯 얇은 꽃잎과 가느다란 털줄기는 개양귀비 특징으로, 회록색 매끈한 잎에 통통한 씨방을 가진 아편양귀비(P. somniferum)와 형태가 다르다. **다만 종명이 문자로 명시되지는 않았다** — 종 확실성이 필요하면 대체안(설명에 "common poppy" 명기) 사용 | 어두운 배경 + 빨강. 가로 6016px |
 | `jasmine` | `https://images.pexels.com/photos/34677052/pexels-photo-34677052.jpeg` | Photo: Louis Tran / Pexels | 검은 배경 위에 모여 핀 흰 겹꽃 재스민 클로즈업 | Pexels 제목 "Close-up of Beautiful White Jasmine Flowers". **Jasminum 속은 확인되나 sambac 여부는 형태 근거**(겹꽃 로제트가 J. sambac 겹꽃 계열 형태이고, 작은 로제트가 다발로 붙는 배열이 홑꽃으로 크게 피는 치자와 다르다). 넉장 꽃잎에 노란 수술뭉치가 도드라지는 고광나무(Philadelphus, "mock orange")는 이번에도 배제했다 | 순수 검정 배경 + 흰 겹꽃, 가로 4624px. **2026-08-16 교체** (옛 컷은 꽃이 화면 구석에 2% 남짓 — 32장 중 근접도 최악) |
-| `babys-breath` | `https://images.unsplash.com/photo-1591868308567-c36f3a2c5407` | Photo: Tatiana Koroleva / Unsplash | 잔가지마다 자잘하게 흐드러진 흰 안개꽃 | 설명 "Gypsophila" — 속 명시 | 밝고 부드럽다. 다크 배경 무료 컷 중 실제 Gypsophila 인 것을 찾지 못했다(상위 다크 컷은 Erigeron·Cosmos 로 오분류된 것들) |
+| `babys-breath` | `https://images.unsplash.com/photo-1591868308567-c36f3a2c5407` | Photo: Tatiana Koroleva / Unsplash | 잔가지마다 자잘하게 흐드러진 흰 안개꽃 | 설명 "Gypsophila" — 속 명시 | 밝고 부드럽다. 2026-08-15 시점에는 다크 배경 무료 컷 중 실제 Gypsophila 인 것을 찾지 못했다(상위 다크 컷은 Erigeron·Cosmos 로 오분류된 것들). → **2026-08-16 갤러리 라운드에서 검은 배경의 진짜 Gypsophila 를 찾았다**(Eva Bronzini / Pexels, 라벨 `어둠 속`). 대표컷은 그대로 두고 갤러리가 어두운 쪽을 든다 |
 | `cosmos` | `https://images.unsplash.com/photo-1704265586510-f09575135f35` | Photo: William Warby / Unsplash | 노란 화심을 가운데 두고 활짝 펼쳐진 자홍 코스모스 매크로 | 제목 "Cosmos Flower". 넓은 자홍 설상화 + 노란 관상화 = C. bipinnatus 계열 — **주황에 설상화 끝이 톱니인 노랑코스모스(C. sulphureus)는 CSV 학명과 달라 이번에도 배제했다** | 꽃 한 송이가 화면을 가득 채우는 매크로, 자홍이 쨍하다. **2026-08-16 교체** (옛 컷은 꽃이 화면 위 10%, 아래 절반이 빈 어둠이라 4:5 카드에서 잘려 나갔다) |
 | `magnolia` | `https://images.unsplash.com/photo-1713727747459-2c5774698437` | Photo: Ronin / Unsplash | 어두운 맨가지 위에 겹겹이 벌어진 흰 목련 한 송이 | 제목 "Star Magnolia" = **Magnolia stellata** — M. kobus 와 같은 절이고 일부 분류에서는 M. kobus var. stellata 로 다룬다. **잎 없는 맨가지에 꽃만 핀 상태**가 CSV 의 "잎보다 꽃이 먼저 나오는 꽃" 서술과 일치. 상록 잎과 함께 찍힌 컷은 M. grandiflora 라 이번에도 전량 배제했다 | 어두운 맨가지 + 흰 꽃이 화면을 채운다. **2026-08-16 교체** (옛 컷은 해질녘 가지 덤불 원경이라 꽃 한 송이도 또렷하지 않았다) |
 | `pansy` | `https://images.unsplash.com/photo-1705947722737-519c0bab7814` | Photo: Wyxina Tresse / Unsplash | 검은 배경 위 주황과 노랑이 번지는 팬지 클로즈업 | 설명 "A close up of colorful orange Pansy flowers with green leaves in the background" — 종 명시 | 검정 배경 + 주황·노랑. 세로 4640×6960 |
@@ -320,6 +322,9 @@
 2. **도감 상세 히어로 = 실사 우선, 세밀화는 보조.** 도감이 먼저 답해야 하는 질문이
    "이 꽃이 어떻게 생겼나"이기 때문이다. 세밀화 액자·크레딧·`note` 각주는 그대로 아래 자리에 남는다
    (판본에 따라 종이 갈리는 도판이 종을 대표하면 안 된다는 것이 `illustration-assets.md` §D 의 결론이기도 하다).
+   → **2026-08-16 에 두 번 더 움직였다.** 히어로 실사가 **슬라이드 갤러리**(2~4컷)가 됐고,
+   세밀화 액자는 히어로 칸 안이 아니라 **바로 아래 제 소절**(`도감의 세밀화`)로 내려갔다.
+   위계는 그대로이고 자리만 분명해졌다 — [§도감 갤러리 컷](#도감-갤러리-컷-2026-08-16) §화면.
 
 ### 아직 반영하지 않은 권고
 
@@ -514,11 +519,11 @@
 
 ## 남은 판단 (Advisor 몫)
 
-1. **`violet` 의 종 근거가 한 단계 내려갔다.** 옛 컷은 제목이 "Sweet violets"(= *Viola
-   odorata*, CSV 학명과 일치)였고, 새 컷은 "Violet Flower" 로 **속(Viola)까지만** 확인된다.
-   근접도·색 생동·해상도(3676 → 8640px)를 크게 얻는 대신 치른 값이다. 종 확실성을 되찾고
-   싶으면 §대체안에 올려 둔 Commons 컷(Javier martin, *Viola odorata* 명기, **Public
-   domain**)이 있지만, 위키미디어는 폭 치환이 안 되고 배경이 밝다.
+1. ~~**`violet` 의 종 근거가 한 단계 내려갔다.**~~ **(2026-08-16 늦게 해소)** 옛 컷은 제목이
+   "Sweet violets"(= *Viola odorata*)였고 새 대표컷은 "Violet Flower" 로 **속(Viola)까지만**
+   확인됐다. → **갤러리 추가컷이 이 구멍을 메웠다** — Petr Ganaj / Pexels 컷 설명에
+   *viola odorata* 가 명기돼 있고, 위키미디어와 달리 폭 치환도 된다. 대표컷은 그대로 두고
+   **학명 근거를 갤러리가 든다**([§도감 갤러리 컷](#도감-갤러리-컷-2026-08-16) §메운 구멍).
 2. **`magnolia` 는 *M. stellata* 다.** CSV 는 *M. kobus*. 같은 절이고 일부 분류는
    *M. kobus* var. *stellata* 로 다루며, "잎보다 꽃이 먼저"라는 CSV 서술과도 맞는다.
    옛 컷은 종명이 아예 없는 원경이었으니 순증이지만, 엄밀히는 다른 종명이다.
@@ -531,3 +536,301 @@
 5. **조건부 통과 4종**(`tulip-white` 소프트 포커스 · `sunflower` 넓은 여백 ·
    `corn-poppy` 밝고 뿌연 배경 · `daisy` 헐거운 프레이밍)은 이번에 유지했다. 다음 라운드에서
    더 엄격하게 볼지, 지금 수준을 합격선으로 굳힐지는 열려 있다.
+
+---
+
+# 도감 갤러리 컷 (2026-08-16)
+
+> 사용자 요청에서 시작했다. **"도감 상세 이미지를 초고화질 여러 컷 슬라이드로 — 같은 꽃이라도
+> 색상이 여러 가지니까."** 그리고 **"실사 + 도판 2장 배치가 깔끔하지 않다"**,
+> **"전 컷을 근접샷·초고화질로 다시 검증하라"**.
+>
+> 위 §꽃별 대표 실사 32종은 **"이 꽃이 무슨 꽃인가"** 에 한 장으로 답하는 표다. 이 절은 그
+> 대표컷 **뒤에 붙는 컷들**을 정리한 것이다 — 흰 튤립 한 장은 튤립이 희다고만 말하지만,
+> 크림·분홍이 옆에 서면 `content/flowers.csv` 의 `colors` 가 적어 둔 것을 **보여 준다.**
+
+## 대전제 — 첫 장은 대표컷이다
+
+사용자가 못 박은 조건이다. **랜딩(홈)에서 쓰는 대표 컷 32장은 한 장도 바꾸지 않았고**,
+갤러리의 첫 장은 언제나 그 대표컷이다. 카드를 누르고 들어온 사람이 방금 본 사진을 상세에서
+다시 만나야 두 화면이 한 꽃을 가리킨다는 것이 눈으로 읽힌다.
+
+코드는 이 약속을 **구조로** 지킨다 — 대표는 `FLOWER_PHOTOS` 에서, 나머지는
+`GALLERY_EXTRAS` 에서 오고 `photosFor()` 가 그 순서로만 잇는다. 순서를 뒤집을 자리가 없다.
+
+## 조사 개요
+
+| 항목 | 내용 |
+|---|---|
+| 조사일 | 2026-08-16 |
+| 대상 | 카탈로그 32종 전부 |
+| 결과 | **추가 51장** — 꽃당 1~3장(대표 포함 **2~4장**) |
+| 분포 | 2컷 14종 · 3컷 17종 · 4컷 1종(`ranunculus`) · **미달 0종** |
+| 소스 | 추가분 Unsplash 12 · Pexels 39. 대표 32장까지 합치면 **Unsplash 40 · Pexels 43 = 83장** |
+| 방법 | ① 위 §실측 스펙·대체안의 **검증된 백업 URL 23개 재활용**(20장 채택·3장 탈락) → ② 부족분은 Pexels 검색 → ③ 후보 **전량 썸네일로 눈 검증** → ④ 전수 HTTP 검증 |
+| 검증 | **83/83** HTTP 200 · `image/jpeg` · 원본 픽셀 실측이 선언값과 일치 · `w=1080` 요청이 실제로 1080px 로 내려옴. 실패 0건 |
+| 인물 포함 | 0장 |
+
+**검색 API 가 막혀 있었다.** 2026-08-15·16 라운드가 쓰던 Unsplash `/napi/search/photos` 는
+이제 봇 차단(Anubis) 뒤에 있고(HTTP 307 `Authorization required`), Pexels 검색 API 는 키를
+요구한다. 그래서 이번에는 **Pexels 검색 페이지를 읽어 사진 ID 를 뽑는** 경로를 썼다 —
+Pexels 는 ID 만 알면 CDN 주소가 `…/photos/{id}/pexels-photo-{id}.jpeg` 로 결정되기 때문이다.
+추가분에 Pexels 가 39장으로 몰린 것은 취향이 아니라 **이 접근성의 차이** 때문이다.
+
+## 선정 기준
+
+§실사 품질 재검토(2026-08-16)의 다섯 기준을 **그대로** 적용했다(근접도 → 선명·해상 →
+색 생동 → 종 정확성 → 다크 UI 조화). 갤러리라고 기준을 풀면 대표 32장을 두 번에 걸쳐 다시
+고른 일이 무의미해진다. 여기에 이 라운드만의 규칙 둘을 더했다:
+
+6. **색이 먼저다.** `flowers.csv` 의 `colors` 에 있는 색을 우선 채운다. 그 색의 쓸 만한 컷이
+   없으면 같은 색의 **다른 앵글**로 간다(`lavender`·`sunflower`·`camellia`·`corn-poppy` 가
+   그 경우다).
+7. **대표컷과 겹치지 않는다.** 같은 색·같은 구도를 한 장 더 놓는 것은 슬라이드를 늘릴 뿐
+   아무것도 더 말하지 않는다.
+
+## 꽃별 컷
+
+`U:` = `https://images.unsplash.com/`, `P:{id}` = `https://images.pexels.com/photos/{id}/pexels-photo-{id}.jpeg`.
+픽셀은 원본 **가로** 실측값이다. 라벨(`variant`)은 화면의 액자 위에 그대로 나가는 캡션이다.
+
+| flower_id / 컷 | 라벨 | 작가 / 소스 | 주소 · 원본 가로 |
+|---|---|---|---|
+| `rose-red` | 빨간 장미 | 2 | red·pink·yellow·white |
+| ↳ **대표(첫 장)** | `붉은빛` | Lye Clicks / Unsplash | `U:photo-1643282046863-c51a0e6d39bf` · 3448px |
+| ↳ 추가 1 | `분홍빛` | Tanya Budchenko / Pexels | `P:18829227` · 4000px |
+| `tulip-white` | 흰 튤립 | 3 | white·cream·yellow·red·variegated·pink·purple |
+| ↳ **대표(첫 장)** | `흰빛` | Rainhard Wiesinger / Unsplash | `U:photo-1616160513556-9eca56c718d3` · 6024px |
+| ↳ 추가 1 | `크림빛` | Andromeda99 / Pexels | `P:36998694` · 5000px |
+| ↳ 추가 2 | `분홍빛` | Tatsiana Snitko / Pexels | `P:12620487` · 4000px |
+| `freesia` | 프리지아 | 3 | yellow·white·purple |
+| ↳ **대표(첫 장)** | `연보랏빛` | Gintare Baradinske / Pexels | `P:12224117` · 3747px |
+| ↳ 추가 1 | `흰빛` | Ahmed / Pexels | `P:11724820` · 3915px |
+| ↳ 추가 2 | `붉은빛` | Gintare Baradinske / Pexels | `P:12224120` · 4000px |
+| `lily-asiatic` | 아시아틱 백합 | 3 | orange·pink·white·yellow |
+| ↳ **대표(첫 장)** | `주황빛` | M Poiss / Unsplash | `U:photo-1598443207199-33af6ea1aaa3` · 3840px |
+| ↳ 추가 1 | `검붉은 무늬` | Sephina Cornwall / Pexels | `P:37010067` · 5184px |
+| ↳ 추가 2 | `막 벌어질 때` | MikeGz / Pexels | `P:18302276` · 3470px |
+| `gerbera` | 거베라 | 3 | red·pink·yellow·orange·white |
+| ↳ **대표(첫 장)** | `붉은빛` | Marija Ivanovic / Unsplash | `U:photo-1636799666540-4d90bcbf82d6` · 6240px |
+| ↳ 추가 1 | `주황빛` | Anna Jackowska / Unsplash | `U:photo-1724122720444-1f54bc5ba04d` · 5760px |
+| ↳ 추가 2 | `분홍빛` | Ylanite Koppens / Pexels | `P:2343173` · 6000px |
+| `anemone` | 아네모네 | 2 | red·purple·white·pink·magenta |
+| ↳ **대표(첫 장)** | `푸른빛` | Siegfried Poepperl / Unsplash | `U:photo-1777567457818-a9e91885ff96` · 6000px |
+| ↳ 추가 1 | `붉은빛` | Karola G / Pexels | `P:7185715` · 6720px |
+| `hellebore` | 헬레보어 | 3 | white·cream·pink·purple·green |
+| ↳ **대표(첫 장)** | `흰빛` | Gordon Bishop / Pexels | `P:6580045` · 4333px |
+| ↳ 추가 1 | `분홍빛` | Siegfried Poepperl / Pexels | `P:31261507` · 5255px |
+| ↳ 추가 2 | `연둣빛` | Ellie Burgin / Pexels | `P:3796630` · 3898px |
+| `hyacinth` | 히아신스 | 3 | blue·purple·white·pink·red·yellow |
+| ↳ **대표(첫 장)** | `분홍빛` | Oscar Helgstrand / Unsplash | `U:photo-1606675647699-e6f0e1c39261` · 4016px |
+| ↳ 추가 1 | `보랏빛` | Pescha Taylor / Pexels | `P:38051960` · 8688px |
+| ↳ 추가 2 | `흰빛` | Jeffrey Riley / Pexels | `P:4023531` · 3456px |
+| `peony` | 작약 | 3 | white·cream·pink·coral·red·purple |
+| ↳ **대표(첫 장)** | `분홍빛` | Gayatri Malhotra / Unsplash | `U:photo-1596907731844-b2c4156abab0` · 6000px |
+| ↳ 추가 1 | `크림빛` | Haberdoedas / Unsplash | `U:photo-1747348744574-e8119373cbaf` · 7656px |
+| ↳ 추가 2 | `흰빛` | Fez Brook / Pexels | `P:38039807` · 5272px |
+| `hydrangea` | 수국 | 3 | blue·purple·pink·white·red·green |
+| ↳ **대표(첫 장)** | `푸른빛` | César Couto / Unsplash | `U:photo-1579833931255-04fca9af45be` · 6244px |
+| ↳ 추가 1 | `분홍빛` | Sveta Moisseyeva / Pexels | `P:38085976` · 3072px |
+| ↳ 추가 2 | `자홍빛` | Siegfried Poepperl / Pexels | `P:29158296` · 4800px |
+| `lavender` | 라벤더 | 2 | purple·white·pink |
+| ↳ **대표(첫 장)** | `보랏빛` | Mia Brzeskot / Unsplash | `U:photo-1783094674172-90ca237a47f3` · 6720px |
+| ↳ 추가 1 | `가까이` | Brett Sayles / Pexels | `P:1196311` · 5568px |
+| `sunflower` | 해바라기 | 3 | yellow·orange·red·brown |
+| ↳ **대표(첫 장)** | `노란빛` | Kelly Sikkema / Unsplash | `U:photo-1593003520833-5c874a3cef28` · 3712px |
+| ↳ 추가 1 | `위에서` | DI LAI / Pexels | `P:17296674` · 4996px |
+| ↳ 추가 2 | `뒤에서` | Roman Bengaiev / Pexels | `P:19944973` · 4000px |
+| `carnation` | 카네이션 | 3 | red·pink·white·yellow·purple·green·variegated |
+| ↳ **대표(첫 장)** | `붉은빛` | Townsend Walton / Unsplash | `U:photo-1699316048896-928064608723` · 6048px |
+| ↳ 추가 1 | `분홍빛` | Marek Ruczaj / Pexels | `P:37902604` · 5184px |
+| ↳ 추가 2 | `자주 테두리` | Irene Asthetik / Pexels | `P:35156328` · 2548px |
+| `lisianthus` | 리시안셔스 | 3 | purple·white·pink·cream·green |
+| ↳ **대표(첫 장)** | `보랏빛` | Pedro Vit / Unsplash | `U:photo-1783835697342-7c0ccffcfe12` · 4606px |
+| ↳ 추가 1 | `분홍빛` | Pawel Konrad / Pexels | `P:15252970` · 6000px |
+| ↳ 추가 2 | `흰빛` | Maison Lighthouse / Pexels | `P:34978903` · 3769px |
+| `ranunculus` | 라넌큘러스 | 4 | white·cream·yellow·orange·pink·red·purple |
+| ↳ **대표(첫 장)** | `주황빛` | Pedro Vit / Unsplash | `U:photo-1767555489475-2a38e30535e8` · 7006px |
+| ↳ 추가 1 | `분홍빛` | Pedro Vit / Unsplash | `U:photo-1742341383956-ae09c07675a3` · 7002px |
+| ↳ 추가 2 | `흰빛` | Albina White / Pexels | `P:7409640` · 3820px |
+| ↳ 추가 3 | `붉은 테두리` | Siegfried Poepperl / Pexels | `P:38566138` · 5504px |
+| `lily-of-the-valley` | 은방울꽃 | 2 | white·pink |
+| ↳ **대표(첫 장)** | `흰빛` | Océane George / Unsplash | `U:photo-1525106285486-d9fd5a988a23` · 6016px |
+| ↳ 추가 1 | `잎 사이` | Julia Butsykina / Unsplash | `U:photo-1683547049214-b30698e79dc5` · 3456px |
+| `chrysanthemum` | 국화 | 3 | white·yellow·purple·red·pink·orange·green |
+| ↳ **대표(첫 장)** | `노란빛` | Yang Yu / Unsplash | `U:photo-1624373400586-b7f27ea22aad` · 5772px |
+| ↳ 추가 1 | `흰빛` | Олександр К / Unsplash | `U:photo-1618927483829-2d16941299e8` · 4424px |
+| ↳ 추가 2 | `보랏빛` | Wyxina Tresse / Pexels | `P:17239995` · 6960px |
+| `narcissus` | 수선화 | 2 | yellow·white·cream·orange·pink |
+| ↳ **대표(첫 장)** | `흰빛` | Sebastian Schuster / Unsplash | `U:photo-1758141302921-aaf087d2617f` · 4000px |
+| ↳ 추가 1 | `노란빛` | Siegfried Poepperl / Pexels | `P:36679109` · 7200px |
+| `forget-me-not` | 물망초 | 2 | blue·pink·white |
+| ↳ **대표(첫 장)** | `하늘빛` | Nancy Hughes / Unsplash | `U:photo-1650634693805-4ca42ddc1af5` · 3996px |
+| ↳ 추가 1 | `가까이` | Jean-Yves Matroule / Unsplash | `U:photo-1622483327420-667f2913c907` · 3904px |
+| `cherry-blossom` | 벚꽃 | 2 | pink·white·cream·magenta |
+| ↳ **대표(첫 장)** | `분홍빛` | Ricky LK / Unsplash | `U:photo-1671042512616-41e6f8ade6e0` · 4654px |
+| ↳ 추가 1 | `연분홍빛` | Takashi Miyazaki / Unsplash | `U:photo-1615632427664-f7444e047182` · 5568px |
+| `camellia` | 동백 | 2 | red·white·pink |
+| ↳ **대표(첫 장)** | `붉은빛` | Nick Fewings / Unsplash | `U:photo-1615931632997-c592e375d6ef` · 3032px |
+| ↳ 추가 1 | `가까이` | Annie Spratt / Unsplash | `U:photo-1708183704955-da3601e1fc04` · 8256px |
+| `violet` | 제비꽃 | 2 | purple·blue·white·pink |
+| ↳ **대표(첫 장)** | `자줏빛` | Tom Fisk / Pexels | `P:12556024` · 8640px |
+| ↳ 추가 1 | `연보랏빛` | Petr Ganaj / Pexels | `P:19632845` · 4261px |
+| `iris` | 아이리스 | 3 | purple·blue·white·yellow·brown |
+| ↳ **대표(첫 장)** | `보랏빛` | Lisa Siefert / Unsplash | `U:photo-1779286341675-be412c1448f9` · 6000px |
+| ↳ 추가 1 | `가까이` | Oliver Wagenblatt / Pexels | `P:32806170` · 8192px |
+| ↳ 추가 2 | `푸른빛` | Aaron Burden / Pexels | `P:11619585` · 2927px |
+| `marigold` | 마리골드 | 3 | yellow·orange·brown·cream |
+| ↳ **대표(첫 장)** | `주황빛` | Julia Kwiek / Unsplash | `U:photo-1620005807545-2e08850d6591` · 5616px |
+| ↳ 추가 1 | `한 송이` | Mr. Pugo / Pexels | `P:34103630` · 4000px |
+| ↳ 추가 2 | `겹꽃 속` | Medina Loh / Pexels | `P:5445090` · 3024px |
+| `corn-poppy` | 개양귀비 | 2 | red·orange·white·pink·purple |
+| ↳ **대표(첫 장)** | `붉은빛` | Tanya Cressey / Unsplash | `U:photo-1560255261-85cbc816539f` · 4015px |
+| ↳ 추가 1 | `가까이` | Eduardo Goody / Unsplash | `U:photo-1606952460453-3b7edc2f67a7` · 6016px |
+| `jasmine` | 재스민 | 2 | white·cream·yellow |
+| ↳ **대표(첫 장)** | `흰빛` | Louis Tran / Pexels | `P:34677052` · 4624px |
+| ↳ 추가 1 | `한 다발` | Louis Tran / Pexels | `P:34677051` · 4624px |
+| `babys-breath` | 안개꽃 | 2 | white·pink·cream |
+| ↳ **대표(첫 장)** | `흰빛` | Tatiana Koroleva / Unsplash | `U:photo-1591868308567-c36f3a2c5407` · 5184px |
+| ↳ 추가 1 | `어둠 속` | Eva Bronzini / Pexels | `P:6064918` · 3909px |
+| `cosmos` | 코스모스 | 3 | pink·white·magenta·purple·yellow |
+| ↳ **대표(첫 장)** | `자홍빛` | William Warby / Unsplash | `U:photo-1704265586510-f09575135f35` · 3648px |
+| ↳ 추가 1 | `잎까지` | Seven Colors / Unsplash | `U:photo-1739308759028-c22d926c3634` · 4288px |
+| ↳ 추가 2 | `흰빛` | Niki Emmert / Pexels | `P:14675701` · 6000px |
+| `magnolia` | 목련 | 2 | white·cream·pink·purple |
+| ↳ **대표(첫 장)** | `흰빛` | Ronin / Unsplash | `U:photo-1713727747459-2c5774698437` · 3024px |
+| ↳ 추가 1 | `가지 위` | Brendan Church / Unsplash | `U:photo-1525723479413-421d81fea02d` · 3648px |
+| `pansy` | 팬지 | 3 | purple·yellow·white·blue·red·orange |
+| ↳ **대표(첫 장)** | `주황빛` | Wyxina Tresse / Unsplash | `U:photo-1705947722737-519c0bab7814` · 4640px |
+| ↳ 추가 1 | `보랏빛` | Wyxina Tresse / Pexels | `P:28003582` · 4640px |
+| ↳ 추가 2 | `노란빛` | Magda Ehlers / Pexels | `P:4611318` · 3648px |
+| `poinsettia` | 포인세티아 | 3 | red·white·pink·cream·magenta |
+| ↳ **대표(첫 장)** | `붉은빛` | Samantha Jean / Unsplash | `U:photo-1637538286398-10173661522b` · 5184px |
+| ↳ 추가 1 | `흰빛` | Eva Bronzini / Pexels | `P:5947869` · 6000px |
+| ↳ 추가 2 | `분홍빛` | Eva Bronzini / Pexels | `P:5947770` · 6000px |
+| `daisy` | 데이지 | 2 | white·pink·red |
+| ↳ **대표(첫 장)** | `흰빛` | Antje Winkler / Unsplash | `U:photo-1770061737103-18986c61fa5f` · 7008px |
+| ↳ 추가 1 | `한 송이` | Pierre Bamin / Unsplash | `U:photo-1647808713955-64685f28f728` · 5472px |
+
+### 라벨 어휘
+
+색 라벨은 **`…빛`** 으로 끝난다(`흰빛` `크림빛` `분홍빛` `자홍빛` `연분홍빛` `붉은빛`
+`주황빛` `노란빛` `연둣빛` `푸른빛` `하늘빛` `보랏빛` `연보랏빛` `자줏빛`). 색이 아닌 변형은
+아래 열넷만 쓴다 — `가까이` `뒤에서` `위에서` `한 송이` `한 다발` `잎 사이` `잎까지`
+`가지 위` `겹꽃 속` `어둠 속` `막 벌어질 때` `검붉은 무늬` `자주 테두리` `붉은 테두리`.
+**`tests/components/photos.test.ts` 가 이 목록을 들고 있다** — 새 어휘를 쓰려면 거기 먼저 적어라.
+
+라벨이 `colors` 첫 값과 다를 때는 **사진이 이긴다**(팬지의 CSV 대표색은 purple 이지만
+대표컷은 주황이다). 캡션은 분류가 아니라 눈에 보이는 것을 말해야 한다.
+
+## 이번에 메운 구멍 둘
+
+| 문서가 열어 두었던 것 | 이번에 한 일 |
+|---|---|
+| §남은 판단 1 — **`violet` 의 종 근거가 속(Viola)까지로 내려갔다.** 대표컷 제목이 "Violet Flower" 라 *V. odorata* 여부가 문자로 없었다. 되찾으려면 위키미디어 컷뿐인데 폭 치환이 안 됐다 | 갤러리 추가컷(Petr Ganaj / Pexels)의 설명에 **"viola odorata" 가 명기**돼 있다. 대표컷은 그대로 두고 **학명 근거를 갤러리가 든다** — 폭 치환도 되는 Pexels 컷이다 |
+| §32종 대표컷 `babys-breath` 비고 — **"다크 배경 무료 컷 중 실제 Gypsophila 인 것을 찾지 못했다"**(상위 다크 컷이 Erigeron·Cosmos 오분류였다) | 검은 배경의 진짜 Gypsophila 를 찾았다(Eva Bronzini / Pexels, `어둠 속`). 대표컷이 밝은 컷일 수밖에 없던 이유가 이 컷으로 풀린다 |
+
+## 검토했으나 제외한 것
+
+| 대상 | 제외 사유 |
+|---|---|
+| Pexels "white anemone" 상위 전량 (`18244764` `37397564` `2297542` 등) | 전부 **일본아네모네**(*A. hupehensis* / *A.* × *hybrida*) — CSV 학명은 *A. coronaria* 다. 검은 화심 + 흰 테가 있는 컷만 채택했다 |
+| Pexels James Lee 라벤더 (`4083396`) 외 stoechas 다수 | 토끼귀 포엽 = **스페인라벤더**(*L. stoechas*). CSV 는 *L. angustifolia* |
+| Unsplash Little Annabell 백합 (`photo-1782872752101`, §대체안) | 갈빛으로 죽은 저채도 — 색 생동 기준 위반 |
+| Unsplash Blu 리시안셔스 (`photo-1779911533677`, §대체안) | 2026-08-16 에 **갈변으로 대표에서 내려온 바로 그 컷**이다. 갤러리에서도 같은 이유로 배제한다 |
+| Unsplash Michelle Tresemer 라벤더 (`photo-1687878267753`, §대체안) | 밭 원경 — 근접도 기준 위반(대표에서 내려온 사유 그대로) |
+| Pexels M Saim Akin 벚꽃 (`36855576`) | 검정 배경 최상급이지만 **짙은 자주 잎**과 함께 핀다 = 자엽자두(*Prunus cerasifera* 'Nigra') 계열 |
+| Pexels 분홍 목련 다수 (`24538181` `37235638`) | **접시목련**(*M.* × *soulangeana*) — CSV 는 *M. kobus*(별목련 절). 배경도 파란 하늘·건물이다 |
+| Pexels Koko 흰 히아신스 (`7327650`) 외 | **블루벨**(*Hyacinthoides*)·**무스카리**(그레이프 히아신스) — 속이 다르다. 히아신스 검색이 이 둘로 오염돼 있다 |
+| Pexels Chirag 노란 마리골드 (`27075798`) | 평평한 관상화 원반 = **금잔화**(*Calendula*) — 속이 다르다 |
+| Pexels 오리엔탈 백합 다수 (`38865930` `37834881`) | 뒤로 말린 꽃잎·큰 화분 = 오리엔탈 계열. 아시아틱과 다르다(대표 선정 때와 같은 사유) |
+| §대체안의 위키미디어 두 컷(`violet` · `jasmine`) | 폭 치환 불가(§위키미디어는 왜 폭 치환이 안 되는가) — 갤러리는 컷마다 `srcset` 을 내므로 더 손해다 |
+| Pexels Pixabay 노란 프리지아 (`235998`) | 2000px — **2400px 하한 미달** |
+| Pexels Dirk Schuneman 라벤더 (`17486402`) | 2087px — 하한 미달 |
+| Pexels Fotios 안개꽃 (`11796465`), Merve Kaya 수국 (`38959518`) | CDN 주소가 HTTP 404 — 표준 `pexels-photo-{id}.jpeg` 경로에 파일이 없다 |
+
+## 화면 — 배치를 다시 짰다
+
+사용자 지적: **"현재 실사 + 도판 2장 배치가 깔끔하지 않다."**
+
+**전:** 히어로가 2열 그리드였고 왼쪽 칸에 실사와 세밀화 액자가 **위아래로** 섰다
+(`grid-template-areas: 'shot text' / 'plate text'`). 사진 한 장과 그림 한 장이 같은 크기대로
+나란히 놓여 "둘 중 뭐가 이 꽃이지" 싶었고, 오른쪽 이름 칸 아래로는 500px 넘는 빈 자리가 남았다.
+
+**후:** 액자를 히어로에서 빼내 **바로 아래 제 소절**로 내렸다(`도감의 세밀화` — "사진이
+나오기 전, 식물학자들은 이 꽃을 이렇게 그려 두었어요"). 그래서
+
+- 히어로는 **갤러리 + 이름·꽃말** 2열로 단순해졌고, 오른쪽 빈 자리가 절반으로 줄었다.
+- 위계가 **자리로** 말한다 — 실사가 주인공, 세밀화는 그다음 이야기. 크기로 눌러 둘 필요가
+  없어져 액자는 264px → 340px 로 **오히려 커졌다.**
+- 갤러리의 넘김 컨트롤이 액자와 뒤엉키지 않는다(이게 재배치의 직접적 계기였다).
+- 도판 크레딧과 `note` 각주는 **그대로** 액자 아래에 있다.
+
+갤러리 자체의 규격(§1.6b):
+
+| 요소 | 규격 |
+|---|---|
+| 이전·다음 | 원형 **44×44** · 1px 보더 · 아이콘 스트로크 1.6 · 액자 안 좌우, 반투명 배경 + blur |
+| 점 인디케이터 | **세그먼트 문법** — 전경 8% pill 트랙 안의 토글. 선택은 `--ctrl-on` 채움. 누르는 면 **44×44**, 그 안에 8px 점 |
+| 변형 라벨 | 액자 **위** 한 줄(왼쪽 라벨 · 오른쪽 `2 / 4`). **사진 위에 글자를 얹지 않는다**(§1.5g) |
+| 크레딧 | 기존 `출처 ›` 디스클로저 그대로. **컷을 넘기면 안의 한 줄도 함께 바뀐다** |
+| 키보드 | 갤러리 안에 포커스가 있으면 `←` `→` |
+| 모바일 | 스와이프(임계 44px). `touch-action: pan-y` 라 세로 스크롤을 뺏지 않는다 |
+| CLS | **0.** 액자가 `aspect-ratio: 4/3` 으로 자리를 먼저 잡고, 라벨 줄도 라벨 없는 컷을 위해 높이를 비워 둔다 |
+| 지연 로드 | 첫 장만 즉시. 나머지는 `src` 를 비워 두고 넘어갈 때·마우스가 얹힐 때 데운다(결과 화면 `ResultView` 의 선례) |
+| reduced-motion | `globals.css` 가 전환을 0 으로 만든다 → 즉시 교체 |
+
+## 코드에 반영한 것
+
+| 문서가 말한 것 | 코드가 한 일 | 자리 |
+|---|---|---|
+| 대표컷 32장 불변 | `FLOWER_PHOTOS` 를 **한 줄도 고치지 않았다.** 갤러리 라벨조차 별도 표(`PRIMARY_VARIANT`)에 두고 `photosFor()` 가 조립할 때만 합친다 — 32줄에 손대면 그 약속이 눈에 안 보이게 흔들린다 | `src/lib/photos/index.ts` |
+| 추가컷 51장 | `GALLERY_EXTRAS` 표를 새로 냈다. 줄마다 교체·채택 사유와 종 근거를 주석으로 남겼다 | 〃 |
+| 첫 장 = 대표 | `photosFor(id)` = `[대표, ...추가]`. **구조로** 보장하고 테스트가 한 번 더 못 박는다 | 〃 |
+| 변형 라벨 | `FlowerPhoto.variant?` 를 더했다. 한 장만 보여 주는 자리(랜딩·결과·편지)에서는 뜻이 없는 값이라 `photoFor()` 는 이 값을 주지 않는다 | 〃 |
+| 대표 단수 API 불변 | `photoFor` · `photoSrc` · `photoSrcSet` · `photoCredits` · `needsDarkOverlay` · `canLeadHero` **시그니처·동작 그대로**. 랜딩·결과·편지는 한 줄도 바뀌지 않았다 | 〃 |
+| 상세 뷰모델 | `FlowerDetailData.photo`(단수) → `photos: DetailPhoto[]`. 컷마다 `src`(1600px) + `srcSet`(640·1080·1600) + `variant` | `components/flowers/types.ts` · `data.ts` |
+| 슬라이드 화면 | `FlowerGallery.tsx`(클라이언트) 신설. 컷이 한 장뿐인 꽃에는 컨트롤을 세우지 않는다 | `components/flowers/FlowerGallery.tsx` |
+| 세밀화 재배치 | 히어로 그리드에서 빼 `도감의 세밀화` 소절로. `grid-template-areas` 가 사라지고 평범한 2열이 됐다 | `app/flowers/[slug]/page.tsx` · `flowers.module.css` |
+
+### 새로 세운 그물 (`tests/components/photos.test.ts`)
+
+- **첫 장 = 대표컷** — `src`·`credit`·`alt`·`width` 전부 대조. 대표 상수에 `variant` 가 새어
+  들어가도 실패한다.
+- **꽃마다 2~4장**, 같은 주소를 두 번 싣지 않는다, `flowerId` 가 어긋나지 않는다.
+- **추가컷도 같은 규정** — 승인 소스·무료 경로·쿼리 없는 주소·크레딧 꼬리표 일치·2400px 하한.
+- **라벨 어휘** — `…빛` 이거나 허용 목록에 있어야 하고, 8자를 넘지 않고, 한 꽃 안에서 겹치지
+  않는다.
+- **색 변형이 실제로 있다** — 색 라벨 둘 이상인 꽃이 20종 밑으로 떨어지면 실패한다
+  (요청의 알맹이가 조용히 빠져나가는 것을 막는다).
+- **포인세티아는 갤러리에서도 "꽃잎"이라 말하지 않는다**(§주의 2).
+- **제비꽃 갤러리에 *V. odorata* 명시 컷이 있다** — 위에서 메운 구멍이 되돌려지지 않게.
+
+## 검증
+
+| 항목 | 결과 |
+|---|---|
+| **83장 전수** URL | HTTP 200 · `image/jpeg` · 선언 `width` = 실측 원본 가로(83/83 일치) · `w=1080` 요청이 실제로 1080px 로 내려옴. **실패 0건** |
+| 후보 눈 검증 | 채택·탈락 후보 **105장을 전부 썸네일로 열어** 근접도·색 생동·배경·종을 확인했다(문서상 추론이 아니다) |
+| `npm run lint` · `typecheck` | exit 0 |
+| `npx vitest run` | 35 파일 · **562 테스트** 전부 통과(신규 9건 포함) |
+| `npm run build` | 성공(도감 32종 SSG 포함) |
+| 브라우저(Playwright, 390·1280) | `ranunculus`(4컷)·`camellia`(2컷)·`tulip-white`(3컷)에서 넘김·키보드 `←→`·점 이동·스와이프·크레딧 갱신 전부 동작. **CLS 0.00000~0.00010** · 가로 오버플로 없음 · 콘솔 에러 0 · 터치 타깃 전부 44×44 · 지연 로드 확인(첫 화면에 `src` 붙은 컷 1장) |
+
+## 남은 판단 (Advisor 몫)
+
+1. **`layout.tsx` 의 preconnect 에 Pexels 가 없다.** 이전 라운드의 지적이 그대로 남아 있고,
+   이제 **83장 중 43장**이 `images.pexels.com` 에서 온다 — 무게가 더 커졌다.
+   (`src/app/layout.tsx` 는 이번에도 작업 범위 밖이었다.)
+2. **`rose-red` 갤러리에 분홍 장미를 넣었다.** §사용 규칙 3 은 **빨강·와인 레드** 장미를 막고,
+   분홍은 그 금지선 밖이라고 읽었다. 도감·카드 한정이라는 자리 제한과 `canLeadHero()` 가드는
+   대표컷과 똑같이 걸린다. 장미를 아예 한 장으로 묶어 두고 싶다면 이 한 줄만 빼면 된다.
+3. **`iris` 세 컷이 전부 속(Iris) 수준이다.** CSV 는 *Iris* × *hollandica*(수염 없는 더치
+   아이리스)인데, 무료 풀에서 종명이 문자로 박힌 컷을 찾지 못했다. 셋 다 **수염이 없다**는
+   것까지는 확인했고(수염붓꽃 컷은 배제), 그 이상은 대표컷 때와 같은 한계다.
+4. **`hellebore` 도 속 수준이다.** CSV 는 *H. niger* 인데 채택 셋(흰 반점·분홍·연둣빛)은
+   원예 교잡종·근연종으로 보인다. 대표컷을 고를 때 이미 속 수준으로 합의한 자리라 같은 선을
+   따랐다.
+5. **`freesia` 의 `붉은빛` 은 CSV `colors`(yellow·white·purple) 에 없는 색이다.**
+   대표컷과 같은 촬영분이라 종은 확실하고 화면에서 가장 강한 컷이지만, 엄밀히는 카탈로그가
+   적어 두지 않은 색이다. CSV 에 색을 더할지, 컷을 뺄지는 데이터 쪽 판단이다.

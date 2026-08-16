@@ -656,6 +656,20 @@ body.db-nav-compact .db-nav {
   color: var(--fg-70);
 }
 /**
+ * 리드 둘째 줄 — 화면 분위기·넘기기 안내 (§1.5n 리듬 재조정).
+ *
+ * 첫 줄이 그 꽃의 **이야기 한 줄을 통째로 인용**하게 되면서 길어졌다(훅 최장 59자).
+ * 안내 문장을 같은 문단에 이어 붙이면 인용이 문단 한가운데 파묻혀 눈에 걸리지 않는다.
+ * 그래서 줄을 가르고 한 단 내린다 — **읽지 않아도 되는 줄**이라는 뜻이기도 하다.
+ * 15.5(리드) → 14.5(여기) → 14(탄생화 각주) 로 세 단이 눈에 갈린다.
+ */
+.db-today-aside {
+  margin-top: clamp(8px, 1.1vw, 11px);
+  font-size: 14.5px;
+  line-height: 1.74;
+  color: var(--fg-50);
+}
+/**
  * 탄생화 각주 (§1.5e 절제) — 리드보다 한 단 작고 한 단 흐리다.
  * 면(배경·보더)을 주지 않는 이유가 곧 이 줄의 규격이다: 박스를 두르는 순간 카드가 되고,
  * 카드가 되면 오늘의 꽃과 위계가 같아진다. 14px 은 §1.6b 캡션 하한(12px) 위이면서
@@ -679,6 +693,127 @@ body.db-nav-compact .db-nav {
 .db-today-birth a:focus-visible {
   color: var(--fg);
   text-decoration-color: currentColor;
+}
+
+/**
+ * 화면의 빛깔 선택기 (§1.4c v3.4 — 2026-08-16 개정) -------------------
+ *
+ * 전역 테마를 바꾸는 **유일한** 컨트롤이다. 예전에는 카드마다 있던 "이 꽃의 분위기로
+ * 바꾸기" 버튼이 그 일을 했는데, 카드가 32장이라 같은 컨트롤이 32번 반복됐다.
+ *
+ * 위계는 탄생화 각주와 같은 단이다 — 이 줄은 **읽는 것이 아니라 만지는 것**이고,
+ * 리드보다 커지는 순간 "오늘의 꽃"이 아니라 색 고르기가 챕터의 주인공이 된다.
+ */
+.db-tint {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  margin-top: clamp(14px, 2vw, 20px);
+}
+.db-tint-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: var(--fg-50);
+}
+/* 좁은 화면에서는 머리말을 칩 줄 위로 올린다 — 같은 줄에 두면 칩이 한 줄 더 접힌다
+   (`/stories` 필터 줄과 같은 판단·같은 값). */
+@media (max-width: 639px) {
+  .db-tint-label {
+    flex-basis: 100%;
+  }
+}
+.db-tint-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+/* §1.6b 칩 규격 — 높이 44px 고정, 줄일 수 있는 것은 가로 여백뿐.
+   선택 표현은 `--cta-bg`/`--cta-fg` 짝 채움 **하나뿐**이다(밑줄·테두리 두께 금지).
+   채움을 골드로 되돌리지 마라 — §1.4 가 골드 배경 위 텍스트를 금지한다. */
+.db-tint-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 44px;
+  padding: 0 15px;
+  border-radius: 9999px;
+  border: 1px solid var(--ctrl-line);
+  background: transparent;
+  font-size: 13.5px;
+  line-height: 1;
+  color: var(--fg-70);
+  transition: border-color var(--ctrl-t) var(--ease), background-color var(--ctrl-t) var(--ease),
+    color var(--ctrl-t) var(--ease);
+}
+@media (max-width: 479px) {
+  .db-tint-chip {
+    padding: 0 12px;
+  }
+}
+.db-tint-chip:hover,
+.db-tint-chip:focus-visible {
+  background: var(--ctrl-hover);
+  color: var(--fg);
+}
+.db-tint-chip[aria-pressed='true'],
+.db-tint-chip[aria-pressed='true']:hover {
+  background: var(--ctrl-on);
+  border-color: var(--ctrl-on);
+  color: var(--ctrl-on-fg);
+  font-weight: 600;
+}
+/**
+ * 계열 색 점 — 라벨이 말하는 색을 **그대로 보여 주는 견본**이다.
+ *
+ * §1.6b 가 금지한 "선택의 이중 표시"가 아니다: 이 점은 눌림 상태와 무관하게 늘 같은 색이고,
+ * 다섯 칩이 서로 무엇이 다른지를 말한다(`숲빛`이 어떤 초록인지는 글자로 알 수 없다).
+ * 그래서 값은 **전역 테마를 따라가지 않는 팔레트 원색 고정**이다 — `var(--accent)` 류를 쓰면
+ * 다섯 점이 전부 같은 색이 되어 견본 노릇을 못 한다.
+ *
+ * 링은 **글자색(`currentColor`)** 이다. 고정 헤어라인(`--hair-2`)으로 둘렀더니 계열색 자체가
+ * 배경에 붙는 자리에서 점이 통째로 사라졌다(실측: 다크 배경 위 숲 1.6:1 · 와인 2.49:1 —
+ * §1.6 의 비텍스트 하한 3:1 미달). 라벨과 같은 색으로 두르면 어느 테마에서든 윤곽이
+ * 라벨과 같은 대비(≈10:1)를 갖고, 안쪽 색조는 그 위에서 힌트로 읽힌다.
+ */
+.db-tint-dot {
+  width: 10px;
+  height: 10px;
+  flex: none;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px currentColor;
+}
+.db-tint-chip[data-tint='forest'] .db-tint-dot {
+  background: var(--stem);
+}
+.db-tint-chip[data-tint='ivory'] .db-tint-dot {
+  background: var(--ivory-3);
+}
+.db-tint-chip[data-tint='gold'] .db-tint-dot {
+  background: var(--gold);
+}
+.db-tint-chip[data-tint='wine'] .db-tint-dot {
+  background: var(--rose);
+}
+.db-tint-chip[data-tint='dusk'] .db-tint-dot {
+  background: var(--lavender);
+}
+/**
+ * 눌린 칩의 점은 **글자색을 따른다.**
+ *
+ * 각 테마의 CTA 채움색이 곧 그 계열의 색이라, 눌린 칩에서는 점과 배경이 같은 색이 된다 —
+ * 와인빛은 채움(#8A3448)과 점(`--rose` #8A3448)이 **완전히 일치해 점이 사라졌고**,
+ * 금빛(#8A672B 위 #C8963E)·보랏빛(#4A4160 위 #83779C)도 1.7~2.3:1 로 §1.6 의 비텍스트
+ * 하한(3:1)을 밑돌았다.
+ *
+ * 고른 순간 그 색은 **화면 전체가 입고 있다** — 칩 하나가 색을 다시 주장할 이유가 없다.
+ * 그래서 점을 라벨과 같은 색으로 넘긴다: 대비는 글자와 같은 값이 보장되고(CTA 는 배경·전경이
+ * 짝인 색이다), 칩 폭도 흔들리지 않는다(숨기면 다섯 칩이 눌릴 때마다 자리를 바꾼다).
+ */
+.db-tint-chip[aria-pressed='true'] .db-tint-dot {
+  background: currentColor;
+  box-shadow: none;
 }
 
 /* 캐러셀 ------------------------------------------------------------- */
@@ -859,12 +994,13 @@ body.db-nav-compact .db-nav {
 /**
  * 카드 전면 덮개 링크 — 카드 어디를 눌러도 그 꽃의 도감(`/flowers/{id}`)으로 간다.
  *
- * `<a>` 로 카드를 통째로 감싸지 않는 이유는 카드 안에 이미 버튼("이 꽃의 분위기로 바꾸기")이
- * 있기 때문이다 — 감싸면 링크 안에 버튼이 들어가 **중첩 인터랙티브**가 된다. 그래서 링크는
- * 버튼의 **형제**로 두고 절대 배치로 카드를 덮는다(카드 오버레이 링크 패턴).
- *   · 보이는 이름은 `.db-card-name` 이고, 링크의 이름은 `aria-label` 이 준다
- *     (`{꽃 이름} — 도감에서 보기` — 보이는 텍스트로 시작하므로 WCAG 2.5.3 도 지킨다).
- *   · 버튼은 `z-index: 2` 로 이 덮개보다 한 단 위에 뜬다.
+ * `<a>` 로 카드를 통째로 감싸지 않는다. 감싸면 링크의 **접근 가능한 이름이 카드 본문
+ * 전체**(꽃말·이야기 티저·상황 예시·각주)가 되어 스크린 리더가 문단을 통째로 읽는다.
+ * 그래서 빈 `<a>` 를 절대 배치로 덮고 이름은 `aria-label` 한 줄로 붙든다
+ * (`{꽃 이름} — 도감에서 보기` — 보이는 텍스트로 시작하므로 WCAG 2.5.3 도 지킨다).
+ *
+ * ⚠ 카드 안에 버튼을 새로 넣지 마라. 넣는 순간 덮개 위로 `z-index` 를 올려야 하고,
+ *   그건 §1.4c v3.4 가 걷어 낸 구조다(카드 32장 × 같은 컨트롤).
  */
 .db-card-hit {
   position: absolute;
@@ -1141,41 +1277,10 @@ body.db-nav-compact .db-nav {
   line-height: 1.7;
   color: var(--fg-70);
 }
-/* 꽃 칩 — §1.6b 칩 규격.
-   기본은 투명 배경 + 전경 72%, 선택은 **`--cta-bg`/`--cta-fg` 짝 채움 + 동색 보더** 하나로만
-   표시한다(점·밑줄 같은 두 번째 표현 금지). 높이는 44px 로 못 박는다.
-   채움을 골드로 되돌리지 마라 — 위 `--ctrl-on` 주석 참고(§1.4 골드 배경 금지선). */
-/* 스트레치 링크 덮개(`.db-card-reveal::after`, z-index 1) 위에 떠 있어야 눌린다. */
-.db-adopt {
-  position: relative;
-  z-index: 2;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  min-height: 44px;
-  margin-top: auto;
-  padding: 0 18px;
-  border-radius: 9999px;
-  border: 1px solid var(--ctrl-line);
-  background: transparent;
-  font-size: 13.5px;
-  font-weight: 500;
-  color: var(--fg-70);
-  transition: border-color var(--ctrl-t) var(--ease), background-color var(--ctrl-t) var(--ease),
-    color var(--ctrl-t) var(--ease);
-}
-.db-adopt:hover,
-.db-adopt:focus-visible {
-  background: var(--ctrl-hover);
-  color: var(--fg);
-}
-.db-adopt[aria-pressed='true'],
-.db-adopt[aria-pressed='true']:hover {
-  background: var(--ctrl-on);
-  border-color: var(--ctrl-on);
-  color: var(--ctrl-on-fg);
-}
+/* 카드 안에는 컨트롤이 없다 (§1.4c v3.4 — 2026-08-16).
+   여기 있던 `.db-adopt`("이 꽃의 분위기로 바꾸기")는 카드 32장에 그대로 32번 복제되는
+   컨트롤이었다. 전역 테마 전환은 리드 아래 `.db-tint` 선택기 한 줄로 옮겼다.
+   되살리지 마라 — 카드의 유일한 인터랙션은 도감 덮개 링크(`.db-card-hit`)다. */
 
 /* 캐러셀 컨트롤 ------------------------------------------------------ */
 .db-carousel-foot {

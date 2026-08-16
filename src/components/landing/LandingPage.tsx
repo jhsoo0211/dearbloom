@@ -6,7 +6,8 @@
  * 확정 시안 `design/landing-v3/home.html` 을 React 로 옮기되, v3.3 확정 사항을 따른다:
  *  · 전역 테마는 **진입 시 1회**(오늘의 꽃 → 카테고리)로 정해지고 세션 중 저절로 바뀌지 않는다.
  *  · 오늘의 꽃 탐색은 슬라이드 캐러셀이며, 넘겨도 카드 안쪽만 바뀐다.
- *  · 전역 전환은 카드 안 "이 꽃의 분위기로 바꾸기" 버튼을 눌렀을 때만.
+ *  · 전역 전환은 리드 아래 "화면의 빛깔" 선택기 한 줄로만 일어난다(§1.4c v3.4 —
+ *    카드마다 있던 반복 버튼은 폐지했다).
  *
  * 데이터(오늘의 꽃·꽃말·설화)는 서버에서 계산해 props 로 받는다 — 여기서 fs 를 만지지 않는다.
  */
@@ -14,8 +15,15 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 
+import { STORY_CATEGORIES } from '@/components/stories/categories';
+
 import TodayCarousel from './TodayCarousel';
-import { SECTION_IMAGES, withParticle, type LandingData, type SlideView } from './landing-data';
+import {
+  CATEGORY_THEMES,
+  SECTION_IMAGES,
+  withParticle,
+  type LandingData,
+} from './landing-data';
 import { useLandingMotion } from './useLandingMotion';
 import './landing.css';
 
@@ -353,8 +361,6 @@ export default function LandingPage({ data }: { data: LandingData }) {
     [enter],
   );
 
-  const adopt = useCallback((slide: SlideView) => setGlobalSlug(slide.themeSlug), []);
-
   const { today, hero } = data;
   const heroStyle = hero.grade
     ? ({ '--db-grade': hero.grade } as React.CSSProperties)
@@ -591,19 +597,26 @@ export default function LandingPage({ data }: { data: LandingData }) {
                 <p className="db-overline" data-db-reveal>
                   No.&nbsp;01 <span className="db-ko">오늘의 꽃</span>
                 </p>
-                {/* §1.5d — 스펙 언어(카드 안만 바뀌고…) 금지. 테마 이름도 여기서는 부르지 않는다
-                    (카드가 이미 말해 준다). 리드는 네 문장 리듬: 오늘의 꽃 → 고른 이유 → 화면 분위기 → 넘기기 안내.
-                    고른 이유는 엔진의 선정 근거(basis — 제철 우선 로직)를 사람의 말로 옮긴 것이다(사용자 요청 2026-08-16). */}
+                {/*
+                  §1.5d — 스펙 언어(카드 안만 바뀌고…) 금지. 테마 이름도 여기서는 부르지 않는다
+                  (카드가 이미 말해 준다).
+
+                  리드는 **두 줄로 나뉜다**(§1.5n · 사용자 요청 2026-08-16):
+                    ① `db-today-lede`  — 오늘의 꽃 + 고른 이유. 이유는 서버가 그 꽃의 실제
+                       이야기에서 끌어와 조합한 문장이라(`data.todayReason`) 길다. 안내 문장과
+                       한 문단에 섞이면 인용이 묻힌다.
+                    ② `db-today-aside` — 화면 분위기 + 넘기기 안내. 읽지 않아도 되는 줄이다.
+                  ⚠ `todayReason` 은 인용 부호까지 서버가 붙여 내려보낸다. 여기서 자르거나
+                    따옴표를 덧붙이지 마라(훅 원문에 `"`·`'` 가 섞여 있다).
+                */}
                 <h2 className="db-today-title" id="db-today-title" data-db-split>
                   오늘 꺼내 온 한 송이, 그리고 이어지는 이야기들
                 </h2>
                 <p className="db-today-lede" data-db-reveal>
                   {data.todayLabel}, 오늘의 꽃은 {withParticle(today.name, 'copula')}.{' '}
-                  {data.basis === 'in_season'
-                    ? '요즘이 한창 피는 철이라 오늘의 자리에 세웠어요.'
-                    : data.basis === 'adjacent'
-                      ? '곧 철을 맞는 꽃이라 먼저 인사를 건네요.'
-                      : '철을 가리지 않고 오래 사랑받아 온 꽃이에요.'}{' '}
+                  {data.todayReason}
+                </p>
+                <p className="db-today-aside" data-db-reveal>
                   화면의 빛깔도 이 꽃의 분위기를 닮아 있어요. 카드를 옆으로 넘기면 다른 꽃들의
                   이야기가 이어져요.
                 </p>
@@ -629,18 +642,60 @@ export default function LandingPage({ data }: { data: LandingData }) {
                     — 꽃말은 ‘{data.birthFlower.meaning}’{data.birthFlower.meaningCopula}.
                   </p>
                 )}
+
+                {/*
+                  화면의 빛깔 선택기 (§1.4c v3.4 — 2026-08-16 개정).
+
+                  예전에는 전역 테마를 카드 안 "이 꽃의 분위기로 바꾸기" 버튼이 바꿨다.
+                  카드가 32장이라 **같은 컨트롤이 32번 반복**됐고, 그건 §1.6b 가 컨트롤을
+                  한 벌로 통합한 취지와 정면으로 어긋난다. 전환은 여기 한 줄로 모은다.
+
+                  누르는 것은 꽃이 아니라 **계열**이다 — 색감을 소유하는 것이 카테고리이므로
+                  (§1.4c v3.2) 고르는 단위도 카테고리여야 말이 맞는다.
+                */}
+                <div
+                  className="db-tint"
+                  role="group"
+                  aria-labelledby="db-tint-label"
+                  data-db-reveal
+                >
+                  <span className="db-tint-label" id="db-tint-label">
+                    화면의 빛깔
+                  </span>
+                  <div className="db-tint-chips">
+                    {STORY_CATEGORIES.map((tint) => {
+                      const slug = CATEGORY_THEMES[tint.key].slug;
+                      const on = slug === globalSlug;
+                      return (
+                        <button
+                          key={tint.key}
+                          type="button"
+                          className="db-tint-chip"
+                          data-tint={tint.key}
+                          aria-pressed={on}
+                          aria-label={`${tint.label} 색감으로 보기`}
+                          onClick={() => setGlobalSlug(slug)}
+                        >
+                          <span className="db-tint-dot" aria-hidden="true" />
+                          {tint.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
 
               {/*
-                캐러셀 건너뛰기 (접근성 리뷰 P1-5). 카드 한 장에 링크 하나 + 버튼 하나라
-                32장이면 **탭 정지점이 64개**다 — 키보드 사용자가 다음 이야기로 가려면
-                예순 번을 눌러야 했다. 평소에는 숨어 있다가 포커스가 오면 나타난다.
+                캐러셀 건너뛰기 (접근성 리뷰 P1-5). 예전에는 카드 한 장에 링크 하나 +
+                분위기 버튼 하나라 32장이면 탭 정지점이 64개였다. 버튼을 걷어 낸 지금도
+                (§1.4c v3.4 — 전환은 위 "화면의 빛깔" 한 줄로 모았다) 32개는 남는다.
+                평소에는 숨어 있다가 포커스가 오면 나타난다.
               */}
               <a className="db-skip db-skip-inline" href="#db-trust">
                 꽃 카드 {data.slides.length}장 건너뛰기
               </a>
 
-              <TodayCarousel slides={data.slides} globalSlug={globalSlug} onAdopt={adopt} />
+              <TodayCarousel slides={data.slides} />
             </div>
           </section>
 

@@ -39,6 +39,13 @@
  *      원본 바이트를 우리 도메인에 복사해 서빙하는 것은 그 조항에 가까이 간다.
  * 그래서 `src` 는 **파라미터가 없는 순수 원본 주소**만 갖고, 폭·포맷은 `photoSrc()` 가 붙인다.
  *
+ * ── 컷이 한 장이 아니다 (2026-08-16 갤러리 라운드) ───────────────────
+ * 표가 둘이다. **대표 32장**(`FLOWER_PHOTOS`)과 그 뒤에 붙는 **갤러리 추가컷**
+ * (`GALLERY_EXTRAS`, 꽃당 1~3장). 나누어 둔 이유는 자리마다 필요가 다르기 때문이다:
+ *   · 한 장만 보여 주는 자리(랜딩 히어로·카드, 결과, 편지)는 `photoFor()` — **대표 하나**.
+ *   · 여러 장을 넘겨 보는 자리(도감 상세)는 `photosFor()` — **대표를 첫 장으로** 한 전부.
+ * 그래서 대표를 바꾸면 서비스 전체가 따라 움직이고, 갤러리를 늘려도 다른 화면은 그대로다.
+ *
  * 순수 데이터·순수 함수만 둔다(React·fs 의존 금지) — 서버·클라이언트 양쪽에서 import 한다.
  */
 
@@ -58,6 +65,18 @@ export interface FlowerPhoto {
   width?: number;
   /** 이 컷을 쓸 때 알아야 하는 한 줄. 화면에 나가지 않는 **개발자용 각주**다. */
   note?: string;
+  /**
+   * 같은 꽃의 **다른 컷들 사이에서 이 컷이 무엇인가** — 도감 갤러리 캡션에 그대로 나간다
+   * (`흰빛` `분홍빛` 같은 색 변형, 색이 같으면 `가까이` `뒤에서` 같은 앵글).
+   *
+   * ⚠ 이 라벨은 **이웃한 컷이 있을 때만 뜻이 있다.** 한 장만 보여 주는 자리(랜딩 히어로·
+   *   결과 카드·편지)에서 "분홍빛"이라고 말해 봐야 무엇과 견준 분홍인지 알 수 없다.
+   *   그래서 `photoFor()` 가 주는 대표컷에는 이 값이 없고, `photosFor()` 가 갤러리를
+   *   조립할 때만 첫 장에 붙여 준다(`PRIMARY_VARIANT`).
+   *
+   * 어휘는 §1.5d 톤 — `…빛` 계열의 색 이름이거나 두세 어절짜리 한국어 구다.
+   */
+  variant?: string;
 }
 
 /**
@@ -353,6 +372,581 @@ export const FLOWER_PHOTOS: Record<string, FlowerPhoto> = {
   },
 };
 
+/* ------------------------------------------------------------------ *
+ * 도감 갤러리 — 같은 꽃의 여러 컷 (2026-08-16 다중 사진 라운드)
+ * ------------------------------------------------------------------ */
+
+/**
+ * 대표컷의 색 라벨 — **갤러리 첫 장의 캡션**이다.
+ *
+ * 왜 위 `FLOWER_PHOTOS` 안에 안 넣었나: 대표컷 32장은 랜딩 히어로·결과 카드·편지가
+ * 함께 쓰는 자리이고, 사용자가 "홈에서 본 그 사진이 갤러리 첫 장"이라고 못 박은 값이다.
+ * 32줄에 손을 대면 그 약속이 눈에 안 보이게 흔들릴 수 있다 — **표를 건드리지 않고
+ * 라벨만 옆에 둔다.** `photosFor()` 가 조립할 때만 합쳐진다.
+ *
+ * 라벨은 `content/flowers.csv` 의 `colors` 첫 값과 **대체로** 일치한다. 다르면 사진이
+ * 이긴다(예: 팬지의 CSV 대표색은 purple 이지만 대표컷은 주황이다) — 캡션은 분류가 아니라
+ * **눈에 보이는 것**을 말해야 한다.
+ */
+const PRIMARY_VARIANT: Record<string, string> = {
+  'rose-red': '붉은빛',
+  'tulip-white': '흰빛',
+  freesia: '연보랏빛',
+  'lily-asiatic': '주황빛',
+  gerbera: '붉은빛',
+  anemone: '푸른빛',
+  hellebore: '흰빛',
+  hyacinth: '분홍빛',
+  peony: '분홍빛',
+  hydrangea: '푸른빛',
+  lavender: '보랏빛',
+  sunflower: '노란빛',
+  carnation: '붉은빛',
+  lisianthus: '보랏빛',
+  ranunculus: '주황빛',
+  'lily-of-the-valley': '흰빛',
+  chrysanthemum: '노란빛',
+  narcissus: '흰빛',
+  'forget-me-not': '하늘빛',
+  'cherry-blossom': '분홍빛',
+  camellia: '붉은빛',
+  violet: '자줏빛',
+  iris: '보랏빛',
+  marigold: '주황빛',
+  'corn-poppy': '붉은빛',
+  jasmine: '흰빛',
+  'babys-breath': '흰빛',
+  cosmos: '자홍빛',
+  magnolia: '흰빛',
+  pansy: '주황빛',
+  poinsettia: '붉은빛',
+  daisy: '흰빛',
+};
+
+/**
+ * 대표 **다음에** 오는 컷들 — 꽃마다 1~3장(합쳐서 2~4장).
+ *
+ * 출처 문서: `docs/image-assets.md` §도감 갤러리 컷 (2026-08-16). 위 32장과 같은 규정을
+ * 통과했다 — Unsplash·Pexels 무료 경로만, `premium_photo-`·`plus.` 배제, 근접샷,
+ * 원본 가로 2400px 이상, 색 생동, 종 정확성. 전수 HTTP 200 + 원본 픽셀 실측을 마쳤다.
+ *
+ * **고르는 순서는 색이 먼저다**(사용자 요청 — "같은 꽃이라도 색상이 여러 가지니까").
+ * `content/flowers.csv` 의 `colors` 에 있는 색을 우선 채우고, 그 색의 쓸 만한 컷이 없으면
+ * 같은 색의 **다른 앵글**로 간다(해바라기·라벤더·동백이 그 경우다).
+ *
+ * ⚠ 여기 줄을 더할 때 **첫 장을 여기 넣지 마라.** 첫 장은 언제나 `FLOWER_PHOTOS` 의
+ *   대표컷이고, 그것이 랜딩 카드를 누르고 들어온 사람이 방금 본 사진이다.
+ */
+const GALLERY_EXTRAS: Record<string, readonly FlowerPhoto[]> = {
+  'rose-red': [
+    {
+      flowerId: 'rose-red',
+      src: 'https://images.pexels.com/photos/18829227/pexels-photo-18829227.jpeg',
+      credit: 'Photo: Tanya Budchenko / Pexels',
+      alt: '검은 배경 앞에 겹쳐 선 연분홍 장미 세 송이',
+      width: 4000,
+      variant: '분홍빛',
+      // §사용 규칙 3 은 **빨강·와인 레드** 장미를 막는다. 분홍은 그 금지선 밖이고,
+      // 이 컷도 대표컷과 같이 `canLeadHero()` 가 히어로에서 걸러 낸다(자리로만 막는다).
+      note: '장미는 갤러리도 도감·카드 한정 — 히어로 금지는 대표컷과 같다.',
+    },
+  ],
+  'tulip-white': [
+    {
+      flowerId: 'tulip-white',
+      src: 'https://images.pexels.com/photos/36998694/pexels-photo-36998694.jpeg',
+      credit: 'Photo: Andromeda99 / Pexels',
+      alt: '검은 배경 위에 서로 기댄 크림빛 튤립 두 송이',
+      width: 5000,
+      variant: '크림빛',
+    },
+    {
+      flowerId: 'tulip-white',
+      src: 'https://images.pexels.com/photos/12620487/pexels-photo-12620487.jpeg',
+      credit: 'Photo: Tatsiana Snitko / Pexels',
+      alt: '물방울이 촘촘히 맺힌 분홍 튤립 클로즈업',
+      width: 4000,
+      variant: '분홍빛',
+    },
+  ],
+  freesia: [
+    {
+      flowerId: 'freesia',
+      src: 'https://images.pexels.com/photos/11724820/pexels-photo-11724820.jpeg',
+      credit: 'Photo: Ahmed / Pexels',
+      alt: '검은 배경 위에 옆으로 누운 흰 프리지아 클로즈업',
+      width: 3915,
+      variant: '흰빛',
+    },
+    {
+      flowerId: 'freesia',
+      src: 'https://images.pexels.com/photos/12224120/pexels-photo-12224120.jpeg',
+      credit: 'Photo: Gintare Baradinske / Pexels',
+      alt: '짙푸른 배경 앞에 붉게 물든 프리지아 꽃대',
+      width: 4000,
+      // 대표컷과 같은 작가·같은 촬영분이라 종 근거가 그대로 따라온다.
+      note: '대표컷(Gintare Baradinske)과 같은 촬영분 — 종 근거를 공유한다.',
+      variant: '붉은빛',
+    },
+  ],
+  'lily-asiatic': [
+    {
+      flowerId: 'lily-asiatic',
+      src: 'https://images.pexels.com/photos/37010067/pexels-photo-37010067.jpeg',
+      credit: 'Photo: Sephina Cornwall / Pexels',
+      alt: '주황 꽃잎 안쪽이 검붉게 물든 아시아틱 백합 클로즈업',
+      width: 5184,
+      note: 'Pexels 제목이 "asiatic lily" — 위를 향해 벌어진 무향 대륜이라 오리엔탈과 구분된다.',
+      variant: '검붉은 무늬',
+    },
+    {
+      flowerId: 'lily-asiatic',
+      src: 'https://images.pexels.com/photos/18302276/pexels-photo-18302276.jpeg',
+      credit: 'Photo: MikeGz / Pexels',
+      alt: '검은 배경 앞에서 막 벌어지는 주황 백합 봉오리',
+      width: 3470,
+      variant: '막 벌어질 때',
+    },
+  ],
+  gerbera: [
+    {
+      flowerId: 'gerbera',
+      src: 'https://images.unsplash.com/photo-1724122720444-1f54bc5ba04d',
+      credit: 'Photo: Anna Jackowska / Unsplash',
+      alt: '검은 배경 위에 눕혀 놓은, 물방울이 맺힌 주황 거베라',
+      width: 5760,
+      variant: '주황빛',
+    },
+    {
+      flowerId: 'gerbera',
+      src: 'https://images.pexels.com/photos/2343173/pexels-photo-2343173.jpeg',
+      credit: 'Photo: Ylanite Koppens / Pexels',
+      alt: '어두운 배경 위에 곧게 선 분홍 거베라 한 송이',
+      width: 6000,
+      variant: '분홍빛',
+    },
+  ],
+  anemone: [
+    {
+      flowerId: 'anemone',
+      src: 'https://images.pexels.com/photos/7185715/pexels-photo-7185715.jpeg',
+      credit: 'Photo: Karola G / Pexels',
+      alt: '검은 천 위에 놓인, 검은 화심을 가진 붉은 아네모네 한 송이',
+      width: 6720,
+      note: '검은 화심 + 흰 테 = A. coronaria 특징(CSV 학명과 일치). 흰 일본아네모네는 종이 달라 배제했다.',
+      variant: '붉은빛',
+    },
+  ],
+  hellebore: [
+    {
+      flowerId: 'hellebore',
+      src: 'https://images.pexels.com/photos/31261507/pexels-photo-31261507.jpeg',
+      credit: 'Photo: Siegfried Poepperl / Pexels',
+      alt: '초록 잎을 배경으로 활짝 벌어진 진분홍 헬레보어',
+      width: 5255,
+      variant: '분홍빛',
+    },
+    {
+      flowerId: 'hellebore',
+      src: 'https://images.pexels.com/photos/3796630/pexels-photo-3796630.jpeg',
+      credit: 'Photo: Ellie Burgin / Pexels',
+      alt: '연둣빛 꽃과 봉오리가 층층이 달린 헬레보어',
+      width: 3898,
+      variant: '연둣빛',
+    },
+  ],
+  hyacinth: [
+    {
+      flowerId: 'hyacinth',
+      src: 'https://images.pexels.com/photos/38051960/pexels-photo-38051960.jpeg',
+      credit: 'Photo: Pescha Taylor / Pexels',
+      alt: '잔꽃이 빽빽이 달린 보라 히아신스 꽃대 여럿',
+      width: 8688,
+      variant: '보랏빛',
+    },
+    {
+      flowerId: 'hyacinth',
+      src: 'https://images.pexels.com/photos/4023531/pexels-photo-4023531.jpeg',
+      credit: 'Photo: Jeffrey Riley / Pexels',
+      alt: '어두운 배경 앞에 모여 핀 흰 히아신스 꽃차례',
+      width: 3456,
+      // 히아신스 검색은 무스카리(그레이프 히아신스)가 대량으로 섞인다 — 속이 다르다.
+      note: '굵은 꽃대에 별 모양 소화 = Hyacinthus. 무스카리·블루벨은 이번에도 배제했다.',
+      variant: '흰빛',
+    },
+  ],
+  peony: [
+    {
+      flowerId: 'peony',
+      src: 'https://images.unsplash.com/photo-1747348744574-e8119373cbaf',
+      credit: 'Photo: Haberdoedas / Unsplash',
+      alt: '검은 배경 위 노란 수술을 드러낸 크림빛 작약',
+      width: 7656,
+      variant: '크림빛',
+    },
+    {
+      flowerId: 'peony',
+      src: 'https://images.pexels.com/photos/38039807/pexels-photo-38039807.jpeg',
+      credit: 'Photo: Fez Brook / Pexels',
+      alt: '검은 배경 위 겹겹이 부푼 흰 작약 한 송이',
+      width: 5272,
+      variant: '흰빛',
+    },
+  ],
+  hydrangea: [
+    {
+      flowerId: 'hydrangea',
+      src: 'https://images.pexels.com/photos/38085976/pexels-photo-38085976.jpeg',
+      credit: 'Photo: Sveta Moisseyeva / Pexels',
+      alt: '화면을 가득 채운 분홍 수국 꽃차례',
+      width: 3072,
+      variant: '분홍빛',
+    },
+    {
+      flowerId: 'hydrangea',
+      src: 'https://images.pexels.com/photos/29158296/pexels-photo-29158296.jpeg',
+      credit: 'Photo: Siegfried Poepperl / Pexels',
+      alt: '어두운 잎을 배경으로 크게 벌어진 자홍빛 수국 헛꽃 두 송이',
+      width: 4800,
+      variant: '자홍빛',
+    },
+  ],
+  lavender: [
+    {
+      flowerId: 'lavender',
+      src: 'https://images.pexels.com/photos/1196311/pexels-photo-1196311.jpeg',
+      credit: 'Photo: Brett Sayles / Pexels',
+      alt: '보라 보케를 배경으로 잔꽃이 벌어진 라벤더 이삭 매크로',
+      width: 5568,
+      // 토끼귀 포엽을 단 스페인라벤더(L. stoechas)는 CSV 학명과 달라 전량 배제했다.
+      note: '포엽 없이 이삭에 잔꽃만 붙는 형태 = L. angustifolia 계열(CSV 학명과 일치).',
+      variant: '가까이',
+    },
+  ],
+  sunflower: [
+    {
+      flowerId: 'sunflower',
+      src: 'https://images.pexels.com/photos/17296674/pexels-photo-17296674.jpeg',
+      credit: 'Photo: DI LAI / Pexels',
+      alt: '어두운 바탕에 꽃가루가 흩어진 해바라기 한 송이를 위에서 본 컷',
+      width: 4996,
+      variant: '위에서',
+    },
+    {
+      flowerId: 'sunflower',
+      src: 'https://images.pexels.com/photos/19944973/pexels-photo-19944973.jpeg',
+      credit: 'Photo: Roman Bengaiev / Pexels',
+      alt: '검은 배경 앞에서 초록 총포와 노란 꽃잎이 겹쳐 보이는 해바라기 옆모습',
+      width: 4000,
+      variant: '뒤에서',
+    },
+  ],
+  carnation: [
+    {
+      flowerId: 'carnation',
+      src: 'https://images.pexels.com/photos/37902604/pexels-photo-37902604.jpeg',
+      credit: 'Photo: Marek Ruczaj / Pexels',
+      alt: '검은 배경 앞에 모여 핀 연분홍 카네이션과 꽃봉오리',
+      width: 5184,
+      variant: '분홍빛',
+    },
+    {
+      flowerId: 'carnation',
+      src: 'https://images.pexels.com/photos/35156328/pexels-photo-35156328.jpeg',
+      credit: 'Photo: Irene Asthetik / Pexels',
+      alt: '꽃잎 가장자리마다 자주색 테가 둘린 분홍 카네이션 클로즈업',
+      width: 2548,
+      // CSV colors 의 `variegated` 를 눈으로 보여 주는 컷이다.
+      variant: '자주 테두리',
+    },
+  ],
+  lisianthus: [
+    {
+      flowerId: 'lisianthus',
+      src: 'https://images.pexels.com/photos/15252970/pexels-photo-15252970.jpeg',
+      credit: 'Photo: Pawel Konrad / Pexels',
+      alt: '검은 배경 위에 옆으로 벌어진 분홍 리시안셔스와 봉오리',
+      width: 6000,
+      variant: '분홍빛',
+    },
+    {
+      flowerId: 'lisianthus',
+      src: 'https://images.pexels.com/photos/34978903/pexels-photo-34978903.jpeg',
+      credit: 'Photo: Maison Lighthouse / Pexels',
+      alt: '초록 줄기 끝마다 봉오리를 단 흰 리시안셔스',
+      width: 3769,
+      variant: '흰빛',
+    },
+  ],
+  ranunculus: [
+    {
+      flowerId: 'ranunculus',
+      src: 'https://images.unsplash.com/photo-1742341383956-ae09c07675a3',
+      credit: 'Photo: Pedro Vit / Unsplash',
+      alt: '검은 배경 위 겹꽃잎이 촘촘한 분홍 라넌큘러스',
+      width: 7002,
+      note: '대표컷과 같은 작가·같은 셋업 — 종 근거를 공유한다.',
+      variant: '분홍빛',
+    },
+    {
+      flowerId: 'ranunculus',
+      src: 'https://images.pexels.com/photos/7409640/pexels-photo-7409640.jpeg',
+      credit: 'Photo: Albina White / Pexels',
+      alt: '검은 배경 위에 한 송이만 핀 흰 라넌큘러스와 봉오리',
+      width: 3820,
+      variant: '흰빛',
+    },
+    {
+      flowerId: 'ranunculus',
+      src: 'https://images.pexels.com/photos/38566138/pexels-photo-38566138.jpeg',
+      credit: 'Photo: Siegfried Poepperl / Pexels',
+      alt: '검은 배경 위 흰 꽃잎마다 붉은 테가 번진 라넌큘러스',
+      width: 5504,
+      variant: '붉은 테두리',
+    },
+  ],
+  'lily-of-the-valley': [
+    {
+      flowerId: 'lily-of-the-valley',
+      src: 'https://images.unsplash.com/photo-1683547049214-b30698e79dc5',
+      credit: 'Photo: Julia Butsykina / Unsplash',
+      alt: '짙은 초록 잎 사이로 늘어진 흰 은방울꽃 꽃대',
+      width: 3456,
+      variant: '잎 사이',
+    },
+  ],
+  chrysanthemum: [
+    {
+      flowerId: 'chrysanthemum',
+      src: 'https://images.unsplash.com/photo-1618927483829-2d16941299e8',
+      credit: 'Photo: Олександр К / Unsplash',
+      alt: '검은 배경 위 가느다란 꽃잎이 겹겹이 선 흰 국화',
+      width: 4424,
+      note: '종명이 문자로 없는 정황 근거 — 국화 검색 둘에서 모두 상위였다(문서 §대체안).',
+      variant: '흰빛',
+    },
+    {
+      flowerId: 'chrysanthemum',
+      src: 'https://images.pexels.com/photos/17239995/pexels-photo-17239995.jpeg',
+      credit: 'Photo: Wyxina Tresse / Pexels',
+      alt: '어두운 배경 위 물방울이 맺힌 보라 국화 두 송이',
+      width: 6960,
+      variant: '보랏빛',
+    },
+  ],
+  narcissus: [
+    {
+      flowerId: 'narcissus',
+      src: 'https://images.pexels.com/photos/36679109/pexels-photo-36679109.jpeg',
+      credit: 'Photo: Siegfried Poepperl / Pexels',
+      alt: '어두운 배경 앞에 나팔 부화관을 세운 노란 수선화 한 송이',
+      width: 7200,
+      note: '길게 뻗은 나팔 부화관 = N. pseudonarcissus 계열(CSV 학명과 일치).',
+      variant: '노란빛',
+    },
+  ],
+  'forget-me-not': [
+    {
+      flowerId: 'forget-me-not',
+      src: 'https://images.unsplash.com/photo-1622483327420-667f2913c907',
+      credit: 'Photo: Jean-Yves Matroule / Unsplash',
+      alt: '어두운 초록 배경 앞 노란 화심을 가진 하늘색 물망초 두 송이 매크로',
+      width: 3904,
+      // 대표컷은 배경 풀잎이 밝다 — 이 컷이 그 짝의 어두운 쪽이다(문서 §대체안).
+      note: '속(Myosotis)까지 확인 — 대표컷과 달리 배경이 어둡다.',
+      variant: '가까이',
+    },
+  ],
+  'cherry-blossom': [
+    {
+      flowerId: 'cherry-blossom',
+      src: 'https://images.unsplash.com/photo-1615632427664-f7444e047182',
+      credit: 'Photo: Takashi Miyazaki / Unsplash',
+      alt: '검은 배경 앞 가지에 줄지어 핀 연분홍 벚꽃',
+      width: 5568,
+      // 짙은 자주 잎과 함께 피는 자엽자두(Prunus cerasifera)는 이번에도 배제했다.
+      note: '순수 검정 배경 컷(문서 §대체안). 초록 잎·갈라진 꽃잎으로 벚나무를 확인했다.',
+      variant: '연분홍빛',
+    },
+  ],
+  camellia: [
+    {
+      flowerId: 'camellia',
+      src: 'https://images.unsplash.com/photo-1708183704955-da3601e1fc04',
+      credit: 'Photo: Annie Spratt / Unsplash',
+      alt: '노란 수술 뭉치가 드러난 붉은 동백 클로즈업',
+      width: 8256,
+      // 대표컷(3032px)이 이 표에서 가장 작다 — 크게 걸 자리에는 이 컷이 여유가 있다.
+      note: '종 근거는 태그 `camellia` 수준. 학명 명기는 대표컷 쪽에만 있다(문서 §대체안).',
+      variant: '가까이',
+    },
+  ],
+  violet: [
+    {
+      flowerId: 'violet',
+      src: 'https://images.pexels.com/photos/19632845/pexels-photo-19632845.jpeg',
+      credit: 'Photo: Petr Ganaj / Pexels',
+      alt: '초록 풀 사이에 홀로 핀 연보라 제비꽃 한 송이',
+      width: 4261,
+      // 문서 §남은 판단 1 이 열어 둔 구멍을 메운다 — 대표컷은 속(Viola)까지만이었다.
+      note: 'Pexels 설명에 "viola odorata" 명기 — CSV 학명과 일치한다.',
+      variant: '연보랏빛',
+    },
+  ],
+  iris: [
+    {
+      flowerId: 'iris',
+      src: 'https://images.pexels.com/photos/32806170/pexels-photo-32806170.jpeg',
+      credit: 'Photo: Oliver Wagenblatt / Pexels',
+      alt: '검은 배경 위에 활짝 펼쳐진 진보라 아이리스 한 송이',
+      width: 8192,
+      note: '속(Iris)까지 — 수염이 없는 계열이라 수염붓꽃(bearded iris)은 아니다.',
+      variant: '가까이',
+    },
+    {
+      flowerId: 'iris',
+      src: 'https://images.pexels.com/photos/11619585/pexels-photo-11619585.jpeg',
+      credit: 'Photo: Aaron Burden / Pexels',
+      alt: '흐린 배경 앞에 곧게 선 짙푸른 아이리스 한 송이',
+      width: 2927,
+      note: '속(Iris)까지 — 수염 없는 계열. CSV 의 Dutch iris 와 같은 무수염 무리다.',
+      variant: '푸른빛',
+    },
+  ],
+  marigold: [
+    {
+      flowerId: 'marigold',
+      src: 'https://images.pexels.com/photos/34103630/pexels-photo-34103630.jpeg',
+      credit: 'Photo: Mr. Pugo / Pexels',
+      alt: '어두운 잎을 배경으로 활짝 벌어진 주황 마리골드 한 송이',
+      width: 4000,
+      variant: '한 송이',
+    },
+    {
+      flowerId: 'marigold',
+      src: 'https://images.pexels.com/photos/5445090/pexels-photo-5445090.jpeg',
+      credit: 'Photo: Medina Loh / Pexels',
+      alt: '겹겹이 말린 주황 꽃잎이 화면을 가득 채운 마리골드 매크로',
+      width: 3024,
+      // 노란 금잔화(Calendula)가 마리골드 검색에 섞여 든다 — 속이 다르다.
+      note: '속(Tagetes)까지 확인 — 금잔화(Calendula)는 배제했다.',
+      variant: '겹꽃 속',
+    },
+  ],
+  'corn-poppy': [
+    {
+      flowerId: 'corn-poppy',
+      src: 'https://images.unsplash.com/photo-1606952460453-3b7edc2f67a7',
+      credit: 'Photo: Eduardo Goody / Unsplash',
+      alt: '어두운 배경 위에 홀로 벌어진 붉은 개양귀비 클로즈업',
+      width: 6016,
+      // 2026-08-15 대표컷이었다가 종 확실성 때문에 내려온 컷이다(문서 §통합 상태).
+      note: '종명이 문자로 없는 정황 동정 — 대표컷 쪽이 "common poppy" 로 명시돼 있다.',
+      variant: '가까이',
+    },
+  ],
+  jasmine: [
+    {
+      flowerId: 'jasmine',
+      src: 'https://images.pexels.com/photos/34677051/pexels-photo-34677051.jpeg',
+      credit: 'Photo: Louis Tran / Pexels',
+      alt: '검은 배경 위에 둥글게 모여 핀 흰 겹꽃 재스민 한 다발',
+      width: 4624,
+      note: '대표컷과 같은 촬영분 — 종 근거를 공유한다(겹꽃 로제트 = J. sambac 겹꽃 계열).',
+      variant: '한 다발',
+    },
+  ],
+  'babys-breath': [
+    {
+      flowerId: 'babys-breath',
+      src: 'https://images.pexels.com/photos/6064918/pexels-photo-6064918.jpeg',
+      credit: 'Photo: Eva Bronzini / Pexels',
+      alt: '검은 배경 위쪽에서 드리운 흰 안개꽃 잔가지',
+      width: 3909,
+      // 문서가 "다크 배경 무료 컷 중 실제 Gypsophila 를 못 찾았다" 고 적어 둔 구멍을 메운다.
+      note: '어두운 배경의 실제 Gypsophila — 대표컷이 밝은 컷일 수밖에 없던 이유를 이 컷이 푼다.',
+      variant: '어둠 속',
+    },
+  ],
+  cosmos: [
+    {
+      flowerId: 'cosmos',
+      src: 'https://images.unsplash.com/photo-1739308759028-c22d926c3634',
+      credit: 'Photo: Seven Colors / Unsplash',
+      alt: '깃털처럼 갈라진 잎과 함께 핀 연분홍 코스모스 한 송이',
+      width: 4288,
+      note: '깃꼴로 갈라진 잎이 함께 보여 C. bipinnatus 근거가 한 단 더 있다(문서 §대체안).',
+      variant: '잎까지',
+    },
+    {
+      flowerId: 'cosmos',
+      src: 'https://images.pexels.com/photos/14675701/pexels-photo-14675701.jpeg',
+      credit: 'Photo: Niki Emmert / Pexels',
+      alt: '노란 화심을 가운데 둔 흰 코스모스 한 송이',
+      width: 6000,
+      note: 'Pexels 설명에 "Cosmos bipinnatus" 명기 — CSV 학명과 일치한다.',
+      variant: '흰빛',
+    },
+  ],
+  magnolia: [
+    {
+      flowerId: 'magnolia',
+      src: 'https://images.unsplash.com/photo-1525723479413-421d81fea02d',
+      credit: 'Photo: Brendan Church / Unsplash',
+      alt: '어두운 맨가지에 줄지어 벌어진 흰 별목련',
+      width: 3648,
+      note: '대표컷과 같은 별목련(M. stellata). 상록 잎이 함께 찍힌 컷은 종이 달라 배제했다.',
+      variant: '가지 위',
+    },
+  ],
+  pansy: [
+    {
+      flowerId: 'pansy',
+      src: 'https://images.pexels.com/photos/28003582/pexels-photo-28003582.jpeg',
+      credit: 'Photo: Wyxina Tresse / Pexels',
+      alt: '어두운 잎을 배경으로 활짝 벌어진 짙은 보라 팬지',
+      width: 4640,
+      variant: '보랏빛',
+    },
+    {
+      flowerId: 'pansy',
+      src: 'https://images.pexels.com/photos/4611318/pexels-photo-4611318.jpeg',
+      credit: 'Photo: Magda Ehlers / Pexels',
+      alt: '어두운 흙 위에 놓인, 노랑과 진자주가 갈라지는 팬지',
+      width: 3648,
+      variant: '노란빛',
+    },
+  ],
+  poinsettia: [
+    {
+      flowerId: 'poinsettia',
+      src: 'https://images.pexels.com/photos/5947869/pexels-photo-5947869.jpeg',
+      credit: 'Photo: Eva Bronzini / Pexels',
+      alt: '초록 잎 사이에서 별처럼 펼쳐진 흰 포인세티아 포엽',
+      width: 6000,
+      variant: '흰빛',
+    },
+    {
+      flowerId: 'poinsettia',
+      src: 'https://images.pexels.com/photos/5947770/pexels-photo-5947770.jpeg',
+      credit: 'Photo: Eva Bronzini / Pexels',
+      alt: '연분홍으로 물든 포인세티아 포엽 한 송이',
+      width: 6000,
+      variant: '분홍빛',
+    },
+  ],
+  daisy: [
+    {
+      flowerId: 'daisy',
+      src: 'https://images.unsplash.com/photo-1647808713955-64685f28f728',
+      credit: 'Photo: Pierre Bamin / Unsplash',
+      alt: '어두운 풀밭을 배경으로 홀로 고개 든 흰 데이지',
+      width: 5472,
+      variant: '한 송이',
+    },
+  ],
+};
+
 /**
  * 화면이 쓰는 폭. Unsplash imgix 는 임의 폭을 받아 주지만(위키미디어와 다른 점),
  * 값이 화면마다 제각각이면 CDN 캐시가 갈라진다 — **쓰는 폭을 여기 네 가지로 묶는다.**
@@ -503,6 +1097,31 @@ export function unsplashSrcSet(src: string, widths: readonly number[]): string {
 /** 그 꽃의 대표 실사. 아직 컷이 없는 꽃이면 undefined — 화면은 사진 없이도 성립해야 한다. */
 export function photoFor(flowerId: string): FlowerPhoto | undefined {
   return FLOWER_PHOTOS[flowerId];
+}
+
+/**
+ * 그 꽃의 **컷 전부** — 도감 갤러리가 넘겨 보는 순서 그대로다(2~4장).
+ *
+ * ⚠ **`[0]` 은 언제나 `photoFor()` 와 같은 컷이다.** 이건 성능이나 취향이 아니라 화면의
+ *   약속이다 — 랜딩 카드를 누르고 들어온 사람이 방금 본 사진이 상세의 첫 장이어야
+ *   두 화면이 한 꽃을 가리킨다는 것이 눈으로 읽힌다(2026-08-16 사용자 확정).
+ *   그 약속을 **구조로** 지킨다: 대표는 `FLOWER_PHOTOS` 에서 오고 나머지는
+ *   `GALLERY_EXTRAS` 에서 온다 — 순서를 뒤집을 자리가 아예 없다.
+ *   (그래도 `tests/components/photos.test.ts` 가 한 번 더 못 박는다. 표 두 개를 합치려는
+ *    다음 사람에게 그물이 필요하다.)
+ *
+ * 첫 장에는 대표컷의 색 라벨(`PRIMARY_VARIANT`)을 얹어 준다 — 갤러리에서만 뜻이 있는
+ * 값이라 원본 상수에는 두지 않는다(`FlowerPhoto.variant` 주석).
+ *
+ * 컷이 없는 꽃이면 빈 배열이다(`photoFor()` 의 undefined 와 짝을 맞춘다).
+ */
+export function photosFor(flowerId: string): FlowerPhoto[] {
+  const primary = photoFor(flowerId);
+  if (!primary) return [];
+
+  const label = PRIMARY_VARIANT[flowerId];
+  const head = label ? { ...primary, variant: label } : primary;
+  return [head, ...(GALLERY_EXTRAS[flowerId] ?? [])];
 }
 
 /**

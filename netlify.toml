@@ -1,8 +1,11 @@
 # Netlify 빌드 설정 — deploy/README.md 의 가이드와 한 벌이다.
 #
-# 이 서비스는 정적 사이트가 아니다 — 추천(/recommend)과 멘트 생성이 서버 액션으로 돌아
-# zip 드래그 앤 드롭 배포로는 동작하지 않는다. 반드시 git 연결(또는 Netlify CLI) 배포를 쓰고,
-# Next.js 런타임 플러그인이 서버 액션을 함수로 옮기게 둔다.
+# 이 파일은 **본배포** 설정이다 — 추천(/recommend)과 멘트 생성이 서버 액션으로 도는 쪽.
+# 반드시 git 연결(또는 Netlify CLI) 배포를 쓰고, Next.js 런타임 플러그인이 서버 액션을
+# 함수로 옮기게 둔다.
+#
+# 드래그 앤 드롭으로 올리는 정적 데모(`npm run build:static` → out/)는 이 파일을 쓰지
+# 않는다. 그쪽은 빌드 설정 자체가 없고, 멘트가 LLM 대신 예문이다 — deploy/README.md 참조.
 #
 # ⚠ API 키는 여기에도, 리포 어디에도 넣지 않는다. Netlify 대시보드
 #   Site settings → Environment variables 에서만 넣는다(deploy/README.md 의 표 참조).

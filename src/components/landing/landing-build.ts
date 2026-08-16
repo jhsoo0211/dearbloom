@@ -22,7 +22,7 @@
 import { birthDateLabel, birthFlowerOn } from '@/lib/data/birth-flowers';
 import type { Catalog, CatalogFlower, CatalogStory } from '@/lib/data/types';
 import { pickStories } from '@/lib/engine/stories';
-import { todayFlower } from '@/lib/engine/today';
+import { todayFlower, type TodayBasis } from '@/lib/engine/today';
 import {
   canLeadHero,
   needsDarkOverlay,
@@ -206,6 +206,133 @@ function storyFor(flowerId: string, stories: CatalogStory[]) {
   return pickStories(flowerId, 'just_because', stories, 1).featured ?? undefined;
 }
 
+/* ------------------------------------------------------------------ *
+ * 오늘의 꽃을 고른 이유 — 이야기에서 끌어온 한두 문장 (§1.5n)
+ * ------------------------------------------------------------------ */
+
+/**
+ * 이유 문장의 앞머리 — **엔진의 선정 근거(`basis`)를 사람의 말로 옮긴 것.**
+ * 뒤에 이야기 인용이 붙으므로 예전 리드보다 짧다(한 문장에 사연을 둘 담지 않는다).
+ */
+const BASIS_OPENING: Record<TodayBasis, string> = {
+  in_season: '일 년을 기다려 지금이 한창인 꽃이에요.',
+  adjacent: '이제 막 제철로 들어서는 꽃이에요.',
+  all: '계절을 가리지 않고 한결같이 곁에 있는 꽃이에요.',
+};
+
+/** ① 이야기 훅을 인용했을 때의 맺음. 인용을 "초대장"으로 받는 자리다. */
+const HOOK_CLOSING: Record<TodayBasis, string> = {
+  in_season: '오늘은 이 이야기부터 들려드리고 싶었어요.',
+  adjacent: '피기도 전에 이 이야기가 먼저 떠올랐어요.',
+  all: '어느 날에 꺼내도 좋을 이야기라, 오늘 먼저 꺼냈어요.',
+};
+
+/** ② 이야기가 없어 꽃말을 재료로 쓸 때의 맺음. */
+const MEANING_CLOSING: Record<TodayBasis, string> = {
+  in_season: '오늘 같은 날 꺼내고 싶었어요.',
+  adjacent: '피기 전부터 먼저 건네고 싶었어요.',
+  all: '어느 날에 꺼내도 좋았어요.',
+};
+
+/** ③ 이야기도 꽃말도 없을 때. 재료가 없다고 문장을 비우지는 않는다. */
+const BARE_CLOSING: Record<TodayBasis, string> = {
+  in_season: '오늘을 그냥 보내기 아까워서 먼저 꺼냈어요.',
+  adjacent: '피기 직전의 설렘부터 먼저 건네고 싶었어요.',
+  all: '어느 날에 꺼내도 좋아서 오늘 꺼냈어요.',
+};
+
+/**
+ * 인용할 수 있는 훅으로 다듬는다 — **다듬는 것은 앞뒤 공백과 마침표 하나뿐이다.**
+ *
+ * 훅은 §1.5d 이야기 문체 규범이 합니다체 헤드라인을 허용한 자리이고, 그 무덤덤함이
+ * 그대로 매력이라 **문장은 절대 다시 쓰지 않는다.** 다만 317편 중 212편은 마침표로
+ * 끝나고 105편은 그냥 끝난다 — 그대로 인용하면 `“…있습니다.” —` 와 `“…있습니다” —` 가
+ * 날마다 번갈아 나온다. 인용 부호 안의 문장부호는 인용하는 쪽 조판의 몫이라, 문장 끝
+ * 마침표 하나만 떼어 317편을 같은 모양으로 세운다.
+ * ⚠ `?` `!` 는 떼지 않는다 — 그건 조판이 아니라 화자의 어조다.
+ */
+function quotableHook(hook: string | undefined): string | undefined {
+  const text = hook?.trim().replace(/\.$/, '').trim();
+  return text ? text : undefined;
+}
+
+/**
+ * FNV-1a 32비트 — `today.ts` 와 같은 함수를 여기에 한 벌 더 둔다.
+ *
+ * 그쪽은 모듈 내부 함수이고, 오늘의 꽃 배정이라는 **다른 계약**을 지키는 자리다.
+ * 내보내 공유하면 이 문장 하나를 손보려다 날짜→꽃 배정이 통째로 밀릴 수 있어
+ * (해시 입력이 같은 함수를 공유하는 순간 그렇게 된다) 일부러 갈라 둔다.
+ */
+const FNV_OFFSET_BASIS = 0x811c9dc5;
+const FNV_PRIME = 0x01000193;
+
+function fnv1a32(input: string): number {
+  let hash = FNV_OFFSET_BASIS;
+  for (let i = 0; i < input.length; i += 1) {
+    hash ^= input.charCodeAt(i);
+    hash = Math.imul(hash, FNV_PRIME);
+  }
+  return hash >>> 0;
+}
+
+/**
+ * 오늘 인용할 훅 하나.
+ *
+ * 후보 순서는 **슬라이드 티저와 같은 경로**(`pickStories(…, 'just_because')`)에서 온다 —
+ * 이야기 순서를 정하는 규칙을 두 벌 두지 않기 위해서다. 다르게 하는 것은 하나뿐:
+ * 티저는 늘 1순위를 쓰고, 여기서는 **날짜를 씨앗으로 후보 중 하나를 고른다.**
+ *
+ * 그래서 같은 꽃이 다시 오늘의 꽃이 돼도 다른 이야기가 나온다(장미는 23편이다).
+ * 결정성은 그대로다 — 씨앗이 `날짜 + 꽃 id` 뿐이라 **같은 날 새로고침은 같은 문장**이고,
+ * 서버·클라이언트·테스트가 모두 같은 값을 낸다(LLM 을 쓰지 않는 이유이기도 하다).
+ */
+export function pickReasonHook(
+  flowerId: string,
+  stories: CatalogStory[],
+  todayISO: string,
+): string | undefined {
+  const mine = stories.filter((story) => story.flowerId === flowerId);
+  if (mine.length === 0) return undefined;
+
+  const { featured, others } = pickStories(flowerId, 'just_because', stories, mine.length);
+  const pool = [...(featured ? [featured] : []), ...others]
+    .map((story) => quotableHook(story.hook))
+    .filter((hook): hook is string => hook !== undefined);
+  if (pool.length === 0) return undefined;
+
+  return pool[fnv1a32(`${todayISO}:${flowerId}:reason`) % pool.length];
+}
+
+/**
+ * "왜 이 꽃을 오늘 꺼냈는가" 한두 문장 (§1.5n).
+ *
+ * 재료 3단(이야기 훅 → 꽃말 → 없음) × `basis` 3분기 = 9가지 조합이며, 모두 규칙 조합이라
+ * **로컬에서도 그대로 돈다**(모델 호출 없음 · 사용자 요청 2026-08-16).
+ *
+ * ⚠ 훅은 `“…”` 로, 꽃말은 `‘…’` 로 감싼다. 훅 원문에는 `"` 와 `'` 가 섞여 있어
+ *   (317편 중 26편) 홑·겹 **타이포그래픽 따옴표**라야 안쪽 인용과 겹치지 않는다.
+ */
+export function composeTodayReason(input: {
+  basis: TodayBasis;
+  /** 그 꽃 이야기에서 끌어온 헤드라인 한 줄. `pickReasonHook` 이 고른다. */
+  hook?: string;
+  /** 대표 꽃말. 훅이 없을 때만 쓴다. */
+  meaning?: string;
+}): string {
+  const opening = BASIS_OPENING[input.basis];
+
+  const hook = quotableHook(input.hook);
+  if (hook) return `${opening} “${hook}” — ${HOOK_CLOSING[input.basis]}`;
+
+  const meaning = input.meaning?.trim();
+  if (meaning) {
+    const particle = hasFinalConsonant(meaning) ? '이라는' : '라는';
+    return `${opening} ‘${meaning}’${particle} 말을 품은 꽃이라, ${MEANING_CLOSING[input.basis]}`;
+  }
+
+  return `${opening} ${BARE_CLOSING[input.basis]}`;
+}
+
 function toSlide(flower: CatalogFlower, catalog: Catalog, isToday: boolean): SlideView {
   const theme = themeForFlower(flower.id);
   const category = categoryOf(flower);
@@ -287,6 +414,20 @@ export function buildLandingData(catalog: Catalog, todayISO: string): LandingDat
 
   const today = toSlide(todayCatalogFlower, catalog, true);
   const birthFlower = birthFlowerLine(catalog, todayISO);
+
+  /**
+   * 고른 이유 한 문장 (§1.5n).
+   *
+   * 꽃말은 `today.meaning` 이 아니라 **원천에서 다시 읽는다** — 그 값은 꽃말이 없을 때
+   * `아직 갈래를 고르는 중이에요` 라는 화면용 자리표시로 채워져 있어서, 그대로 인용하면
+   * `‘아직 갈래를 고르는 중이에요’라는 말을 품은 꽃이라` 가 나온다.
+   */
+  const todayTheme = themeForFlower(todayCatalogFlower.id);
+  const todayReason = composeTodayReason({
+    basis: picked.basis,
+    hook: pickReasonHook(todayCatalogFlower.id, catalog.stories, todayISO),
+    meaning: todayTheme?.meaning ?? meaningFor(todayCatalogFlower, catalog)?.meaningKo,
+  });
   const rest = catalog.flowers
     .filter((flower) => flower.id !== todayCatalogFlower.id)
     .map((flower) => toSlide(flower, catalog, false));
@@ -344,6 +485,7 @@ export function buildLandingData(catalog: Catalog, todayISO: string): LandingDat
     todayISO,
     todayLabel: todayISO.replaceAll('-', '.'),
     basis: picked.basis,
+    todayReason,
     category: today.category,
     themeSlug: categoryTheme.slug,
     categoryLabel: categoryTheme.label,

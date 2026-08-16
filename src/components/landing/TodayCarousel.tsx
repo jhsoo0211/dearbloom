@@ -8,15 +8,19 @@
  *    모바일 터치 스와이프는 네이티브 스크롤, 데스크톱은 드래그 + 화살표 키.
  *  · 넘겨도 바뀌는 것은 **카드 내부뿐**이다 — 카드마다 `data-flower` 로 카테고리 색감을
  *    국소 적용한다. 전역 배경·내비·CTA 는 건드리지 않는다(슬라이드 부수효과 금지).
- *  · 전역 테마 변경은 카드 안의 명시적 버튼("이 꽃의 분위기로 바꾸기")으로만 일어난다.
  *  · reduced-motion 이면 스냅은 즉시 전환, 자동 넘김은 애초에 없다.
  *
+ * ── 카드에는 컨트롤이 없다 (§1.4c v3.4 — 2026-08-16) ────────────────
+ * 예전에는 카드마다 "이 꽃의 분위기로 바꾸기" 버튼이 있어 거기서 전역 테마가 바뀌었다.
+ * 카드가 32장이라 **같은 컨트롤이 32번 반복**됐고(§1.6b 통합 취지 위반), 전환은 리드 아래
+ * "화면의 빛깔" 선택기 한 줄로 옮겼다(`LandingPage`). 여기 남은 인터랙션은 도감 링크뿐이다.
+ *
  * ── 카드 = 링크 (2026-08-15) ────────────────────────────────────────
- * 카드를 누르면 그 꽃의 도감(`/flowers/{id}`)으로 간다. 구현은 **스트레치 링크** 패턴이다:
- * 링크는 이름 블록 하나뿐이고, 그 `::after` 가 카드 전면을 덮는다(landing.css).
- *   · 그래서 링크 안에 버튼이 들어가는 **중첩 인터랙티브가 생기지 않는다** — "이 꽃의 분위기로
- *     바꾸기" 버튼은 DOM 상 링크의 형제이고, `z-index` 로 덮개 위에 떠 있을 뿐이다.
- *   · 탭 순서도 자연스럽다: 카드 링크 → (본문) → 분위기 버튼.
+ * 카드를 누르면 그 꽃의 도감(`/flowers/{id}`)으로 간다. 구현은 **덮개 링크** 패턴이다:
+ * 링크는 빈 `<a>` 하나이고 절대 배치로 카드 전면을 덮는다(landing.css `.db-card-hit`).
+ *   · 버튼이 사라진 지금도 카드를 통째로 `<a>` 로 감싸지 않는다 — 감싸면 링크의 접근 가능한
+ *     이름이 카드 본문 전체(꽃말·이야기 티저·상황 예시…)가 된다. 덮개 링크는 이름을
+ *     `aria-label` 한 줄로 붙들어 둔다.
  *   · 드래그로 끝난 포인터는 `onClickCapture` 가 이미 막고 있어 링크에도 그대로 적용된다.
  *
  * ⚠ 예전에는 이름 블록이 **터치 첫 탭으로 티저를 펼치는 버튼**이었다. 카드가 링크가 된 이상
@@ -31,9 +35,6 @@ import type { SlideView } from './landing-data';
 
 interface Props {
   slides: SlideView[];
-  /** 지금 전역 테마가 쓰는 `data-flower` 값. 버튼의 눌림 상태를 가른다. */
-  globalSlug: string;
-  onAdopt: (slide: SlideView) => void;
 }
 
 function prefersReduce(): boolean {
@@ -43,7 +44,7 @@ function prefersReduce(): boolean {
   );
 }
 
-export default function TodayCarousel({ slides, globalSlug, onAdopt }: Props) {
+export default function TodayCarousel({ slides }: Props) {
   const trackRef = useRef<HTMLUListElement>(null);
   const [index, setIndex] = useState(0);
   const [edge, setEdge] = useState({ atStart: true, atEnd: false });
@@ -133,7 +134,7 @@ export default function TodayCarousel({ slides, globalSlug, onAdopt }: Props) {
     if (drag.current.moved > 6) goTo(readPosition().index);
   };
 
-  /** 드래그로 끝난 포인터가 카드 안 버튼을 누르는 것을 막는다. */
+  /** 드래그로 끝난 포인터가 카드 링크를 여는 것을 막는다. */
   const onClickCapture = (event: React.MouseEvent<HTMLUListElement>) => {
     if (drag.current.moved > 6) {
       event.preventDefault();
@@ -233,7 +234,6 @@ export default function TodayCarousel({ slides, globalSlug, onAdopt }: Props) {
         onClickCapture={onClickCapture}
       >
         {slides.map((slide, i) => {
-          const isGlobal = slide.themeSlug === globalSlug;
           const teaser = slide.storyHook ?? slide.note ?? slide.meaning;
           return (
             <li
@@ -245,8 +245,7 @@ export default function TodayCarousel({ slides, globalSlug, onAdopt }: Props) {
             >
               <article className="db-card">
                 {/*
-                  카드 전면 덮개 링크. 버튼("이 꽃의 분위기로 바꾸기")의 **형제**라
-                  중첩 인터랙티브가 아니다(landing.css `.db-card-hit`).
+                  카드 전면 덮개 링크(landing.css `.db-card-hit`) — 카드의 유일한 컨트롤이다.
                   `draggable={false}` 는 데스크톱 드래그 스크롤이 네이티브 링크 드래그로
                   가로채이지 않게 한다 — 드래그로 끝난 클릭은 `onClickCapture` 가 막는다.
                 */}
@@ -360,19 +359,6 @@ export default function TodayCarousel({ slides, globalSlug, onAdopt }: Props) {
                   ) : null}
 
                   {slide.petCaveat ? <p className="db-caveat">{slide.petCaveat}</p> : null}
-
-                  {/* 꽃 칩 — §1.6b 칩 규격(44px·선택은 액센트 채움 하나로만).
-                      예전의 색 점 표식은 "선택을 다른 표현으로 이중 표시"라 뺐다. */}
-                  <button
-                    type="button"
-                    className="db-adopt"
-                    aria-pressed={isGlobal}
-                    onClick={() => onAdopt(slide)}
-                  >
-                    {isGlobal
-                      ? `${slide.categoryLabel} 분위기로 보는 중`
-                      : '이 꽃의 분위기로 바꾸기'}
-                  </button>
                 </div>
               </article>
             </li>

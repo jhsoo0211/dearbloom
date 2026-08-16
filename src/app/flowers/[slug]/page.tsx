@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { cache, type CSSProperties } from 'react';
 
+import FlowerGallery from '@/components/flowers/FlowerGallery';
 import FlowerPlate from '@/components/flowers/FlowerPlate';
 import { CATEGORY_TONE } from '@/components/flowers/category';
 import { buildFlowerDetail, flowerSlugs } from '@/components/flowers/data';
@@ -13,8 +14,9 @@ import { loadCatalog } from '@/lib/data/catalog';
  * `/flowers/[slug]` — 도감 상세.
  *
  * 위계는 §1.5i 그대로다: **꽃(실사 → 세밀화) → 꽃말 → 이야기 → 상황 → 참고(작게) → CTA.**
- * 히어로 맨 위는 그 꽃의 **대표 실사**다(2026-08-15) — 도감이 먼저 답해야 하는 질문이
- * "이 꽃이 어떻게 생겼나"이기 때문이다. 세밀화 액자는 그 아래 보조 자리로 내려왔다.
+ * 히어로 맨 위는 그 꽃의 **실사 갤러리**다 — 도감이 먼저 답해야 하는 질문이
+ * "이 꽃이 어떻게 생겼나"이기 때문이다(2026-08-15). 2026-08-16 에 한 장에서 2~4장으로
+ * 늘었고(색 변형 우선), 세밀화 액자는 히어로 안이 아니라 **바로 아래 제 소절**로 내려왔다.
  * "정보"보다 "이야기"가 먼저이고, 안전·계절·가격은 찾을 수 있는 위치면 충분해 맨 아래
  * 작은 블록으로 내린다(§1.5h 반려동물 위계 강등도 같은 자리에서 지켜진다).
  *
@@ -94,41 +96,16 @@ export default async function FlowerDetailPage(props: PageProps<'/flowers/[slug]
 
             <div className={styles.heroGrid}>
               {/*
-                ① 대표 실사 — 도감이 먼저 답하는 것은 "이 꽃이 어떻게 생겼나"다.
-                세밀화는 아름답지만 판본에 따라 종이 갈리므로(겹꽃 변종·근연종) **실사가 앞이고
-                도판이 보조**다. 사진 위에 글자를 얹지 않으므로 스크림이 필요 없다(§1.5g).
+                ① 실사 갤러리 — 도감이 먼저 답하는 것은 "이 꽃이 어떻게 생겼나"다.
+                세밀화는 아름답지만 판본에 따라 종이 갈리므로(겹꽃 변종·근연종) **실사가
+                앞이고 도판이 보조**다.
+
+                ⚠ 첫 장은 **랜딩 카드가 쓰는 그 대표컷**이다(`photosFor()` 가 구조로 지킨다).
+                  카드를 누르고 들어온 사람이 방금 본 사진을 여기서 다시 만나야 두 화면이
+                  한 꽃을 가리킨다는 게 눈으로 읽힌다 — 넘기면 같은 꽃의 다른 색이 나온다.
               */}
-              {flower.photo && (
-                <figure className={styles.shot}>
-                  <div className={styles.shotFrame}>
-                    {/* eslint-disable-next-line @next/next/no-img-element -- Unsplash 원격 CDN. 승인 URL 을 그대로 쓴다(docs/image-assets.md — 핫링크가 권장 사용법). */}
-                    <img
-                      className={styles.shotImg}
-                      src={flower.photo.src}
-                      alt={flower.photo.alt}
-                      fetchPriority="high"
-                      decoding="async"
-                    />
-                  </div>
-                  {/*
-                    사진 크레딧은 '출처' 한 단어로 접어 둔다(2026-08-15 사용자 피드백 —
-                    `Photo: … / Unsplash` 전문이 사진마다 상시 노출되면 화면이 크레딧에 먹힌다).
-                    표기가 사라지는 게 아니라 한 번의 클릭 뒤로 갈 뿐이고, `<details>` 라
-                    JS 없이 열린다. 도판(`Plate:`) 크레딧은 액자 각주에 그대로 둔다 —
-                    거기엔 종·판면에 대한 `note` 각주가 함께 서기 때문이다.
-                  */}
-                  <figcaption className={styles.shotCredit}>
-                    <details className={styles.creditFold}>
-                      <summary className={styles.creditSum}>
-                        출처
-                        <svg viewBox="0 0 24 24" aria-hidden="true">
-                          <path d="m9 6 6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      </summary>
-                      <span className={styles.creditText}>{flower.photo.credit}</span>
-                    </details>
-                  </figcaption>
-                </figure>
+              {flower.photos.length > 0 && (
+                <FlowerGallery photos={flower.photos} flowerName={flower.nameKo} />
               )}
 
               <div className={styles.heroText}>
@@ -143,18 +120,37 @@ export default async function FlowerDetailPage(props: PageProps<'/flowers/[slug]
                 </p>
                 <p className={styles.heroMeaning}>{flower.headline}</p>
               </div>
+            </div>
+          </div>
+        </section>
 
-              {/*
-                ② 세밀화 액자 — 실사에 자리를 내주고 보조로 내려왔지만 **버리지 않는다.**
-                도판·크레딧·각주는 이 서비스가 쌓아 온 자산이고, 19세기 판면이 있어야
-                "야간 식물 아카이브"라는 톤이 성립한다.
-                DOM 순서는 사진 → 이름·꽃말 → 도판이다(모바일에서 이름이 사진 바로 아래
-                오게). 데스크톱은 CSS 그리드가 도판을 사진 밑 왼쪽 칸으로 되돌린다.
-              */}
+        {/* ── ①-b 세밀화 — 실사 갤러리 아래 제 소절로 ─────────────── */}
+        {/*
+          2026-08-16 재배치. 예전에는 히어로 그리드 왼쪽 칸에 실사와 도판이 **위아래로
+          나란히** 서 있었다. 실사가 한 장일 때도 "둘 중 뭐가 이 꽃이지" 싶은 배치였는데,
+          갤러리가 되어 넘길 것이 생기자 액자가 그 밑에 붙어 컨트롤과 뒤엉켰다.
+
+          그래서 도판을 **자기 소절로 내려보냈다.** 위계가 자리로 분명해지고(실사가
+          주인공, 세밀화는 그다음 이야기), 액자는 오히려 제 크기를 되찾는다.
+          버리지 않는 이유는 그대로다 — 19세기 판면이 있어야 "야간 식물 아카이브"라는
+          톤이 성립하고, 크레딧·각주는 이 서비스가 쌓아 온 자산이다.
+        */}
+        {flower.plate && (
+          <section className={styles.section} aria-labelledby="plate-title">
+            <div className={styles.wrap}>
+              <div className={styles.sectionHead}>
+                <h2 className={styles.sectionTitle} id="plate-title">
+                  도감의 세밀화
+                </h2>
+              </div>
+              <p className={styles.sectionLead}>
+                사진이 나오기 전, 식물학자들은 이 꽃을 이렇게 그려 두었어요.
+              </p>
+
               <figure className={styles.frame}>
                 <div className={styles.matte}>
                   <div className={styles.plate}>
-                    <FlowerPlate src={flower.plate?.src} alt={flower.plate?.alt} />
+                    <FlowerPlate src={flower.plate.src} alt={flower.plate.alt} />
                   </div>
                 </div>
                 {/*
@@ -162,18 +158,16 @@ export default async function FlowerDetailPage(props: PageProps<'/flowers/[slug]
                   (`/stories` 시트의 `.plateNoteTail` 과 같은 규칙이다). 감추면 "벚꽃이라며
                   다른 꽃을 보여 준" 화면이 된다. 없는 꽃에는 빈 요소도 세우지 않는다.
                 */}
-                {flower.plate && (
-                  <figcaption className={styles.plateCredit}>
-                    {flower.plate.credit}
-                    {flower.plate.note && (
-                      <span className={styles.plateNote}>{flower.plate.note}</span>
-                    )}
-                  </figcaption>
-                )}
+                <figcaption className={styles.plateCredit}>
+                  {flower.plate.credit}
+                  {flower.plate.note && (
+                    <span className={styles.plateNote}>{flower.plate.note}</span>
+                  )}
+                </figcaption>
               </figure>
             </div>
-          </div>
-        </section>
+          </section>
+        )}
 
         {/* ── ② 꽃말 전체(색깔별·문화권별) ───────────────────────── */}
         <section className={styles.section} aria-labelledby="meanings-title">

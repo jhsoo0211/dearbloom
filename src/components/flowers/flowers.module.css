@@ -710,13 +710,13 @@
   padding: 10px 0 clamp(30px, 5vw, 52px);
 }
 /**
- * 히어로 = **대표 실사(주) + 이름·꽃말 + 세밀화 액자(보조)**.
+ * 히어로 = **실사 갤러리(주) + 이름·꽃말**. 세밀화 액자는 2026-08-16 에 이 그리드에서
+ * 빠져 아래 제 소절(`도감의 세밀화`)로 내려갔다.
  *
- * DOM 순서는 사진 → 이름·꽃말 → 도판이다. 모바일(세로 한 줄)에서 이름이 사진 바로 아래
- * 와야 하기 때문인데, 데스크톱에서는 도판이 사진 밑(왼쪽 칸)으로 돌아가야 한다 —
- * 그래서 880px 부터 flex 를 버리고 **그리드 영역**으로 자리를 지정한다.
- *   [실사 ] [이름 ]
- *   [도판 ] [꽃말 ]
+ * 예전에는 왼쪽 칸에 실사와 도판이 위아래로 서서 `grid-template-areas` 로 자리를 지정했다.
+ * 실사가 슬라이드가 되자 그 아래 붙은 액자가 넘김 컨트롤과 뒤엉겨서, **칸을 하나 비우는
+ * 대신 소절을 하나 늘렸다.** 그래서 여기는 이제 평범한 2열이다.
+ *   [갤러리] [이름·꽃말]
  */
 .heroGrid {
   display: flex;
@@ -727,67 +727,202 @@
   .heroGrid {
     display: grid;
     grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr);
-    grid-template-areas:
-      'shot text'
-      'plate text';
     align-items: start;
     column-gap: 44px;
-    row-gap: 26px;
-  }
-  .shot {
-    grid-area: shot;
   }
   .heroText {
-    grid-area: text;
-    /* 사진 위쪽에 이름을 맞춘다 — 도판까지 포함한 왼쪽 칸 높이에 가운데를 맞추면
-       이름이 화면 한참 아래로 내려간다(실측 y≈620px). */
+    /* 사진 위쪽에 이름을 맞춘다 — 갤러리 높이에 가운데를 맞추면 이름이 아래로 내려간다. */
     align-self: start;
     padding-top: clamp(8px, 2vw, 28px);
     min-width: 0;
   }
-  .frame {
-    grid-area: plate;
-  }
 }
 
 /**
- * 대표 실사(`@/lib/photos`) — 도감에서 사진이 가장 크게 서는 자리.
+ * 실사 갤러리(`@/lib/photos` 의 `photosFor`) — 도감에서 사진이 가장 크게 서는 자리.
  *
- * ⚠ 사진 위에 글자를 얹지 않는다. 이름·꽃말은 옆(또는 아래) 칸에 있으므로 스크림도
- *   필요 없고, §1.5g 의 대비 계산을 처음부터 만들지 않는 것이 가장 싼 해법이다.
+ * ⚠ 사진 **위에** 글자를 얹지 않는다. 변형 라벨도 액자 바깥 윗줄이다 — 이름·꽃말이 옆
+ *   칸에 있어 이 화면은 §1.5g 의 스크림 계산을 처음부터 만들지 않기로 한 자리다.
+ *   (넘김 버튼만 예외로 액자 안에 든다. 글자가 아니라 아이콘이고, 제 배경을 갖는다.)
  */
 .shot {
   margin: 0;
 }
+
+/**
+ * 액자 **위**의 한 줄 — `분홍빛` 같은 색 라벨과 `2 / 3` 카운트.
+ *
+ * ⚠ 라벨이 없는 컷이 섞여 있어도 **줄 높이는 고정**이다(`min-height`). 없다고 줄을 접으면
+ *   컷을 넘길 때마다 액자가 위아래로 튄다 — CLS 0 을 지키려고 비워 두는 자리다.
+ */
+.shotLabel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 22px;
+  margin-bottom: 8px;
+  /* §1.6b — 마이크로 타이포도 12px 아래로 내려가지 않는다. */
+  font-size: 12px;
+  line-height: 1.6;
+}
+.shotVariant {
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--fg-70);
+}
+.shotCount {
+  /* 카운트는 라벨보다 한 단 물러선다 — 읽을 것은 색 이름 쪽이다. */
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.08em;
+  color: var(--fg-50);
+}
+
 .shotFrame {
   position: relative;
   overflow: hidden;
-  /* 32컷이 가로·세로가 섞여 있어 한 틀에 담고 잘라 낸다(액자와 달리 여백을 두지 않는다). */
+  /* 컷들이 가로·세로가 섞여 있어 한 틀에 담고 잘라 낸다(액자와 달리 여백을 두지 않는다).
+     **높이를 비율로 먼저 잡는 것이 CLS 0 의 전부다** — 첫 장이 늦게 와도 자리는 이미 있다. */
   aspect-ratio: 4 / 3;
   border: 1px solid var(--hair);
   border-radius: 3px;
   /* 로드 전·실패 시 드러나는 면 — 도판 폴백과 같은 규칙(그 꽃의 카테고리 색). */
   background: linear-gradient(158deg, var(--cat-tone) 0%, var(--ink-900) 52%, var(--ink-950) 100%);
   box-shadow: 0 14px 36px rgba(0, 0, 0, 0.42);
+  /* 스와이프가 세로 스크롤을 잡아먹지 않게 — 가로만 우리가 처리한다. */
+  touch-action: pan-y;
 }
+/**
+ * 컷들은 **전부 겹쳐 눕는다.** 크로스페이드가 성립하려면 요소가 처음부터 다 서 있어야
+ * 하기 때문이다(결과 화면 `ResultView` 의 선례와 같은 문법). 받아 오는 시점만 미룬다 —
+ * `src` 는 컴포넌트가 데운 컷에만 붙인다.
+ */
 .shotImg {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
+  opacity: 0;
   /* 테마 공통 사진 틴트 — 랜딩 카드·히어로와 같은 값을 쓴다. */
   filter: var(--media-filter);
+  /* reduced-motion 은 globals.css 가 전환을 0 으로 만든다 → 즉시 교체된다. */
+  transition: opacity 0.28s var(--ease);
 }
+.shotOn {
+  opacity: 1;
+}
+
+/**
+ * 이전·다음 — §1.6b 아이콘 버튼 규격(원형 44×44 · 1px 보더 · 아이콘 스트로크 1.6).
+ * 액자 안에 들지만 제 배경을 깔고 서므로 사진 위 대비 문제를 만들지 않는다.
+ */
+.shotNav {
+  position: absolute;
+  top: 50%;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  transform: translateY(-50%);
+  border: 1px solid color-mix(in srgb, var(--fg) 35%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink-950) 62%, transparent);
+  color: var(--fg);
+  backdrop-filter: blur(6px);
+  transition:
+    background-color var(--dur) var(--ease),
+    border-color var(--dur) var(--ease);
+}
+.shotPrev {
+  left: 10px;
+}
+.shotNext {
+  right: 10px;
+}
+.shotNav:hover {
+  border-color: color-mix(in srgb, var(--fg) 60%, transparent);
+  background: color-mix(in srgb, var(--ink-950) 82%, transparent);
+}
+.shotNav:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.shotNav svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+}
+
 /**
  * 작가 크레딧은 사진 바로 아래 캡션에(문서 §주의 6 — 도감은 캡션, 랜딩은 푸터 일괄).
  * 다만 **전문은 '출처' 한 단어 뒤로 접는다**(2026-08-15 사용자 피드백). 표기를 없애는 게
  * 아니라 한 번의 클릭 뒤로 옮기는 것이고, `<details>` 라 JS 없이도 열린다.
+ *
+ * 2026-08-16 부터 이 줄이 점 인디케이터와 자리를 나눠 쓴다 — 둘 다 "지금 어느 컷인가"에
+ * 딸린 것이라 같은 줄에 두는 편이 액자 아래를 조용하게 만든다.
  */
 .shotCredit {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
   margin-top: 2px;
-  font-size: 11.5px;
+  font-size: 12px;
   line-height: 1.6;
   letter-spacing: 0.01em;
   color: var(--fg-50);
+}
+
+/**
+ * 점 인디케이터 — §1.6b **세그먼트** 문법(pill 트랙 + 안쪽 토글).
+ * 트랙은 전경 8% 면이고, 고른 칸만 `--ctrl-on` 으로 채운다(밑줄·크기 변화 같은 다른
+ * 선택 표현을 섞지 마라 — "한 화면 한 선택 표현").
+ *
+ * ⚠ 점은 보기용이고 **누르는 면은 44×44** 다(§1.6 터치 타깃). 그래서 버튼을 크게 두고
+ *   그 안에 8px 짜리 점을 그린다 — 점 자체를 44px 로 키우면 트랙이 알약이 아니라 판이 된다.
+ */
+.shotDots {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--fg) 8%, transparent);
+}
+.shotDot {
+  display: grid;
+  place-items: center;
+  /* §1.6 터치 타깃 하한은 아이콘 버튼만이 아니라 **전 컨트롤**에 걸린다 — 44×44 를 채운다.
+     점 넷이면 트랙이 190px 쯤 되지만, 그 줄에 함께 서는 것은 `출처` 하나뿐이라 자리가 있다
+     (390px 에서 실측 228px / 가용 346px). */
+  width: 44px;
+  height: 44px;
+  padding: 0;
+}
+.shotDot span {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--fg) 34%, transparent);
+  transition:
+    background-color var(--dur) var(--ease),
+    transform var(--dur) var(--ease);
+}
+.shotDot:hover span {
+  background: color-mix(in srgb, var(--fg) 60%, transparent);
+}
+.shotDotOn span {
+  background: var(--ctrl-on);
+}
+.shotDot:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: -4px;
+  border-radius: 999px;
 }
 .creditSum {
   display: inline-flex;
@@ -836,17 +971,22 @@
  * 그 안쪽에 골드 헤어라인을 넣은 뒤 바깥 그림자로 띄운다.
  */
 .frame {
-  width: min(100%, 420px);
+  width: min(100%, 400px);
   margin-inline: auto;
+  margin-top: 18px;
 }
 /**
- * 보조로 내려온 도판은 실사보다 작게 선다 — 위계가 크기로도 읽혀야 한다.
+ * 2026-08-16 — 액자가 히어로 칸에서 **제 소절**로 내려오며 264px 에서 340px 로 돌아왔다.
+ * 실사와 한 칸을 나눠 쓸 때는 "실사보다 작아야" 위계가 읽혔지만, 이제 위계는 **자리**가
+ * 말한다(히어로 다음 소절). 그러니 액자는 판면이 보일 만큼은 커도 된다.
+ *
  * ⚠ 이 블록은 반드시 위 `.frame` 기본값 **뒤에** 온다. 미디어 쿼리는 우선순위를 올리지
- *   않으므로(같은 0,1,0), 앞에 두면 나중에 오는 420px 이 이겨서 아무 일도 일어나지 않는다.
+ *   않으므로(같은 0,1,0), 앞에 두면 나중에 오는 기본값이 이겨서 아무 일도 일어나지 않는다.
  */
 @media (min-width: 880px) {
   .frame {
-    width: min(100%, 264px);
+    width: min(100%, 340px);
+    /* 소절 제목이 왼쪽에 서 있으니 액자도 왼쪽에 맞춘다. */
     margin-inline: 0;
   }
 }

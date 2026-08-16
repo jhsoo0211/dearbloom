@@ -570,6 +570,9 @@
 .footNav a {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  /* §1.6 터치 타깃 44**×**44 — 높이만으로는 `홈으로`(36.1px)·`꽃 도감`(39.5px) 이 모자라다. */
+  min-width: 44px;
   min-height: 44px;
   font-size: 14px;
   color: var(--ivory-72);

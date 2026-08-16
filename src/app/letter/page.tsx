@@ -37,8 +37,13 @@ export default async function LetterPage() {
     <div className={styles.page}>
       <span className={styles.grain} aria-hidden="true" />
 
+      {/*
+        머리·발은 본문과 **같은 폭**이어야 한다. `.wrapNarrow`(680) 로 좁힌 것은 본문뿐이라
+        머리·발만 940 에 남으면 한 페이지에 왼쪽 끝이 둘 생긴다 — 1024px 위에서 로고가
+        제목보다 133px 바깥에 서 있었다(2026-08-16 QA 실측). 스튜디오는 2단이라 940 그대로다.
+      */}
       <header className={styles.siteHead}>
-        <div className={`${styles.wrap} ${styles.siteHeadRow}`}>
+        <div className={`${styles.wrap} ${styles.wrapNarrow} ${styles.siteHeadRow}`}>
           <Link className={styles.logo} href="/">
             dearbloom
           </Link>
@@ -67,7 +72,7 @@ export default async function LetterPage() {
 
       {/* ── 3. 푸터 ─────────────────────────────────────────────── */}
       <footer className={styles.siteFoot}>
-        <div className={styles.wrap}>
+        <div className={`${styles.wrap} ${styles.wrapNarrow}`}>
           <p className={styles.footSay}>
             꽃말은 시대와 나라를 건너며 조금씩 다른 이야기가 돼요. dearbloom은 그 갈래를 함께
             들려드려요.

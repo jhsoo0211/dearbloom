@@ -934,7 +934,10 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  /* §1.6b 공통 — 글자는 작아도 누르는 면은 44px. */
+  /* §1.6b 공통 — 글자는 작아도 누르는 면은 44**×**44. `출처 ›` 는 가로가 38px 이라
+     세로만 세워 두면 하한을 못 채운다(2026-08-16 QA 실측). 데스크톱 좌단은 아래
+     `.colAInner .creditSum` 이 36px 로 낮춘다(포인터 전용 · 기존 판단 유지). */
+  min-width: 44px;
   min-height: 44px;
   cursor: pointer;
   list-style: none;
@@ -1277,7 +1280,9 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  min-height: 32px;
+  /* §1.6 터치 타깃 44px. 위계 강등(§1.5h)은 **글자 크기·색**이 맡는다 — 누름면까지 줄이면
+     접근성 하한을 깬다(2026-08-16 QA 실측 45.5×32). 글자는 13px 그대로다. */
+  min-height: 44px;
   font-size: 13px;
   color: var(--fg-50);
   cursor: pointer;
@@ -2216,8 +2221,12 @@
     border-radius: 0;
   }
   .wmDesk {
-    display: block;
-    padding: 6px 2px 4px;
+    /* 768px 는 손가락도 닿는 폭이다 — 누름면은 §1.6 하한(44px)을 지키고, 글자는 그대로
+       둔다(2026-08-16 QA 실측 88×32). `inline-flex` 로 바꿔야 min-height 가 먹는다. */
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 2px;
   }
   .progress {
     max-width: 520px;

@@ -201,6 +201,9 @@
 .footNav a {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  /* §1.6 터치 타깃 44**×**44 — 높이만으로는 `홈으로`(36.1px)·`꽃 도감`(39.5px) 이 모자라다. */
+  min-width: 44px;
   min-height: 44px;
   font-size: 14px;
   text-decoration: none;
@@ -474,7 +477,9 @@
   border-radius: 9999px;
   border: 1px solid var(--ghost-line);
   background: transparent;
-  font-size: 15px;
+  /* iOS Safari 확대 방지선 — 16px 미만이면 포커스와 동시에 페이지가 확대된다(§1.5m).
+     아래 `.textarea` 가 16px 를 따로 세워 둔 것과 이제 같은 값이다. */
+  font-size: 16px;
   color: var(--fg);
   appearance: none;
   transition: border-color var(--dur) var(--ease);
@@ -667,7 +672,9 @@
   align-items: center;
   gap: 8px;
   flex: 1 1 200px;
-  height: 44px;
+  /* 46px 이다(§1.6b 보조 컨트롤 h44~48 안). 상자가 44 면 1px 보더 두 줄을 빼고 남는
+     안쪽이 42px 이라, 실제로 눌리는 인풋이 §1.6 하한 아래로 내려간다. */
+  height: 46px;
   padding: 0 14px;
   border-radius: 9999px;
   border: 1px solid var(--ghost-line);
@@ -684,7 +691,8 @@
   height: 100%;
   border: 0;
   background: transparent;
-  font-size: 14.5px;
+  /* iOS Safari 확대 방지선 — 16px 미만이면 포커스와 동시에 페이지가 확대된다(§1.5m). */
+  font-size: 16px;
   color: var(--fg);
   appearance: none;
 }

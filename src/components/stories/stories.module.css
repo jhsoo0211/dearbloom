@@ -300,8 +300,10 @@
     top: 0;
     z-index: 25;
     background: var(--chrome);
-    backdrop-filter: blur(14px) saturate(130%);
+    /* ⚠ 프리픽스 먼저 · 표준 나중. 뒤집으면 빌드가 표준 선언을 버리고 `-webkit-` 판만 남겨
+       Chrome 에서 blur 이 통째로 죽는다(2026-08-16 QA 실측 · landing.css 같은 주석). */
     -webkit-backdrop-filter: blur(14px) saturate(130%);
+    backdrop-filter: blur(14px) saturate(130%);
   }
   @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
     .filters {
@@ -472,6 +474,14 @@
  *   않으므로 페이지가 가로로 밀리지 않는다(`.strip` 이 지키는 관계와 같다).
  */
 .chipsScroll {
+  /* ⚠ `position: relative` 는 장식이 아니라 **가로 넘침 차단선**이다.
+     이 상자 안 `꽃 고르기` 버튼은 `.srOnly`(position:absolute) 한 조각을 품는데, 상자가
+     static 이면 그 조각의 컨테이닝 블록이 `.page` 로 올라가 **스크롤러 밖**에 놓인다.
+     절대 배치 자손은 조상 스크롤러가 클립하지 못하므로, 줄 끝(≈434px)에 선 1px 짜리
+     조각 하나가 390px 화면에서 `body.scrollWidth` 를 435 로 밀어 올렸다(2026-08-16 QA
+     실측: 45px 넘침. `html{overflow-x:clip}` 이 스크롤바만 가리고 있었다).
+     상자를 positioned 로 만들면 그 조각이 상자 안에 갇혀 함께 클립된다. */
+  position: relative;
   flex: 1 1 0;
   /* flex 자식의 기본 min-width:auto 를 풀지 않으면 상자가 내용만큼 벌어져 스크롤이 안 생긴다. */
   min-width: 0;
@@ -529,7 +539,9 @@
   border: 0;
   background: transparent;
   font: inherit;
-  font-size: 15px;
+  /* 16px 아래로 내리지 않는다 — iOS Safari 는 그때 포커스와 동시에 페이지를 확대하고,
+     되돌리려면 사용자가 손으로 핀치해야 한다(§1.5m 이 셀렉트에 세워 둔 것과 같은 선). */
+  font-size: 16px;
   color: var(--fg);
   /* iOS 가 검색 인풋에 얹는 기본 모양(둥근 회색 상자·내부 그림자)을 지운다. */
   appearance: none;
@@ -546,8 +558,9 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  /* §1.6b 아이콘 버튼 44×44. 담는 바가 48px·좌우 8px 여백이라 그대로 들어간다. */
+  width: 44px;
+  height: 44px;
   border-radius: 9999px;
   color: var(--fg-50);
   transition: background-color var(--dur) var(--ease);
@@ -1242,6 +1255,9 @@
 .footNav a {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  /* §1.6 터치 타깃 44**×**44 — 높이만으로는 `홈으로`(34.8px) 가 가로로 모자라다. */
+  min-width: 44px;
   min-height: 44px;
   text-decoration: none;
   color: var(--fg-50);

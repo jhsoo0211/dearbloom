@@ -82,8 +82,13 @@
   min-height: 58px;
   padding: env(safe-area-inset-top) 10px 0;
   background: linear-gradient(180deg, rgba(11, 12, 10, 0.94), rgba(11, 12, 10, 0.72));
-  backdrop-filter: blur(18px) saturate(130%);
+  /* ⚠ 프리픽스가 **먼저**, 표준이 **나중**이다. 순서를 뒤집으면 빌드(lightningcss)가 두
+     선언을 한 속성으로 접으면서 뒤에 온 `-webkit-` 판만 남기고 표준 판을 버린다 —
+     Chrome 은 `-webkit-backdrop-filter` 를 모르므로 유리가 통째로 죽는다(2026-08-16 QA
+     실측: 빌드 산출물에 `-webkit-` 만 남아 전 sticky 바가 blur 없이 비쳤다).
+     flow.module.css 가 처음부터 이 순서라 살아 있었다 — 그 순서를 표준으로 삼는다. */
   -webkit-backdrop-filter: blur(18px) saturate(130%);
+  backdrop-filter: blur(18px) saturate(130%);
   border-bottom: 1px solid var(--hair);
 }
 
@@ -335,7 +340,9 @@
   border: 1px solid var(--hair-2);
   background: rgba(11, 12, 10, 0.55);
   font-family: inherit;
-  font-size: 15.5px;
+  /* iOS Safari 확대 방지선 — 16px 미만이면 포커스와 동시에 페이지가 확대된다(§1.5m).
+     명단 칸은 폰에서 연달아 눌러 채우는 자리라 그 확대가 특히 거슬린다. */
+  font-size: 16px;
   font-weight: 600;
   letter-spacing: -0.01em;
   color: var(--fg);
@@ -768,8 +775,9 @@
   font-size: 10.5px;
   letter-spacing: 0.04em;
   color: var(--on-media-mute);
-  backdrop-filter: blur(8px);
+  /* 프리픽스 먼저 · 표준 나중 (위 `.bar` 주석의 빌드 함정) */
   -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
 }
 
 .bqList {

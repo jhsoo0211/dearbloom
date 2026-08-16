@@ -793,7 +793,9 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  /* §1.6b 공통 — 글자는 작아도 누르는 면은 44px. */
+  /* §1.6b 공통 — 글자는 작아도 누르는 면은 44**×**44. `출처 ›` 두 글자는 가로가 38px 밖에
+     안 나와 세로만 세워 두면 하한을 못 채운다(2026-08-16 QA 실측). */
+  min-width: 44px;
   min-height: 44px;
   cursor: pointer;
   list-style: none;
@@ -1383,6 +1385,10 @@
 .footNav a {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  /* §1.6 터치 타깃은 44**×**44 다 — 높이만 세워 두면 `홈으로`(34.8px) 처럼 짧은 항목이
+     가로로 모자란다(2026-08-16 QA 실측). 글자가 이미 44px 를 넘는 항목은 그대로다. */
+  min-width: 44px;
   min-height: 44px;
   text-decoration: none;
   color: var(--fg-50);

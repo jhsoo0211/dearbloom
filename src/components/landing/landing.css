@@ -299,6 +299,34 @@ body.db-nav-compact .db-nav {
 .db-nav-cta:active {
   scale: 0.98;
 }
+/* 모바일 메뉴 버튼 (§1.6c) — 규격은 §1.6b 아이콘 버튼(원형 44×44 · 1px 보더 · 스트로크 1.6).
+   861px 위에서는 `.db-nav-links` 가 서 있으므로 이 버튼은 화면에 없다(아래 860 쿼리에서만 켠다).
+   ⚠ `visibility` 나 투명도로 감추지 마라 — `display:none` 이라야 탭 정지점에서도 사라진다.
+     데스크톱에서 보이지 않는 버튼이 Tab 순서에 남아 있으면 그게 더 나쁜 고장이다. */
+.db-nav-menu {
+  display: none;
+  width: 44px;
+  height: 44px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid var(--ctrl-line);
+  color: var(--fg);
+  transition: border-color var(--ctrl-t) var(--ease), background-color var(--ctrl-t) var(--ease);
+}
+.db-nav-menu:hover,
+.db-nav-menu:focus-visible {
+  border-color: var(--fg);
+  background: var(--ctrl-hover);
+}
+.db-nav-menu svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+}
 
 /* ── 타이포·버튼 유틸 ───────────────────────────────────────────────── */
 .db-overline {
@@ -1848,6 +1876,182 @@ body.db-nav-compact .db-nav {
   scale: 0.98;
 }
 
+/* ═══════════════ 모바일 내비 메뉴 (§1.6c) ═══════════════
+   860px 아래에서 `.db-nav-links` 가 숨는 자리를 메우는 전면 목차.
+   게이트와 달리 **JS 가 그린다**(닫혀 있으면 DOM 에 없다) — 첫 프레임에 떠 있어야 할
+   이유가 없고, 없는 편이 하이드레이션에서 견줄 것도 없다.
+   z-index 는 내비(60)·그레인(70) 위, 게이트(120) 아래인 100 이다: 게이트가 떠 있는 동안은
+   내비가 `inert` 라 메뉴가 열릴 수 없으므로 둘이 겹칠 자리는 없지만, 순서까지 뒤집혀
+   있으면 그 사실이 화면으로 증명되지 않는다. */
+.db-navsheet {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  color: var(--fg);
+  /* 잉크 한 면 + 위쪽에서 번지는 액센트 한 겹(§1.4 팔레트 변수만 쓴다).
+     ⚠ `backdrop-filter` 로 뒤를 비치게 하지 않는다 — 전면을 덮는 블러 면은 스크롤이
+       잠긴 동안에도 합성 비용이 크고, 목차는 사진 위에서 읽을 글이 아니다. */
+  background: radial-gradient(
+      132% 78% at 50% 0%,
+      color-mix(in srgb, var(--accent) 9%, transparent),
+      transparent 62%
+    ),
+    var(--bg);
+}
+/* 필름 그레인 — 필터 자체(`#db-grain-noise`)는 `.db-page` 끝의 한 벌을 같이 쓴다. */
+.db-navsheet-grain {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: var(--grain-opacity);
+  mix-blend-mode: var(--grain-blend);
+}
+.db-navsheet-in {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  width: min(100%, 560px);
+  margin-inline: auto;
+  padding: 18px clamp(22px, 7vw, 40px) clamp(28px, 5vh, 44px);
+}
+.db-navsheet-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 44px;
+}
+.db-navsheet-over {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+/* 닫기 — §1.6b 아이콘 버튼(원형 44×44 · 1px 보더 · 스트로크 1.6), 메뉴 버튼과 한 짝이다. */
+.db-navsheet-x {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid var(--ctrl-line);
+  color: var(--fg);
+  transition: border-color var(--ctrl-t) var(--ease), background-color var(--ctrl-t) var(--ease);
+}
+.db-navsheet-x:hover,
+.db-navsheet-x:focus-visible {
+  border-color: var(--fg);
+  background: var(--ctrl-hover);
+}
+.db-navsheet-x svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+}
+/* 남는 세로 자리는 **목차 위아래로 나눈다**(`margin-block: auto`) — 머리말은 위에,
+   CTA 는 아래에 남기고 목차가 그 사이 가운데에 선다. 슬랙을 한쪽에만 두면 390×844 에서
+   목차와 CTA 사이가 화면의 40% 만큼 비어 화면이 끊겨 보였다.
+   최소 간격은 `padding` 이 맡는다 — 내용이 길어 auto 가 0으로 접혀도 줄이 붙지 않는다. */
+.db-navsheet-list {
+  display: flex;
+  flex-direction: column;
+  margin-block: auto;
+  padding-top: clamp(18px, 4.5vh, 40px);
+  padding-bottom: clamp(20px, 4vh, 36px);
+}
+.db-navsheet-item {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+}
+.db-navsheet-no {
+  flex: none;
+  width: 2.4em;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  color: var(--accent);
+}
+/* 항목은 세리프 대형 — 목차가 화면의 주인공이 되는 자리라 본문 위계를 쓰지 않는다.
+   링크 상자는 **글자 폭만큼**이다: 줄의 남는 자리는 배경이라, 거기를 누르면 닫힌다. */
+.db-navsheet-item a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 56px;
+  font-family: var(--font-serif);
+  font-weight: 300;
+  font-size: clamp(30px, 8.5vw, 42px);
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  color: var(--fg);
+  text-decoration: none;
+  transition: color var(--ctrl-t) var(--ease);
+}
+.db-navsheet-item a:hover,
+.db-navsheet-item a:focus-visible {
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 8px;
+}
+/* CTA 는 목차의 결론이자 엄지 사정거리 — 폭을 다 쓴다(위 `margin-block: auto` 가 밀어 준다). */
+.db-navsheet-cta {
+  align-self: stretch;
+}
+.db-navsheet-foot {
+  margin-top: 14px;
+  text-align: center;
+  font-size: 12.5px;
+  letter-spacing: 0.04em;
+  color: var(--fg-50);
+}
+
+/* 순차 등장 — `--db-i` 가 자리 번호다.
+   ⚠ `opacity: 0` 이 **이 미디어 쿼리 안에만** 있는 것이 전부다. 모션을 끈 사용자에게는
+     숨기는 선언 자체가 없으므로 여는 즉시 전부 서 있다(§1.2·§1.6). 밖으로 빼지 마라. */
+@media (prefers-reduced-motion: no-preference) {
+  .db-navsheet {
+    animation: db-navsheet-fade 0.32s var(--ease) both;
+  }
+  .db-navsheet-top,
+  .db-navsheet-item,
+  .db-navsheet-cta,
+  .db-navsheet-foot {
+    opacity: 0;
+    animation: db-navsheet-rise 0.5s var(--ease) forwards;
+    animation-delay: calc(var(--db-i, 0) * 55ms + 60ms);
+  }
+}
+@keyframes db-navsheet-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes db-navsheet-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 /* ═══════════════ 모션 프리셋 ═══════════════
    인트로 대상은 GSAP 이 잡기 전까지 숨어 있다. 모션이 아예 안 뜨는 경우를 대비해
    9초짜리 페일세이프 애니메이션을 함께 걸어 둔다 — 스크립트가 죽어도 글자가 갇히지 않는다. */
@@ -1901,8 +2105,12 @@ body.db-nav-compact .db-nav {
   }
 }
 @media (max-width: 860px) {
+  /* 유리 알약 하나에 항목 다섯이 들어가지 않는다 — 줄은 접고, 대신 옆에 문을 낸다(§1.6c). */
   .db-nav-links {
     display: none;
+  }
+  .db-nav-menu {
+    display: inline-flex;
   }
 }
 @media (max-width: 640px) {

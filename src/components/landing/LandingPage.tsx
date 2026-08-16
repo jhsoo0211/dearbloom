@@ -20,7 +20,9 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from '
 import { STORY_CATEGORIES } from '@/components/stories/categories';
 import type { FlowerThemeSlug } from '@/lib/theme/flowers';
 
+import MobileNavSheet from './MobileNavSheet';
 import TodayCarousel from './TodayCarousel';
+import { lockBodyScroll } from './body-scroll-lock';
 import {
   BIRTH_FINDER_HREF,
   CATEGORY_THEMES,
@@ -235,6 +237,7 @@ export default function LandingPage({ data }: { data: LandingData }) {
   const progressRef = useRef<HTMLSpanElement>(null);
   const gateRef = useRef<HTMLDivElement>(null);
   const gateButtonRef = useRef<HTMLButtonElement>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
 
   /**
    * 전역 테마 — 명시적 액션으로만 바뀐다(§1.4c v3.3).
@@ -262,6 +265,31 @@ export default function LandingPage({ data }: { data: LandingData }) {
   const gateOpen = !entered && !reduceMotion;
   /** 게이트 로딩 바. 첫 프레임부터 조금 차 있는 편이 "멈춘 화면"으로 보이지 않는다. */
   const [gateProgress, setGateProgress] = useState(0.12);
+
+  /* ── 모바일 내비 메뉴 (§1.6c) ──────────────────────────────────────
+     860px 아래에서 내비 링크가 숨는 자리를 메우는 전체 목차. 시트 자체는
+     `MobileNavSheet` 가 그리고, 여기서는 **뒤 화면의 책임**만 진다:
+       · 열려 있는 동안 nav·main·footer 에 `inert` (게이트와 같은 문법)
+       · 닫히면 연 버튼으로 포커스 복귀
+     ⚠ 게이트가 떠 있는 동안에는 내비가 이미 `inert` 라 이 메뉴는 열릴 수 없다 —
+       두 대화상자가 겹칠 자리가 애초에 없다. */
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuUsed = useRef(false);
+  const openMenu = useCallback(() => setMenuOpen(true), []);
+  const closeMenu = useCallback(() => setMenuOpen(false), []);
+
+  /* 포커스 복귀는 **이펙트에서** 해야 한다. 닫기 핸들러 안에서 곧바로 `focus()` 하면
+     그 시점의 내비는 아직 `inert` 라(리렌더 전) 포커스가 어디에도 앉지 않는다.
+     React 는 DOM 을 커밋한 뒤 이펙트를 돌리므로 여기서는 이미 `inert` 가 걷혀 있다. */
+  useEffect(() => {
+    if (menuOpen) {
+      menuUsed.current = true;
+      return;
+    }
+    if (!menuUsed.current) return;
+    menuUsed.current = false;
+    menuButtonRef.current?.focus({ preventScroll: true });
+  }, [menuOpen]);
 
   const motion = useLandingMotion(rootRef, entered);
 
@@ -328,9 +356,10 @@ export default function LandingPage({ data }: { data: LandingData }) {
        (여기서 일찍 물러나지 않으면 게이트 없는 화면에서 body 스크롤만 잠긴다.) */
     if (!gateOpen) return;
 
-    // 게이트가 떠 있는 동안 뒤 페이지가 밀리지 않게 잠근다(CSS 로는 조상에 닿지 못한다).
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    /* 게이트가 떠 있는 동안 뒤 페이지가 밀리지 않게 잠근다(CSS 로는 조상에 닿지 못한다).
+       잠금은 **셈하는 한 벌**이다 — 모바일 메뉴(§1.6c)도 같은 것을 쓰므로 둘이 겹쳐도
+       해제 순서가 어긋나지 않는다(`body-scroll-lock.ts` 머리말). */
+    const unlockScroll = lockBodyScroll();
 
     let done = 0;
     const step = () => {
@@ -367,7 +396,7 @@ export default function LandingPage({ data }: { data: LandingData }) {
       window.clearTimeout(readyTimer);
       window.clearTimeout(failsafe);
       document.removeEventListener('keydown', onKey);
-      document.body.style.overflow = previousOverflow;
+      unlockScroll();
     };
     /* `gateOpen` 이 deps 에 있는 것이 잠금 해제의 전부다 — 들어가는 순간 위 정리 함수가
        돌아 원래 overflow 로 되돌리고, 다시 실행된 이펙트는 첫 줄에서 물러난다. */
@@ -525,13 +554,14 @@ export default function LandingPage({ data }: { data: LandingData }) {
         </div>
 
         {/* ═══ 내비 ═══
-            `inert` 는 게이트가 떠 있는 동안만 붙는다 — 대화상자 뒤의 것은 Tab 으로도
-            스크린리더로도 닿지 않아야 한다(접근성 리뷰 P0-1). */}
+            `inert` 는 대화상자가 떠 있는 동안만 붙는다 — 그 뒤의 것은 Tab 으로도
+            스크린리더로도 닿지 않아야 한다(접근성 리뷰 P0-1). 대화상자는 둘이다:
+            로딩 게이트(#21)와 모바일 내비 메뉴(§1.6c). */}
         <nav
           className="db-nav db-glass"
           aria-label="주요 메뉴"
           data-db-intro
-          inert={gateOpen || undefined}
+          inert={gateOpen || menuOpen || undefined}
         >
           <a className="db-brand" href="#db-hero" aria-label="dearbloom 홈">
             <svg className="db-mark" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -578,9 +608,38 @@ export default function LandingPage({ data }: { data: LandingData }) {
           <Link className="db-nav-cta" href="/recommend" prefetch={false}>
             추천 시작
           </Link>
+
+          {/*
+            §1.6c — 860px 아래에서만 서는 메뉴 버튼(CSS 가 `display` 로 가른다).
+            위 `.db-nav-links` 가 그 폭에서 통째로 숨기 때문에, 이 버튼이 없으면 폰에서는
+            이야기·도감·편지로 가는 길이 첫 화면에 하나도 없다.
+            규격은 §1.6b 아이콘 버튼(원형 44×44 · 1px 보더 · 스트로크 1.6).
+          */}
+          <button
+            type="button"
+            ref={menuButtonRef}
+            className="db-nav-menu"
+            aria-label="전체 메뉴 열기"
+            aria-haspopup="dialog"
+            aria-expanded={menuOpen}
+            onClick={openMenu}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M4 7.5h16M4 12h16M4 16.5h16" strokeLinecap="round" />
+            </svg>
+          </button>
         </nav>
 
-        <main id="db-main" inert={gateOpen || undefined}>
+        {/*
+          모바일 내비 메뉴 (§1.6c).
+
+          ⚠ 내비 **밖**이다. `.db-nav` 는 `backdrop-filter` 를 쓰는 `.db-glass` 라
+            고정 위치 자손의 컨테이닝 블록이 되고 `overflow: hidden` 까지 걸려 있어서,
+            안에 두면 전면 시트가 알약 크기로 잘린다.
+        */}
+        <MobileNavSheet open={menuOpen} onClose={closeMenu} />
+
+        <main id="db-main" inert={gateOpen || menuOpen || undefined}>
           {/* ═══════════════ 히어로 ═══════════════ */}
           <section className="db-hero" id="db-hero" aria-labelledby="db-hero-h1">
             <div className="db-hero-media" aria-hidden="true">
@@ -963,7 +1022,7 @@ export default function LandingPage({ data }: { data: LandingData }) {
         </main>
 
         {/* ═══════════════ 푸터 ═══════════════ */}
-        <footer className="db-footer" inert={gateOpen || undefined}>
+        <footer className="db-footer" inert={gateOpen || menuOpen || undefined}>
           <div className="db-shell">
             <div className="db-footer-top">
               <p className="db-disc">

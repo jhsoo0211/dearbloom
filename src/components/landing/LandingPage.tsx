@@ -22,9 +22,9 @@ import type { FlowerThemeSlug } from '@/lib/theme/flowers';
 
 import TodayCarousel from './TodayCarousel';
 import {
+  BIRTH_FINDER_HREF,
   CATEGORY_THEMES,
   SECTION_IMAGES,
-  withParticle,
   type LandingData,
 } from './landing-data';
 import { useLandingMotion } from './useLandingMotion';
@@ -673,11 +673,17 @@ export default function LandingPage({ data }: { data: LandingData }) {
                   §1.5d — 스펙 언어(카드 안만 바뀌고…) 금지. 테마 이름도 여기서는 부르지 않는다
                   (카드가 이미 말해 준다).
 
-                  리드는 **두 줄로 나뉜다**(§1.5n · 사용자 요청 2026-08-16):
-                    ① `db-today-lede`  — 오늘의 꽃 + 고른 이유. 이유는 서버가 그 꽃의 실제
-                       이야기에서 끌어와 조합한 문장이라(`data.todayReason`) 길다. 안내 문장과
-                       한 문단에 섞이면 인용이 묻힌다.
-                    ② `db-today-aside` — 화면 분위기 + 넘기기 안내. 읽지 않아도 되는 줄이다.
+                  리드는 **세 줄로 내려간다**(§1.5n · 2026-08-16 재작성):
+                    ① `db-today-lede`  — 리드 문단 전체. **문장을 여기서 짓지 않는다.**
+                       꽃 이름·고른 이유·이야기 인용까지 서버가 한 문단으로 만들어 내려보내고
+                       (`data.todayReason`), 그 문장 틀은 날짜로 회전한다.
+                    ② `db-today-aside` — 화면 빛깔 한 마디(`data.todayAside`). 아래 빛깔
+                       선택기를 여는 말이다. 읽지 않아도 되는 줄이다.
+                    ③ `db-today-birth` — 탄생화 각주.
+
+                  ⚠ 리드 앞에 `{날짜}, 오늘의 꽃은 {이름}이에요.` 를 되돌리지 마라. 그 뼈대가
+                    날마다 그대로 서는 것이 "작위적"이라는 피드백의 첫 원인이었고, 날짜는 이미
+                    히어로 캡션(`오늘의 꽃 · 2026.08.16`)과 아래 탄생화 줄이 말한다.
                   ⚠ `todayReason` 은 인용 부호까지 서버가 붙여 내려보낸다. 여기서 자르거나
                     따옴표를 덧붙이지 마라(훅 원문에 `"`·`'` 가 섞여 있다).
                 */}
@@ -685,14 +691,10 @@ export default function LandingPage({ data }: { data: LandingData }) {
                   오늘 꺼내 온 한 송이, 그리고 이어지는 이야기들
                 </h2>
                 <p className="db-today-lede" data-db-reveal>
-                  {/* ⚠ 여기는 `todayDateLabel`(`8월 16일`)이다. `todayLabel`(`2026.08.16`)로
-                      되돌리지 마라 — 두 줄 아래 탄생화 각주와 표기가 어긋난다. */}
-                  {data.todayDateLabel}, 오늘의 꽃은 {withParticle(today.name, 'copula')}.{' '}
                   {data.todayReason}
                 </p>
                 <p className="db-today-aside" data-db-reveal>
-                  화면의 빛깔도 이 꽃의 분위기를 닮아 있어요. 카드를 옆으로 넘기면 다른 꽃들의
-                  이야기가 이어져요.
+                  {data.todayAside}
                 </p>
                 {/*
                   탄생화 각주 (§1.5e 절제 — 밴드도 박스도 만들지 않는다).
@@ -705,15 +707,31 @@ export default function LandingPage({ data }: { data: LandingData }) {
                     통하게 된 목록이다(`docs/birth-flowers-research.md` §2). 계보를 풀어 적는
                     자리는 도감(`/flowers` 생일 꽃 찾기)이고, 여기서는 단정만 하지 않으면 된다.
                 */}
+                {/*
+                  문장은 서버가 조각으로 내려보낸다(`lead` · `tail`) — 이 줄도 §1.5n 개정에서
+                  날짜 씨앗 변주가 들어왔고, 이름 한 낱말만 링크라 조각이 필요하다.
+
+                  링크는 **언제나 붙는다.** 도감에 있는 꽃(366일 중 57일)은 상세로 가고,
+                  나머지는 도감의 `생일 꽃 찾기` 구획으로 간다. 예전에는 그 309일에 이름이
+                  검은 글자로 남아 막다른 줄이 됐다 — 표에만 있는 꽃인 것은 맞지만, 다음에
+                  하고 싶은 일(다른 날짜도 찾아보기)로 가는 문이 화면에 없었다.
+                  ⚠ 폴백 링크의 `aria-label` 은 **보이는 이름으로 시작한다**(WCAG 2.5.3
+                    Label in Name) — 이름을 지우고 목적지만 읽히게 하면 음성 조작이 깨진다.
+                */}
                 {data.birthFlower && (
                   <p className="db-today-birth" data-db-reveal>
-                    오늘 {data.birthFlower.dateLabel}의 탄생화는{' '}
+                    {data.birthFlower.lead}
                     {data.birthFlower.href ? (
                       <Link href={data.birthFlower.href}>{data.birthFlower.name}</Link>
                     ) : (
-                      data.birthFlower.name
-                    )}{' '}
-                    — 꽃말은 ‘{data.birthFlower.meaning}’{data.birthFlower.meaningCopula}.
+                      <Link
+                        href={BIRTH_FINDER_HREF}
+                        aria-label={`${data.birthFlower.name} — 도감의 생일 꽃 찾기에서 다른 날짜도 보기`}
+                      >
+                        {data.birthFlower.name}
+                      </Link>
+                    )}
+                    {data.birthFlower.tail}
                   </p>
                 )}
 

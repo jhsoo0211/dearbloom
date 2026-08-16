@@ -38,6 +38,7 @@ import {
   SECTION_IMAGES,
   categoryOf,
   hasFinalConsonant,
+  withParticle,
   type BirthFlowerLine,
   type HeroImage,
   type LandingData,
@@ -226,48 +227,125 @@ function storyFor(flowerId: string, stories: CatalogStory[]) {
 }
 
 /* ------------------------------------------------------------------ *
- * 오늘의 꽃을 고른 이유 — 이야기에서 끌어온 한두 문장 (§1.5n)
+ * 오늘의 꽃 리드 — 이야기에서 끌어온 문단 (§1.5n)
  * ------------------------------------------------------------------ */
 
 /**
- * 이유 문장의 앞머리 — **엔진의 선정 근거(`basis`)를 사람의 말로 옮긴 것.**
- * 뒤에 이야기 인용이 붙으므로 예전 리드보다 짧다(한 문장에 사연을 둘 담지 않는다).
+ * ── 왜 문장 틀이 여러 벌인가 (2026-08-16 사용자 피드백: "워딩이 너무 작위적") ──────────
+ *
+ * 개정 전에는 틀이 **한 벌**이었다. `{날짜}, 오늘의 꽃은 {이름}이에요. {제철 한 마디}
+ * “{훅}” — {맺음}` 이 매일 그대로 서고 값만 갈렸다. 하루만 보면 멀쩡한데, 이 서비스는
+ * 같은 사람이 며칠에 걸쳐 다시 오는 화면이라 **뼈대가 먼저 눈에 익는다** — 그 순간
+ * 문장은 사람의 말이 아니라 빈칸 채운 서식으로 읽힌다.
+ *
+ * 그래서 값이 아니라 **틀을 회전시킨다.** 씨앗은 날짜(+슬롯 이름)뿐이라 결정성은 그대로다:
+ * 같은 날 새로고침은 같은 문단이고, 서버·테스트가 같은 값을 본다(§1.5n 의 대전제).
+ *
+ * 문장을 고를 때 지킨 선 셋:
+ *   · **날짜를 부르지 않는다.** 히어로 캡션(`오늘의 꽃 · 2026.08.16`)이 이미 말했고,
+ *     예전 리드는 그 아래에서 `8월 16일`을 한 번 더, 탄생화 줄이 또 한 번 불렀다.
+ *   · **문장끼리 잇는다.** 독립 완결문을 나열하면(사실 → 사실 → 안내) 사람의 말이 아니다.
+ *   · 꽃 이름은 조사를 데이터에서 맞춘다(`withParticle`) — `프리지아을` 이 나오는 순간
+ *     공들인 문장 전체가 기계 티를 낸다.
  */
-const BASIS_OPENING: Record<TodayBasis, string> = {
-  in_season: '일 년을 기다려 지금이 한창인 꽃이에요.',
-  adjacent: '이제 막 제철로 들어서는 꽃이에요.',
-  all: '계절을 가리지 않고 한결같이 곁에 있는 꽃이에요.',
+
+/** 꽃 이름을 데려가는 문장 ① — `basis` 별 네 벌. */
+type Opening = (name: string) => string;
+
+const OPENINGS: Record<TodayBasis, Opening[]> = {
+  in_season: [
+    (name) =>
+      `오늘은 ${withParticle(name, 'object')} 꺼냈어요. 마침 지금이 한창이라 오래 고민하지 않았어요.`,
+    (name) =>
+      `${withParticle(name, 'copula')}. 일 년을 기다려 지금 피는 꽃이라, 오늘이 아니면 안 될 것 같았어요.`,
+    /**
+     * ⚠ 여기서 **꽃집을 부르지 않는다.** 초고는 `요즘 꽃집에서 가장 싱싱하게 만날 수
+     * 있어요` 였는데, 오늘의 꽃 366일에는 팬지·제비꽃·크로커스·수련처럼 화단·화분에서
+     * 사는 꽃이 4분의 1쯤 걸린다(실측). 그런 날 이 문장은 없는 매대를 안내한다.
+     */
+    (name) =>
+      `오늘의 꽃은 ${withParticle(name, 'copula')}. 일 년 중 가장 싱싱한 얼굴을 볼 수 있는 때거든요.`,
+    (name) => `${withParticle(name, 'object')} 골랐어요. 지금이 이 꽃의 계절이라서요.`,
+  ],
+  adjacent: [
+    (name) =>
+      `오늘은 ${withParticle(name, 'object')} 꺼냈어요. 아직 한창은 아니지만, 곧 올 계절을 먼저 기다리고 싶었어요.`,
+    (name) =>
+      `${withParticle(name, 'copula')}. 제철을 코앞에 둔 꽃이라, 첫 소식처럼 먼저 건네고 싶었어요.`,
+    /**
+     * 네 벌 중 **방향을 말하지 않는 한 벌.** `adjacent` 는 앞뒤 달을 함께 훑은 결과라
+     * (`today.ts`) 갓 피는 꽃일 수도, 막 진 꽃일 수도 있다. 나머지 셋은 "곧 온다" 쪽으로
+     * 읽히니 한 벌은 어느 쪽에도 맞게 남겨 둔다.
+     */
+    (name) =>
+      `오늘의 꽃은 ${withParticle(name, 'copula')}. 제철과 한 뼘 떨어진 날이라, 오늘 꺼내도 어색하지 않아요.`,
+    (name) => `${withParticle(name, 'object')} 골랐어요. 며칠만 더 지나면 한창일 꽃이거든요.`,
+  ],
+  all: [
+    (name) =>
+      `오늘은 ${withParticle(name, 'object')} 꺼냈어요. 계절을 크게 가리지 않는 꽃이라 오늘 같은 날에도 잘 어울려요.`,
+    (name) =>
+      `${withParticle(name, 'copula')}. 철을 따지지 않고 곁에 두기 좋은 꽃이라 오늘 먼저 떠올랐어요.`,
+    (name) =>
+      `오늘의 꽃은 ${withParticle(name, 'copula')}. 언제 건네도 어색하지 않은 꽃이라 순서를 미루지 않았어요.`,
+    (name) => `${withParticle(name, 'object')} 골랐어요. 어느 계절에 꺼내도 좋은 꽃이니까요.`,
+  ],
 };
 
-/** ① 이야기 훅을 인용했을 때의 맺음. 인용을 "초대장"으로 받는 자리다. */
-const HOOK_CLOSING: Record<TodayBasis, string> = {
-  in_season: '오늘은 이 이야기부터 들려드리고 싶었어요.',
-  adjacent: '피기도 전에 이 이야기가 먼저 떠올랐어요.',
-  all: '어느 날에 꺼내도 좋을 이야기라, 오늘 먼저 꺼냈어요.',
-};
+/**
+ * 문장 ② — 이야기 인용의 맺음. **인용은 늘 앞에 서고 맺음이 회전한다.**
+ *
+ * 순서를 뒤집어(`이런 이야기가 있어요. “{훅}”`) 인용으로 문단을 끝내 보면, 훅 105편은
+ * 마침표 없이 끝나기 때문에(§1.5n 인용 규칙) 문단이 잘린 것처럼 보인다. 그래서 모양은
+ * 하나로 두고 뒤를 회전시킨다 — 어차피 눈에 먼저 걸리는 것은 따옴표 안쪽이다.
+ */
+const HOOK_CLOSINGS = [
+  '이 이야기부터 들려드리고 싶었어요.',
+  '이런 이야기를 품은 꽃이에요.',
+  '이 한 줄을 아는 사람이 많지 않더라고요.',
+  '읽다가 한참을 멈췄던 문장이에요.',
+];
 
-/** ② 이야기가 없어 꽃말을 재료로 쓸 때의 맺음. */
-const MEANING_CLOSING: Record<TodayBasis, string> = {
-  in_season: '오늘 같은 날 꺼내고 싶었어요.',
-  adjacent: '피기 전부터 먼저 건네고 싶었어요.',
-  all: '어느 날에 꺼내도 좋았어요.',
-};
+/**
+ * ② 이야기가 없어 꽃말을 재료로 쓸 때. 훅이 있으면 꽃말은 부르지 않는다(재료 겹침 금지).
+ * 현 카탈로그로는 **366일 전부 인용이 서서**(실측) 화면에 오르지 않는 사다리다 — 데이터가
+ * 얇아지는 날을 위해 둔다.
+ */
+type Fallback = (meaning: string) => string;
+
+const MEANING_LINES: Fallback[] = [
+  (meaning) =>
+    `‘${meaning}’${hasFinalConsonant(meaning) ? '이라는' : '라는'} 말을 품고 있어요. 오늘 같은 날 꺼내기 좋은 말이라서요.`,
+  (meaning) =>
+    `품고 있는 말은 ‘${meaning}’${hasFinalConsonant(meaning) ? '이에요' : '예요'}. 그 말이 오늘 먼저 떠올랐어요.`,
+  (meaning) =>
+    `‘${meaning}’${hasFinalConsonant(meaning) ? '이라는' : '라는'} 말을 오래 들어 온 꽃이에요.`,
+];
 
 /** ③ 이야기도 꽃말도 없을 때. 재료가 없다고 문장을 비우지는 않는다. */
-const BARE_CLOSING: Record<TodayBasis, string> = {
-  in_season: '오늘을 그냥 보내기 아까워서 먼저 꺼냈어요.',
-  adjacent: '피기 직전의 설렘부터 먼저 건네고 싶었어요.',
-  all: '어느 날에 꺼내도 좋아서 오늘 꺼냈어요.',
-};
+const BARE_LINES = [
+  '이야기는 아직 모으는 중이에요. 그래도 이 꽃 곁에 좀 더 머물고 싶었어요.',
+  '이름을 오래 들여다보게 되는 꽃이라, 다른 말을 더 얹지 않았어요.',
+  '사연을 붙이지 않아도 좋은 날이 있잖아요. 오늘이 그런 날이에요.',
+];
+
+/**
+ * 리드 아래 한 단 흐린 줄 — 화면 빛깔 한 마디(`.db-today-aside`).
+ * 바로 아래 오는 `화면의 빛깔` 선택기(§1.4c v3.4)를 여는 말이라 남긴다.
+ */
+const ASIDE_LINES = [
+  '화면 빛깔도 오늘의 꽃을 따라 물들여 두었어요.',
+  '화면에 도는 색도 이 꽃에서 가져왔어요.',
+];
 
 /**
  * 인용할 수 있는 훅으로 다듬는다 — **다듬는 것은 앞뒤 공백과 마침표 하나뿐이다.**
  *
  * 훅은 §1.5d 이야기 문체 규범이 합니다체 헤드라인을 허용한 자리이고, 그 무덤덤함이
- * 그대로 매력이라 **문장은 절대 다시 쓰지 않는다.** 다만 317편 중 212편은 마침표로
+ * 그대로 매력이라 **문장은 절대 다시 쓰지 않는다.** 다만 377편 중 272편은 마침표로
  * 끝나고 105편은 그냥 끝난다 — 그대로 인용하면 `“…있습니다.” —` 와 `“…있습니다” —` 가
  * 날마다 번갈아 나온다. 인용 부호 안의 문장부호는 인용하는 쪽 조판의 몫이라, 문장 끝
- * 마침표 하나만 떼어 317편을 같은 모양으로 세운다.
+ * 마침표 하나만 떼어 377편을 같은 모양으로 세운다.
  * ⚠ `?` `!` 는 떼지 않는다 — 그건 조판이 아니라 화자의 어조다.
  */
 function quotableHook(hook: string | undefined): string | undefined {
@@ -292,6 +370,17 @@ function fnv1a32(input: string): number {
     hash = Math.imul(hash, FNV_PRIME);
   }
   return hash >>> 0;
+}
+
+/**
+ * 오늘의 한 벌을 고른다 — **씨앗은 `날짜:슬롯` 뿐이다.**
+ *
+ * 슬롯 이름(`opening` `hook` `aside` …)을 씨앗에 섞는 이유: 같은 날짜만으로 고르면 표 길이가
+ * 같은 슬롯끼리 **늘 같은 번호**를 뽑는다(4벌짜리 두 표가 매일 나란히 0번, 나란히 3번).
+ * 그러면 조합이 4가지로 줄어 회전을 넣은 뜻이 사라진다.
+ */
+function pickVariant<T>(pool: readonly T[], seed: string): T {
+  return pool[fnv1a32(seed) % pool.length];
 }
 
 /**
@@ -323,33 +412,45 @@ export function pickReasonHook(
 }
 
 /**
- * "왜 이 꽃을 오늘 꺼냈는가" 한두 문장 (§1.5n).
+ * "오늘은 이 꽃을 꺼냈어요" — 리드 문단 (§1.5n).
  *
- * 재료 3단(이야기 훅 → 꽃말 → 없음) × `basis` 3분기 = 9가지 조합이며, 모두 규칙 조합이라
- * **로컬에서도 그대로 돈다**(모델 호출 없음 · 사용자 요청 2026-08-16).
+ * 문장 ①(꽃 이름 + 고른 이유) 뒤에 문장 ②(이야기 인용)가 붙는다. 재료 3단(이야기 훅 →
+ * 꽃말 → 없음) × `basis` 3분기 = 9칸이 전부 채워지고, 각 칸의 **문장 틀이 날짜로 회전한다.**
+ * 조합은 전부 규칙이라 **로컬에서도 그대로 돈다**(모델 호출 없음 · 사용자 요청 2026-08-16).
  *
  * ⚠ 훅은 `“…”` 로, 꽃말은 `‘…’` 로 감싼다. 훅 원문에는 `"` 와 `'` 가 섞여 있어
- *   (317편 중 26편) 홑·겹 **타이포그래픽 따옴표**라야 안쪽 인용과 겹치지 않는다.
+ *   (377편 중 26편) 홑·겹 **타이포그래픽 따옴표**라야 안쪽 인용과 겹치지 않는다.
  */
 export function composeTodayReason(input: {
   basis: TodayBasis;
+  /** 화면에 서는 꽃 이름. 문장 안에서 조사가 붙으므로 이름만 넘긴다(`흰 튤립`). */
+  flowerName: string;
+  /** 변주 씨앗. 시각·난수가 아니라 **날짜**라야 같은 날 같은 문단이 나온다. */
+  todayISO: string;
   /** 그 꽃 이야기에서 끌어온 헤드라인 한 줄. `pickReasonHook` 이 고른다. */
   hook?: string;
   /** 대표 꽃말. 훅이 없을 때만 쓴다. */
   meaning?: string;
 }): string {
-  const opening = BASIS_OPENING[input.basis];
+  const { todayISO } = input;
+  const opening = pickVariant(OPENINGS[input.basis], `${todayISO}:opening`)(input.flowerName);
 
   const hook = quotableHook(input.hook);
-  if (hook) return `${opening} “${hook}” — ${HOOK_CLOSING[input.basis]}`;
+  if (hook) {
+    return `${opening} “${hook}” — ${pickVariant(HOOK_CLOSINGS, `${todayISO}:hook`)}`;
+  }
 
   const meaning = input.meaning?.trim();
   if (meaning) {
-    const particle = hasFinalConsonant(meaning) ? '이라는' : '라는';
-    return `${opening} ‘${meaning}’${particle} 말을 품은 꽃이라, ${MEANING_CLOSING[input.basis]}`;
+    return `${opening} ${pickVariant(MEANING_LINES, `${todayISO}:meaning`)(meaning)}`;
   }
 
-  return `${opening} ${BARE_CLOSING[input.basis]}`;
+  return `${opening} ${pickVariant(BARE_LINES, `${todayISO}:bare`)}`;
+}
+
+/** 리드 아래 흐린 한 줄 — 화면 빛깔 (§1.5n 리듬 ②). */
+export function composeTodayAside(todayISO: string): string {
+  return pickVariant(ASIDE_LINES, `${todayISO}:aside`);
 }
 
 function toSlide(flower: CatalogFlower, catalog: Catalog, isToday: boolean): SlideView {
@@ -386,6 +487,37 @@ function toSlide(flower: CatalogFlower, catalog: Catalog, isToday: boolean): Sli
  * ------------------------------------------------------------------ */
 
 /**
+ * 탄생화 각주의 문장 틀 — 세 벌 (§1.5n 개정).
+ *
+ * 이름 한 낱말이 링크라 문장을 **앞뒤 조각으로** 낸다. 세 벌 중 둘은 날짜를 부르고 하나는
+ * 부르지 않는데, 리드가 날짜를 놓아 준 지금 **오늘 화면에서 날짜를 말하는 자리는 여기뿐이라**
+ * 그 편이 자연스럽다(예전에는 리드가 `8월 16일`, 이 줄이 `오늘 8월 16일` 로 두 번 불렀다).
+ */
+const BIRTH_PHRASES: readonly ((line: {
+  dateLabel: string;
+  name: string;
+  meaning: string;
+  meaningCopula: string;
+}) => { lead: string; tail: string })[] = [
+  ({ dateLabel, name, meaning }) => ({
+    lead: `참, ${dateLabel}의 탄생화는 `,
+    tail:
+      `${hasFinalConsonant(name) ? '이에요' : '예요'} — ` +
+      `‘${meaning}’${hasFinalConsonant(meaning) ? '이라는' : '라는'} 말을 품고 있어요.`,
+  }),
+  ({ meaning, meaningCopula }) => ({
+    lead: '오늘의 탄생화는 따로 있어요. ',
+    tail: `, 품은 말은 ‘${meaning}’${meaningCopula}.`,
+  }),
+  ({ dateLabel, name, meaning }) => ({
+    lead: `${dateLabel}의 탄생화를 찾아보면 `,
+    tail:
+      `${hasFinalConsonant(name) ? '이' : '가'} 나와요 — ` +
+      `‘${meaning}’${hasFinalConsonant(meaning) ? '이라는' : '라는'} 말을 품은 꽃이에요.`,
+  }),
+];
+
+/**
  * 오늘 날짜의 탄생화 한 줄.
  *
  * 날짜는 **`todayISO` 문자열에서 쪼갠다** — `new Date(todayISO)` 로 되돌리면 UTC 로 파싱돼
@@ -393,6 +525,8 @@ function toSlide(flower: CatalogFlower, catalog: Catalog, isToday: boolean): Sli
  *
  * 도감 링크는 **`flowerId` 가 실제로 카탈로그에 있을 때만** 건다. 시드 교차 검증이 이미
  * 참조 무결성을 보고 있지만, 링크는 끊기면 404 로 곧장 드러나는 자리라 화면 쪽에서도 확인한다.
+ * 나머지 309일은 이름이 `BIRTH_FINDER_HREF`(생일 꽃 찾기)로 간다 — 화면 쪽 결정이라
+ * 여기서는 `href` 를 비워 두는 것까지만 한다(그 대비를 `birth-flowers-ui.test.ts` 가 본다).
  */
 function birthFlowerLine(catalog: Catalog, todayISO: string): BirthFlowerLine | undefined {
   const [, monthText, dayText] = todayISO.split('-');
@@ -400,12 +534,16 @@ function birthFlowerLine(catalog: Catalog, todayISO: string): BirthFlowerLine | 
   if (!row) return undefined;
 
   const linked = row.flowerId && catalog.flowers.some((flower) => flower.id === row.flowerId);
-
-  return {
+  const parts = {
     dateLabel: birthDateLabel(row.month, row.day),
     name: row.nameKo,
     meaning: row.meaningKo,
     meaningCopula: hasFinalConsonant(row.meaningKo) ? '이에요' : '예요',
+  };
+
+  return {
+    ...parts,
+    ...pickVariant(BIRTH_PHRASES, `${todayISO}:birth`)(parts),
     ...(linked ? { href: `/flowers/${row.flowerId}` } : {}),
   };
 }
@@ -435,15 +573,20 @@ export function buildLandingData(catalog: Catalog, todayISO: string): LandingDat
   const birthFlower = birthFlowerLine(catalog, todayISO);
 
   /**
-   * 고른 이유 한 문장 (§1.5n).
+   * 리드 문단 (§1.5n).
+   *
+   * 꽃 이름은 **`today.name`** 을 넘긴다 — 화면에 서는 이름과 문장 속 이름이 갈리면 안 된다
+   * (테마 상수가 있는 꽃은 시안 이름 `흰 튤립`, 없으면 카탈로그 이름).
    *
    * 꽃말은 `today.meaning` 이 아니라 **원천에서 다시 읽는다** — 그 값은 꽃말이 없을 때
    * `아직 갈래를 고르는 중이에요` 라는 화면용 자리표시로 채워져 있어서, 그대로 인용하면
-   * `‘아직 갈래를 고르는 중이에요’라는 말을 품은 꽃이라` 가 나온다.
+   * `‘아직 갈래를 고르는 중이에요’라는 말을 품고 있어요` 가 나온다.
    */
   const todayTheme = themeForFlower(todayCatalogFlower.id);
   const todayReason = composeTodayReason({
     basis: picked.basis,
+    flowerName: today.name,
+    todayISO,
     hook: pickReasonHook(todayCatalogFlower.id, catalog.stories, todayISO),
     meaning: todayTheme?.meaning ?? meaningFor(todayCatalogFlower, catalog)?.meaningKo,
   });
@@ -500,15 +643,12 @@ export function buildLandingData(catalog: Catalog, todayISO: string): LandingDat
     ]),
   ];
 
-  const [, todayMonth, todayDay] = todayISO.split('-');
-
   return {
     todayISO,
     todayLabel: todayISO.replaceAll('-', '.'),
-    // 탄생화 각주와 **같은 함수**로 만든다 — 두 줄이 같은 오늘을 같은 말로 불러야 한다.
-    todayDateLabel: birthDateLabel(Number(todayMonth), Number(todayDay)),
     basis: picked.basis,
     todayReason,
+    todayAside: composeTodayAside(todayISO),
     category: today.category,
     themeSlug: categoryTheme.slug,
     categoryLabel: categoryTheme.label,

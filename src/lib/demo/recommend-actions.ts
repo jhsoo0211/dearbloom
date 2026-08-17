@@ -25,6 +25,7 @@ import {
   parseSubmission,
   prepareResult,
 } from '@/app/recommend/build-result';
+import type { BuyProductsResponse } from '@/components/flow/buy-products';
 import type { FlowResponse, WizardSubmission } from '@/components/flow/types';
 
 import { loadDemoCatalog } from './catalog';
@@ -50,4 +51,15 @@ export async function submitRecommendation(
 
   const tones = buildTones(catalog, prepared.draft.intent, prepared.draft.relationship);
   return { ok: true, payload: assemblePayload(prepared.draft, tones) };
+}
+
+/**
+ * 「사러 가기」 실상품 검색 — 데모에서는 **언제나 빈손**이다.
+ *
+ * 상품 검색(11번가 오픈API)은 서버 전용 키를 요구하고, 서버가 없는 드롭 데모에서
+ * 그 키를 둘 자리는 브라우저뿐이다 — 멘트 LLM 과 같은 금지선이라 부르지 않는다.
+ * 화면(BuySheet)은 이 빈손을 받으면 사이트 목록으로 조용히 내려간다.
+ */
+export async function searchBuyProducts(): Promise<BuyProductsResponse> {
+  return { ok: false };
 }

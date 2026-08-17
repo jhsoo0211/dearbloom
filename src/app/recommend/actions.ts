@@ -20,6 +20,12 @@
  *    타입 주석은 아무것도 지켜 주지 않는다(컴파일이 끝나면 사라진다).
  */
 
+import {
+  ELEVENST_ENDPOINT,
+  encodeKeyword,
+  parseElevenstProducts,
+  type KeywordEncoding,
+} from '@/lib/buy/elevenst';
 import { loadCatalog } from '@/lib/data/catalog';
 import type { Catalog } from '@/lib/data/types';
 import type { Intent, RecoResult, Tone } from '@/lib/engine';
@@ -27,6 +33,7 @@ import { RESPONSE_TONE_COUNT } from '@/lib/llm/contracts';
 import type { GenerateRequest } from '@/lib/llm/contracts';
 import { generateMessages } from '@/lib/llm/provider';
 import { isBlockedForGeneration } from '@/lib/llm/safety';
+import type { BuyProduct, BuyProductsResponse } from '@/components/flow/buy-products';
 import { CARD_LINE_NOTES } from '@/components/flow/labels';
 import type { FlowResponse, ToneView, WizardSubmission } from '@/components/flow/types';
 
@@ -175,4 +182,73 @@ export async function submitRecommendation(
 
   const tones = await buildToneViews(catalog, prepared.draft);
   return { ok: true, payload: assemblePayload(prepared.draft, tones) };
+}
+
+/* ------------------------------------------------------------------ *
+ * 「사러 가기」 실상품 검색 (2026-08-17)
+ * ------------------------------------------------------------------ */
+
+/**
+ * 문서(EUC-KR)와 현실이 다를 수 있어, 상품이 실제로 나온 인코딩을 한 번 알아내면
+ * 프로세스가 사는 동안 기억한다 — 매 검색마다 두 번 묻지 않기 위해서다.
+ */
+let provenKeywordEncoding: KeywordEncoding | null = null;
+
+async function fetchElevenstProducts(
+  key: string,
+  keyword: string,
+  encoding: KeywordEncoding,
+): Promise<BuyProduct[]> {
+  const url =
+    `${ELEVENST_ENDPOINT}?key=${encodeURIComponent(key)}` +
+    `&apiCode=ProductSearch&keyword=${encodeKeyword(keyword, encoding)}&pageSize=20`;
+  const response = await fetch(url, { signal: AbortSignal.timeout(4000), cache: 'no-store' });
+  if (!response.ok) return [];
+  // 응답은 EUC-KR XML 이다(실측). Node 공식 빌드는 full-icu 라 TextDecoder 가 받는다.
+  const xml = new TextDecoder('euc-kr').decode(await response.arrayBuffer());
+  return parseElevenstProducts(xml);
+}
+
+/**
+ * 추천된 꽃 이름 → 지금 살 수 있는 상품 목록(상품명·가격·상품 페이지).
+ *
+ * 공급원은 11번가 오픈API 하나다 — 왜 그곳뿐인지는 `lib/buy/elevenst.ts` 머리말
+ * (네이버 쇼핑 API 2026-08-01 종료 · 쿠팡은 수수료 링크라 무제휴 고지가 깨진다).
+ * `ELEVENST_API_KEY` 가 없으면 **조용히 빈손**이다 — 화면(BuySheet)은 사이트 목록으로
+ * 내려가고, 아무것도 죽지 않는다(멘트 키와 같은 규칙). 실패도 예외 대신 값으로 돌려준다.
+ *
+ * 검색어는 `{이름} 꽃다발` — 이름만 넣으면 엉뚱한 것이 섞이는 것을 우체국 검색에서
+ * 실측한 그 원리다(`buy-links.ts`). 키를 받은 날 `node tests/partners/check-buy-api.mjs`
+ * 로 실응답(태그 이름·keyword 인코딩)을 확인하라.
+ */
+export async function searchBuyProducts(flowerName: string): Promise<BuyProductsResponse> {
+  const key = process.env.ELEVENST_API_KEY;
+  if (!key) return { ok: false };
+
+  // 서버 액션은 공개 엔드포인트다 — 타입 주석은 아무것도 지켜 주지 않는다(위 머리말).
+  const name = typeof flowerName === 'string' ? flowerName.trim().slice(0, 40) : '';
+  if (name === '') return { ok: false };
+  const keyword = `${name} 꽃다발`;
+
+  try {
+    const first = provenKeywordEncoding ?? 'euc-kr';
+    let products = await fetchElevenstProducts(key, keyword, first);
+    if (products.length > 0) {
+      provenKeywordEncoding = first;
+      return { ok: true, products };
+    }
+    // 0건 — 검색어 인코딩이 어긋난 것일 수 있다. 아직 증명된 인코딩이 없으면 반대쪽으로 한 번 더.
+    if (provenKeywordEncoding === null) {
+      products = await fetchElevenstProducts(key, keyword, 'utf-8');
+      if (products.length > 0) {
+        provenKeywordEncoding = 'utf-8';
+        return { ok: true, products };
+      }
+    }
+    // 두 인코딩 다 0건 — 정말 없는 꽃일 수 있다. 빈 목록도 정상 값이다.
+    return { ok: true, products: [] };
+  } catch {
+    console.error('[recommend] 상품 검색에 실패했습니다.');
+    return { ok: false };
+  }
 }

@@ -199,7 +199,13 @@
    가상 꽃집 카드 3장을 걷어낸 자리다(2026-08-16). 카드마다 깔려 있던 보태니컬 사진도
    함께 걷었다 — **실존하는 기관 이름 옆의 무관한 스톡 사진은 그 기관의 가게 사진처럼
    읽힌다.** 근거 없는 인상을 주느니 활자로만 세우는 편이 정직하다.
-   그래서 이 구획은 아래 `.rows` 와 같은 결(번호 + 헤어라인)의 활자 조판이다.
+
+   ── 박스 카드 → 헤어라인 원장 행 (2026-08-17) ─────────────────────────
+   사용자 지적("디자인·폰트를 우리 톤에 맞춰 다시 정렬")로 박스 그리드를 걷어냈다.
+   박스는 이 사이트 어디에도 없는 문법이었고(랜딩·플로우는 전부 번호+헤어라인 활자
+   조판이다), 갈래마다 2~4곳이라 열 수가 4·2·2·2 로 들쭉날쭉했다. 지금은 랜딩의
+   `.rows` 와 같은 결 — 행마다 헤어라인, 왼쪽에 지역 라벨, 오른쪽에 이름·소개·주의.
+   곳이 늘어도 행이 한 줄 늘어날 뿐 리듬이 안 깨진다.
    ═════════════════════════════════════════════════════════════════════ */
 .groups {
   margin: clamp(38px, 6vw, 60px) 0 0;
@@ -231,16 +237,11 @@
 }
 
 .places {
-  margin: clamp(20px, 3vw, 26px) 0 0;
-  display: grid;
-  gap: clamp(18px, 2.6vw, 22px);
-  grid-template-columns: 1fr;
+  margin: clamp(22px, 3.4vw, 30px) 0 0;
 }
 .place {
-  padding: clamp(18px, 2.6vw, 22px) clamp(16px, 2.4vw, 22px);
-  background: var(--ink-900);
-  border: 1px solid var(--hair-soft);
-  border-radius: 2px;
+  padding: clamp(18px, 2.8vw, 24px) 0;
+  border-top: 1px solid var(--hair-soft);
 }
 .placeWhere {
   display: inline-block;
@@ -254,9 +255,9 @@
 .place h4 {
   font-family: var(--font-serif);
   font-weight: 400;
-  font-size: 20px;
+  font-size: clamp(20px, 2.2vw, 23px);
   line-height: 1.4;
-  margin: 8px 0 0;
+  margin: 6px 0 0;
 }
 /**
  * 실제로 갈 곳이 있는 링크 — 밑줄은 **글자에만** 걸고 화살표에는 걸지 않는다.
@@ -287,6 +288,7 @@
   line-height: 1.78;
   color: var(--ivory-72);
   margin: 6px 0 0;
+  max-width: 60ch;
 }
 /**
  * 기대와 실제가 어긋날 수 있는 곳의 한 줄(도매가 · 기업 주문 위주 등).
@@ -299,6 +301,7 @@
   font-size: 13px;
   line-height: 1.7;
   color: var(--ivory-58);
+  max-width: 56ch;
 }
 
 /* ── 새벽 꽃시장 카드 ─────────────────────────────────────────────────
@@ -647,12 +650,30 @@
   .marketFacts > div {
     grid-template-columns: 8rem 1fr;
   }
+  /*
+   * 원장 행의 2단 — 왼쪽 지역 라벨, 오른쪽 이름·소개·주의(`.marketFacts` 와 같은 문법).
+   * 열 배치는 이 쿼리 안에만 둔다 — 좁은 화면에서 `grid-column: 2` 가 남으면
+   * 있지도 않은 둘째 열을 암시적으로 만들어 라벨과 본문이 옆으로 찢어진다.
+   */
+  .place {
+    display: grid;
+    grid-template-columns: 10rem 1fr;
+    column-gap: 28px;
+  }
+  .place > * {
+    grid-column: 2;
+  }
+  .place .placeWhere {
+    grid-column: 1;
+    grid-row: 1;
+    /* 세리프 이름의 첫 줄과 캡 높이를 맞추는 시각 보정 — 수치는 실측(스크린샷)으로 잡았다. */
+    padding-top: 12px;
+  }
+  .place h4 {
+    margin: 0;
+  }
 }
 @media (min-width: 900px) {
-  /* 한 갈래에 2~3곳이라 `auto-fit` 으로 둔다. 3곳이면 3열, 2곳이면 2열로 알아서 선다. */
-  .places {
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  }
   .cols {
     grid-template-columns: 1.02fr 0.98fr;
     align-items: start;

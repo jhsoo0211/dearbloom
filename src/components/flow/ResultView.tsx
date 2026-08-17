@@ -22,6 +22,9 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import Link from 'next/link';
 
+import { searchBuyProducts } from '@/app/recommend/actions';
+import { buildBuyLinks, type BuyLinkKind } from './buy-links';
+import { sortBuyProducts, type BuyProduct, type BuySort } from './buy-products';
 import type { ResultPayload, StoryCard } from './types';
 import styles from './flow.module.css';
 
@@ -323,6 +326,297 @@ function StorySheet({ story, position, total, onPrev, onNext, onClose }: StorySh
 }
 
 /* ------------------------------------------------------------------ *
+ * 「사러 가기」 시트 (2026-08-17)
+ * ------------------------------------------------------------------ */
+
+/** 필터 칸 — 전체 / 우리가 확인한 곳 / 쇼핑몰. (`바깥 장` 은 어색하다는 사용자 확정 워딩) */
+const BUY_FILTERS: readonly { key: 'all' | BuyLinkKind; label: string }[] = [
+  { key: 'all', label: '전체' },
+  { key: 'partner', label: '확인한 곳' },
+  { key: 'market', label: '쇼핑몰' },
+];
+
+/** 상품 정렬 칸 — 추천순이 기본. 공익 판매처 가산점은 점수 안에만 있다(`buy-products.ts`). */
+const BUY_SORTS: readonly { key: BuySort; label: string }[] = [
+  { key: 'recommended', label: '추천순' },
+  { key: 'priceAsc', label: '낮은 가격순' },
+  { key: 'priceDesc', label: '높은 가격순' },
+];
+
+/** 화면에 세우는 상품 수 상한 — 시트는 목록이지 검색 결과 페이지가 아니다. */
+const BUY_PRODUCT_LIMIT = 10;
+
+interface BuySheetProps {
+  /** 검색어로 쓸 대표 이름 — `mainName()` 을 거친 값이다. */
+  flowerName: string;
+  onClose: () => void;
+}
+
+/**
+ * 사용자 요구(2026-08-17) 둘을 여기서 받는다: ① 눌러도 아무 일 없던 `카드에 담기`(더미)
+ * 대신 실제 구매로 이어지는 길, ② "다나와처럼" 값을 한눈에 견주는 곳을 앞세우되
+ * 우리가 확인한 곳과 바깥 큰 장을 **필터로 가를 수 있게**.
+ *
+ * 목적지·검색어 규칙·실측 근거는 `buy-links.ts` 머리말과 `docs/partners-research.md` 의
+ * 「사러 가기 시트」 절에 있다. 대화상자 규격(포커스 트랩·ESC·배경 탭·스크롤 잠금·
+ * 닫을 때 연 버튼으로 포커스 복귀)은 StorySheet 와 같은 문법이다.
+ */
+function BuySheet({ flowerName, onClose }: BuySheetProps) {
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const [filter, setFilter] = useState<'all' | BuyLinkKind>('all');
+  /**
+   * 실상품 목록(2026-08-17 사용자 요구 — "그냥 검색한 느낌 말고 구체적 상품 링크").
+   * null = 아직 안 왔거나 공급원이 없다(키 미설정·데모·실패·0건) — 그때는 사이트 목록이
+   * 전면에 선다. 정렬은 받아 온 목록을 클라이언트에서 다시 세운다(호출 1번으로 3정렬).
+   */
+  const [products, setProducts] = useState<BuyProduct[] | null>(null);
+  const [productsPending, setProductsPending] = useState(true);
+  const [sort, setSort] = useState<BuySort>('recommended');
+  /** 상품이 서면 사이트 목록은 접힌다 — 이 플래그가 다시 편다. */
+  const [linksOpen, setLinksOpen] = useState(false);
+
+  const links = useMemo(() => buildBuyLinks(flowerName), [flowerName]);
+  const shown = filter === 'all' ? links : links.filter((link) => link.kind === filter);
+
+  const sortedProducts = useMemo(
+    () => (products === null ? [] : sortBuyProducts(products, sort).slice(0, BUY_PRODUCT_LIMIT)),
+    [products, sort],
+  );
+
+  // 서버에 한 번 묻는다 — 빈손(키 없음·실패·0건)이면 products 는 null 로 남는다.
+  useEffect(() => {
+    let alive = true;
+    searchBuyProducts(flowerName)
+      .then((response) => {
+        if (!alive) return;
+        setProducts(response.ok && response.products.length > 0 ? response.products : null);
+      })
+      .catch(() => {
+        if (alive) setProducts(null);
+      })
+      .finally(() => {
+        if (alive) setProductsPending(false);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [flowerName]);
+
+  useEffect(() => {
+    const opener = document.activeElement as HTMLElement | null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    titleRef.current?.focus();
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      opener?.focus?.();
+    };
+  }, []);
+
+  function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      onClose();
+      return;
+    }
+    if (event.key !== 'Tab') return;
+
+    const focusables = sheetRef.current?.querySelectorAll<HTMLElement>(
+      'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    );
+    if (!focusables || focusables.length === 0) return;
+
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  }
+
+  return (
+    <div className={styles.sheetRoot}>
+      <div className={styles.sheetScrim} onClick={onClose} aria-hidden="true" />
+
+      <div
+        className={styles.sheet}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="buy-sheet-title"
+        ref={sheetRef}
+        onKeyDown={onKeyDown}
+      >
+        <span className={styles.sheetGrip} aria-hidden="true" />
+
+        <div className={styles.sheetHead}>
+          <p className={styles.sheetCount}>사러 가기</p>
+          <button
+            type="button"
+            className={styles.sheetClose}
+            onClick={onClose}
+            aria-label="사러 가기 닫기"
+          >
+            <IconClose />
+          </button>
+        </div>
+
+        <div className={styles.sheetBody}>
+          <h3 className={styles.storyTitle} id="buy-sheet-title" tabIndex={-1} ref={titleRef}>
+            ‘{flowerName}’ 살 수 있는 곳
+          </h3>
+
+          {/* 상품은 뒤늦게 도착한다 — 그동안 아래 사이트 목록이 먼저 서 있는다(빈 화면 금지). */}
+          {productsPending ? (
+            <p className={styles.buyLoading} role="status">
+              지금 살 수 있는 상품을 찾아보는 중이에요…
+            </p>
+          ) : null}
+
+          {products !== null ? (
+            <>
+              {/* 상품 정렬 — 추천순 점수의 속(공익 판매처 가산점)은 buy-products.ts 만 안다. */}
+              <div className={styles.moodFilter} role="group" aria-label="상품 정렬 고르기">
+                {BUY_SORTS.map((item) => {
+                  const on = item.key === sort;
+                  return (
+                    <button
+                      key={item.key}
+                      type="button"
+                      className={on ? `${styles.moodChip} ${styles.moodChipOn}` : styles.moodChip}
+                      aria-pressed={on}
+                      onClick={() => setSort(item.key)}
+                    >
+                      {item.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className={styles.buyList}>
+                {sortedProducts.map((product) => (
+                  <a
+                    key={product.link}
+                    className={styles.buyRow}
+                    href={product.link}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <span className={styles.buyBody}>
+                      <span className={styles.buyProdTitle}>{product.title}</span>
+                      <span className={styles.buyProdMeta}>
+                        {product.mallName}
+                        <span className={styles.sep} aria-hidden="true">
+                          ·
+                        </span>
+                        {product.price !== null ? (
+                          <span className={styles.buyPrice}>
+                            {product.price.toLocaleString('ko-KR')}원
+                          </span>
+                        ) : (
+                          '값은 눌러서 확인해 주세요'
+                        )}
+                      </span>
+                      <span className="sr-only"> (새 창)</span>
+                    </span>
+                    <span className={styles.buyAr} aria-hidden="true">
+                      <IconExternal />
+                    </span>
+                  </a>
+                ))}
+              </div>
+              {/* 출처와 한계를 그대로 말한다 — 값·재고를 우리가 보증하는 것처럼 읽히면 안 된다. */}
+              <p className={styles.disc}>
+                11번가 검색에서 가져온 상품이에요 — 값과 재고는 그 페이지 기준이에요.
+              </p>
+
+              <button
+                type="button"
+                className={styles.teaser}
+                aria-expanded={linksOpen}
+                onClick={() => setLinksOpen(!linksOpen)}
+              >
+                다른 곳에서 더 찾아보기 ({links.length})
+                <span className={styles.tar} aria-hidden="true">
+                  <IconArrow />
+                </span>
+              </button>
+            </>
+          ) : null}
+
+          {products === null || linksOpen ? (
+            <>
+              <div className={styles.moodFilter} role="group" aria-label="구매처 갈래 고르기">
+                {BUY_FILTERS.map((item) => {
+                  const on = item.key === filter;
+                  return (
+                    <button
+                      key={item.key}
+                      type="button"
+                      className={on ? `${styles.moodChip} ${styles.moodChipOn}` : styles.moodChip}
+                      aria-pressed={on}
+                      onClick={() => setFilter(item.key)}
+                    >
+                      {item.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className={styles.buyList}>
+                {shown.map((link) => (
+                  <a
+                    key={link.key}
+                    className={styles.buyRow}
+                    href={link.href}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <span className={styles.buyBody}>
+                      <span className={styles.buyName}>
+                        {link.name}
+                        <span
+                          className={
+                            link.kind === 'partner'
+                              ? `${styles.buyBadge} ${styles.buyBadgePartner}`
+                              : styles.buyBadge
+                          }
+                        >
+                          {link.kind === 'partner' ? '확인한 곳' : '쇼핑몰'}
+                        </span>
+                      </span>
+                      {link.query ? (
+                        <span className={styles.buyQuery}>‘{link.query}’ 검색 결과로 열려요</span>
+                      ) : null}
+                      <span className={styles.buyDesc}>{link.desc}</span>
+                      <span className="sr-only"> (새 창)</span>
+                    </span>
+                    <span className={styles.buyAr} aria-hidden="true">
+                      <IconExternal />
+                    </span>
+                  </a>
+                ))}
+              </div>
+            </>
+          ) : null}
+
+          {/* 이 두 줄은 목록과 한 몸이다 — 지우면 목록이 재고와 제휴를 약속하는 말이 된다. */}
+          <p className={styles.disc}>
+            값과 재고는 저마다 그때그때 달라요 — 여기서는 길만 이어드려요.
+          </p>
+          <p className={styles.disc}>
+            이어지는 곳들과 아직 제휴 관계는 아니에요 — 좋은 곳을 먼저 알려 드리는 거예요.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ *
  * 결과 화면
  * ------------------------------------------------------------------ */
 
@@ -345,6 +639,8 @@ export default function ResultView({ payload, onRestart }: ResultViewProps) {
   const [moodFilter, setMoodFilter] = useState<string>(MOOD_ALL);
   const [openStoryId, setOpenStoryId] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
+  /** 「사러 가기」 시트 — 활성 안의 대표 이름으로 열린다(2026-08-17). */
+  const [buyOpen, setBuyOpen] = useState(false);
   /** §1.5k 문학 — 펼침 상태와 지금 보고 있는 발췌의 자리(0 = 대표). */
   const [litOpen, setLitOpen] = useState(false);
   const [litIndex, setLitIndex] = useState(0);
@@ -1251,24 +1547,33 @@ export default function ResultView({ payload, onRestart }: ResultViewProps) {
                 ) : null}
               </section>
 
-              {/* ═══ 공유·저장 (더미) ═══ */}
-              <section className={`${styles.sect} ${styles.share}`} aria-label="공유하고 저장하기">
-                <button type="button" className={`${styles.btn} ${styles.btnPrimary}`}>
-                  카드에 담기
+              {/*
+                ═══ 사러 가기 · 다시 골라보기 ═══
+
+                예전 이 자리는 `카드에 담기`·`링크로 공유` **더미 버튼**이었다
+                (2026-08-17 사용자 신고: "카드에 담기 버튼이 작동하지 않는다").
+                눌러도 아무 일 없는 버튼은 갈 곳 없는 링크와 같은 거짓말이라(P2-11 의
+                정신) 실제 길이 생길 때까지 세우지 않는다. 지금 주 버튼은 이 꽃을
+                실제로 살 수 있는 곳들의 시트(BuySheet)를 연다 — 공유·저장이 정말
+                생기는 날 그 기능과 함께 되살린다.
+              */}
+              <section className={`${styles.sect} ${styles.share}`} aria-label="이 꽃 사러 가기">
+                <button
+                  type="button"
+                  className={`${styles.btn} ${styles.btnPrimary}`}
+                  onClick={() => setBuyOpen(true)}
+                >
+                  ‘{mainName(option.nameKo)}’ 사러 가기
                   <IconArrow />
                 </button>
-                <div className={styles.btnPair}>
-                  <button type="button" className={`${styles.btn} ${styles.btnGhost}`}>
-                    링크로 공유
-                  </button>
-                  <button
-                    type="button"
-                    className={`${styles.btn} ${styles.btnGhost}`}
-                    onClick={onRestart}
-                  >
-                    다시 골라보기
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  className={`${styles.btn} ${styles.btnGhost}`}
+                  style={{ marginTop: 10 }}
+                  onClick={onRestart}
+                >
+                  다시 골라보기
+                </button>
               </section>
 
               {/* ═══ ⑤ 최하단 참고 — 작게. 안전·계절·가격·구매는 "찾을 수 있으면 충분"(§1.5i) ═══ */}
@@ -1450,6 +1755,11 @@ export default function ResultView({ payload, onRestart }: ResultViewProps) {
           onNext={() => moveStory(1)}
           onClose={() => setOpenStoryId(null)}
         />
+      ) : null}
+
+      {/* 사러 가기 시트 — StorySheet 와 같은 이유로 폰 프레임 밖이다. */}
+      {buyOpen ? (
+        <BuySheet flowerName={mainName(option.nameKo)} onClose={() => setBuyOpen(false)} />
       ) : null}
     </>
   );

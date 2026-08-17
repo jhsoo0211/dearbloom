@@ -963,6 +963,8 @@ export interface CrossValidateResult {
  *  7. 탄생화 이야기 — birth_stories.name_ko 가 표에 있는 이름인가, story_id 가 파일 안에서
  *     유일하고 **stories.csv 와도 겹치지 않는가**. 두 표의 id 공간을 나누지 않으면
  *     `/stories` 아카이브와 사전 시트가 같은 id 로 서로 다른 이야기를 부르게 된다.
+ *  8. 카탈로그 이야기 id — stories.csv 안의 story_id 가 유일한가. 같은 id 두 행은 DB의
+ *     한 번짜리 upsert를 실패시키고, 화면의 find·Map·React key가 서로 다른 행을 고르게 한다.
  */
 export function crossValidate(data: SeedDataset): CrossValidateResult {
   const checks: CrossCheckResult[] = [];
@@ -1322,6 +1324,33 @@ export function crossValidate(data: SeedDataset): CrossValidateResult {
       bstoryFailures === 0
         ? `${data.birth_stories.length}편이 표의 ${bstoryNames.size}가지 이름에 붙음 — stories.csv ${catalogStoryIds.size}편과 id 충돌 0`
         : `이름·id 문제 ${bstoryFailures}건`,
+  });
+
+  /* 8. stories.csv story_id 유일성 ----------------------------------- */
+  const storyIdBefore = issues.length;
+  const storyIds = new Map<string, number>();
+  for (const row of data.stories) {
+    const storyId = row.value.story_id;
+    const first = storyIds.get(storyId);
+    if (first !== undefined) {
+      issues.push({
+        file: SEED_FILE_NAMES.stories,
+        line: row.line,
+        column: 'story_id',
+        message: `story_id 가 두 번 나옵니다: ${storyId} (앞선 행: ${first}번째 줄)`,
+      });
+    } else {
+      storyIds.set(storyId, row.line);
+    }
+  }
+  const storyIdFailures = issues.length - storyIdBefore;
+  checks.push({
+    name: 'stories.csv story_id 유일성',
+    ok: storyIdFailures === 0,
+    detail:
+      storyIdFailures === 0
+        ? `${data.stories.length}편의 story_id 중복 0`
+        : `중복 story_id ${storyIdFailures}건`,
   });
 
   return { checks, issues };

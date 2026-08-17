@@ -231,13 +231,14 @@ describe('content/*.csv 실제 데이터', () => {
     }
   });
 
-  it('교차 검증 7종을 모두 통과한다', () => {
+  it('교차 검증 8종을 모두 통과한다', () => {
     const { dataset } = loadDataset();
     const { checks, issues } = crossValidate(dataset);
     expect(issues.map(formatIssue)).toEqual([]);
     // 참조 무결성 · 반려동물 커버리지 · 공유 어휘 · 탄생화 366일 · 탄생화 도감 연결
     // · 탄생화 사진(날짜·이름·slug) · 탄생화 이야기(이름·id 공간)
-    expect(checks).toHaveLength(7);
+    // · 카탈로그 이야기 story_id 유일성
+    expect(checks).toHaveLength(8);
     expect(checks.every((check) => check.ok)).toBe(true);
   });
 
@@ -765,6 +766,26 @@ describe('교차 검증', () => {
     const { checks, issues } = crossValidate(broken);
     expect(issues.some((issue) => issue.file === 'stories.csv')).toBe(true);
     expect(checks.find((c) => c.name.includes('참조'))?.ok).toBe(false);
+  });
+
+  it('stories.csv 안에서 같은 story_id 가 두 번 나오면 두 줄을 함께 짚는다', () => {
+    const { dataset } = loadDataset();
+    const first = dataset.stories[0];
+    const duplicate = { ...first, line: first.line + 1000 };
+    const broken: SeedDataset = {
+      ...dataset,
+      stories: [...dataset.stories, duplicate],
+    };
+
+    const { checks, issues } = crossValidate(broken);
+    const issue = issues.find(
+      (candidate) => candidate.file === 'stories.csv' && candidate.column === 'story_id',
+    );
+
+    expect(issue?.line).toBe(duplicate.line);
+    expect(issue?.message).toContain(first.value.story_id);
+    expect(issue?.message).toContain(`앞선 행: ${first.line}번째 줄`);
+    expect(checks.find((check) => check.name.includes('story_id 유일성'))?.ok).toBe(false);
   });
 
   it('quotes 의 끊어진 flower_id 참조도 잡아낸다', () => {

@@ -24,19 +24,11 @@ DB는 이 CSV에서 시드(upsert)될 뿐, 반대로 DB를 직접 고치지 않�
 ⚠ `reads.csv` 만 아직 등록 전이다 — 「읽을거리」 섹션은 **원장을 먼저 세우고 화면·시드는
 나중에** 붙이기로 한 단계라(2026-08-17), 지금은 시드가 이 파일을 읽지 않는다.
 
-`rules.csv` 는 5종(`rose-red` `tulip-white` `freesia` `lily-asiatic` `gerbera`)만 다룬다.
-2026-08-14에 들어온 4종(`anemone` `hellebore` `hyacinth` `peony`), 2026-08-15에 들어온 8종
-(`hydrangea` `lavender` `sunflower` `carnation` `lisianthus` `ranunculus` `lily-of-the-valley`
-`chrysanthemum`), 같은 날 seed-v4로 들어온 14종(`narcissus` `forget-me-not` `cherry-blossom`
-`camellia` `violet` `iris` `marigold` `corn-poppy` `jasmine` `babys-breath` `cosmos` `magnolia`
-`pansy` `poinsettia`), seed-v5의 `daisy`, 2026-08-16에 seed-v6로 들어온 15종(`sweet-pea`
-`gladiolus` `dahlia` `zinnia` `aster` `calendula` `cyclamen` `geranium` `primula` `stock`
-`delphinium` `amaryllis` `cornflower` `crocus` `water-lily`) 은 **이야기·도감용으로 먼저 존재**하며,
-추천 규칙은 편집 판단이 끝난 뒤에 붙인다. 규칙이 없는 꽃은 추천 결과에 오르지 않을 뿐 교차 검증에는
-걸리지 않는다(반려동물 판정만 전수로 필요하다). **59종 중 5종만 추천 결과에 오른다** — 카탈로그가
-커질수록 이 불균형이 커진다. 2026-08-17 배치 2로 12종(`phalaenopsis` `alstroemeria` `anthurium`
-`gardenia` `eucalyptus` `statice` `mimosa` `bouvardia` `scabiosa` `plum-blossom` `azalea`
-`cotton`)이 더 들어와 격차가 또 벌어졌다(`docs/flowers-batch2-research.md`).
+`rules.csv` 의 7행은 6종을 다룬다. 5종에는 `fit_score` 추천 규칙이 있고,
+`lily-asiatic` 에는 `avoid_reason` 회피 규칙만 있다. 규칙은 상황·관계 가점의 명시 근거이며,
+규칙이 없는 꽃도 계절·색·분위기 점수로 추천 결과에 오를 수 있다. 회피 행은 점수로 해석하지
+않지만, 조건별 제외·감점에는 아직 연결하지 않았다. 그 동작은 `occasion`·`apology_level` 등
+조건 매칭 규칙을 먼저 확정한 뒤 별도 제외 단계에서 구현한다.
 
 ## 편집 규칙
 
@@ -348,12 +340,12 @@ seed-v6·seed-v7 127행을 더한 **현재 377행 분포는 `history` 290 · `fo
 - 당시 남은 미커버 4종(`freesia` `gerbera` `babys-breath` `poinsettia`)은 근대에 명명돼 고전
   문학에 등장하지 않는다. **편집팀 문장으로 메우지 않는다** — §1.5k 가 "있을 때만"이라고
   이미 정해 두었고, 문학 블록에 문학이 아닌 걸 넣으면 위화감만 남는다.
-- **확장 배치 1(seed-v6) 15종에는 문학 발췌가 아직 없다.** 커버는 `28/47종` 이고, 이 파일은
+- **확장 배치 이후 추가된 꽃에는 문학 발췌가 아직 없다.** 현재 커버는 `28/59종` 이고, 이 파일은
   이번 배치에서 한 행도 늘지 않았다. 같은 원칙이 그대로 적용된다 — 있을 때만 싣는다.
 
 ### `birth_flowers.csv` — 날짜별 탄생화 (2026-08-16 신설)
 
-**행의 주인은 꽃이 아니라 날짜다.** 자연키는 `(month, day)` 이고, 366일이 카탈로그 47종보다
+**행의 주인은 꽃이 아니라 날짜다.** 자연키는 `(month, day)` 이고, 366일이 카탈로그 59종보다
 훨씬 많은 종을 부른다(반대로 한 종이 여러 날에 걸리기도 한다 — 장미 10일·국화 4일).
 
 | 컬럼 | 필수 | 뜻 |
@@ -370,7 +362,7 @@ seed-v6·seed-v7 127행을 더한 **현재 377행 분포는 `history` 290 · `fo
 - **366행이다(365가 아니다).** 2월 29일도 실재하는 생일이므로 윤년 달력으로 채운다.
   교차 검증이 **366일 전수 · 중복 0 · 2월 30일 같은 불가능한 조합**을 막는다.
 - **`flower_id` 가 빈 것은 미완성이 아니다.** "카탈로그에 그 꽃이 없다"는 뜻이고, 현재
-  **86일만 도감으로 이어진다**(카탈로그 47종 중 38종 — 확장 배치 1이 57일·24종에서 늘렸다).
+  **86일만 도감으로 이어진다**(카탈로그 59종 중 38종).
   적혀 있으면 반드시 `flowers.csv`
   안에 있어야 한다(교차 검증이 막는다).
 - **`editorial_note` 는 화면에 나가지 않는다.** `quotes.pd_basis` 와 같은 취급이라
@@ -469,7 +461,7 @@ seed-v6·seed-v7 127행을 더한 **현재 377행 분포는 `history` 290 · `fo
 - `birth_flowers` 는 **윤년 366일을 빠짐없이 한 번씩** 채워야 한다. 빠진 날·중복된 날·
   2월 30일 같은 불가능한 조합은 전부 시드 실패다.
 - `birth_flowers.meaning_ko` 와 `source_url` 은 필수다(꽃말 없는 탄생화는 싣지 않는다).
-  반대로 `birth_flowers.flower_id` 는 **비워 두는 것이 정상 값**이다 — 309일이 그렇다.
+  반대로 `birth_flowers.flower_id` 는 **비워 두는 것이 정상 값**이다 — 280일이 그렇다.
 
 ## 공유 어휘
 
@@ -498,13 +490,7 @@ seed-v6·seed-v7 127행을 더한 **현재 377행 분포는 `history` 290 · `fo
 어휘를 벗어나면 그 꽃은 페르소나 점수를 영영 못 받는다. 한국어 라벨 ↔ slug 대응은
 `src/lib/engine/normalize.ts` 의 `TRAIT_LABELS` 가 단일 원본이다.
 
-`flower_id` 는 `flowers.csv` 의 `id` 를 그대로 참조한다. 현재 47종: `rose-red`, `tulip-white`,
-`freesia`, `lily-asiatic`, `gerbera`, `anemone`, `hellebore`, `hyacinth`, `peony`,
-`hydrangea`, `lavender`, `sunflower`, `carnation`, `lisianthus`, `ranunculus`,
-`lily-of-the-valley`, `chrysanthemum`, `narcissus`, `forget-me-not`, `cherry-blossom`,
-`camellia`, `violet`, `iris`, `marigold`, `corn-poppy`, `jasmine`, `babys-breath`,
-`cosmos`, `magnolia`, `pansy`, `poinsettia`, `daisy`, `sweet-pea`, `gladiolus`, `dahlia`,
-`zinnia`, `aster`, `calendula`, `cyclamen`, `geranium`, `primula`, `stock`, `delphinium`,
-`amaryllis`, `cornflower`, `crocus`, `water-lily`.
+`flower_id` 는 `flowers.csv` 의 `id` 를 그대로 참조한다. 현재 목록과 개수(59종)는 원본
+`flowers.csv` 와 `npm run seed` 검증 결과를 단일 기준으로 삼는다.
 
 `birth_flowers.flower_id` 도 같은 목록을 참조하되 **비어 있어도 된다**(위 §birth_flowers).

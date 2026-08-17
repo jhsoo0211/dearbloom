@@ -14,9 +14,6 @@ export interface ScoredFlower {
   score: ScoreBreakdown;
 }
 
-/** fitScore가 비어 있는 규칙 행은 만점 매칭으로 본다. */
-const DEFAULT_FIT_SCORE = 100;
-
 /** 개화월 정보가 없는 달의 기본 계절 점수(제철도 비수기도 아닌 중립값). */
 const SEASON_OFF = 0.3;
 /** 날짜 미입력 시 계절 점수(정보 없음). */
@@ -57,7 +54,13 @@ function round4(n: number): number {
 function bestFit(rows: RecommendationRuleRow[]): number {
   let best = 0;
   for (const row of rows) {
-    const fit = clamp01((row.fitScore ?? DEFAULT_FIT_SCORE) / 100);
+    /*
+     * rules.csv 는 추천(fitScore)과 회피(avoidReason) 행을 같은 타입으로 싣는다.
+     * 회피 행의 빈 fitScore를 기본 만점으로 해석하면, 피하라고 적은 꽃에 오히려
+     * I/R 가점이 붙는다. 점수 단계에서는 명시적인 추천 점수만 사용한다.
+     */
+    if (row.fitScore === undefined) continue;
+    const fit = clamp01(row.fitScore / 100);
     if (fit > best) best = fit;
   }
   return best;

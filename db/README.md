@@ -40,7 +40,7 @@ Postgres cannot CHECK array elements one by one, so 0005 uses the containment op
 
 ### `confidence_level` counts sources; `source_kind` says what they are
 
-0007 exists because those two questions were collapsed into one column and the screen paid for it. 40 rows are `single_source`, and 29 of them are a peer-reviewed paper, a national archive page, or an 1839 first edition — sources that are singular, not shaky. Labelling all 40 "드물게 전해지는 이야기예요" (a phrase meant for hearsay with no primary record) had the app understating its own data. `source_kind` splits the label: `paper` / `museum` / `book-pd` / `newspaper` / `garden` read as "기록으로 남아 있는 이야기예요", while `magazine` / `wiki` / `other` keep the original wording. The split itself lives in exactly one function, `storyConfidenceLabel()` in `src/components/flow/labels.ts`, and both the result screen and `/stories` call it — never re-derive the label at a call site.
+0007 exists because those two questions were collapsed into one column and the screen paid for it. 68 rows are `single_source`, and 50 of them use `paper`, `museum`, `book-pd`, `newspaper`, or `garden` sources — sources that are singular, not necessarily shaky. Labelling all 68 "드물게 전해지는 이야기예요" (a phrase meant for hearsay with no primary record) would understate the data. `source_kind` splits the label: `paper` / `museum` / `book-pd` / `newspaper` / `garden` read as "기록으로 남아 있는 이야기예요", while `magazine` / `wiki` / `other` keep the original wording. The split itself lives in exactly one function, `storyConfidenceLabel()` in `src/components/flow/labels.ts`, and both the result screen and `/stories` call it — never re-derive the label at a call site.
 
 The column defaults to `'other'` on purpose: `other` falls on the cautious side of that split, so a row nobody classified can only under-claim. Grading a row *up* to `paper` or `museum` is the move that can make the UI assert trust it does not have, so when in doubt, write it down, not up.
 
@@ -59,7 +59,7 @@ does — dropping a catalog entry should demote the quote to a general one, not 
 public-domain excerpt that someone verified against the source by hand.
 
 `quotes_excerpt_needs_flower` covers the opposite mistake: a genre with no flower describes
-a literary excerpt that `pickLiterature()` (src/app/recommend/actions.ts) can never reach,
+a literary excerpt that `pickLiterature()` (`src/app/recommend/build-result.ts`) can never reach,
 because it matches on `flower_id` alone. Such a row loads clean, seeds clean, and stays
 invisible forever, which is the failure mode hardest to notice — so it is made loud in both
 gates, the CHECK here and `QuoteRowSchema`'s `superRefine` in `db/seed/schemas.ts`.
@@ -71,7 +71,7 @@ type has no field for it, so there is no path from the CSV to the screen.
 
 ## File naming — migration to the Supabase CLI
 
-Files are numbered sequentially (`0001_` … `0008_`) while we apply them manually. When the project moves to the Supabase CLI, rename each file into `supabase/migrations/<timestamp>_*.sql` (e.g. `20260814090000_catalog.sql`), keeping the same relative order — the CLI orders migrations by that leading UTC timestamp, not by sequence number. Rename rather than re-author, so the applied SQL stays byte-identical to what production already ran, and record the already-applied files in `supabase_migrations.schema_migrations` (`supabase migration repair --status applied <version>`) so the CLI does not try to run them again.
+Files are numbered sequentially (`0001_` … `0011_`) while we apply them manually. When the project moves to the Supabase CLI, rename each file into `supabase/migrations/<timestamp>_*.sql` (e.g. `20260814090000_catalog.sql`), keeping the same relative order — the CLI orders migrations by that leading UTC timestamp, not by sequence number. Rename rather than re-author, so the applied SQL stays byte-identical to what production already ran, and record the already-applied files in `supabase_migrations.schema_migrations` (`supabase migration repair --status applied <version>`) so the CLI does not try to run them again.
 
 ## TODO — enable pg_cron
 

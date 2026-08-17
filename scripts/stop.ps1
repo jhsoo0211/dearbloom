@@ -1,37 +1,140 @@
-﻿# dearbloom — 개발 서버 포트 정리 스크립트 (Windows PowerShell 5.1+)
-#
-# 사용:
-#   .\scripts\stop.ps1                # 기본 포트 3000, 3001 정리
-#   .\scripts\stop.ps1 -Ports 3000    # 특정 포트만
-#   .\scripts\stop.ps1 -Any           # node 가 아닌 점유 프로세스도 강제 종료
-#   npm run stop                      # package.json 스크립트로도 동일
-#
-# 동작: 지정 포트를 LISTEN 중인 프로세스를 찾아 프로세스 트리째(taskkill /T) 종료한다.
-#       기본값은 node 프로세스만 종료 대상 — 다른 앱이 포트를 쓰고 있으면 건너뛰고 알려준다.
+﻿<#
+.SYNOPSIS
+지정한 개발 포트를 점유한 프로세스를 종료합니다.
 
+.DESCRIPTION
+기본값은 Node.js 프로세스만 종료합니다. -Any를 명시하면 Node.js가 아닌 프로세스도
+종료할 수 있습니다. taskkill의 종료 코드와 실제 LISTEN 상태를 모두 확인하며, 실패한 종료를
+성공으로 집계하지 않습니다.
+
+.PARAMETER Ports
+정리할 포트 목록입니다. 기본값은 3000, 3001입니다.
+
+.PARAMETER Any
+Node.js가 아닌 점유 프로세스도 종료합니다.
+
+.EXAMPLE
+.\scripts\stop.ps1
+
+.EXAMPLE
+.\scripts\stop.ps1 -Ports 3000,3400
+
+.EXAMPLE
+.\scripts\stop.ps1 -Any
+#>
+[CmdletBinding()]
 param(
+  [ValidateRange(1, 65535)]
   [int[]]$Ports = @(3000, 3001),
+
   [switch]$Any
 )
 
-$total = 0
-foreach ($port in $Ports) {
-  $conns = Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue
-  if (-not $conns) {
-    Write-Host ("[stop] :{0}  비어 있음" -f $port)
+Set-StrictMode -Version 2.0
+$ErrorActionPreference = 'Stop'
+
+$terminatedCount = 0
+$skippedCount = 0
+$failures = @()
+
+function Get-PortListeners {
+  param([int]$LocalPort)
+
+  return @(
+    Get-NetTCPConnection -LocalPort $LocalPort -State Listen -ErrorAction SilentlyContinue
+  )
+}
+
+if (-not (Get-Command 'Get-NetTCPConnection' -ErrorAction SilentlyContinue)) {
+  throw '[stop] Get-NetTCPConnection을 사용할 수 없습니다. Windows PowerShell 5.1 이상에서 실행하세요.'
+}
+
+$taskkillCommand = Get-Command 'taskkill.exe' -ErrorAction SilentlyContinue
+if (-not $taskkillCommand) {
+  throw '[stop] taskkill.exe를 찾을 수 없습니다.'
+}
+
+foreach ($port in ($Ports | Select-Object -Unique)) {
+  $connections = @(Get-PortListeners -LocalPort $port)
+  if ($connections.Count -eq 0) {
+    Write-Host ("[stop] :{0} 비어 있음" -f $port)
     continue
   }
-  $procIds = @($conns | Select-Object -ExpandProperty OwningProcess -Unique)
-  foreach ($procId in $procIds) {
-    $proc = Get-Process -Id $procId -ErrorAction SilentlyContinue
-    if (-not $proc) { continue }
-    if (($proc.ProcessName -ne 'node') -and (-not $Any)) {
-      Write-Host ("[stop] :{0}  PID {1} ({2}) — node 가 아니라 건너뜀. 강제 종료는 -Any" -f $port, $procId, $proc.ProcessName)
+
+  $processIds = @($connections | Select-Object -ExpandProperty OwningProcess -Unique)
+  foreach ($processId in $processIds) {
+    $process = Get-Process -Id $processId -ErrorAction SilentlyContinue
+    if (-not $process) {
+      Write-Host ("[stop] :{0} PID {1}은 이미 종료됨" -f $port, $processId)
       continue
     }
-    taskkill /PID $procId /T /F 2>$null | Out-Null
-    Write-Host ("[stop] :{0}  PID {1} ({2}) 프로세스 트리 종료" -f $port, $procId, $proc.ProcessName)
-    $total++
+
+    if (($process.ProcessName -ne 'node') -and (-not $Any)) {
+      Write-Warning ("[stop] :{0} PID {1} ({2}) — Node.js가 아니라 건너뜁니다. 의도적으로 종료하려면 -Any를 사용하세요." -f $port, $processId, $process.ProcessName)
+      $skippedCount++
+      continue
+    }
+
+    $savedErrorActionPreference = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try {
+      $taskkillOutput = @(& $taskkillCommand.Source /PID $processId /T /F 2>&1)
+      $taskkillExitCode = $LASTEXITCODE
+    }
+    finally {
+      $ErrorActionPreference = $savedErrorActionPreference
+    }
+    if ($taskkillExitCode -ne 0) {
+      $detail = ($taskkillOutput | ForEach-Object { $_.ToString().Trim() } | Where-Object { $_ }) -join ' '
+      $message = "[stop] :{0} PID {1} ({2}) taskkill 실패 (종료 코드 {3})" -f $port, $processId, $process.ProcessName, $taskkillExitCode
+      if ($detail) {
+        $message = "{0}: {1}" -f $message, $detail
+      }
+      Write-Warning $message
+      $failures += $message
+      continue
+    }
+
+    $stillListening = $true
+    for ($attempt = 0; $attempt -lt 10; $attempt++) {
+      $remainingForProcess = @(
+        Get-PortListeners -LocalPort $port |
+          Where-Object { $_.OwningProcess -eq $processId }
+      )
+      if ($remainingForProcess.Count -eq 0) {
+        $stillListening = $false
+        break
+      }
+      Start-Sleep -Milliseconds 100
+    }
+
+    if ($stillListening) {
+      $message = "[stop] :{0} PID {1} ({2}) — taskkill 후에도 포트를 점유 중" -f $port, $processId, $process.ProcessName
+      Write-Warning $message
+      $failures += $message
+      continue
+    }
+
+    Write-Host ("[stop] :{0} PID {1} ({2}) 프로세스 트리 종료" -f $port, $processId, $process.ProcessName)
+    $terminatedCount++
+  }
+
+  $remainingConnections = @(Get-PortListeners -LocalPort $port)
+  if ($remainingConnections.Count -gt 0) {
+    $remainingIds = @($remainingConnections | Select-Object -ExpandProperty OwningProcess -Unique)
+    $remainingSummary = ($remainingIds | ForEach-Object {
+      $remainingProcess = Get-Process -Id $_ -ErrorAction SilentlyContinue
+      $remainingName = if ($remainingProcess) { $remainingProcess.ProcessName } else { 'unknown' }
+      "PID {0} ({1})" -f $_, $remainingName
+    }) -join ', '
+    $message = "[stop] :{0} 포트가 아직 사용 중: {1}" -f $port, $remainingSummary
+    Write-Warning $message
+    $failures += $message
   }
 }
-Write-Host ("[stop] 완료 — {0}개 프로세스 트리 종료" -f $total)
+
+if ($failures.Count -gt 0) {
+  throw ("[stop] 완료하지 못함 — {0}건의 실패, {1}개 종료, {2}개 건너뜀" -f $failures.Count, $terminatedCount, $skippedCount)
+}
+
+Write-Host ("[stop] 완료 — {0}개 프로세스 트리 종료, {1}개 건너뜀" -f $terminatedCount, $skippedCount)

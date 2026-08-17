@@ -17,7 +17,7 @@ import type { Catalog } from '@/lib/data/types';
  */
 
 const EXPECTED_FLOWERS = 47;
-const EXPECTED_STORIES = 377;
+const EXPECTED_STORIES = 384;
 /** 윤년 366일. 하루라도 비면 그 날 태어난 사람에게 보여 줄 것이 없다. */
 const EXPECTED_BIRTH_DAYS = 366;
 

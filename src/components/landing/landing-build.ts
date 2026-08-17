@@ -22,6 +22,12 @@
 import { birthDateLabel, birthFlowerOn } from '@/lib/data/birth-flowers';
 import type { Catalog, CatalogFlower, CatalogStory } from '@/lib/data/types';
 import { pickStories } from '@/lib/engine/stories';
+/**
+ * ⚠ `@/lib/engine` 배럴이 아니라 **타입만** 딥 임포트한다(파일 머리말의 규율). `import type`
+ *   은 컴파일에서 통째로 지워지므로 번들에 아무것도 싣지 않는다. `pickStories` 가 돌려주는
+ *   것이 `StoryRow` 라 `CatalogStory`(= StoryRow + reviewedAt)로 좁혀 받을 수 없다.
+ */
+import type { StoryRow } from '@/lib/engine/types';
 import { todayFlower, type TodayBasis } from '@/lib/engine/today';
 import {
   canLeadHero,
@@ -578,23 +584,255 @@ const WHY_FALLBACKS: Record<TodayBasis, (name: string) => string> = {
     `언제 건네도 어색하지 않은 꽃이거든요. 그래서 순서를 미루지 않고 ${withParticle(name, 'object')} 골랐어요.`,
 };
 
+/* ------------------------------------------------------------------ *
+ * 마디 ③ — 이야기 (§1.5n v4 · 2026-08-17 사용자 피드백 두 번째)
+ * ------------------------------------------------------------------ */
+
 /**
- * 마디 ③ — 이야기 인용의 맺음. **인용은 늘 앞에 서고 맺음이 회전한다.**
+ * ── 왜 ③ 이 세 조각인가 ────────────────────────────────────────────────────
  *
- * 순서를 뒤집어(`이런 이야기가 있어요. “{훅}”`) 인용으로 문단을 끝내 보면, 훅 105편은
- * 마침표 없이 끝나기 때문에(§1.5n 인용 규칙) 문단이 잘린 것처럼 보인다. 그래서 모양은
- * 하나로 두고 뒤를 회전시킨다 — 어차피 눈에 먼저 걸리는 것은 따옴표 안쪽이다.
+ * v3 의 ③ 은 `“{훅}” — {맺음}` 두 조각이었다. 사용자가 짚은 것:
+ * *"갑자기 이야기 한 줄 나오고 «멈추게 되는 문장이었어요» 하니까 뭔 말인지 모를 수도 있다."*
  *
- * ⚠ **정보 우위를 내비치는 말은 쓰지 않는다.** v2 의 `이 한 줄을 아는 사람이 많지
- *   않더라고요.` 가 사용자 피드백에서 걸린 문장이다 — 아는 쪽과 모르는 쪽을 가르고,
- *   우리를 아는 쪽에 세운다. 네 벌 전부 **같이 발견한 결·나눠 주는 결**로 다시 썼다.
+ * 진단: **훅은 이야기 본문 위에 얹히도록 쓰인 헤드라인이다.** 본문에서 떼어 문단 끝에 홀로
+ * 두면 단서가 없다 — `“물을 많이 먹어서 붙은 이름이 아니었습니다”` 만 보면 무엇의 이름인지,
+ * 그럼 어디서 왔는지 알 길이 없어 수수께끼가 된다. 그 상태에서 `읽다가 한참을 멈추게 되는
+ * 문장이었어요` 라고 하면 **멈출 이유를 못 찾은 채 멈추라는 말만** 듣는다. 우리만 아는
+ * 감동을 통보하는 꼴이라, v2 의 "아는 사람만 아는" 문제가 형태를 바꿔 되살아난 것이다.
+ *
+ * 그래서 ③ 을 세 조각으로 나눈다:
+ *   ㉠ **어디서 온 이야기인지** — `19세기 프랑스에서 온 이야기예요.`
+ *   ㉡ **훅 인용** — 규칙 그대로(마침표 하나만 떼고 `“…”`, `?`·`!` 유지, 원문 불변)
+ *   ㉢ **이어 읽을 수 있다는 안내** — `이어지는 이야기는 도감에 옮겨 두었어요.`
+ *
+ * ⚠ ㉠ 은 **출처의 좌표만** 말한다. 이야기 내용을 요약하려 들면 우리가 본문을 다시 쓰는
+ *   셈이고, 그 순간 사실이 틀어진다.
+ */
+
+/**
+ * ㉢ 맺음 — **감정 통보에서 초대로.**
+ *
+ * v3 의 네 벌은 전부 우리가 느낀 것을 알리는 말이었다(`읽다가 한참을 멈추게 되는 문장…`).
+ * 독자는 아직 이야기를 읽지 않았으므로 그 감정을 가질 수가 없다 — 대신 **뒷이야기가 어디
+ * 있는지**를 말한다.
+ *
+ * ⚠ 이 안내가 참인 근거: 오늘의 꽃 카드는 덮개 링크로 `/flowers/{id}` 로 가고
+ *   (`TodayCarousel` — 카드에 `도감에서 보기` 라벨이 보인다), 그 상세의 `꽃에 얽힌 이야기`
+ *   구획이 그 꽃의 이야기를 **전문 그대로** 싣는다(`app/flowers/[slug]/page.tsx`).
+ *   그 동선을 걷어 내면 이 네 문장이 거짓이 되므로 함께 고쳐야 한다.
+ * ⚠ **아직 읽지 않은 것에 대한 감상을 대신 단정하지 않는다**(§1.5n v4 금지선).
+ *   `멈추게·뭉클·소름·감동…` 류는 366일 전수 검사가 막는다.
  */
 const HOOK_CLOSINGS = [
-  '저도 찾아보다 알게 된 이야기예요.',
-  '이 한 줄이 마음에 남아서 함께 적어 뒀어요.',
-  '읽다가 한참을 멈추게 되는 문장이었어요.',
-  '이 대목이 좋아서 그대로 옮겨 왔어요.',
+  '이어지는 이야기는 도감에 옮겨 두었어요.',
+  '이 이야기는 도감에 처음부터 그대로 있어요.',
+  '무슨 이야기인지는 도감에서 마저 읽어 보실 수 있어요.',
+  '나머지는 도감에서 천천히 읽어 보셔도 좋아요.',
 ];
+
+/**
+ * ㉠ 의 재료 — 그 이야기 행이 **실제로 갖고 있는 것만** 추린 좌표.
+ * 없는 칸은 `undefined` 이고, 그 칸을 쓰는 벌은 물러난다.
+ */
+interface HookSource {
+  /** `culture_region` 을 한국어로 옮긴 값. **표를 통과한 것만** 채워진다. */
+  region?: string;
+  /** `era` 를 한국어로 옮긴 값. 마찬가지로 표를 통과한 것만. */
+  era?: string;
+  /** 그 시대 이름이 지역까지 함께 가리키는가(`조선 시대`·`에도 시대`). */
+  eraImpliesRegion?: boolean;
+  storyType?: CatalogStory['storyType'];
+  confidenceLevel?: CatalogStory['confidenceLevel'];
+}
+
+/**
+ * `culture_region` → 한국어 지명. **단일 지역이고 문장에 자연스럽게 놓이는 값만** 싣는다.
+ *
+ * 표에는 438편이 120가지가 넘는 값을 쓰고 있고, 그중에는 문장으로 만들 수 없는 것이 섞여
+ * 있다: `western`·`global`·`europe`·`near-east` 처럼 지명이 아니라 범주인 값, 그리고
+ * `japan-bermuda-usa`·`persia-bulgaria` 처럼 여러 곳을 이어 붙인 값(합쳐 100편 남짓).
+ *
+ * ⚠ **그런 값은 여기 넣지 마라.** `서양에서 온 이야기예요` 는 아무 좌표도 주지 못하고,
+ *   `일본·버뮤다·미국에서 온 이야기예요` 는 문장이 아니다. 표에 없으면 지명을 부르지 않고
+ *   시대·갈래로만 잡거나 ㉠ 을 통째로 생략한다 — 그래도 ㉡㉢ 로 문단은 선다.
+ */
+const REGION_LABEL: Record<string, string> = {
+  korea: '한국',
+  japan: '일본',
+  china: '중국',
+  taiwan: '대만',
+  usa: '미국',
+  canada: '캐나다',
+  mexico: '멕시코',
+  colombia: '콜롬비아',
+  ecuador: '에콰도르',
+  chile: '칠레',
+  england: '영국',
+  uk: '영국',
+  scotland: '스코틀랜드',
+  wales: '웨일스',
+  ireland: '아일랜드',
+  france: '프랑스',
+  netherlands: '네덜란드',
+  belgium: '벨기에',
+  germany: '독일',
+  italy: '이탈리아',
+  spain: '스페인',
+  portugal: '포르투갈',
+  switzerland: '스위스',
+  sweden: '스웨덴',
+  finland: '핀란드',
+  estonia: '에스토니아',
+  latvia: '라트비아',
+  poland: '폴란드',
+  hungary: '헝가리',
+  serbia: '세르비아',
+  croatia: '크로아티아',
+  bulgaria: '불가리아',
+  ukraine: '우크라이나',
+  russia: '러시아',
+  georgia: '조지아',
+  greece: '그리스',
+  rome: '로마',
+  turkey: '튀르키예',
+  persia: '페르시아',
+  iran: '이란',
+  israel: '이스라엘',
+  'saudi-arabia': '사우디아라비아',
+  egypt: '이집트',
+  ethiopia: '에티오피아',
+  kenya: '케냐',
+  tanzania: '탄자니아',
+  rwanda: '르완다',
+  'south-africa': '남아프리카',
+  india: '인도',
+  thailand: '태국',
+  vietnam: '베트남',
+  indonesia: '인도네시아',
+  philippines: '필리핀',
+  australia: '오스트레일리아',
+  hawaii: '하와이',
+};
+
+interface EraLabel {
+  label: string;
+  /** `{시대} {지역}에서 온 이야기` 로 지역과 나란히 세울 수 있는가. */
+  withRegion: boolean;
+}
+
+/**
+ * `era` → 한국어 시대. 여기도 **문장에 놓이는 값만** 싣는다.
+ *
+ * `modern`(130편)·`traditional`·`19c-20c` 같은 폭 넓은 값과 합성 값은 뺐다 — `근현대에
+ * 있었던 이야기예요` 는 좌표라기보다 하나 마나 한 말이고, 그런 날은 지역·갈래가 대신 선다.
+ *
+ * `withRegion: false` 는 **시대 이름이 이미 지역을 가리키는** 경우다. `조선 시대 한국에서 온
+ * 이야기예요` 처럼 같은 말을 두 번 하지 않으려고 나눠 뒀다.
+ */
+const ERA_LABEL: Record<string, EraLabel> = {
+  ancient: { label: '아주 오래전', withRegion: true },
+  medieval: { label: '중세', withRegion: true },
+  '8c': { label: '8세기', withRegion: true },
+  '12c': { label: '12세기', withRegion: true },
+  '13c': { label: '13세기', withRegion: true },
+  '14c': { label: '14세기', withRegion: true },
+  '15c': { label: '15세기', withRegion: true },
+  '16c': { label: '16세기', withRegion: true },
+  '17c': { label: '17세기', withRegion: true },
+  '18c': { label: '18세기', withRegion: true },
+  '19c': { label: '19세기', withRegion: true },
+  '20c': { label: '20세기', withRegion: true },
+  victorian: { label: '빅토리아 시대', withRegion: false },
+  joseon: { label: '조선 시대', withRegion: false },
+  edo: { label: '에도 시대', withRegion: false },
+};
+
+/**
+ * 이야기 갈래 → ㉠ 이 쓰는 말. `original` 은 여기 없다 — 아래 라벨 규칙이 따로 받는다.
+ *
+ * `alone` 이 두 벌인 이유: 지명이 표에 없는 날은 갈래가 유일한 좌표가 되는데, 그런 날이
+ * 366일 중 3분의 1이다(실측). 한 벌만 두면 그 3분의 1이 **전부 같은 문장**으로 열린다.
+ */
+const STORY_TYPE_PHRASE: Record<string, { withRegion: string; alone: readonly [string, string] }> =
+  {
+    folklore: {
+      withRegion: '에서 오래 전해 오는',
+      alone: ['오래 전해 오는 이야기가 하나 있어요.', '입에서 입으로 전해 온 이야기예요.'],
+    },
+    history: {
+      withRegion: ' 쪽 기록에서 온',
+      alone: ['기록에 남아 있는 이야기예요.', '기록으로 남은 이야기 하나를 옮겨 볼게요.'],
+    },
+    literary: {
+      withRegion: ' 문학에서 온',
+      alone: ['문학에서 온 이야기예요.', '글 속에 남은 이야기예요.'],
+    },
+  };
+
+/**
+ * ㉠ 후보. `pickApplicable` 이 오늘 쓸 수 있는 것만 추린다.
+ *
+ * ⚠ **`original`(dearbloom 창작)은 이 표를 타지 않는다.** §1.5f 가 창작 라벨을 의무로
+ *   걸어 둔 자리라, 라벨이 회전 표의 한 벌이 되면 다른 벌이 뽑히는 날 라벨이 사라진다.
+ *   `composeTodayReason` 이 그 갈래를 먼저 가로챈다.
+ */
+type HookLead = (source: HookSource) => string | undefined;
+
+const HOOK_LEADS: readonly HookLead[] = [
+  /** 시대 + 지역 — 가장 또렷한 좌표. */
+  ({ region, era, eraImpliesRegion }) =>
+    region && era && !eraImpliesRegion ? `${era} ${region}에서 온 이야기예요.` : undefined,
+  /** 지역 + 갈래. */
+  ({ region, storyType }) => {
+    const phrase = storyType ? STORY_TYPE_PHRASE[storyType] : undefined;
+    return region && phrase ? `${region}${phrase.withRegion} 이야기예요.` : undefined;
+  },
+  /** 지역만 — `한국에서 건너온` 은 쓰지 않는다(우리 독자에게 한국은 건너올 곳이 아니다). */
+  ({ region }) => (region ? `${region}에서 전해지는 이야기예요.` : undefined),
+  /**
+   * 시대만. 지역이 있으면 위 두 벌이 더 또렷하므로 물러난다 — 다만 `조선 시대`처럼 시대가
+   * 이미 지역을 품은 값은 위 0번이 서지 못하니 여기서 받는다.
+   */
+  ({ region, era, eraImpliesRegion }) =>
+    era && (!region || eraImpliesRegion) ? `${era}에 있었던 이야기예요.` : undefined,
+  /**
+   * 갈래만 — **지역이 없을 때만.**
+   *
+   * 지역이 있는 날에도 후보로 두면, 좌표를 두 칸 쥐고도 `기록에 남아 있는 이야기예요.`
+   * 한 마디로 여는 날이 366일 중 122일까지 올라갔다(실측). 덜 아는 쪽 문장이 더 아는 쪽을
+   * 밀어내는 셈이라, ② 에서 색인상을 공명 날에 물린 것과 같은 판단으로 뺐다.
+   */
+  ({ region, storyType }) =>
+    !region && storyType ? STORY_TYPE_PHRASE[storyType]?.alone[0] : undefined,
+  ({ region, storyType }) =>
+    !region && storyType ? STORY_TYPE_PHRASE[storyType]?.alone[1] : undefined,
+  /** 신뢰 등급 — 화면 라벨(`CONFIDENCE_LABEL`)과 같은 사실을 문단 안에서 말한다. */
+  ({ confidenceLevel }) =>
+    confidenceLevel === 'single_source' ? '드물게 전해지는 이야기예요.' : undefined,
+  ({ confidenceLevel }) =>
+    confidenceLevel === 'varies' ? '전하는 데마다 조금씩 다른 이야기인데요.' : undefined,
+];
+
+/** §1.5f — 창작 이야기는 **반드시** 창작이라고 먼저 밝힌다. 회전 대상이 아니다. */
+const ORIGINAL_LEAD = 'dearbloom이 지어 본 이야기예요.';
+
+/** 이야기 행 → ㉠ 이 쥘 수 있는 좌표. 표를 통과하지 못한 값은 조용히 버린다. */
+function hookSourceOf(source: {
+  cultureRegion?: string;
+  era?: string;
+  storyType?: CatalogStory['storyType'];
+  confidenceLevel?: CatalogStory['confidenceLevel'];
+}): HookSource {
+  const era = source.era ? ERA_LABEL[source.era] : undefined;
+  return {
+    ...(source.cultureRegion && REGION_LABEL[source.cultureRegion]
+      ? { region: REGION_LABEL[source.cultureRegion] }
+      : {}),
+    ...(era ? { era: era.label, eraImpliesRegion: !era.withRegion } : {}),
+    ...(source.storyType ? { storyType: source.storyType } : {}),
+    ...(source.confidenceLevel ? { confidenceLevel: source.confidenceLevel } : {}),
+  };
+}
 
 /**
  * ③ 이야기가 없어 꽃말을 재료로 쓸 때. 훅이 있으면 꽃말은 부르지 않는다(재료 겹침 금지).
@@ -697,7 +935,12 @@ function pickApplicable<A, R>(
 }
 
 /**
- * 오늘 인용할 훅 하나.
+ * 오늘 인용할 이야기 **한 행**.
+ *
+ * v3 까지는 훅 문자열만 돌려줬다. 그러면 인용은 얻어도 **그 훅이 어디서 온 이야기인지**를
+ * 알 수 없어, 문단 끝에 헤드라인 한 줄이 홀로 서고 독자는 발 디딜 데가 없었다
+ * (2026-08-17 사용자 피드백). 행 통째로 돌려줘야 `culture_region`·`era`·`story_type`·
+ * `confidence_level` 로 마디 ③ ㉠ 을 세울 수 있다. 훅이 없는 편은 여전히 후보에서 뺀다.
  *
  * 후보 순서는 **슬라이드 티저와 같은 경로**(`pickStories(…, 'just_because')`)에서 온다 —
  * 이야기 순서를 정하는 규칙을 두 벌 두지 않기 위해서다. 다르게 하는 것은 하나뿐:
@@ -707,18 +950,18 @@ function pickApplicable<A, R>(
  * 결정성은 그대로다 — 씨앗이 `날짜 + 꽃 id` 뿐이라 **같은 날 새로고침은 같은 문장**이고,
  * 서버·클라이언트·테스트가 모두 같은 값을 낸다(LLM 을 쓰지 않는 이유이기도 하다).
  */
-export function pickReasonHook(
+export function pickReasonStory(
   flowerId: string,
   stories: CatalogStory[],
   todayISO: string,
-): string | undefined {
+): StoryRow | undefined {
   const mine = stories.filter((story) => story.flowerId === flowerId);
   if (mine.length === 0) return undefined;
 
   const { featured, others } = pickStories(flowerId, 'just_because', stories, mine.length);
-  const pool = [...(featured ? [featured] : []), ...others]
-    .map((story) => quotableHook(story.hook))
-    .filter((hook): hook is string => hook !== undefined);
+  const pool = [...(featured ? [featured] : []), ...others].filter(
+    (story) => quotableHook(story.hook) !== undefined,
+  );
   if (pool.length === 0) return undefined;
 
   return pool[fnv1a32(`${todayISO}:${flowerId}:reason`) % pool.length];
@@ -755,8 +998,19 @@ export function composeTodayReason(input: {
   tags?: string[];
   /** `bloomMonths` 의 달 수. 아주 좁거나(1–2) 열두 달인 꽃만 문장에 쓴다. */
   bloomSpan?: number;
-  /** 그 꽃 이야기에서 끌어온 헤드라인 한 줄. `pickReasonHook` 이 고른다. */
+  /** 그 꽃 이야기에서 끌어온 헤드라인 한 줄. `pickReasonStory` 가 고른다. */
   hook?: string;
+  /**
+   * 그 훅이 **어디서 온 이야기인지** — 마디 ③ ㉠ 의 재료(§1.5n v4).
+   * `hook` 이 있을 때만 쓰인다. 표를 통과하지 못한 값은 조용히 버려지고 ㉠ 이 짧아지거나
+   * 통째로 빠진다 — 없는 좌표를 지어내는 것보다 말하지 않는 편이 낫다.
+   */
+  hookSource?: {
+    cultureRegion?: string;
+    era?: string;
+    storyType?: CatalogStory['storyType'];
+    confidenceLevel?: CatalogStory['confidenceLevel'];
+  };
   /** 대표 꽃말. 훅이 없을 때만 쓴다. */
   meaning?: string;
 }): string {
@@ -797,9 +1051,20 @@ export function composeTodayReason(input: {
 
   const beats = [opening, why].filter((beat): beat is string => beat !== undefined);
 
-  /** ③ 이야기 한 줄. 훅 → 꽃말 → (없으면 마디 자체를 생략). */
+  /** ③ 이야기. 훅 → 꽃말 → (없으면 마디 자체를 생략). */
   const hook = quotableHook(input.hook);
   if (hook) {
+    const source = hookSourceOf(input.hookSource ?? {});
+    /**
+     * ㉠ 좌표. `original`(dearbloom 창작)만 회전 밖에서 가로챈다 — §1.5f 가 건 창작 라벨은
+     * 다른 벌이 뽑히는 날 사라지면 안 되는 의무 표시다.
+     */
+    const lead =
+      source.storyType === 'original'
+        ? ORIGINAL_LEAD
+        : pickApplicable(HOOK_LEADS, source, `${todayISO}:lead`);
+
+    if (lead) beats.push(lead);
     beats.push(`“${hook}” — ${pickVariant(HOOK_CLOSINGS, `${todayISO}:hook`)}`);
   } else {
     const meaning = input.meaning?.trim();
@@ -948,6 +1213,12 @@ export function buildLandingData(catalog: Catalog, todayISO: string): LandingDat
    * `flowers.csv` 가 유일한 원천이다.
    */
   const todayTheme = themeForFlower(todayCatalogFlower.id);
+  /**
+   * 인용할 이야기는 **행 통째로** 받는다(§1.5n v4). 훅 문자열만 받던 예전에는 그 훅이
+   * 어디서 온 이야기인지 알 길이 없어, 문단 끝에 인용만 홀로 서고 독자는 발 디딜 데가
+   * 없었다. `culture_region`·`era`·`story_type`·`confidence_level` 이 ㉠ 의 재료다.
+   */
+  const todayStory = pickReasonStory(todayCatalogFlower.id, catalog.stories, todayISO);
   const todayReason = composeTodayReason({
     basis: picked.basis,
     flowerName: today.name,
@@ -956,7 +1227,17 @@ export function buildLandingData(catalog: Catalog, todayISO: string): LandingDat
     fragranceLevel: todayCatalogFlower.fragranceLevel,
     tags: todayCatalogFlower.aestheticTags,
     bloomSpan: new Set(todayCatalogFlower.bloomMonths).size,
-    hook: pickReasonHook(todayCatalogFlower.id, catalog.stories, todayISO),
+    hook: todayStory?.hook,
+    ...(todayStory
+      ? {
+          hookSource: {
+            cultureRegion: todayStory.cultureRegion,
+            era: todayStory.era,
+            storyType: todayStory.storyType,
+            confidenceLevel: todayStory.confidenceLevel,
+          },
+        }
+      : {}),
     meaning: todayTheme?.meaning ?? meaningFor(todayCatalogFlower, catalog)?.meaningKo,
   });
   const rest = catalog.flowers

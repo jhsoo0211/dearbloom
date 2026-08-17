@@ -7,7 +7,7 @@ import {
   buildLandingData,
   composeTodayAside,
   composeTodayReason,
-  pickReasonHook,
+  pickReasonStory,
 } from '@/components/landing/landing-build';
 import { BIRTH_FINDER_HREF, CATEGORY_THEMES } from '@/components/landing/landing-data';
 import { STORY_CATEGORIES } from '@/components/stories/categories';
@@ -70,6 +70,8 @@ function everyDayOf2026(): string[] {
  * 물러나 문단이 한 벌로 좁혀지므로, 조사·인용·회전처럼 재료와 무관한 성질을 보기에 좋다.
  * 속성이 붙었을 때의 문장은 `수국()` 이 따로 본다.
  */
+type HookSource = NonNullable<Parameters<typeof composeTodayReason>[0]['hookSource']>;
+
 function reason(input: {
   basis?: TodayBasis;
   flowerName?: string;
@@ -79,6 +81,7 @@ function reason(input: {
   tags?: string[];
   bloomSpan?: number;
   hook?: string;
+  hookSource?: HookSource;
   meaning?: string;
 }): string {
   return composeTodayReason({
@@ -90,12 +93,13 @@ function reason(input: {
     ...(input.tags === undefined ? {} : { tags: input.tags }),
     ...(input.bloomSpan === undefined ? {} : { bloomSpan: input.bloomSpan }),
     ...(input.hook === undefined ? {} : { hook: input.hook }),
+    ...(input.hookSource === undefined ? {} : { hookSource: input.hookSource }),
     ...(input.meaning === undefined ? {} : { meaning: input.meaning }),
   });
 }
 
 /** 카탈로그의 수국 한 행 그대로 — 사용자가 예로 든 그 꽃이다(`blue` · 향 0 · 5~9월). */
-function 수국(todayISO: string, extra: { hook?: string } = {}): string {
+function 수국(todayISO: string, extra: { hook?: string; hookSource?: HookSource } = {}): string {
   return reason({
     basis: 'in_season',
     flowerName: '수국',
@@ -170,6 +174,31 @@ const WEATHER_WORDS = [
 const GATEKEEPING_WORDS = ['아는 사람', '모르는 사람', '많지 않', '잘 알려지지', '의외로'];
 
 /**
+ * **독자가 아직 갖지 못한 감정** (2026-08-17 사용자 피드백 두 번째 · §1.5n v4 금지선).
+ *
+ * v3 의 맺음 `읽다가 한참을 멈추게 되는 문장이었어요.` 가 걸린 문장이다. 훅은 본문에서
+ * 떼어 온 헤드라인이라 그 자체로는 단서가 없는데, 거기에 대고 감상을 단정하면 독자는
+ * **멈출 이유를 찾지 못한 채 멈추라는 말만** 듣는다. 우리만 아는 감동을 통보하는 꼴이라
+ * "아는 사람만 아는" 문제가 형태를 바꿔 되살아난다.
+ *
+ * 맺음이 할 일은 감정을 대신 느껴 주는 것이 아니라 **뒷이야기가 어디 있는지 알려 주는 것**이다.
+ */
+const FELT_FOR_YOU_WORDS = [
+  '멈추게',
+  '멈췄',
+  '뭉클',
+  '소름',
+  '감동',
+  '울컥',
+  '눈물',
+  '먹먹',
+  '벅차',
+  '전율',
+  '마음이 아리',
+  '한참을',
+];
+
+/**
  * 인용 부호 안쪽을 들어낸 나머지 — **우리가 쓴 말만** 남는다.
  *
  * 금지어 검사를 문장 전체에 걸 수 없다: 훅은 편집자가 쓴 헤드라인 원문이고 438편 중 2편에
@@ -186,16 +215,27 @@ function firstBeatOf(sentence: string): string {
 
 describe('§1.5n v3 — 세 마디로 선다', () => {
   it('① 오늘이라는 날 → ② 그래서 이 꽃 → ③ 이야기 순서로 붙는다', () => {
-    const lede = 수국('2026-08-17', { hook: '천 년째 답장을 못 받고 있는 새가 있습니다' });
+    const lede = 수국('2026-08-17', {
+      hook: '천 년째 답장을 못 받고 있는 새가 있습니다',
+      hookSource: {
+        cultureRegion: 'japan',
+        era: '19c',
+        storyType: 'history',
+        confidenceLevel: 'repeated',
+      },
+    });
 
     expect(lede).toBe(
       '8월의 가운데 열흘이에요. ' +
         '이맘때는 눈이라도 시원한 게 반가워서, 마침 제철인 수국을 골랐어요. ' +
-        '“천 년째 답장을 못 받고 있는 새가 있습니다” — 읽다가 한참을 멈추게 되는 문장이었어요.',
+        '일본 쪽 기록에서 온 이야기예요. “천 년째 답장을 못 받고 있는 새가 있습니다” — ' +
+        '무슨 이야기인지는 도감에서 마저 읽어 보실 수 있어요.',
     );
     // ① 이 ② 앞에 서고, 인용은 맨 뒤다 — 이야기가 첫마디에 붙지 않는다(피드백 ⑴).
     expect(lede.indexOf('8월')).toBeLessThan(lede.indexOf('수국'));
     expect(lede.indexOf('수국')).toBeLessThan(lede.indexOf('“'));
+    // 인용 앞에 좌표가 선다 — 훅이 홀로 서서 수수께끼가 되지 않는다(피드백 v4).
+    expect(lede.indexOf('일본 쪽 기록')).toBeLessThan(lede.indexOf('“'));
   });
 
   it('① 은 날짜가 실제로 말해 주는 것만 부른다 (달과 순)', () => {
@@ -250,9 +290,10 @@ describe('§1.5n — 재료 3단 × basis 3분기', () => {
       meaning: '열정적인 사랑과 깊은 애정',
     });
 
+    // 좌표(`hookSource`)를 넘기지 않았으므로 ㉠ 은 서지 않는다 — 없는 출처를 지어내느니 뺀다.
     expect(lede).toBe(
       '8월 중순이잖아요. 그래서 지금 피어 있는 꽃들 사이에서 국화를 꺼냈어요. ' +
-        '“천 년째 답장을 못 받고 있는 새가 있습니다” — 이 대목이 좋아서 그대로 옮겨 왔어요.',
+        '“천 년째 답장을 못 받고 있는 새가 있습니다” — 나머지는 도감에서 천천히 읽어 보셔도 좋아요.',
     );
     // 훅이 있으면 꽃말은 부르지 않는다(한 문장에 재료 둘을 겹치지 않는다).
     expect(lede).not.toContain('열정적인 사랑');
@@ -389,10 +430,30 @@ describe('§1.5n v3 — 366일 분포', () => {
   it('문단이 화면 자리를 넘기지 않는다 (§1.5n 리듬)', async () => {
     const data = await catalog();
 
+    // v4 에서 ③ 이 한 조각(㉠ 좌표) 늘어 실측 110~163자가 됐다. 상한은 그 위 한 뼘이다.
     for (const iso of everyDayOf2026()) {
       const lede = buildLandingData(data, iso).todayReason;
-      expect(lede.length, `${iso} — ${lede}`).toBeLessThanOrEqual(150);
+      expect(lede.length, `${iso} — ${lede}`).toBeLessThanOrEqual(170);
     }
+  });
+
+  it('③ ㉠ 좌표가 열두 벌 넘게 돌아간다 (한 벌로 굳지 않는다)', async () => {
+    const data = await catalog();
+    // 인용 앞 문장 = ㉠. 지명·시대가 값마다 달라지므로 고유명사를 지워 **틀**만 센다.
+    const shapes = new Set<string>();
+
+    for (const iso of everyDayOf2026()) {
+      const lede = buildLandingData(data, iso).todayReason;
+      const before = lede.slice(0, lede.indexOf('“')).trimEnd();
+      const lead = before.slice(before.lastIndexOf('. ') + 2);
+      shapes.add(
+        lead
+          .replace(/^\S+(에서|에|\s)/, '{좌표}$1')
+          .replace(/^\S+ \S+에서 온/, '{시대} {지역}에서 온'),
+      );
+    }
+
+    expect(shapes.size).toBeGreaterThanOrEqual(12);
   });
 });
 
@@ -583,6 +644,102 @@ describe('§1.5n v3 — 모르는 것을 말하지 않는다', () => {
       expect(closing.endsWith('.'), closing).toBe(true);
     }
   });
+
+  it('실데이터 366일 전수 — 읽지 않은 것에 대한 감상을 대신 단정하지 않는다', async () => {
+    const data = await catalog();
+
+    for (const iso of everyDayOf2026()) {
+      // 인용 안쪽은 편집자가 쓴 훅 원문이라 검사에서 뺀다 — 막는 것은 **우리 말**이다.
+      const frame = frameOf(buildLandingData(data, iso).todayReason);
+      for (const word of FELT_FOR_YOU_WORDS) expect(frame, `${iso} — ${frame}`).not.toContain(word);
+    }
+  });
+});
+
+/**
+ * §1.5n v4 — 마디 ③ 의 두 약속이 **참인가** (2026-08-17).
+ *
+ * ㉠ 은 출처의 좌표를 말하고 ㉢ 은 뒷이야기가 어디 있는지 말한다. 둘 다 화면 밖의 사실을
+ * 가리키는 문장이라, 문장만 예쁘게 두고 사실이 어긋나면 그대로 거짓말이 된다.
+ */
+describe('§1.5n v4 — 마디 ③ 이 가리키는 것이 실재한다', () => {
+  it('㉢ 이 가리키는 도감 동선이 카드 마크업에 실제로 있다', () => {
+    const source = readFileSync(
+      path.join(process.cwd(), 'src/components/landing/TodayCarousel.tsx'),
+      'utf8',
+    );
+
+    // 카드 전면을 덮는 링크가 `/flowers/{id}` 로 간다 — `뒷이야기는 도감에` 의 근거다.
+    expect(source).toContain('href={`/flowers/${slide.flowerId}`}');
+    expect(source).toContain('도감에서 보기');
+  });
+
+  it('㉢ 네 벌이 모두 도감을 가리킨다 (막연한 감상으로 끝나지 않는다)', () => {
+    const closings = new Set(
+      everyDayOf2026().map((iso) => reason({ todayISO: iso, hook: '새가 있습니다' }).split('” — ')[1]),
+    );
+
+    expect(closings.size).toBe(4);
+    for (const closing of closings) expect(closing, closing).toContain('도감');
+  });
+
+  it('㉠ 은 표에 있는 지명만 부른다 (`western`·`global`·합성 값은 지명을 만들지 않는다)', () => {
+    const vague = ['western', 'global', 'europe', 'near-east', 'americas', 'japan-bermuda-usa'];
+
+    for (const cultureRegion of vague) {
+      for (const iso of everyDayOf2026().slice(0, 40)) {
+        const lede = reason({
+          todayISO: iso,
+          hook: '새가 있습니다',
+          hookSource: { cultureRegion, era: 'modern', storyType: 'history' },
+        });
+        // 좌표가 없으면 갈래로만 잡는다 — 서양·전 세계 같은 말을 지어내지 않는다.
+        expect(lede, lede).not.toContain('서양');
+        expect(lede, lede).not.toContain('전 세계');
+        expect(lede, lede).toContain('기록');
+      }
+    }
+  });
+
+  it('㉠ 은 재료가 하나도 없으면 통째로 빠진다 (㉡㉢ 만으로 문단이 선다)', () => {
+    const lede = reason({ todayISO: '2026-08-17', hook: '새가 있습니다', hookSource: {} });
+
+    expect(lede).toContain('“새가 있습니다” — ');
+    expect(lede).toContain('도감');
+    // 인용 바로 앞은 ② 의 끝이다 — 좌표 문장이 끼어들지 않는다.
+    expect(lede.slice(0, lede.indexOf('“'))).not.toContain('이야기예요');
+  });
+
+  it('㉠ 은 지역과 시대를 겹쳐 부르지 않는다 (`조선 시대 한국에서` 금지)', () => {
+    for (const iso of everyDayOf2026()) {
+      const lede = reason({
+        todayISO: iso,
+        hook: '새가 있습니다',
+        hookSource: { cultureRegion: 'korea', era: 'joseon', storyType: 'history' },
+      });
+
+      expect(lede, lede).not.toContain('조선 시대 한국');
+      expect(lede, lede).not.toContain('에도 시대 일본');
+    }
+  });
+
+  it('§1.5f — 창작 이야기는 어느 날에도 창작 라벨을 잃지 않는다', () => {
+    for (const iso of everyDayOf2026()) {
+      const lede = reason({
+        todayISO: iso,
+        hook: '새가 있습니다',
+        // 지역·시대·신뢰까지 다 쥐여 줘도 라벨이 다른 벌에 밀리면 안 된다.
+        hookSource: {
+          cultureRegion: 'korea',
+          era: '19c',
+          storyType: 'original',
+          confidenceLevel: 'single_source',
+        },
+      });
+
+      expect(lede, iso).toContain('dearbloom이 지어 본 이야기예요.');
+    }
+  });
 });
 
 describe('§1.5n — 결정성 (LLM 없이 로컬에서 같은 값)', () => {
@@ -606,7 +763,7 @@ describe('§1.5n — 결정성 (LLM 없이 로컬에서 같은 값)', () => {
     // 장미는 이야기가 23편이다 — 날짜만 바꿔 30번 물으면 여러 훅이 나와야 한다.
     const picked = new Set<string>();
     for (const iso of everyDayOf2026().slice(0, 30)) {
-      const hook = pickReasonHook('rose-red', stories, iso);
+      const hook = pickReasonStory('rose-red', stories, iso)?.hook;
       if (hook) picked.add(hook);
     }
 
@@ -615,24 +772,20 @@ describe('§1.5n — 결정성 (LLM 없이 로컬에서 같은 값)', () => {
 
   it('고른 훅은 반드시 **그 꽃의** 이야기에서 온다', async () => {
     const { stories } = await catalog();
-    const mine = new Set(
-      stories
-        .filter((story) => story.flowerId === 'rose-red')
-        .map((story) => story.hook?.trim().replace(/\.$/, '').trim()),
-    );
+    const mine = new Set(stories.filter((story) => story.flowerId === 'rose-red'));
 
     for (let day = 0; day < 40; day += 1) {
       const date = new Date(Date.UTC(2026, 5, 1 + day));
-      const hook = pickReasonHook('rose-red', stories, date.toISOString().slice(0, 10));
-      expect(mine.has(hook), `${hook}`).toBe(true);
+      const story = pickReasonStory('rose-red', stories, date.toISOString().slice(0, 10));
+      expect(mine.has(story as never), `${story?.storyId}`).toBe(true);
     }
   });
 
   it('이야기가 없는 꽃이면 훅 없이 물러선다 (던지지 않는다)', async () => {
     const { stories } = await catalog();
 
-    expect(pickReasonHook('no-such-flower', stories, '2026-08-16')).toBeUndefined();
-    expect(pickReasonHook('rose-red', [], '2026-08-16')).toBeUndefined();
+    expect(pickReasonStory('no-such-flower', stories, '2026-08-16')).toBeUndefined();
+    expect(pickReasonStory('rose-red', [], '2026-08-16')).toBeUndefined();
   });
 
   it('실데이터 리드에는 오늘의 꽃 이름과 그 꽃 이야기가 함께 서 있다', async () => {

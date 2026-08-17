@@ -19,6 +19,7 @@
 import { useEffect, useRef, useState, useTransition } from 'react';
 import Link from 'next/link';
 
+import { loadFlowSession, saveFlowSession } from './flow-session';
 import type {
   ChoiceOption,
   ColorChoice,
@@ -30,7 +31,8 @@ import type {
 } from './types';
 import styles from './flow.module.css';
 
-const TOTAL_STEPS = 5;
+/** RecommendFlow 가 걸음을 범위(1~5)로 눌러 담을 때도 쓴다 — 어휘의 원본은 여기다. */
+export const TOTAL_STEPS = 5;
 
 /** 마음 목록에서 `직접 쓸게요` 를 가리키는 값. 어휘 원본은 엔진 INTENTS 다. */
 const INTENT_OTHER = 'other';
@@ -310,12 +312,28 @@ export interface WizardProps {
   options: WizardOptions;
   /** 서버가 정한 "내일". 화면에서 계산하면 서버 렌더와 값이 어긋난다. */
   defaultDateISO: string;
+  /**
+   * 지금 걸음(1~5). 걸음의 주인은 RecommendFlow 다 — 걸음이 히스토리 스택과 한 벌이라
+   * (걸음 하나 = 엔트리 하나), popstate 를 듣는 쪽이 걸음도 쥐어야 둘이 어긋나지 않는다.
+   */
+  step: number;
+  /** 다음·프리셋 건너뛰기 — 새 히스토리 엔트리를 쌓는다. */
+  onStepChange: (next: number) => void;
+  /** `이전 질문` — 브라우저 뒤로가기와 같은 길로 간다(RecommendFlow.stepBack 머리말). */
+  onStepBack: () => void;
   action: (submission: WizardSubmission) => Promise<FlowResponse>;
   onResult: (payload: ResultPayload) => void;
 }
 
-export default function Wizard({ options, defaultDateISO, action, onResult }: WizardProps) {
-  const [step, setStep] = useState(1);
+export default function Wizard({
+  options,
+  defaultDateISO,
+  step,
+  onStepChange,
+  onStepBack,
+  action,
+  onResult,
+}: WizardProps) {
   const [relationship, setRelationship] = useState('');
   // §1.5l 사이 `직접 쓸게요` 한 줄. 마음 쪽과 같은 규칙이다 — 비워도 진행된다.
   const [relationshipDetail, setRelationshipDetail] = useState('');
@@ -338,6 +356,84 @@ export default function Wizard({ options, defaultDateISO, action, onResult }: Wi
   const [dateISO, setDateISO] = useState(defaultDateISO);
   const [pending, startSubmit] = useTransition();
   const [error, setError] = useState<string | null>(null);
+
+  /*
+   * 뒤로가기·새로고침으로 다시 선 자리 — 골랐던 답을 탭 한정 저장에서 되살린다(마운트
+   * 1회). 걸음(step)은 RecommendFlow 가 히스토리에서 되살리고, 여기는 답만 맡는다.
+   * 저장이 서버로 가지 않는 이유와 범위는 `flow-session.ts` 머리말에 있다.
+   *
+   * 되살리기 전에는 저장하지 않는다(`hydrated`) — 마운트 직후의 저장 effect 가 기본값
+   * (빈 답)으로 살아 있는 저장을 덮는 것을 막는 빗장이다. state 인 이유: ref 로 두면
+   * 같은 커밋의 저장 effect 가 아직 기본값인 클로저로 저장해 버린다.
+   */
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect -- 하이드레이션 뒤 정확히 한 번의
+       복원이다(RecommendFlow 의 복원 effect 와 같은 사유). lazy 초기값으로 옮기면 첫
+       렌더가 서버 HTML 과 어긋난다. */
+    const saved = loadFlowSession()?.answers;
+    if (saved) {
+      // 저장에서 온 값은 남의 손을 탄 값이다 — 모양만 맞춰 받고, 어휘 검증은 서버가 한다.
+      const str = (v: unknown) => (typeof v === 'string' ? v : '');
+      const list = (v: unknown) =>
+        Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [];
+      setRelationship(str(saved.relationship));
+      setRelationshipDetail(str(saved.relationshipDetail));
+      setIntent(str(saved.intent));
+      setIntentDetail(str(saved.intentDetail));
+      setPreset(str(saved.preset));
+      setRecipientChips(list(saved.recipientChips));
+      setColorPrefs(list(saved.colorPrefs));
+      setRecipientNote(str(saved.recipientNote));
+      setEpisode(str(saved.episode));
+      setEpisodeHints(list(saved.episodeHints));
+      setEpisodeHintDetail(str(saved.episodeHintDetail));
+      setBudgetKey(str(saved.budgetKey));
+      setBudgetDetail(str(saved.budgetDetail));
+      setDateISO(str(saved.dateISO) || defaultDateISO);
+    }
+    setHydrated(true);
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, [defaultDateISO]);
+
+  /** 답이 바뀔 때마다 이어가기 저장을 따라 쓴다 — 위 빗장이 열린 뒤부터만. */
+  useEffect(() => {
+    if (!hydrated) return;
+    saveFlowSession({
+      answers: {
+        relationship,
+        relationshipDetail,
+        intent,
+        intentDetail,
+        preset,
+        recipientChips,
+        colorPrefs,
+        recipientNote,
+        episode,
+        episodeHints,
+        episodeHintDetail,
+        budgetKey,
+        budgetDetail,
+        dateISO,
+      },
+    });
+  }, [
+    hydrated,
+    relationship,
+    relationshipDetail,
+    intent,
+    intentDetail,
+    preset,
+    recipientChips,
+    colorPrefs,
+    recipientNote,
+    episode,
+    episodeHints,
+    episodeHintDetail,
+    budgetKey,
+    budgetDetail,
+    dateISO,
+  ]);
 
   const head = STEP_HEADS[step - 1];
   const canAdvance = step === 1 ? relationship !== '' : step === 2 ? intent !== '' : true;
@@ -382,8 +478,8 @@ export default function Wizard({ options, defaultDateISO, action, onResult }: Wi
     setRelationshipDetail('');
     setIntent(option.intent);
     setIntentDetail('');
-    setStep(3);
-    window.scrollTo({ top: 0 });
+    // 걸음 이동(과 맨 위 스크롤)은 RecommendFlow 가 한다 — 히스토리 엔트리도 거기서 쌓인다.
+    onStepChange(3);
   }
 
   function chooseRelationship(next: string) {
@@ -447,8 +543,7 @@ export default function Wizard({ options, defaultDateISO, action, onResult }: Wi
 
   function next() {
     if (step < TOTAL_STEPS) {
-      setStep(step + 1);
-      window.scrollTo({ top: 0 });
+      onStepChange(step + 1);
       return;
     }
     submit();
@@ -475,7 +570,7 @@ export default function Wizard({ options, defaultDateISO, action, onResult }: Wi
           <button
             type="button"
             className={styles.iconBtn}
-            onClick={() => setStep(step - 1)}
+            onClick={onStepBack}
             aria-label="이전 질문으로"
           >
             <svg

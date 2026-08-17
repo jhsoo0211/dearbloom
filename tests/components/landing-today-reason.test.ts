@@ -53,8 +53,11 @@ async function catalog(): Promise<Catalog> {
 
 const BASES: TodayBasis[] = ['in_season', 'adjacent', 'all'];
 
-/** 나흘 연속 — 회전을 보는 창. 이 넷은 `mid` 순(旬)의 첫마디 네 벌을 한 번씩 다 쓴다. */
+/** 나흘 연속 — 맺음 네 벌의 회전을 보는 창(맺음 씨앗은 날짜뿐이라 순(旬)과 무관하다). */
 const FOUR_DAYS = ['2026-08-16', '2026-08-17', '2026-08-18', '2026-08-19'];
+
+/** 8월 중순 열흘. 한 순(旬) 안에서 첫마디가 도는지 보는 창. */
+const AUGUST_MID = Array.from({ length: 10 }, (_, i) => `2026-08-${11 + i}`);
 
 /** 2026년 366일 전수. `new Date(...)` 는 여기서만 쓴다(리드는 문자열에서 날짜를 쪼갠다). */
 function everyDayOf2026(): string[] {
@@ -199,6 +202,28 @@ const FELT_FOR_YOU_WORDS = [
 ];
 
 /**
+ * **사람이 그렇게 말하지 않는 말** (2026-08-17 사용자 피드백 세 번째 · §1.5n v5 금지선).
+ *
+ * 사용자가 짚은 문장은 `{M}월의 가운데 열흘이에요.` 였다 — 중순(中旬)의 직역이라 뜻은
+ * 맞지만 **아무도 그렇게 말하지 않는다.** 그 문장이 태어난 이유는 계측 보고에 적혀 있다:
+ * *"중순에 대해 참으로 할 수 있는 말이 많지 않아 **표현 변주로 채웠다**."*
+ *
+ * 그래서 규칙이 하나 늘었다 — **변주 칸을 채우려고 문장을 지어내지 않는다.** 자연스러운
+ * 말이 셋뿐이면 셋으로 간다. 여기 목록은 그 판정으로 버린 문장들이고, 되살아나면 잡힌다.
+ */
+const UNSPOKEN_PHRASES = [
+  '가운데 열흘', // 중순의 직역
+  '한가운데예요', // 문어투
+  '첫머리예요', // 글에나 쓰는 말
+  '저물어 가요', // 해·한 해에나 쓰는 말
+  '넘어가는 참이에요', // 설명조
+  '하순으로 접어들었어요', // 일기예보 말투
+  '한 뼘 비켜', // 문어투
+  '한 뼘 떨어진', // 문어투
+  '순서를 미루지', // 우리 머릿속 로테이션의 말
+];
+
+/**
  * 인용 부호 안쪽을 들어낸 나머지 — **우리가 쓴 말만** 남는다.
  *
  * 금지어 검사를 문장 전체에 걸 수 없다: 훅은 편집자가 쓴 헤드라인 원문이고 438편 중 2편에
@@ -226,7 +251,7 @@ describe('§1.5n v3 — 세 마디로 선다', () => {
     });
 
     expect(lede).toBe(
-      '8월의 가운데 열흘이에요. ' +
+      '벌써 8월 중순이네요. ' +
         '이맘때는 눈이라도 시원한 게 반가워서, 마침 제철인 수국을 골랐어요. ' +
         '일본 쪽 기록에서 온 이야기예요. “천 년째 답장을 못 받고 있는 새가 있습니다” — ' +
         '무슨 이야기인지는 도감에서 마저 읽어 보실 수 있어요.',
@@ -240,10 +265,18 @@ describe('§1.5n v3 — 세 마디로 선다', () => {
 
   it('① 은 날짜가 실제로 말해 주는 것만 부른다 (달과 순)', () => {
     // 초순 · 중순 · 하순 · 달의 끝 — 넷 다 8월의 참인 사실이다.
-    expect(firstBeatOf(수국('2026-08-03'))).toMatch(/^8월/);
+    // 달의 길목만 다음 달을 부른다(`곧 9월이에요`).
+    expect(firstBeatOf(수국('2026-08-03'))).toContain('8월');
     expect(firstBeatOf(수국('2026-08-17'))).toContain('8월');
     expect(firstBeatOf(수국('2026-08-24'))).toContain('8월');
-    expect(firstBeatOf(수국('2026-08-30'))).toContain('8월');
+    expect(firstBeatOf(수국('2026-08-30'))).toMatch(/8월|9월/);
+  });
+
+  it('`며칠 남지 않았어요` 는 말일 당일에는 서지 않는다 (남은 날이 0이다)', () => {
+    // 2월 28일 · 4월 30일 · 12월 31일 — 달 길이가 다른 말일 셋.
+    for (const iso of ['2026-02-28', '2026-04-30', '2026-12-31']) {
+      expect(firstBeatOf(수국(iso)), iso).not.toContain('며칠 남지 않았어요');
+    }
   });
 
   it('① 은 계절 이름을 부르지 않는다 (② 가 부르는 자리라 겹치면 안 된다)', () => {
@@ -264,7 +297,7 @@ describe('§1.5n v3 — 세 마디로 선다', () => {
     const twoBeats = 수국('2026-08-17');
 
     expect(twoBeats).toBe(
-      '8월의 가운데 열흘이에요. 이맘때는 눈이라도 시원한 게 반가워서, 마침 제철인 수국을 골랐어요.',
+      '벌써 8월 중순이네요. 이맘때는 눈이라도 시원한 게 반가워서, 마침 제철인 수국을 골랐어요.',
     );
     // 두 마디만으로도 완결된 문단이다 — 없는 이야기를 아쉬워하는 말을 덧붙이지 않는다.
     expect(twoBeats.endsWith('.')).toBe(true);
@@ -292,7 +325,7 @@ describe('§1.5n — 재료 3단 × basis 3분기', () => {
 
     // 좌표(`hookSource`)를 넘기지 않았으므로 ㉠ 은 서지 않는다 — 없는 출처를 지어내느니 뺀다.
     expect(lede).toBe(
-      '8월 중순이잖아요. 그래서 지금 피어 있는 꽃들 사이에서 국화를 꺼냈어요. ' +
+      '8월도 절반쯤 왔어요. 그래서 지금 피어 있는 꽃들 사이에서 국화를 꺼냈어요. ' +
         '“천 년째 답장을 못 받고 있는 새가 있습니다” — 나머지는 도감에서 천천히 읽어 보셔도 좋아요.',
     );
     // 훅이 있으면 꽃말은 부르지 않는다(한 문장에 재료 둘을 겹치지 않는다).
@@ -301,7 +334,7 @@ describe('§1.5n — 재료 3단 × basis 3분기', () => {
 
   it('훅이 없으면 꽃말을 재료로 물러선다', () => {
     expect(reason({ basis: 'in_season', meaning: '맑은 마음' })).toBe(
-      '8월 중순이잖아요. 그래서 지금 피어 있는 꽃들 사이에서 국화를 꺼냈어요. ' +
+      '8월도 절반쯤 왔어요. 그래서 지금 피어 있는 꽃들 사이에서 국화를 꺼냈어요. ' +
         '‘맑은 마음’이라는 말을 오래 들어 온 꽃이에요.',
     );
   });
@@ -336,12 +369,24 @@ describe('§1.5n — 재료 3단 × basis 3분기', () => {
  * 무너진다 — 그게 정확히 피드백이 가리킨 상태였다.
  */
 describe('§1.5n — 문장 틀이 날마다 회전한다', () => {
-  it('나흘 연속이면 리드 앞 두 마디가 나흘 다 다르다', () => {
-    const heads = FOUR_DAYS.map(
-      (todayISO) => reason({ basis: 'in_season', todayISO, hook: '새가 있습니다' }).split('“')[0],
+  /**
+   * ⚠ **한 순(旬) 안의 첫마디 수만큼만 요구한다.** 중순의 자연스러운 말은 셋뿐이라
+   *   "열흘 내내 다 다르다"는 애초에 불가능하고, 그걸 억지로 만들려다 나온 것이
+   *   `{M}월의 가운데 열흘이에요` 였다(2026-08-17 사용자 피드백 세 번째).
+   *   숫자를 늘리려면 **자연스러운 말을 먼저 찾아야** 한다 — 여기 상수만 올리지 마라.
+   */
+  it('한 순(旬) 안에서도 첫마디가 한 벌로 굳지 않는다', () => {
+    const openers = AUGUST_MID.map((todayISO) => firstBeatOf(수국(todayISO)));
+
+    expect(new Set(openers).size).toBe(3);
+  });
+
+  it('순이 바뀌면 첫마디도 바뀐다', () => {
+    const openers = ['2026-08-04', '2026-08-14', '2026-08-24', '2026-08-31'].map((todayISO) =>
+      firstBeatOf(수국(todayISO)),
     );
 
-    expect(new Set(heads).size).toBe(4);
+    expect(new Set(openers).size).toBe(4);
   });
 
   it('인용을 받는 맺음말도 함께 회전한다', () => {
@@ -395,7 +440,7 @@ describe('§1.5n — 문장 틀이 날마다 회전한다', () => {
  * 재료를 쥔 문장들을 5분의 1씩 밀어낸 것(그래서 `WHY_FALLBACKS` 를 표 밖으로 뺐다).
  */
 describe('§1.5n v3 — 366일 분포', () => {
-  it('① 첫마디 열세 벌이 한 해 안에서 모두 쓰인다', async () => {
+  it('① 첫마디 열한 벌이 한 해 안에서 모두 쓰인다', async () => {
     const data = await catalog();
     // 달 숫자를 지워야 "틀"이 남는다 — `1월 초예요` 와 `8월 초예요` 는 같은 벌이다.
     const shapes = new Set(
@@ -405,7 +450,8 @@ describe('§1.5n v3 — 366일 분포', () => {
     );
 
     // 표를 늘리거나 줄이면 이 수를 다시 재서 고쳐라(그 계측이 개정의 일부다).
-    expect(shapes.size).toBe(13);
+    // v3 는 열세 벌이었고 그중 둘을 **어색하다는 이유로 버렸다** — 수가 준 것이 개선이다.
+    expect(shapes.size).toBe(11);
   });
 
   it('계절과 색을 잇는 문장이 한 해에 쉰 날 넘게 뜬다 (사용자 요청의 핵심)', async () => {
@@ -506,6 +552,23 @@ describe('§1.5n — 조사는 데이터에서 맞춘다', () => {
 
     expect(reason({ hook: '   ', meaning: '' })).toBe(bare);
     expect(reason({ hook: '.' })).toBe(bare);
+  });
+
+  it('이름이 색을 말하면 카탈로그 대표색보다 이름을 믿는다', async () => {
+    const data = await catalog();
+
+    // `lily-asiatic` 은 `colors[0]` 이 orange 인데 화면 이름은 `흰 백합` 이다(§1.4c 시안 이름).
+    // 그대로 두면 `빛깔이 따뜻해 보여서 흰 백합을 꺼냈어요` 가 나온다 — 눈에 곧장 걸리는 모순이다.
+    const lily = everyDayOf2026()
+      .map((iso) => buildLandingData(data, iso))
+      .filter((landing) => landing.today.flowerId === 'lily-asiatic')
+      .map((landing) => landing.todayReason);
+
+    expect(lily.length).toBeGreaterThan(0);
+    for (const lede of lily) {
+      expect(lede, lede).not.toContain('따뜻');
+      expect(lede, lede).not.toContain('환한');
+    }
   });
 
   it('모르는 색·모르는 결은 그 벌만 물러나게 한다 (문장이 깨지지 않는다)', () => {
@@ -652,6 +715,31 @@ describe('§1.5n v3 — 모르는 것을 말하지 않는다', () => {
       // 인용 안쪽은 편집자가 쓴 훅 원문이라 검사에서 뺀다 — 막는 것은 **우리 말**이다.
       const frame = frameOf(buildLandingData(data, iso).todayReason);
       for (const word of FELT_FOR_YOU_WORDS) expect(frame, `${iso} — ${frame}`).not.toContain(word);
+    }
+  });
+
+  it('실데이터 366일 전수 — 변주를 채우려고 지어낸 말이 되살아나지 않는다', async () => {
+    const data = await catalog();
+
+    for (const iso of everyDayOf2026()) {
+      const frame = frameOf(buildLandingData(data, iso).todayReason);
+      for (const phrase of UNSPOKEN_PHRASES) {
+        expect(frame, `${iso} — ${frame}`).not.toContain(phrase);
+      }
+    }
+  });
+
+  it('곁말·꽃말 폴백에도 지어낸 말이 없다 (화면에 안 뜨는 사다리까지 본다)', () => {
+    const lines = everyDayOf2026().flatMap((iso) => [
+      composeTodayAside(iso),
+      frameOf(reason({ basis: 'adjacent', todayISO: iso, color: 'blue', tags: ['calm'] })),
+      frameOf(reason({ basis: 'all', todayISO: iso, color: 'blue', tags: ['calm'] })),
+      frameOf(reason({ todayISO: iso, meaning: '맑은 마음' })),
+    ]);
+
+    for (const line of lines) {
+      for (const phrase of UNSPOKEN_PHRASES) expect(line, line).not.toContain(phrase);
+      for (const word of FELT_FOR_YOU_WORDS) expect(line, line).not.toContain(word);
     }
   });
 });

@@ -348,34 +348,50 @@ function dayNoteOf(todayISO: string): DayNote | undefined {
  * ⚠ **여기서 계절 이름을 부르지 않는다.** ② 가 `여름에는 …` 을 쓰는 벌이 있어, 둘 다
  *   계절을 부르면 한 문단에서 같은 말을 두 번 하게 된다. ① 은 달과 순까지만 말한다.
  *
- * 적용되지 않는 벌은 `undefined` 를 돌려주고 `pickApplicable` 이 걸러 낸다. 그래서
- * 표 하나로 순(旬)마다 다른 후보군이 선다.
+ * ── ⚠⚠ 변주 칸을 채우려고 문장을 지어내지 마라 (2026-08-17 사용자 피드백 세 번째) ──────
+ *
+ * v3 의 중순 칸에는 `{M}월의 가운데 열흘이에요.` 가 있었다. 중순(中旬)을 글자 그대로 푼
+ * 말이라 **뜻으로는 맞지만 아무도 그렇게 말하지 않는다.** 사용자가 그 한 줄을 보고
+ * "이게 뭔 말이니" 라고 했다. 왜 그 문장이 태어났는지는 당시 계측 보고에 그대로 적혀
+ * 있다 — *"날짜만으로 중순에 대해 참으로 할 수 있는 말이 많지 않아 표현 변주로 채웠다."*
+ *
+ * **벌 수는 목표가 아니다.** 자연스러운 말이 셋뿐이면 셋으로 간다. 네 번째 자리를 억지로
+ * 채운 어색한 문장 하나가, 늘어난 변주가 주는 이득을 통째로 까먹는다 — 사용자는 그 하나를
+ * 보고 서비스 전체를 의심한다. 새 벌을 넣기 전에 **소리 내어 읽고** 물어라:
+ * "사람이 말할 때 이렇게 말하나?" 애매하면 넣지 마라.
+ *
+ * 이 개정에서 버린 것: `{M}월의 가운데 열흘이에요`(중순의 직역) · `{M}월 한가운데예요`
+ * (문어투) · `{M}월의 첫머리예요`(글의 첫머리에 쓰는 말) · `{M}월이 저물어 가요`(해·하루에
+ * 쓰는 말) · `{M}월에서 {M+1}월로 넘어가는 참이에요`(설명조) · `이제 막 {M}월에
+ * 들어섰어요`(문어투 → `막 시작됐어요` 로 고쳐 씀) · `{M}월도 하순으로 접어들었어요`
+ * (일기예보 말투 → `{M}월도 하순이네요` 로 고쳐 씀).
+ *
+ * 적용되지 않는 벌은 `undefined` 를 돌려주고 `pickApplicable` 이 걸러 낸다.
  */
 type Opener = (note: DayNote) => string | undefined;
 
 const OPENERS: readonly Opener[] = [
-  // 초순
-  ({ month, phase }) => (phase === 'early' ? `달이 바뀌어 ${month}월이에요.` : undefined),
+  // 초순 — 셋은 늘 서고, 넷째는 정말 초입일 때만.
   ({ month, phase }) => (phase === 'early' ? `${month}월 초예요.` : undefined),
-  ({ month, phase }) => (phase === 'early' ? `${month}월의 첫머리예요.` : undefined),
+  ({ month, phase }) => (phase === 'early' ? `달이 바뀌어 ${month}월이에요.` : undefined),
+  ({ month, phase }) => (phase === 'early' ? `이제 ${month}월이네요.` : undefined),
   ({ month, day, phase }) =>
-    phase === 'early' && day <= 5 ? `이제 막 ${month}월에 들어섰어요.` : undefined,
-  // 중순
+    phase === 'early' && day <= 5 ? `${month}월이 막 시작됐어요.` : undefined,
+  // 중순 — **셋뿐이다.** 넷째 자리를 억지로 채우지 않았다(위 주석).
   ({ month, phase }) => (phase === 'mid' ? `${month}월 중순이잖아요.` : undefined),
+  ({ month, phase }) => (phase === 'mid' ? `벌써 ${month}월 중순이네요.` : undefined),
   ({ month, phase }) => (phase === 'mid' ? `${month}월도 절반쯤 왔어요.` : undefined),
-  ({ month, phase }) => (phase === 'mid' ? `${month}월 한가운데예요.` : undefined),
-  ({ month, phase }) => (phase === 'mid' ? `${month}월의 가운데 열흘이에요.` : undefined),
   // 하순
   ({ month, phase }) => (phase === 'late' ? `${month}월 끝자락이에요.` : undefined),
-  ({ month, phase }) => (phase === 'late' ? `${month}월도 하순으로 접어들었어요.` : undefined),
-  ({ month, phase }) => (phase === 'late' ? `${month}월이 저물어 가요.` : undefined),
+  ({ month, phase }) => (phase === 'late' ? `${month}월도 하순이네요.` : undefined),
+  /** ⚠ 말일 **당일**은 뺀다 — 남은 날이 0인데 `며칠 남았다` 고 하면 그날 하루가 틀린 말이 된다. */
   ({ month, day, lastDay, phase }) =>
-    phase === 'late' && lastDay - day <= 6 ? `${month}월도 며칠 남지 않았어요.` : undefined,
+    phase === 'late' && lastDay - day >= 1 && lastDay - day <= 6
+      ? `${month}월도 며칠 남지 않았어요.`
+      : undefined,
   /** 달의 길목. `며칠 남지 않았어요` 보다 좁게 잡아 마지막 나흘에만 선다. */
   ({ month, day, lastDay, phase }) =>
-    phase === 'late' && lastDay - day <= 3
-      ? `${month}월에서 ${month === 12 ? 1 : month + 1}월로 넘어가는 참이에요.`
-      : undefined,
+    phase === 'late' && lastDay - day <= 3 ? `곧 ${month === 12 ? 1 : month + 1}월이에요.` : undefined,
 ];
 
 /* ------------------------------------------------------------------ *
@@ -417,6 +433,34 @@ const COLOR_TONES: Record<string, ColorTone> = {
   purple: { adnominal: '차분한', looks: '차분해 보여서', key: 'deep' },
   brown: { adnominal: '깊은', looks: '깊어 보여서', key: 'deep' },
 };
+
+/**
+ * 이름 앞에 붙은 색말 → 색. **화면 이름이 색을 말하면 그 색을 믿는다.**
+ *
+ * 대표색(`colors[0]`)은 **종(種)** 의 색이고, 화면 이름은 테마 상수가 고른 **품종**의 이름이다.
+ * 둘이 어긋나는 꽃이 실제로 있다: `lily-asiatic` 의 `colors[0]` 은 `orange` 인데 화면에는
+ * `흰 백합` 으로 선다(§1.4c 시안 이름). 그대로 두면 `빛깔이 따뜻해 보여서 흰 백합을
+ * 꺼냈어요` 가 나온다 — **읽는 사람 눈에 곧장 걸리는 모순**이다. 이름이 흰색이라고 말하고
+ * 있으면 그 이름을 따른다.
+ *
+ * ⚠ 이름에 색말이 없으면(대부분) 그냥 `colors[0]` 이다. 이 표는 이름이 색을 **명시할 때만**
+ *   끼어든다 — 꽃 이름에서 색을 추측하는 표가 아니다.
+ */
+const NAME_COLOR: Record<string, string> = {
+  흰: 'white',
+  하얀: 'white',
+  빨간: 'red',
+  붉은: 'red',
+  노란: 'yellow',
+  파란: 'blue',
+  보라: 'purple',
+  분홍: 'pink',
+};
+
+/** 화면 이름이 색을 말하면 그 색을, 아니면 카탈로그 대표색을. */
+export function reasonColorOf(flowerName: string, catalogColor: string | undefined) {
+  return NAME_COLOR[flowerName.trim().split(' ')[0]] ?? catalogColor;
+}
 
 /**
  * 그 계절에 **반가운 인상**. 사용자가 말한 "더우니까 시원한 걸 골랐어요"를 날씨 없이
@@ -517,9 +561,10 @@ const WHYS: Record<TodayBasis, readonly Why[]> = {
       tagPhrase
         ? `${tagPhrase} 눈이 갔어요. 마침 제철이라 ${withParticle(name, 'object')} 꺼냈어요.`
         : undefined,
+    /** `지금이 그 안이라` 는 "그 안"이 무엇인지 되짚게 만들어서 `딱 그 {N} 달` 로 고쳐 썼다. */
     ({ bloomSpan, name }) =>
       bloomSpan !== undefined && SPAN_WORD[bloomSpan]
-        ? `일 년에 ${SPAN_WORD[bloomSpan]} 달만 피는 꽃이거든요. 지금이 그 안이라 ${withParticle(name, 'object')} 꺼냈어요.`
+        ? `일 년에 ${SPAN_WORD[bloomSpan]} 달만 피는 꽃이에요. 지금이 딱 그 ${SPAN_WORD[bloomSpan]} 달이라 ${withParticle(name, 'object')} 꺼냈어요.`
         : undefined,
     ({ bloomSpan, name }) =>
       bloomSpan === 12
@@ -532,9 +577,10 @@ const WHYS: Record<TodayBasis, readonly Why[]> = {
         : undefined,
   ],
   adjacent: [
+    /** `제철은 한 뼘 비켜 있지만요` 는 문어투라 `조금 비켜 있긴 하지만요` 로 고쳐 썼다. */
     ({ tone, name }) =>
       tone
-        ? `빛깔이 ${tone.looks} ${withParticle(name, 'object')} 꺼냈어요. 제철은 한 뼘 비켜 있지만요.`
+        ? `빛깔이 ${tone.looks} ${withParticle(name, 'object')} 꺼냈어요. 제철에서 조금 비켜 있긴 하지만요.`
         : undefined,
     ({ tagPhrase, name }) =>
       tagPhrase
@@ -546,7 +592,7 @@ const WHYS: Record<TodayBasis, readonly Why[]> = {
      */
     ({ note, name }) =>
       note
-        ? `제철과 한 뼘 떨어진 날이라 오히려 눈에 들어왔어요. 그래서 ${withParticle(name, 'object')} 골랐어요.`
+        ? `제철에서 조금 비켜난 날인데도 눈에 들어왔어요. 그래서 ${withParticle(name, 'object')} 골랐어요.`
         : undefined,
   ],
   all: [
@@ -580,8 +626,9 @@ const WHY_FALLBACKS: Record<TodayBasis, (name: string) => string> = {
     `지금이 딱 ${withParticle(name, 'subject')} 피는 때예요. 그래서 오래 고민하지 않았어요.`,
   adjacent: (name) =>
     `아직 한창은 아니지만, 곧 올 계절을 먼저 기다리고 싶어 ${withParticle(name, 'object')} 꺼냈어요.`,
+  /** `순서를 미루지 않고` 는 무슨 순서인지 짚이지 않아 뺐다 — 우리 머릿속 로테이션의 말이다. */
   all: (name) =>
-    `언제 건네도 어색하지 않은 꽃이거든요. 그래서 순서를 미루지 않고 ${withParticle(name, 'object')} 골랐어요.`,
+    `언제 건네도 어색하지 않은 꽃이거든요. 그래서 오늘 ${withParticle(name, 'object')} 골랐어요.`,
 };
 
 /* ------------------------------------------------------------------ *
@@ -622,10 +669,14 @@ const WHY_FALLBACKS: Record<TodayBasis, (name: string) => string> = {
  *   그 동선을 걷어 내면 이 네 문장이 거짓이 되므로 함께 고쳐야 한다.
  * ⚠ **아직 읽지 않은 것에 대한 감상을 대신 단정하지 않는다**(§1.5n v4 금지선).
  *   `멈추게·뭉클·소름·감동…` 류는 366일 전수 검사가 막는다.
+ * ⚠ **㉠ 과 같은 낱말을 쓰지 않는다.** ㉠ 은 거의 모든 벌이 `…이야기예요.` 로 끝나고 한
+ *   벌은 `…옮겨 볼게요.` 다. ㉢ 까지 `이어지는 이야기는 도감에 옮겨 두었어요.` 라고 하면
+ *   한 문단에서 `이야기` 세 번, `옮기다` 두 번이 된다. 그래서 넷 중 셋은 **다른 낱말**로
+ *   같은 말을 한다(`대목` · `사연` · 아예 생략).
  */
 const HOOK_CLOSINGS = [
-  '이어지는 이야기는 도감에 옮겨 두었어요.',
-  '이 이야기는 도감에 처음부터 그대로 있어요.',
+  '이어지는 대목은 도감에 적어 두었어요.',
+  '앞뒤 사연은 도감에 다 있어요.',
   '무슨 이야기인지는 도감에서 마저 읽어 보실 수 있어요.',
   '나머지는 도감에서 천천히 읽어 보셔도 좋아요.',
 ];
@@ -1223,7 +1274,8 @@ export function buildLandingData(catalog: Catalog, todayISO: string): LandingDat
     basis: picked.basis,
     flowerName: today.name,
     todayISO,
-    color: todayCatalogFlower.colors[0],
+    // 이름이 색을 말하면 그 색이 이긴다 — `흰 백합`(대표색 orange)이 그 자리다.
+    color: reasonColorOf(today.name, todayCatalogFlower.colors[0]),
     fragranceLevel: todayCatalogFlower.fragranceLevel,
     tags: todayCatalogFlower.aestheticTags,
     bloomSpan: new Set(todayCatalogFlower.bloomMonths).size,

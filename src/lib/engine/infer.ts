@@ -56,7 +56,7 @@ export const COLOR_KEYWORDS = {
 } as const satisfies Record<string, readonly string[]>;
 
 /**
- * 꽃 이름 키워드 → flowers.csv 의 id. 카탈로그 **47종 전수**의 한국어명을 **부분 일치**로 잡는다
+ * 꽃 이름 키워드 → flowers.csv 의 id. 카탈로그 **59종 전수**의 한국어명을 **부분 일치**로 잡는다
  * (`흰 튤립` 은 '튤립' 으로, `아시아틱 백합` 은 '백합' 으로 걸린다).
  *
  * 배열 첫 값이 화면에 쓰는 짧은 이름이다(`튤립의 기억` 같은 단서 칩).
@@ -67,13 +67,14 @@ export const COLOR_KEYWORDS = {
  * "모든 key 가 flowers.csv 에 실존" + "카탈로그 전종을 덮는다"(예전에는 17 이라는
  * 스냅샷 숫자를 박아 두어, 꽃이 15종 늘어난 뒤에도 테스트는 초록이었다).
  *
- * ⚠ 별칭을 늘릴 때는 **다른 꽃의 이름을 품지 않는지** 본다. 예를 들어 팬지의 별칭
- *   `삼색제비꽃` 은 '제비꽃'(violet)까지 함께 걸어 단서 두 개를 만든다 — 그래서 뺐다.
- *   같은 이유로 수레국화의 표준명이 여기 없다(아래 `cornflower` 주석).
+ * ⚠ 이름이 **다른 꽃의 이름을 품는 것**은 이제 괜찮다 — `matchKeys` 가 최장일치를 하므로
+ *   `수레국화` 는 수레국화만, `삼색제비꽃` 은 팬지만 건다(2026-08-17 이전에는 둘 다
+ *   단서를 둘로 만들어서 표준명·별칭을 아예 못 넣고 있었다). 자세한 사정은 그 함수 주석.
  *
- * ⚠ **한국어 이름이 다른 식물과 겹치는 꽃**(확장 배치 1, 2026-08-16)은 겹치는 쪽 이름을
- *   여기 넣지 않는다. 사전이 잡을 수 있는 것은 낱말이지 종이 아니라서, 넣는 순간 다른
- *   식물을 말한 사람에게 우리 꽃 칩을 띄우게 된다 — 각 줄의 주석이 그 짝을 적어 둔다.
+ * ⚠ 그래도 **한국어 이름이 다른 식물과 겹치는 꽃**은 겹치는 쪽 이름을 여기 넣지 않는다.
+ *   이건 최장일치로 풀 수 있는 문제가 아니다 — 낱말이 같으면 자리도 같아서, 사전이
+ *   고를 근거가 없다. 넣는 순간 다른 식물을 말한 사람에게 우리 꽃 칩을 띄우게 된다.
+ *   각 줄의 주석이 그 짝을 적어 둔다(확장 배치 1·2, 2026-08-16~17).
  */
 export const FLOWER_KEYWORDS = {
   'rose-red': ['장미'],
@@ -105,7 +106,8 @@ export const FLOWER_KEYWORDS = {
   'babys-breath': ['안개꽃', '안개초'],
   cosmos: ['코스모스', '살사리꽃'],
   magnolia: ['목련', '매그놀리아'],
-  pansy: ['팬지'],
+  /** `삼색제비꽃` 은 '제비꽃'(violet)을 품지만 최장일치가 갈라 준다 — 팬지만 걸린다. */
+  pansy: ['팬지', '삼색제비꽃'],
   poinsettia: ['포인세티아', '포인세차'],
   daisy: ['데이지'],
   // ── 확장 배치 1 (2026-08-16) — flowers.csv seed-v6 15종 ─────────────────
@@ -127,14 +129,41 @@ export const FLOWER_KEYWORDS = {
   stock: ['스토크', '비단향꽃무'],
   delphinium: ['델피니움', '델피늄'],
   amaryllis: ['아마릴리스'],
-  /** ⚠ 표준명 '수레국화' 를 못 쓴다 — 그 낱말이 '국화'(chrysanthemum)를 품어 단서가 둘이 된다
-   *  (팬지의 `삼색제비꽃` 과 같은 사정이고, 이번에는 별칭이 아니라 표준명이 걸렸다).
-   *  '수레' 만 잘라 넣는 길도 있지만 수레(車)를 적은 문장까지 걸려 더 나쁘다. */
-  cornflower: ['콘플라워', '센토레아'],
+  /** 표준명 '수레국화' 가 '국화'(chrysanthemum)를 품는다 — 2026-08-17 최장일치 전에는
+   *  단서가 둘이 되어 표준명을 아예 못 싣고 별칭만 남겨 두었다. 이제 실린다. */
+  cornflower: ['수레국화', '콘플라워', '센토레아'],
   /** '사프란' 은 넣지 않는다 — 가을에 피는 다른 종(Crocus sativus)이다. */
   crocus: ['크로커스'],
   /** '연꽃' 은 넣지 않는다 — 수련(Nymphaea)과 연꽃(Nelumbo)은 과가 다른 남이다. */
   'water-lily': ['수련'],
+  // ── 확장 배치 2 (2026-08-17) — flowers.csv seed-v7 12종 ─────────────────
+  // 12종을 넣기 전에 **부분문자열 충돌을 전수 점검했다.** 새 낱말이 기존 낱말을 품는
+  // 경우도, 기존 낱말이 새 낱말을 품는 경우도 없었다(브리핑이 짚은 자리 넷을 포함해서 —
+  // `매화`↔`벚꽃`·`목화`, `진달래`↔`철쭉`, `치자`, `목화`↔`국화` 는 글자가 겹치지 않는다).
+  // 걸린 것은 낱말이 아니라 **이름 자체가 같은 식물**이었고, 그건 아래 주석들이 적어 둔다.
+  phalaenopsis: ['호접란', '팔레놉시스'],
+  alstroemeria: ['알스트로메리아'],
+  anthurium: ['안스리움', '안시리움'],
+  /** ⚠ 낱말 '치자' 는 넣지 않는다 — 다른 식물이 아니라 **한국어 어미**에 걸린다
+   *  ('고치자'·'마치자'·'합치자'…). 공백을 지우고 부분 일치를 하는 사전이라 그 문장이
+   *  통째로 걸린다. 꽃을 뜻할 때 사람들이 쓰는 말은 '치자꽃'·'치자나무' 쪽이다. */
+  gardenia: ['치자꽃', '치자나무'],
+  eucalyptus: ['유칼립투스', '유칼리'],
+  statice: ['스타티스'],
+  /** ⚠ '신경초' 는 넣지 않는다 — 잎을 건드리면 접히는 그 풀(Mimosa pudica)은 우리 미모사
+   *  (은엽아카시아 Acacia dealbata)와 다른 식물이다. '미모사' 한 낱말은 양쪽을 다 뜻해서
+   *  가를 방법이 없고, 꽃집에서 미모사라 부르는 쪽이 우리 꽃이라 그대로 둔다. */
+  mimosa: ['미모사'],
+  bouvardia: ['부바르디아'],
+  /** '체꽃' 은 같은 속(Scabiosa)의 한국 이름이라 함께 싣는다(primula 의 '앵초' 와 같은 판단). */
+  scabiosa: ['스카비오사', '체꽃'],
+  /** '매실' 은 넣지 않는다 — 같은 나무지만 그 낱말을 적은 사람은 열매(매실차·매실청)를
+   *  말하고 있다. 꽃 단서 칩이 뜰 자리가 아니다. */
+  'plum-blossom': ['매화'],
+  /** ⚠ '철쭉' 은 넣지 않는다 — 진달래(Rhododendron mucronulatum)와 철쭉(R. schlippenbachii)은
+   *  같은 속의 다른 종이고, 꽃이 잎보다 먼저 피는지로 갈린다(도판 각주와 같은 사실). */
+  azalea: ['진달래'],
+  cotton: ['목화'],
 } as const satisfies Record<string, readonly string[]>;
 
 /** `personalCues` 에 담는 꽃 단서의 접두사. */
@@ -148,13 +177,61 @@ function haystack(text: string): string {
   return text.toLowerCase().replace(/\s+/g, '');
 }
 
-/** 사전 하나를 훑어 걸린 key 를 **사전 선언 순서로** 돌려준다(입력 순서에 흔들리지 않게). */
-function matchKeys(dict: Record<string, readonly string[]>, hay: string): string[] {
-  const hits: string[] = [];
+/** 걸린 낱말 한 자리 — 어느 key 의 낱말이 문장의 `[start, end)` 를 차지했는지. */
+interface KeywordHit {
+  key: string;
+  start: number;
+  end: number;
+}
+
+/** 사전의 모든 낱말을, 문장에 나온 **자리마다 한 번씩** 모은다(같은 낱말이 두 번 나오면 둘). */
+function collectHits(dict: Record<string, readonly string[]>, hay: string): KeywordHit[] {
+  const hits: KeywordHit[] = [];
   for (const [key, words] of Object.entries(dict)) {
-    if (words.some((word) => hay.includes(word))) hits.push(key);
+    for (const word of words) {
+      if (word === '') continue; // 빈 낱말은 아래 루프를 멈추지 못한다(사전 오타 방어).
+      for (let at = hay.indexOf(word); at !== -1; at = hay.indexOf(word, at + 1)) {
+        hits.push({ key, start: at, end: at + word.length });
+      }
+    }
   }
   return hits;
+}
+
+/**
+ * 사전 하나를 훑어 걸린 key 를 **사전 선언 순서로** 돌려준다(입력 순서에 흔들리지 않게).
+ *
+ * ── 최장일치 (2026-08-17) ────────────────────────────────────────────
+ * 예전에는 `words.some((word) => hay.includes(word))` 한 줄이었다. 부분 일치라서
+ * **긴 이름이 짧은 이름을 품는 순간 단서가 둘이 됐다** — `수레국화` 한 낱말이 수레국화와
+ * 국화를 함께 걸었고, 그래서 수레국화의 표준명을 사전에 아예 못 넣고 있었다(팬지의
+ * 별칭 `삼색제비꽃` 도 같은 이유로 빠져 있었다). 사전 등록 순서로 피하는 길도 있지만
+ * 그건 회피지 처방이 아니다 — 사전이 자랄 때마다 같은 함정이 다시 파인다.
+ *
+ * 그래서 걸린 **자리(span)** 를 전부 모은 뒤, *다른 key 의 더 긴 자리에 통째로 덮인 자리*를
+ * 버린다. 두 가지가 자연히 따라온다.
+ *   · `수레국화를 좋아해요` → 국화의 자리 `[2,4)` 가 수레국화의 `[0,4)` 에 덮여 사라진다.
+ *   · `수레국화도 국화도 좋아요` → 국화는 덮이지 않은 자리를 따로 가지므로 **둘 다 남는다**
+ *     (사람이 둘 다 말했으니 단서도 둘이 맞다).
+ * 같은 key 끼리는 덮지 않는다 — 별칭이 서로를 품는 일(`은방울` ⊂ `은방울꽃`)은 흔하고,
+ * 그건 어차피 같은 꽃이라 결과가 달라지지 않는다.
+ */
+function matchKeys(dict: Record<string, readonly string[]>, hay: string): string[] {
+  const hits = collectHits(dict, hay);
+  const kept = new Set<string>();
+
+  for (const hit of hits) {
+    const swallowed = hits.some(
+      (other) =>
+        other.key !== hit.key &&
+        other.start <= hit.start &&
+        other.end >= hit.end &&
+        other.end - other.start > hit.end - hit.start,
+    );
+    if (!swallowed) kept.add(hit.key);
+  }
+
+  return Object.keys(dict).filter((key) => kept.has(key));
 }
 
 /**

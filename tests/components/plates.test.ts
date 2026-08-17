@@ -215,16 +215,70 @@ describe('FLOWER_PLATES', () => {
       // `Plate: {작품명}, {연도} / {소장·제공 기관}`
       expect(line).toMatch(/^Plate: .+, .+ \/ .+$/);
     }
-    // 47종이 15개 판본에서 왔다 — 줄 수가 꽃 수만큼이면 합치기가 깨진 것이다.
-    // 확장 배치 1(2026-08-16)의 15종 중 12종이 스텝 《Favourite Flowers》 한 판본이라,
-    // 꽃이 15종 늘어도 크레딧 줄은 그만큼 늘지 않는다 — 그게 판본을 몰아 고른 이유다.
     expect(credits.length).toBeGreaterThan(0);
-    expect(credits.length).toBeLessThan(ids.length / 2);
     expect([...new Set(credits)]).toHaveLength(credits.length);
+
+    /**
+     * **한 판본 = 한 줄.** 이 등식이 합치기의 정의고, 숫자 상한보다 이쪽이 그물이다.
+     *
+     * 예전 그물은 `credits.length < 꽃 수 / 2` 였다. 그때 `plateCredit()` 이 만든 완성된
+     * 줄을 중복만 지워 모았기 때문에 **같은 책도 권이 다르면 줄이 갈렸고**(커티스 8줄 ·
+     * 데스쿠르티 2줄), 59종에서 27줄 대 상한 29.5줄로 다음 배치가 그대로 걸릴 자리였다.
+     * 상한을 푸는 대신 합치는 단위를 판본으로 고쳤다 — 이제 늘어나는 것은 판본 수뿐이다.
+     */
+    const works = new Set(ids.map((id) => plateFor(id)?.work).filter(Boolean));
+    expect(credits).toHaveLength(works.size);
+    // 그리고 판본은 꽃을 따라 늘지 않는다(배치 1·2 를 기존 판본에 얹은 이유). 59종 → 16판본.
+    expect(credits.length).toBeLessThanOrEqual(ids.length / 3);
 
     const one = plateFor('anemone');
     if (!one) throw new Error('도판 상수가 비었다');
     expect(plateCredit(one)).toBe('Plate: Witte, Flora, 1868 / Wikimedia Commons');
+  });
+
+  /**
+   * 합치기가 **정보를 지우지 않는지**.
+   *
+   * 줄을 줄이는 가장 싼 방법은 값을 버리는 것이다 — 커티스 열 장을 `1889 / Commons`
+   * 한 줄로 덮어도 위 테스트는 초록이다. 그래서 여기서 반대로 본다: 모든 도판의 연도가
+   * 제 판본 줄의 범위 안에 들고, 모든 소장 기관이 그 줄에 이름을 남기는가.
+   */
+  it('합쳐도 연도·기관을 잃지 않는다', async () => {
+    const catalog = await loadCatalog();
+    const credits = plateCredits(catalog.flowers.map((flower) => flower.id));
+    const lineOf = (work: string) => credits.find((line) => line.startsWith(`Plate: ${work},`));
+
+    /** `Plate: {작품명}, {연도} / {기관}` 의 연도 칸만 떼어 [최소, 최대] 로. */
+    const yearRange = (line: string): [number, number] => {
+      // 작품명에도 쉼표가 있다(`Witte, Flora`) — 탐욕적 매칭이 **마지막** 쉼표를 잡는다.
+      const years = (/^Plate: .+, ([^,]+) \/ .+$/.exec(line)?.[1].match(/\d{3,4}/g) ?? []).map(
+        Number,
+      );
+      return [Math.min(...years), Math.max(...years)];
+    };
+
+    for (const plate of Object.values(FLOWER_PLATES)) {
+      const line = lineOf(plate.work);
+      expect(line, `${plate.flowerId} 의 판본이 크레딧에 없다`).toBeDefined();
+      if (!line) continue;
+      // 기관은 하나도 빠지지 않는다 — 임의로 대표 기관을 세우지 않는다.
+      expect(line, `${plate.flowerId} 의 소장 기관이 빠졌다`).toContain(plate.institution);
+
+      const [from, to] = yearRange(line);
+      for (const year of (plate.year.match(/\d{3,4}/g) ?? []).map(Number)) {
+        expect(year, `${plate.flowerId} 의 ${year} 년이 판본 줄의 범위 밖이다`).toBeGreaterThanOrEqual(
+          from,
+        );
+        expect(year, `${plate.flowerId} 의 ${year} 년이 판본 줄의 범위 밖이다`).toBeLessThanOrEqual(to);
+      }
+    }
+
+    // 커티스 열 장이 한 줄이다 — 1788(스타티스)에서 1912(목련)까지. 예전에는 연도별 8줄이었다.
+    expect(lineOf("Curtis's Botanical Magazine")).toContain('1788–1912');
+    // 같은 책이 권 때문에 갈리지 않는다 — 1827(목화) · 1828(재스민).
+    expect(lineOf('Descourtilz, Flore médicale des Antilles')).toContain('1827–1828');
+    // 한 해짜리 판본은 범위 기호를 달지 않는다(`1868–1868` 은 사실이지만 읽기 나쁘다).
+    expect(lineOf('Witte, Flora')).toBe('Plate: Witte, Flora, 1868 / Wikimedia Commons');
   });
 
   /**

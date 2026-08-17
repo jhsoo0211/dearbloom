@@ -89,9 +89,9 @@ describe('content/*.csv 실제 데이터', () => {
     expect(SEED_FILE_KEYS).toHaveLength(10);
   });
 
-  it('기대한 행 수를 갖는다 (flowers 47, pet_safety 94)', () => {
+  it('기대한 행 수를 갖는다 (flowers 59, pet_safety 118)', () => {
     const { dataset } = loadDataset();
-    expect(dataset.flowers).toHaveLength(47);
+    expect(dataset.flowers).toHaveLength(59);
     // 불변식: pet_safety 는 꽃 수 × cat·dog. 꽃이 늘면 여기도 같이 늘어야 한다.
     expect(dataset.pet_safety).toHaveLength(dataset.flowers.length * 2);
     expect(dataset.meanings.length).toBeGreaterThanOrEqual(20);
@@ -922,6 +922,6 @@ describe('BOM 처리', () => {
     const fromFile = readCsv(filePath);
     const withBom = parseCsv(`﻿${raw}`);
     expect(withBom).toEqual(fromFile);
-    expect(withBom).toHaveLength(94);
+    expect(withBom).toHaveLength(118);
   });
 });

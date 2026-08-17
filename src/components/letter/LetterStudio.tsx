@@ -7,6 +7,10 @@
  * dearbloom 의 자유 서술은 저장하지 않는 것이 원칙이지만(§1.5j), 편지는 **남기려고 쓰는 글**
  * 이라 저장한다. 그 차이를 화면 맨 위 안내 한 줄이 말하고, 지금은 이 기기에만 남는다는
  * 사실도 같은 자리에서 말한다(`src/lib/letters/store.ts` 머리말과 같은 문장).
+ *   ⚠ **번호를 건네기 전에** 그 제약을 읽어야 한다(design-spec §1.5o). 그래서 기기 고지
+ *     (`LETTER_DEVICE_NOTICE`)가 폼 맨 위와 저장 완료 화면 **두 자리**에 선다. 저장 완료
+ *     화면이 더 중요한 자리다 — 사람이 번호를 복사해 건네는 순간이 거기다.
+ *   문구 원본은 전부 `copy.ts` 다. 여기서 새로 짓지 않는다.
  *
  * ── 고쳐 쓰기로 들어오는 길 ──────────────────────────────────────────
  * 목록에서 `/letter/studio?id=…` 로 온다. 그 id 는 **마운트 뒤에 `window.location` 에서**
@@ -28,6 +32,13 @@ import {
   type LetterTheme,
 } from '@/lib/letters/types';
 import { LetterStoreError, createLocalLetterStore } from '@/lib/letters/store';
+import {
+  LETTER_DEVICE_NOTICE,
+  LETTER_SAVED_LEAD,
+  LETTER_SAVED_NOTE,
+  LETTER_STUDIO_NOTICE,
+  letterCodeHint,
+} from './copy';
 import FlowerChoice from './FlowerChoice';
 import LetterReveal from './LetterReveal';
 import LetterSheet from './LetterSheet';
@@ -179,18 +190,22 @@ export default function LetterStudio({ flowers, defaultTheme }: LetterStudioProp
           <h2 className={styles.panelTitle} id="letter-saved-title">
             편지를 간직해 두었어요
           </h2>
-          <p className={styles.panelLead}>
-            이 번호를 전할 분께만 알려 주세요. 번호를 아는 사람만 이 편지를 열 수 있어요.
-          </p>
+          <p className={styles.panelLead}>{LETTER_SAVED_LEAD}</p>
 
           <strong className={styles.savedCode} data-testid="saved-code">
             {saved.code}
           </strong>
 
-          <p className={styles.note}>
-            번호는 편지 목록에서 다시 볼 수 있어요. 다만 지금은 <b>이 기기에만</b> 남아 있어요 —
-            브라우저 저장소를 비우면 편지도 함께 사라져요.
+          {/*
+            번호를 건네기 직전의 자리다. 기기 제약을 여기서 말하지 않으면, 만든 사람은
+            열리지 않을 번호를 건네고 받는 사람은 없는 문을 두드리게 된다(§1.5o).
+          */}
+          <p className={styles.notice} data-testid="device-notice">
+            <span className={styles.noticeStrong}>{LETTER_DEVICE_NOTICE.lead}</span>{' '}
+            {LETTER_DEVICE_NOTICE.body}
           </p>
+
+          <p className={styles.note}>{LETTER_SAVED_NOTE}</p>
 
           <div className={styles.savedActions}>
             <button type="button" className={styles.btn} onClick={() => setPreviewing(true)}>
@@ -226,10 +241,9 @@ export default function LetterStudio({ flowers, defaultTheme }: LetterStudioProp
         </div>
 
         {/* 정직한 한 줄 — 저장한다는 사실과, 지금 어디까지 사실인지. */}
-        <p className={styles.notice}>
-          <span className={styles.noticeStrong}>이 편지는 저장돼요.</span> 추천 화면에 적는
-          이야기는 남기지 않지만, 편지는 남기려고 쓰는 글이니까요. 아직은 이 기기에 간직해 두는
-          단계예요. 서비스가 문을 열면, 번호를 아는 분은 어디서든 열어볼 수 있게 돼요.
+        <p className={styles.notice} data-testid="device-notice">
+          <span className={styles.noticeStrong}>{LETTER_STUDIO_NOTICE.strong}</span>{' '}
+          {LETTER_STUDIO_NOTICE.body} <b>{LETTER_DEVICE_NOTICE.lead}</b> {LETTER_DEVICE_NOTICE.body}
         </p>
 
         {formError !== '' ? (
@@ -376,8 +390,7 @@ export default function LetterStudio({ flowers, defaultTheme }: LetterStudioProp
             </label>
           </div>
           <p className={styles.hint}>
-            영문과 숫자로 {LETTER_LIMITS.codeMin}~{LETTER_LIMITS.codeMax}자. 이 번호를 아는 분만
-            편지를 열 수 있어요.
+            {letterCodeHint(LETTER_LIMITS.codeMin, LETTER_LIMITS.codeMax)}
           </p>
           <div className={styles.codeRow}>
             <input

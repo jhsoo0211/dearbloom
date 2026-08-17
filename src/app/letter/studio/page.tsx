@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 import LetterStudio from '@/components/letter/LetterStudio';
+import { LETTER_DEVICE_NOTICE_TEXT } from '@/components/letter/copy';
 import { buildLetterFlowers } from '@/components/letter/data';
 import styles from '@/components/letter/letter.module.css';
 import { loadCatalog } from '@/lib/data/catalog';
@@ -66,8 +67,7 @@ export default async function LetterStudioPage() {
       <footer className={styles.siteFoot}>
         <div className={styles.wrap}>
           <p className={styles.footSay}>
-            편지는 남기려고 쓰는 글이라 저장해요. 지금은 이 기기에만 간직해 두고, 서비스가 문을
-            열면 번호를 아는 분이 어디서든 열어볼 수 있게 돼요.
+            편지는 남기려고 쓰는 글이라 저장해요. {LETTER_DEVICE_NOTICE_TEXT}
           </p>
           <nav className={styles.footNav} aria-label="보조 메뉴">
             <Link href="/letter">편지 입구</Link>

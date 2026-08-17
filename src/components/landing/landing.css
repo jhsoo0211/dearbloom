@@ -299,20 +299,25 @@ body.db-nav-compact .db-nav {
 .db-nav-cta:active {
   scale: 0.98;
 }
-/* 모바일 메뉴 버튼 (§1.6c) — 규격은 §1.6b 아이콘 버튼(원형 44×44 · 1px 보더 · 스트로크 1.6).
-   861px 위에서는 `.db-nav-links` 가 서 있으므로 이 버튼은 화면에 없다(아래 860 쿼리에서만 켠다).
+/* 모바일 메뉴 버튼 (§1.6c) — 규격은 §1.6b **보조 버튼**(pill h44 · 고스트 1px 보더 ·
+   hover 배경 8%). 861px 위에서는 `.db-nav-links` 가 서 있으므로 이 버튼은 화면에 없다
+   (아래 860 쿼리에서만 켠다).
    ⚠ `visibility` 나 투명도로 감추지 마라 — `display:none` 이라야 탭 정지점에서도 사라진다.
      데스크톱에서 보이지 않는 버튼이 Tab 순서에 남아 있으면 그게 더 나쁜 고장이다. */
 .db-nav-menu {
   display: none;
-  width: 44px;
-  height: 44px;
-  flex: none;
   align-items: center;
-  justify-content: center;
-  border-radius: 50%;
+  gap: 7px;
+  flex: none;
+  min-height: 44px;
+  padding: 0 15px;
+  border-radius: 9999px;
   border: 1px solid var(--ctrl-line);
   color: var(--fg);
+  font-size: 13.5px;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
   transition: border-color var(--ctrl-t) var(--ease), background-color var(--ctrl-t) var(--ease);
 }
 .db-nav-menu:hover,
@@ -321,8 +326,9 @@ body.db-nav-compact .db-nav {
   background: var(--ctrl-hover);
 }
 .db-nav-menu svg {
-  width: 17px;
-  height: 17px;
+  width: 16px;
+  height: 16px;
+  flex: none;
   fill: none;
   stroke: currentColor;
   stroke-width: 1.6;
@@ -2111,6 +2117,25 @@ body.db-nav-compact .db-nav {
   }
   .db-nav-menu {
     display: inline-flex;
+  }
+  /* 손가락으로 누르는 폭에서는 붙어 선 두 타깃 사이가 8px 이상이어야 한다
+     (ui-ux-pro-max Touch/Touch Spacing). 데스크톱의 6px 은 그대로 둔다 — 거기서는
+     포인터가 누르고, 링크 다섯이 6px 로 붙어 서는 리듬이 이미 서 있다. */
+  .db-nav {
+    gap: 8px;
+  }
+}
+/* 알약 셋(로고·CTA·메뉴)이 한 줄에 서려면 뷰포트가 333px 은 돼야 한다. 그 아래에서는
+   라벨만 접는다 — 접히면 44×44 아이콘 버튼(radius 9999 = 원)으로 되돌아가므로 새 모양이
+   생기지 않는다. 320px 기기뿐 아니라 **360px 에서 125% 확대**한 화면도 여기로 온다
+   (전체 확대는 CSS 픽셀 폭을 줄인다). 접지 않으면 `.db-nav` 의 `overflow:hidden` 이
+   알약 오른쪽을 깎는다(320px 실측 -1.2px). */
+@media (max-width: 344px) {
+  .db-nav-menu-t {
+    display: none;
+  }
+  .db-nav-menu {
+    padding: 0 14px;
   }
 }
 @media (max-width: 640px) {

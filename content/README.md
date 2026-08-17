@@ -7,19 +7,22 @@ DB는 이 CSV에서 시드(upsert)될 뿐, 반대로 DB를 직접 고치지 않�
 
 | 파일 | 내용 | 현재 행 수 |
 |---|---|---|
-| `flowers.csv` | 꽃 기본 정보 | 47 |
-| `meanings.csv` | 꽃말(출처 필수) | 246 |
-| `stories.csv` | 꽃에 얽힌 일화(창작 외 출처 필수) | 377 |
+| `flowers.csv` | 꽃 기본 정보 | 59 |
+| `meanings.csv` | 꽃말(출처 필수) | 305 |
+| `stories.csv` | 꽃에 얽힌 일화(창작 외 출처 필수) | 438 |
 | `rules.csv` | 상황 → 꽃 추천/회피 규칙 | 7 |
 | `templates.csv` | 메시지 템플릿 | 31 |
 | `quotes.csv` | 인용문(범용 3 + 문학 발췌 74) | 77 |
-| `pet_safety.csv` | 반려동물 안전성(꽃 × cat/dog 전수) | 94 |
+| `pet_safety.csv` | 반려동물 안전성(꽃 × cat/dog 전수) | 118 |
 | `birth_flowers.csv` | 날짜별 탄생화(윤년 366일 달력) | 366 |
 | `birth_photos.csv` | 탄생화의 실사 한 장(확보 274 · 미확보 6) | 280 |
 | `birth_stories.csv` | 탄생화 **이름**에 붙는 이야기 | 407 |
+| `reads.csv` | 「읽을거리」 섹션의 외부 링크 원장(축제·글·실용·트렌드) | 54 |
 
-**열 파일 모두 `db/seed/schemas.ts` 의 `SEED_FILE_KEYS` 에 등록돼 있고**, 시드 CLI와 앱
+**앞의 열 파일이 `db/seed/schemas.ts` 의 `SEED_FILE_KEYS` 에 등록돼 있고**, 시드 CLI와 앱
 로더(`src/lib/data/catalog.ts`)가 같은 목록을 읽는다. 파일을 늘릴 때는 그 상수부터 고친다.
+⚠ `reads.csv` 만 아직 등록 전이다 — 「읽을거리」 섹션은 **원장을 먼저 세우고 화면·시드는
+나중에** 붙이기로 한 단계라(2026-08-17), 지금은 시드가 이 파일을 읽지 않는다.
 
 `rules.csv` 는 5종(`rose-red` `tulip-white` `freesia` `lily-asiatic` `gerbera`)만 다룬다.
 2026-08-14에 들어온 4종(`anemone` `hellebore` `hyacinth` `peony`), 2026-08-15에 들어온 8종
@@ -30,8 +33,10 @@ DB는 이 CSV에서 시드(upsert)될 뿐, 반대로 DB를 직접 고치지 않�
 `gladiolus` `dahlia` `zinnia` `aster` `calendula` `cyclamen` `geranium` `primula` `stock`
 `delphinium` `amaryllis` `cornflower` `crocus` `water-lily`) 은 **이야기·도감용으로 먼저 존재**하며,
 추천 규칙은 편집 판단이 끝난 뒤에 붙인다. 규칙이 없는 꽃은 추천 결과에 오르지 않을 뿐 교차 검증에는
-걸리지 않는다(반려동물 판정만 전수로 필요하다). **47종 중 5종만 추천 결과에 오른다** — 카탈로그가
-커질수록 이 불균형이 커진다.
+걸리지 않는다(반려동물 판정만 전수로 필요하다). **59종 중 5종만 추천 결과에 오른다** — 카탈로그가
+커질수록 이 불균형이 커진다. 2026-08-17 배치 2로 12종(`phalaenopsis` `alstroemeria` `anthurium`
+`gardenia` `eucalyptus` `statice` `mimosa` `bouvardia` `scabiosa` `plum-blossom` `azalea`
+`cotton`)이 더 들어와 격차가 또 벌어졌다(`docs/flowers-batch2-research.md`).
 
 ## 편집 규칙
 

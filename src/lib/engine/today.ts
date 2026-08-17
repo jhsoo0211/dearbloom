@@ -150,16 +150,72 @@ function candidatesFor(
 }
 
 /* ------------------------------------------------------------------ *
- * 그날의 순위 — HRW(highest random weight)
+ * 개화 폭 — 연간 노출을 고르게 하는 가중치
  * ------------------------------------------------------------------ */
 
 /**
- * 후보를 그날의 해시값 오름차순으로 세운다. 맨 앞이 그날의 1순위다.
+ * 그 꽃이 제철로 설 수 있는 달 수(1–12).
+ *
+ * 후보군은 달마다 새로 꾸려지므로(candidatesFor) 개화월이 넓은 꽃은 열두 달 중 여러 달의
+ * 후보군에 들어가고, 한 달만 피는 꽃은 그 한 달에만 들어간다. 후보군 **안에서** 균등한
+ * 해시만으로 뽑으면 이 차이가 그대로 연간 노출 차이가 된다 — 2026-08-17 감사가 실측한
+ * 국화 26일 대 벚꽃 1일(26:1)이 그 결과였다. 그래서 이 수의 역수를 가중치로 쓴다.
+ *
+ * ⚠ **꽃 자신의 개화월만 센다.** 카탈로그를 훑어 "실제로 후보로 선 달"을 세면 더 정확하지만,
+ *   그 순간 한 꽃의 가중치가 다른 꽃의 존재에 매이게 되어 아래 rankByHash 가 지키는 성질
+ *   (꽃이 늘고 줄어도 남은 날의 배정이 그대로)이 무너진다. 정확도보다 그 안정성이 먼저다.
+ *
+ * 개화월이 비어 있으면 12로 본다 — 제철로 설 자리가 없어 희소성을 셀 수 없는 꽃이고,
+ * 그런 꽃은 후보군이 `all` 로 넓어진 달에만 만나게 되므로 가장 넓은 쪽에 둔다.
+ */
+function seasonSpan(flower: FlowerData): number {
+  const span = new Set(flower.bloomMonths).size;
+  if (span < 1 || span > 12) return 12;
+  return span;
+}
+
+/** 꽃 id → 개화 폭. 사슬이 하루마다 다시 세지 않도록 한 번만 만든다. */
+function seasonSpans(flowers: FlowerData[]): Map<string, number> {
+  const spans = new Map<string, number>();
+  for (const flower of flowers) spans.set(flower.id, seasonSpan(flower));
+  return spans;
+}
+
+/* ------------------------------------------------------------------ *
+ * 그날의 순위 — 가중 HRW(highest random weight)
+ * ------------------------------------------------------------------ */
+
+/** 해시가 도는 폭(2³²). 해시를 (0,1) 구간의 실수로 옮길 때 쓴다. */
+const HASH_RANGE = 0x1_0000_0000;
+
+/**
+ * 그날 그 꽃의 점수. **큰 쪽이 이긴다.**
+ *
+ * u = (hash + 0.5) / 2³² 로 해시를 (0,1) 로 옮기고 `u^span` 을 점수로 쓴다. 가중 랑데부
+ * 해싱의 표준형(`u^(1/w)`, 최댓값 승리)에 w = 1/span 을 넣은 것과 같은 식이라, 그날 1등이
+ * 될 확률이 **정확히 가중치에 비례한다**(P(i) = w_i / Σw). 개화 폭이 좁은 꽃일수록 지수가
+ * 작아 점수가 크게 남고, 열두 달 내내 후보인 꽃은 u¹²까지 눌린다.
+ *
+ * ⚠ **Math.log·Math.pow 를 쓰지 않는다.** 두 함수의 마지막 자리는 엔진마다 다를 수 있고,
+ *   그러면 서버와 브라우저가 같은 날 다른 꽃을 고를 수 있다(이 파일 머리말의 약속이 깨진다).
+ *   span 은 1~12 정수라 곱셈 열한 번이면 되고, IEEE-754 곱셈은 어디서나 같은 값을 낸다.
+ *   `(hash + 0.5)` 도 2³² 미만 정수 + 0.5 라 배정밀도 안에서 정확하고, 2³² 로 나누는 것은
+ *   2의 거듭제곱 나눗셈이라 반올림이 끼지 않는다.
+ */
+function scoreOf(dateISO: string, flower: FlowerData, span: number): number {
+  const u = (fnv1a32(`${dateISO}:${flower.id}`) + 0.5) / HASH_RANGE;
+  let score = u;
+  for (let i = 1; i < span; i += 1) score *= u;
+  return score;
+}
+
+/**
+ * 후보를 그날의 점수 내림차순으로 세운다. 맨 앞이 그날의 1순위다.
  *
  * "목록을 섞어 하나 고른다"가 아니라 **꽃마다 hash(날짜 + ':' + 꽃id) 점수를 따로 매겨**
- * 최솟값을 고르는 방식(HRW/rendezvous)이다. 카탈로그가 계속 늘어나기 때문에 이 성질이 중요하다.
- * 점수가 꽃 하나에만 매여 있어서, 꽃이 추가·삭제돼도 남은 꽃들의 점수는 그대로다.
- * 새 꽃은 자기 점수가 1등인 날(≈1/N)만 가져가고 나머지 날의 배정은 유지된다.
+ * 최댓값을 고르는 방식(HRW/rendezvous)이다. 카탈로그가 계속 늘어나기 때문에 이 성질이 중요하다.
+ * 점수가 꽃 하나에만 매여 있어서(해시도 개화 폭도 그 꽃의 것뿐이다), 꽃이 추가·삭제돼도 남은
+ * 꽃들의 점수는 그대로다. 새 꽃은 자기 점수가 1등인 날만 가져가고 나머지 날의 배정은 유지된다.
  * (dayIndex % flowers.length 같은 인덱스 방식은 꽃 하나만 늘어도 모든 날이 통째로 밀린다.)
  *
  * 다만 이 안정성은 "그날의 순위"까지의 이야기다. 뒤이어 붙는 연속 반복 회피(todayFlower 주석)가
@@ -167,13 +223,17 @@ function candidatesFor(
  * 것 말고 다른 수가 없어서, 그 달에 꽃이 하나 늘면 순번 전체가 뒤집힌다 — 반복 회피를 지키는 한
  * 피할 수 없는 대가다. 후보가 4~5종인 달이면 새 꽃이 가져간 날 외에는 대체로 그대로다.
  *
- * 해시가 같으면 id 사전순으로 갈라, 카탈로그 배열 순서가 결과를 흔들지 못하게 한다.
+ * 점수가 같으면 id 사전순으로 갈라, 카탈로그 배열 순서가 결과를 흔들지 못하게 한다.
  */
-function rankByHash(dateISO: string, candidates: FlowerData[]): FlowerData[] {
+function rankByHash(
+  dateISO: string,
+  candidates: FlowerData[],
+  spans: Map<string, number>,
+): FlowerData[] {
   return candidates
-    .map((flower) => ({ flower, weight: fnv1a32(`${dateISO}:${flower.id}`) }))
+    .map((flower) => ({ flower, score: scoreOf(dateISO, flower, spans.get(flower.id) ?? 12) }))
     .sort((a, b) => {
-      if (a.weight !== b.weight) return a.weight - b.weight;
+      if (a.score !== b.score) return b.score - a.score;
       return a.flower.id < b.flower.id ? -1 : 1;
     })
     .map((entry) => entry.flower);
@@ -206,9 +266,10 @@ function pickOn(
   date: CivilDate,
   avoidId: string | undefined,
   flowers: FlowerData[],
+  spans: Map<string, number>,
 ): TodayFlowerResult {
   const { list, basis } = candidatesFor(date.month, flowers);
-  const ranked = rankByHash(formatISO(date), list);
+  const ranked = rankByHash(formatISO(date), list, spans);
   const flower = ranked.find((candidate) => candidate.id !== avoidId) ?? ranked[0];
   return { flower, basis };
 }
@@ -243,17 +304,18 @@ export function todayFlower(dateISO: string, flowers: FlowerData[]): TodayFlower
   }
 
   const target = parseISODate(dateISO);
+  const spans = seasonSpans(flowers);
 
   // 사슬의 첫날은 전날을 모르므로 그 하루 앞의 1순위를 씨앗으로 삼는다.
   // 예열 구간이라 목표 날짜에 닿기 전에 씻겨 나간다.
   let cursor = chainStart(target.year);
-  const seedId = pickOn(subtractOneDay(cursor), undefined, flowers).flower.id;
-  let current = pickOn(cursor, seedId, flowers);
+  const seedId = pickOn(subtractOneDay(cursor), undefined, flowers, spans).flower.id;
+  let current = pickOn(cursor, seedId, flowers, spans);
 
   const steps = CHAIN_WARMUP_DAYS + dayOfYear(target) - 1;
   for (let step = 0; step < steps; step += 1) {
     cursor = addOneDay(cursor);
-    current = pickOn(cursor, current.flower.id, flowers);
+    current = pickOn(cursor, current.flower.id, flowers, spans);
   }
 
   return current;

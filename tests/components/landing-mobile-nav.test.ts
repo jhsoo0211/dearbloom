@@ -18,6 +18,8 @@ import { describe, expect, it } from 'vitest';
  *   ③ 대화상자 규격이 빠지는 것 — `aria-modal` 만 적고 트랩·`inert` 를 잊는 흔한 실패
  *   ④ 스크롤 잠금이 각자 저장·복원으로 되돌아가는 것 — 겹치면 화면이 잠긴 채 남는다
  *   ⑤ `opacity: 0` 이 미디어 쿼리 밖으로 새는 것 — 모션을 끈 사용자에게 빈 목차가 뜬다
+ *   ⑥ (2026-08-17) 여는 버튼이 **다시 원형 아이콘 버튼으로 돌아가는 것** — 채움 알약
+ *      바로 옆의 아웃라인 원은 형태와 무게가 동시에 어긋나 딴 시스템 부품처럼 보였다
  *
  * (`tests/components/type-floor.test.ts` 와 같은 장치다 — 소스에 없으면 화면에도 없다.)
  */
@@ -98,17 +100,82 @@ describe('§1.6c — 접힌 줄과 그것을 여는 문은 한 몸이다', () =>
     expect(blockAfter(css, '.db-nav-menu {')).toMatch(/display:\s*none;/);
   });
 
-  it('메뉴 버튼과 닫기 버튼이 §1.6b 아이콘 규격이다 (원형 44×44 · 1px 보더 · 스트로크 1.6)', () => {
-    for (const selector of ['.db-nav-menu {', '.db-navsheet-x {']) {
-      const rule = blockAfter(css, selector);
-      expect(rule, selector).toMatch(/width:\s*44px;/);
-      expect(rule, selector).toMatch(/height:\s*44px;/);
-      expect(rule, selector).toMatch(/border-radius:\s*50%;/);
-      expect(rule, selector).toMatch(/border:\s*1px solid var\(--ctrl-line\);/);
-    }
+  it('시트 닫기 버튼은 §1.6b 아이콘 버튼 그대로다 (원형 44×44 · 1px 보더)', () => {
+    /* 시트 안에서는 옆에 낄 알약이 없다 — 모서리에 혼자 서는 아이콘 버튼이라
+       원형 규격을 그대로 쓴다. 내비 쪽만 아래 §1.6c-2 로 갈라졌다. */
+    const rule = blockAfter(css, '.db-navsheet-x {');
+    expect(rule).toMatch(/width:\s*44px;/);
+    expect(rule).toMatch(/height:\s*44px;/);
+    expect(rule).toMatch(/border-radius:\s*50%;/);
+    expect(rule).toMatch(/border:\s*1px solid var\(--ctrl-line\);/);
+  });
+
+  it('두 햄버거·닫기 아이콘 모두 스트로크 1.6 이다', () => {
     for (const selector of ['.db-nav-menu svg {', '.db-navsheet-x svg {']) {
       expect(blockAfter(css, selector), selector).toMatch(/stroke-width:\s*1\.6;/);
     }
+  });
+});
+
+/**
+ * §1.6c-2 — 여는 버튼은 CTA 와 **같은 알약**이다 (2026-08-17 사용자 지적: "이질적이다").
+ *
+ * 원인은 하나가 아니라 둘이 겹친 것이었다: 채움 알약(`추천 시작`) 바로 옆에 아웃라인
+ * **원**이 서면 ⑴ 형태(pill↔circle)와 ⑵ 무게(filled↔outline)가 동시에 어긋난다. 둘 중
+ * 하나만 달랐다면 위계로 읽혔을 텐데 둘 다 다르니 서로 다른 시스템에서 온 부품처럼 보였다.
+ * 게다가 유리 알약(radius 9999) 끝에 놓인 원은 그 알약의 오른쪽 캡을 한 번 더 그려
+ * 동심원처럼 겹쳤다(실측 스크린샷에서 확인한 자리).
+ *
+ * 고친 방식은 **형태를 맞추고 무게로만 위계를 주는 것**이다 — §1.6b 표의 `주 CTA`(채움)와
+ * `보조 버튼`(고스트 1px 보더) 짝이 이미 그 규격이라, 새 부품을 들이지 않고 표 안에서
+ * 한 칸 옮겨 앉힌 것뿐이다.
+ */
+describe('§1.6c-2 — 채움 알약 옆에는 아웃라인 알약이 선다 (원이 아니다)', () => {
+  const menuRule = blockAfter(css, '.db-nav-menu {');
+  const ctaRule = blockAfter(css, '.db-nav-cta {');
+
+  it('여는 버튼과 CTA 가 같은 캡(radius 9999)을 쓴다', () => {
+    expect(menuRule).toMatch(/border-radius:\s*9999px;/);
+    expect(ctaRule).toMatch(/border-radius:\s*9999px;/);
+    // 원으로 되돌아가면 이 줄이 먼저 깨진다.
+    expect(menuRule).not.toMatch(/border-radius:\s*50%;/);
+  });
+
+  it('위계는 무게로만 준다 — CTA 는 채움, 여는 버튼은 고스트 1px 보더', () => {
+    expect(ctaRule).toMatch(/background:\s*var\(--cta-bg\);/);
+    expect(menuRule).toMatch(/border:\s*1px solid var\(--ctrl-line\);/);
+    // 골드 배경 금지선(§1.4)과 팔레트 밖 색을 들이지 않았는지 — 값 하드코딩이 없어야 한다.
+    expect(menuRule).not.toMatch(/#[0-9a-fA-F]{3,8}/);
+  });
+
+  it('터치 타깃 44px 은 그대로다 (라벨이 붙어도 높이는 규격)', () => {
+    expect(menuRule).toMatch(/min-height:\s*44px;/);
+  });
+
+  it('라벨이 실제로 있다 — 아이콘만 남으면 원이 아니어도 뜻이 흐려진다', () => {
+    expect(page).toContain('<span className="db-nav-menu-t">메뉴</span>');
+    expect(blockAfter(css, '.db-nav-menu {')).toMatch(/font-size:\s*13\.5px;/);
+  });
+
+  it('보이는 라벨이 접근성 이름 안에 있다 (WCAG 2.5.3 Label in Name)', () => {
+    const button = page.slice(page.indexOf('className="db-nav-menu"'));
+    const label = /aria-label="([^"]+)"/.exec(button)?.[1] ?? '';
+
+    expect(label).toContain('메뉴');
+  });
+
+  it('폰 폭에서는 붙어 선 타깃 사이가 8px 이상이다 (ui-ux-pro-max Touch Spacing)', () => {
+    /* 데스크톱 6px 은 그대로다 — 거기서는 포인터가 누른다. 이 줄이 지키는 것은
+       "손가락 폭에서만 벌린다"는 판단이 통째로 사라지지 않는 것이다. */
+    expect(blockAfter(css, '@media (max-width: 860px)')).toMatch(/\.db-nav\s*\{\s*gap:\s*8px;/);
+  });
+
+  it('가장 좁은 폭에서는 **라벨만** 접는다 — 버튼째 숨기면 다시 막다른 화면이다', () => {
+    const fold = blockAfter(css, '@media (max-width: 344px)');
+
+    expect(fold).toMatch(/\.db-nav-menu-t\s*\{\s*display:\s*none;/);
+    // 버튼 자신에게 `display:none` 이 걸리면 그 폭에서는 메뉴로 가는 길이 사라진다.
+    expect(fold).not.toMatch(/\.db-nav-menu\s*\{[^}]*display:\s*none/);
   });
 });
 

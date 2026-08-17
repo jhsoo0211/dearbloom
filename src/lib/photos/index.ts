@@ -505,6 +505,127 @@ export const FLOWER_PHOTOS: Record<string, FlowerPhoto> = {
     // 잎·꽃이 수면 위로 솟는 연꽃(Nelumbo)이 수련 검색에 대량으로 섞인다.
     note: '수면에 붙어 피는 꽃과 물에 뜬 잎 = 수련(Nymphaea) — 연꽃과 다르다. 원본 2592px 라 풀스크린 히어로는 피한다.',
   },
+
+  /* ---------------------------------------------------------------- *
+   * 정식 도감 확장 배치 2 — 12종 (2026-08-17)
+   *
+   * 위 47장과 **같은 규정**을 통과했다(문서 §도감 확장 배치 2). 이번 12종도 전부
+   * Pexels 다 — Unsplash 는 검색 API(`/napi/search`)와 검색 페이지가 모두 봇 차단
+   * (Anubis) 뒤에 있어 후보를 한 장도 모으지 못했다. 배치 1 과 같은 사유이고,
+   * 두 소스를 함께 쓴다는 불변식은 위 32장이 계속 지킨다.
+   *
+   * ⚠ 이번 12종도 **한 장도 밝은 배경이 아니다.** `BRIGHT_BACKGROUND` 명단을 넷으로
+   *   묶어 두기 위해 대표는 어두운 배경만 올렸다(밝지만 좋은 컷은 갤러리로 보냈다 —
+   *   목화 `가지 위`, 부바르디아 `붉은빛` 이 그 경우다).
+   *
+   * 이번 배치에서 실제로 갈라 낸 혼동(근거는 줄마다 `note` 에 있다):
+   *   · 미모사 = **Acacia dealbata**. 영문 mimosa 검색의 최대 함정인 신경초
+   *     (*Mimosa pudica*)는 잎만 있고 노란 방울꽃차례가 없다.
+   *   · 진달래 = **잎보다 꽃이 먼저**. 잎과 함께 피는 철쭉·서양 azalea 는 전량 배제.
+   *   · 매화 = **꽃자루 없이 가지에 바로 붙는다**. 벚꽃(이미 도감에 있다)은 긴
+   *     꽃자루에 매달리고 꽃잎 끝이 갈라진다.
+   *   · 부바르디아 = **꽃통 끝 네 갈래**. 다섯 갈래인 펜타스(Pentas)가 검색 상위를 덮는다.
+   *   · 스타티스 = 색이 있는 부분이 **종이질 꽃받침**이고 흰 것이 진짜 꽃이다.
+   * ---------------------------------------------------------------- */
+
+  phalaenopsis: {
+    flowerId: 'phalaenopsis',
+    src: 'https://images.pexels.com/photos/6135006/pexels-photo-6135006.jpeg',
+    credit: 'Photo: Victor Candiani / Pexels',
+    alt: '검은 배경 위에 나란히 벌어진 흰 호접란 두 송이',
+    width: 4000,
+    note: '넓은 곁꽃잎과 세 갈래 순판 = 호접란. Pexels 제목도 "moth orchids" 로 속을 말한다.',
+  },
+  alstroemeria: {
+    flowerId: 'alstroemeria',
+    src: 'https://images.pexels.com/photos/18682830/pexels-photo-18682830.jpeg',
+    credit: 'Photo: Jean Marc Bonnel / Pexels',
+    alt: '짙은 잎을 배경으로 노랑과 주홍이 번지고 검은 줄무늬가 든 알스트로메리아',
+    width: 4073,
+    note: 'Pexels 제목이 "lily of the Incas"(= 알스트로메리아). 위쪽 두 화피의 검은 줄무늬가 그 근거다.',
+  },
+  anthurium: {
+    flowerId: 'anthurium',
+    src: 'https://images.pexels.com/photos/8974473/pexels-photo-8974473.jpeg',
+    credit: 'Photo: Jeffry Surianto / Pexels',
+    // ⚠ 붉은 부분은 **불염포(잎)** 다 — alt·캡션에 "꽃잎"이라 쓰지 마라(포인세티아와 같은 이유).
+    alt: '검은 배경 위에 나란히 놓인 붉은 안스리움 불염포 두 장과 연노랑 육수꽃차례',
+    width: 5333,
+    note: '붉은 부분은 꽃잎이 아니라 불염포다 — 포인세티아 포엽과 같은 주의가 필요하다.',
+  },
+  gardenia: {
+    flowerId: 'gardenia',
+    src: 'https://images.pexels.com/photos/23709769/pexels-photo-23709769.jpeg',
+    credit: 'Photo: Abtaf Ahmed / Pexels',
+    alt: '짙은 잎 위에 겹겹이 말린 크림빛 치자꽃 한 송이 클로즈업',
+    width: 2756,
+    note: 'Pexels 제목이 "cape jasmine" = Gardenia jasminoides 의 영명 — 종이 문자로 확인된다.',
+  },
+  eucalyptus: {
+    flowerId: 'eucalyptus',
+    src: 'https://images.pexels.com/photos/6068430/pexels-photo-6068430.jpeg',
+    credit: 'Photo: Eva Bronzini / Pexels',
+    alt: '검은 배경 위에 나란히 늘어뜨린 둥근 은녹색 유칼립투스 가지 셋',
+    width: 4000,
+    note: '줄기를 감싸는 둥근 은녹색 유엽 = 실버달러 계열(E. cinerea). 길쭉한 낫 모양 성엽 컷은 종이 갈려 배제했다.',
+  },
+  statice: {
+    flowerId: 'statice',
+    src: 'https://images.pexels.com/photos/30555730/pexels-photo-30555730.jpeg',
+    credit: 'Photo: Damir K / Pexels',
+    alt: '보랏빛 종잇장 같은 꽃받침이 화면을 채운 스타티스 매크로',
+    width: 4269,
+    note: 'Pexels 제목에 "statice" 명기. 색이 있는 부분은 종이질 꽃받침이고 안쪽 흰 것이 진짜 꽃 — L. sinuatum 의 특징이다.',
+  },
+  mimosa: {
+    flowerId: 'mimosa',
+    src: 'https://images.pexels.com/photos/15947000/pexels-photo-15947000.jpeg',
+    credit: 'Photo: Elizaveta Mitenkova / Pexels',
+    alt: '어두운 깃꼴 잎 사이에 노란 방울꽃이 뭉쳐 핀 미모사 가지',
+    width: 2520,
+    note: '노란 방울꽃차례 + 깃꼴 겹잎 = Acacia dealbata. 잎만 있고 꽃차례가 다른 신경초(Mimosa pudica)와 다른 식물이다.',
+  },
+  bouvardia: {
+    flowerId: 'bouvardia',
+    src: 'https://images.pexels.com/photos/1278590/pexels-photo-1278590.jpeg',
+    credit: 'Photo: Alan Cabello / Pexels',
+    alt: '어두운 배경 앞에 긴 꽃통 끝이 네 갈래로 벌어진 흰 부바르디아',
+    width: 5590,
+    note: '꽃통 끝이 네 갈래 — 다섯 갈래인 펜타스(Pentas)와 갈리는 지점이다(검색 상위 대부분이 펜타스였다).',
+  },
+  scabiosa: {
+    flowerId: 'scabiosa',
+    src: 'https://images.pexels.com/photos/38133033/pexels-photo-38133033.jpeg',
+    credit: 'Photo: Rafael Minguet Delgado / Pexels',
+    alt: '검은 배경 위에 홀로 선 연보라 스카비오사 한 송이',
+    width: 3551,
+    note: 'Pexels 제목에 "scabiosa" 명기. 삐져나온 수술이 방석 위에 별처럼 서는 것이 그 근거다.',
+  },
+  'plum-blossom': {
+    flowerId: 'plum-blossom',
+    src: 'https://images.pexels.com/photos/36767527/pexels-photo-36767527.jpeg',
+    credit: 'Photo: Sherine / Pexels',
+    alt: '어두운 배경 앞 맨가지에 다닥다닥 붙어 핀 진분홍 매화',
+    width: 3024,
+    // 도감에 벚꽃이 이미 있어 이 구분이 치명적이다.
+    note: '꽃자루 없이 가지에 바로 붙는다 = 매화(P. mume). 벚꽃은 긴 꽃자루에 매달리고 꽃잎 끝이 갈라진다.',
+  },
+  azalea: {
+    flowerId: 'azalea',
+    src: 'https://images.pexels.com/photos/16314228/pexels-photo-16314228.jpeg',
+    credit: 'Photo: Олександра Кондратенко / Pexels',
+    alt: '어두운 배경 앞 잎 없는 가지에 핀 연분홍 진달래와 꿀벌',
+    width: 3456,
+    note: '잎보다 꽃이 먼저 핀 맨가지 + 연분홍 다섯 갈래 = 진달래. 잎과 함께 피는 철쭉·서양 azalea 는 배제했다.',
+  },
+  cotton: {
+    flowerId: 'cotton',
+    src: 'https://images.pexels.com/photos/13924871/pexels-photo-13924871.jpeg',
+    credit: 'Photo: Mark Stebnicki / Pexels',
+    alt: '어두운 밭을 배경으로 껍질이 벌어져 솜이 드러난 목화 다래',
+    width: 6854,
+    note: '다섯 갈래로 벌어진 깍지 안에 솜이 뭉쳐 있다 = 목화 다래. 학명 확인은 갤러리 `가지 위` 컷이 든다.',
+  },
 };
 
 /* ------------------------------------------------------------------ *
@@ -573,6 +694,21 @@ const PRIMARY_VARIANT: Record<string, string> = {
   cornflower: '푸른빛',
   crocus: '보랏빛',
   'water-lily': '흰빛',
+
+  /* 정식 도감 확장 배치 2 (2026-08-17) */
+  phalaenopsis: '흰빛',
+  alstroemeria: '주황빛',
+  anthurium: '붉은빛',
+  gardenia: '흰빛',
+  // 잎만 쓰는 종이라 색 라벨도 꽃이 아니라 잎 색을 말한다 — 화면에서는 그게 눈에 보이는 것이다.
+  eucalyptus: '은빛',
+  statice: '보랏빛',
+  mimosa: '노란빛',
+  bouvardia: '흰빛',
+  scabiosa: '보랏빛',
+  'plum-blossom': '분홍빛',
+  azalea: '분홍빛',
+  cotton: '흰빛',
 };
 
 /**
@@ -1375,6 +1511,239 @@ const GALLERY_EXTRAS: Record<string, readonly FlowerPhoto[]> = {
       alt: '어두운 연못의 잎 사이에서 나란히 벌어진 분홍 수련 두 송이',
       width: 5000,
       variant: '분홍빛',
+    },
+  ],
+
+  /* ---------------------------------------------------------------- *
+   * 정식 도감 확장 배치 2 — 12종 (2026-08-17)
+   * 대표까지 합쳐 열한 종이 3컷, 부바르디아만 2컷이다.
+   *
+   * ⚠ 부바르디아가 둘뿐인 이유를 여기 남겨 둔다. Pexels 에 **슬러그·설명에
+   *   "bouvardia" 가 박힌 컷이 0건**이고(3개 질의 × 3페이지 전수), 검색 결과는
+   *   펜타스(*Pentas lanceolata*, 다섯 갈래)로 덮여 있다. 그래서 네 갈래 꽃통을
+   *   눈으로 확인한 두 장만 통과시켰다 — 세 번째를 채우려고 펜타스를 넣는 것이
+   *   이 표에서 가장 비싼 실수다(`photosFor()` 는 2~4장을 허용한다).
+   * ---------------------------------------------------------------- */
+
+  phalaenopsis: [
+    {
+      flowerId: 'phalaenopsis',
+      src: 'https://images.pexels.com/photos/27028029/pexels-photo-27028029.jpeg',
+      credit: 'Photo: Chiaroscuro / Pexels',
+      alt: '어두운 잎을 배경으로 자주색 점이 흩뿌려진 분홍 호접란 꽃대',
+      width: 5091,
+      note: 'Pexels 제목에 "phalaenopsis" 명기 — 대표컷의 형태 동정을 이 컷이 문자로 받쳐 준다.',
+      variant: '분홍빛',
+    },
+    {
+      flowerId: 'phalaenopsis',
+      src: 'https://images.pexels.com/photos/9365104/pexels-photo-9365104.jpeg',
+      credit: 'Photo: Kuba Macioszek / Pexels',
+      alt: '검은 배경 앞에 층층이 늘어진 자홍빛 줄무늬 호접란',
+      width: 4000,
+      variant: '자홍빛',
+    },
+  ],
+  alstroemeria: [
+    {
+      flowerId: 'alstroemeria',
+      src: 'https://images.pexels.com/photos/17463009/pexels-photo-17463009.jpeg',
+      credit: 'Photo: Ellie Burgin / Pexels',
+      alt: '어두운 배경 앞에 홀로 벌어진 살구빛 알스트로메리아',
+      width: 3617,
+      variant: '분홍빛',
+    },
+    {
+      flowerId: 'alstroemeria',
+      src: 'https://images.pexels.com/photos/10622099/pexels-photo-10622099.jpeg',
+      credit: 'Photo: Bridgette Lynn / Pexels',
+      alt: '화면을 가득 채운 황금빛 알스트로메리아 무리',
+      width: 3024,
+      variant: '노란빛',
+    },
+  ],
+  anthurium: [
+    {
+      flowerId: 'anthurium',
+      src: 'https://images.pexels.com/photos/34974900/pexels-photo-34974900.jpeg',
+      credit: 'Photo: hartono subagio / Pexels',
+      alt: '검은 배경 앞에 분홍 육수꽃차례를 세운 분홍 안스리움 불염포',
+      width: 3934,
+      variant: '분홍빛',
+    },
+    {
+      flowerId: 'anthurium',
+      src: 'https://images.pexels.com/photos/19821624/pexels-photo-19821624.jpeg',
+      credit: 'Photo: Sônia Motta / Pexels',
+      alt: '초록 하트 잎 사이에서 붉은 불염포를 펼친 안스리움 두 송이',
+      width: 3000,
+      // 이 표에서 CSV 학명이 문자로 확인되는 몇 안 되는 컷이다.
+      note: 'Pexels 제목에 "anthurium andraeanum" 명기 — CSV 학명과 일치한다.',
+      variant: '잎 사이',
+    },
+  ],
+  gardenia: [
+    {
+      flowerId: 'gardenia',
+      src: 'https://images.pexels.com/photos/32213079/pexels-photo-32213079.jpeg',
+      credit: 'Photo: Nidhin S / Pexels',
+      alt: '어두운 잎 사이에 활짝 벌어진 흰 치자꽃',
+      width: 3024,
+      variant: '잎 사이',
+    },
+    {
+      flowerId: 'gardenia',
+      src: 'https://images.pexels.com/photos/16837885/pexels-photo-16837885.jpeg',
+      credit: 'Photo: fei wang / Pexels',
+      alt: '검은 배경 앞 윤나는 잎 사이에 반쯤 벌어진 크림빛 치자꽃',
+      width: 3648,
+      variant: '크림빛',
+    },
+  ],
+  eucalyptus: [
+    {
+      flowerId: 'eucalyptus',
+      src: 'https://images.pexels.com/photos/36097400/pexels-photo-36097400.jpeg',
+      credit: 'Photo: Edita Brus / Pexels',
+      alt: '짙은 초록 배경 앞에 길게 드리운 유칼립투스 가지',
+      width: 3648,
+      variant: '어둠 속',
+    },
+    {
+      flowerId: 'eucalyptus',
+      src: 'https://images.pexels.com/photos/4508749/pexels-photo-4508749.jpeg',
+      credit: 'Photo: Brett Sayles / Pexels',
+      alt: '검은 배경 위에 마주 달린 둥근 은청빛 유칼립투스 잎 두 장',
+      width: 2677,
+      // 제목에 유칼립투스가 없어 형태로만 동정했다 — 그 사실을 감추지 않는다.
+      note: '제목에 종명이 없다 — 마주 달린 둥근 은청 유엽으로 대표컷과 같은 계열임을 확인했다.',
+      variant: '가까이',
+    },
+  ],
+  statice: [
+    {
+      flowerId: 'statice',
+      src: 'https://images.pexels.com/photos/25570554/pexels-photo-25570554.jpeg',
+      credit: 'Photo: ATHENEA CODJAMBASSIS ROSSITTO / Pexels',
+      alt: '짙푸른 스타티스 잔꽃이 빽빽이 모인 꽃차례',
+      width: 6000,
+      variant: '푸른빛',
+    },
+    {
+      flowerId: 'statice',
+      src: 'https://images.pexels.com/photos/37085969/pexels-photo-37085969.jpeg',
+      credit: 'Photo: ABHAY SIROHI / Pexels',
+      alt: '분홍과 보라 스타티스가 뒤섞여 깔린 꽃 무리',
+      width: 3472,
+      variant: '분홍빛',
+    },
+  ],
+  mimosa: [
+    {
+      flowerId: 'mimosa',
+      src: 'https://images.pexels.com/photos/31428888/pexels-photo-31428888.jpeg',
+      credit: 'Photo: Aleksandr Fedorov / Pexels',
+      alt: '검은 배경 위에 가로로 뻗은 노란 미모사 꽃가지',
+      width: 5472,
+      note: 'Pexels 제목에 "acacia" 명기 — 신경초(Mimosa pudica)가 아님이 문자로 확인된다.',
+      variant: '어둠 속',
+    },
+    {
+      flowerId: 'mimosa',
+      src: 'https://images.pexels.com/photos/20462020/pexels-photo-20462020.jpeg',
+      credit: 'Photo: Nati / Pexels',
+      alt: '가지 끝에서 늘어진 노란 미모사 꽃송이',
+      width: 4000,
+      variant: '가지 위',
+    },
+  ],
+  bouvardia: [
+    {
+      flowerId: 'bouvardia',
+      src: 'https://images.pexels.com/photos/15824776/pexels-photo-15824776.jpeg',
+      credit: 'Photo: PeopleByOwen / Pexels',
+      alt: '초록 잎을 배경으로 모여 핀 주홍빛 부바르디아 꽃통',
+      width: 6720,
+      // 대표컷과 같은 네 갈래 구조 — 색만 다르다.
+      note: '네 갈래 꽃통의 주홍 부바르디아(B. ternifolia 계열). 배경이 밝아 갤러리 자리에만 쓴다.',
+      variant: '붉은빛',
+    },
+  ],
+  scabiosa: [
+    {
+      flowerId: 'scabiosa',
+      src: 'https://images.pexels.com/photos/35204831/pexels-photo-35204831.jpeg',
+      credit: 'Photo: Rob van Alphen / Pexels',
+      alt: '흰 테가 둘린 검붉은 스카비오사 꽃 머리 클로즈업',
+      width: 3888,
+      note: '흰 테가 둘린 검붉은 꽃 = Scabiosa atropurpurea 계열(CSV 학명과 일치).',
+      variant: '자줏빛',
+    },
+    {
+      flowerId: 'scabiosa',
+      src: 'https://images.pexels.com/photos/35149441/pexels-photo-35149441.jpeg',
+      credit: 'Photo: Steven May / Pexels',
+      alt: '흐린 배경 앞에 활짝 벌어진 진분홍 스카비오사',
+      width: 6240,
+      variant: '분홍빛',
+    },
+  ],
+  'plum-blossom': [
+    {
+      flowerId: 'plum-blossom',
+      src: 'https://images.pexels.com/photos/35897585/pexels-photo-35897585.jpeg',
+      credit: 'Photo: 海风 张 / Pexels',
+      alt: '검은 배경 위로 휘어진 맨가지에 드문드문 핀 흰 매화',
+      width: 4040,
+      note: 'Pexels 제목이 "plum blossoms on dark background" — 맨가지 개화도 함께 보인다.',
+      variant: '흰빛',
+    },
+    {
+      flowerId: 'plum-blossom',
+      src: 'https://images.pexels.com/photos/15621917/pexels-photo-15621917.jpeg',
+      credit: 'Photo: 성두 홍 / Pexels',
+      alt: '가는 맨가지 끝에 홀로 핀 분홍 매화 한 송이',
+      width: 3200,
+      variant: '한 송이',
+    },
+  ],
+  azalea: [
+    {
+      flowerId: 'azalea',
+      src: 'https://images.pexels.com/photos/12676632/pexels-photo-12676632.jpeg',
+      credit: 'Photo: Erik Mclean / Pexels',
+      alt: '은녹색 잎을 배경으로 무리 지어 핀 자줏빛 진달래',
+      width: 3648,
+      // 대표컷은 형태로만 동정했다 — 그 구멍을 이 컷이 메운다(제비꽃 odorata 컷과 같은 구조).
+      note: 'Pexels 제목에 "rhododendron mucronulatum" 명기 — CSV 학명과 일치한다.',
+      variant: '자줏빛',
+    },
+    {
+      flowerId: 'azalea',
+      src: 'https://images.pexels.com/photos/31325572/pexels-photo-31325572.jpeg',
+      credit: 'Photo: Alina Zahorulko / Pexels',
+      alt: '흐린 갈색 배경 앞 맨가지에 벌어진 연분홍 진달래',
+      width: 2500,
+      variant: '연분홍빛',
+    },
+  ],
+  cotton: [
+    {
+      flowerId: 'cotton',
+      src: 'https://images.pexels.com/photos/6168148/pexels-photo-6168148.jpeg',
+      credit: 'Photo: Vie Studio / Pexels',
+      alt: '밝은 배경 앞 가지 끝에 매달린 목화 솜 두 송이',
+      width: 4160,
+      note: 'Pexels 제목에 "gossypium hirsutum" 명기 — CSV 학명과 일치한다. 배경이 밝아 갤러리 자리에만 쓴다.',
+      variant: '가지 위',
+    },
+    {
+      flowerId: 'cotton',
+      src: 'https://images.pexels.com/photos/14287148/pexels-photo-14287148.jpeg',
+      credit: 'Photo: Lawrence Schaefer / Pexels',
+      alt: '어두운 배경 앞에 층층이 붙은 목화 솜뭉치 클로즈업',
+      width: 3313,
+      variant: '가까이',
     },
   ],
 };

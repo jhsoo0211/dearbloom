@@ -263,6 +263,108 @@ describe('todayFlower — 카탈로그 변화', () => {
 });
 
 /* ------------------------------------------------------------------ *
+ * 4b. 개화 폭 가중 — 연간 노출 평탄화 (2026-08-17 감사 P1-2)
+ * ------------------------------------------------------------------ */
+
+/**
+ * 감사 실측: 365일 중 국화 26일 대 벚꽃 1일(26:1). 버그가 아니라 구조였다 — 후보군은
+ * 달마다 새로 꾸려지므로 개화월이 넓은 꽃은 열두 번의 추첨에 다 끼고 좁은 꽃은 한 번만 낀다.
+ * 그래서 HRW 점수에 **개화 폭의 역수**를 가중치로 넣었다.
+ *
+ * ⚠ 여기서 실데이터의 최대/최소 일수를 단정하지 않는다. 그 숫자는 카탈로그가 자랄 때마다
+ *   움직이고(59종 시점의 평탄화는 표준편차 4.84 → 3.06), 특정 꽃 이름에 기대는 단정은
+ *   도감이 늘어나는 순간 거짓이 된다. 대신 **종 수와 무관하게 성립하는 성질**만 본다:
+ *   같은 후보군에서 좁은 쪽이 자주 나오는가, 그리고 개화 폭이 다른 무리끼리 연간 몫이
+ *   비슷해지는가. 가중치를 걷어 내면 둘 다 곧바로 깨진다.
+ */
+describe('todayFlower — 개화 폭 가중', () => {
+  const EVERY = EVERY_MONTH;
+
+  /** 열두 달 × perMonth 종(그 달에만 핌) + 열두 달 내내 피는 꽃 세 종. */
+  function spreadCatalog(perMonth: number): FlowerData[] {
+    const catalog: FlowerData[] = [];
+    for (const month of EVERY) {
+      for (let k = 0; k < perMonth; k += 1) {
+        catalog.push(flower(`m${String(month).padStart(2, '0')}-${k}`, [month]));
+      }
+    }
+    for (let k = 0; k < 3; k += 1) catalog.push(flower(`all-${k}`, EVERY));
+    return catalog;
+  }
+
+  function yearCounts(flowers: FlowerData[]): Map<string, number> {
+    const counts = new Map(flowers.map((row) => [row.id, 0]));
+    for (const id of pickIds(daysFrom('2026-01-01', 365), flowers)) {
+      counts.set(id, (counts.get(id) ?? 0) + 1);
+    }
+    return counts;
+  }
+
+  it('같은 후보군이면 개화 폭이 좁은 꽃이 더 자주 1등을 한다', () => {
+    // 6월 후보 세 종 — 6월에만 피는 꽃 하나와 열두 달 꽃 둘.
+    const pool = [flower('narrow', [6]), flower('wide-a', EVERY), flower('wide-b', EVERY)];
+    const counts = new Map<string, number>([
+      ['narrow', 0],
+      ['wide-a', 0],
+      ['wide-b', 0],
+    ]);
+    for (const id of pickIds(daysFrom('2026-06-01', 30), pool)) {
+      counts.set(id, (counts.get(id) ?? 0) + 1);
+    }
+
+    // 가중치가 없으면 셋이 1/3 씩 나눠 갖는다. 좁은 쪽은 연속 반복 회피가 씌우는 천장
+    // (이틀에 하루)까지 올라간다.
+    expect(counts.get('narrow')).toBeGreaterThan(counts.get('wide-a') as number);
+    expect(counts.get('narrow')).toBeGreaterThan(counts.get('wide-b') as number);
+  });
+
+  it('개화 폭이 달라도 연간 몫이 비슷해진다 — 넓은 무리가 한 해를 차지하지 않는다', () => {
+    const flowers = spreadCatalog(3);
+    const counts = yearCounts(flowers);
+
+    const narrow = [...counts].filter(([id]) => !id.startsWith('all-')).map(([, n]) => n);
+    const wide = [...counts].filter(([id]) => id.startsWith('all-')).map(([, n]) => n);
+    const average = (rows: number[]): number => rows.reduce((a, b) => a + b, 0) / rows.length;
+
+    // 가중치가 없다면 한 달 후보 여섯 중 셋이 열두 달 꽃이라, 그 셋이 각각 한 해의 1/6
+    // (≈61일)을 가져가고 한 달 꽃은 5일 남짓에 그친다 — 12배 차이.
+    expect(average(wide)).toBeLessThan(average(narrow) * 2);
+    expect(average(narrow)).toBeLessThan(average(wide) * 2);
+  });
+
+  it('좁은 꽃끼리도 고르다 — 어느 달에 피든 연간 몫이 비슷하다', () => {
+    const counts = yearCounts(spreadCatalog(3));
+    const narrow = [...counts].filter(([id]) => !id.startsWith('all-')).map(([, n]) => n);
+
+    expect(Math.min(...narrow)).toBeGreaterThan(0);
+    expect(Math.max(...narrow)).toBeLessThanOrEqual(Math.min(...narrow) * 2.5);
+  });
+
+  it('종 수가 늘어도 같은 성질이 선다 — 27종·39종·51종', () => {
+    for (const perMonth of [2, 3, 4]) {
+      const flowers = spreadCatalog(perMonth);
+      const counts = yearCounts(flowers);
+
+      // 한 종이 한 해의 5분의 1을 넘게 차지하지 않는다(가중치 없이 돌리면 열두 달 꽃 셋이
+      // 각각 1/6~1/4 를 가져간다).
+      for (const [id, days] of counts) {
+        expect(days, `${perMonth}종/달 · ${id}`).toBeLessThan(365 / 5);
+      }
+    }
+  });
+
+  it('개화월이 비어 있는 꽃도 빈손으로 돌려보내지 않는다', () => {
+    // 개화 폭을 셀 수 없는 꽃은 가장 넓은 쪽(12)으로 본다 — 점수가 0 이 되어 영영 밀리면
+    // `all` 후보군만 있는 카탈로그가 통째로 멈춘다.
+    const undated = [flower('a', []), flower('b', []), flower('c', [])];
+    const picked = new Set(pickIds(daysFrom('2026-03-01', 60), undated));
+
+    expect(picked.size).toBeGreaterThanOrEqual(2);
+    for (const id of picked) expect(['a', 'b', 'c']).toContain(id);
+  });
+});
+
+/* ------------------------------------------------------------------ *
  * 5. 잘못된 입력
  * ------------------------------------------------------------------ */
 

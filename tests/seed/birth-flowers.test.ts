@@ -219,14 +219,14 @@ describe('birth_flowers.csv 도감 연결', () => {
     }
   });
 
-  it('빈 flower_id 가 다수다 — 366일은 카탈로그 47종보다 훨씬 넓다', () => {
+  it('빈 flower_id 가 다수다 — 366일은 카탈로그 59종보다 훨씬 넓다', () => {
     const { birth_flowers: rows } = loadBirthFlowers();
     const linked = rows.filter((row) => row.value.flower_id !== undefined);
     expect(linked.length).toBeGreaterThan(0);
     expect(linked.length).toBeLessThan(rows.length);
   });
 
-  it('카탈로그 47종 중 절반 이상이 어느 날짜엔가 걸린다', () => {
+  it('카탈로그 59종 중 절반 이상이 어느 날짜엔가 걸린다', () => {
     const { flowers, birth_flowers: rows } = loadBirthFlowers();
     const linked = new Set(
       rows.map((row) => row.value.flower_id).filter((id): id is string => id !== undefined),

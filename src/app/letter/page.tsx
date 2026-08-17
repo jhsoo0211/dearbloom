@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 import LetterEntrance from '@/components/letter/LetterEntrance';
+import { LETTER_DEVICE_NOTICE_TEXT } from '@/components/letter/copy';
 import { buildLetterFlowers } from '@/components/letter/data';
 import styles from '@/components/letter/letter.module.css';
 import { loadCatalog } from '@/lib/data/catalog';
@@ -18,6 +19,8 @@ import { loadCatalog } from '@/lib/data/catalog';
  * · 편지 자체는 **서버가 모른다.** 지금 단계에서 편지는 그 브라우저의 저장소에만 있다
  *   (`src/lib/letters/store.ts` 머리말). 그래서 이 페이지는 정적으로 서고, 편지를 읽고 쓰는
  *   일은 전부 클라이언트에서 일어난다.
+ *   ⚠ 그 사실을 **인트로와 메타데이터도 함께** 말한다(design-spec §1.5o). 화면 안쪽만
+ *     정직하고 들어오는 문이 "번호만 알면 열려요" 라고 말하면 같은 거짓말이다.
  * · `revalidate = 3600` — `content/*.csv` 는 배포에 고정된 읽기 전용 데이터다.
  */
 
@@ -25,8 +28,7 @@ export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: '비밀 편지 — dearbloom',
-  description:
-    '번호로 잠기는 편지 한 통. 하고 싶었던 말과 함께 보낼 꽃 한 송이를 골라 두면, 번호를 아는 분만 봉투를 열 수 있어요.',
+  description: `번호로 잠기는 편지 한 통. 하고 싶었던 말과 함께 보낼 꽃 한 송이를 골라 두면, 번호로 열리는 편지가 돼요. ${LETTER_DEVICE_NOTICE_TEXT}`,
 };
 
 export default async function LetterPage() {
@@ -57,8 +59,8 @@ export default async function LetterPage() {
         <div className={`${styles.wrap} ${styles.wrapNarrow}`}>
           <h1 className={styles.title}>비밀 편지</h1>
           <p className={`${styles.lead} ${styles.sub}`}>
-            꽃 한 송이와 함께 봉해 두는 편지예요. 번호를 아는 분만 봉투를 열 수 있고, 열면 고른
-            꽃과 그 꽃말이 편지 끝에 함께 놓여 있어요.
+            꽃 한 송이와 함께 봉해 두는 편지예요. 번호를 적으면 봉투가 열리고, 열면 고른 꽃과 그
+            꽃말이 편지 끝에 함께 놓여 있어요.
           </p>
         </div>
       </section>

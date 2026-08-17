@@ -8,7 +8,8 @@
  *   ② 꽃에 얽힌 이야기 + 나라별 꽃말 ← 멘트보다 위. "정보"보다 "이야기"가 먼저다
  *   ③ 추천 이유 · 이런 날 건네보세요
  *   ④ 멘트 3톤 + 함께 담을 한 줄 + 문학 속의 이 꽃
- *   ⑤ 최하단 참고(작게) — 반려동물 배지 · 계절 · 향 · 관리 · 가격 1줄 · 제휴 고지
+ *   ⑤ 최하단 참고(작게) — 반려동물 배지 · 계절 · 향 · 관리 · 가격 1줄 ·
+ *     「이 꽃 어디서 사지」 세 갈래(우체국 꽃배달 검색 · 지도 · 우리가 찾아본 곳들) + 정직 고지 2줄
  *
  * ⚠ ① 은 2026-08-15(#14)에 **3D 뷰어에서 대표 실사로 바뀌었다.** 절차적 3D 는 "이 꽃이
  *   어떻게 생겼나"에 답하지 못했다 — 도감이 실사를 먼저 세우는 것과 같은 이유다.
@@ -29,6 +30,51 @@ const MOOD_ALL = 'all';
 
 /** 가격 구간 칸 수 — 라벨 사전(`labels.ts` PRICE_BAND_SLOTS)과 같은 값이다(#11). */
 const PRICE_SLOTS = [1, 2, 3] as const;
+
+/**
+ * ── 「이 꽃 어디서 사지」에 답하는 두 개의 바깥 링크 (2026-08-17) ──────────────
+ *
+ * 2026-08-17 실측으로 고른 것이다. **바꾸기 전에 아래 셋을 다시 재 보라.**
+ *
+ * ① 우체국 꽃배달 검색 — `searchTerm={대표이름} 꽃배달`
+ *    운영은 재단법인 한국우편사업진흥원(우정사업본부)이고, 이용안내에 목적이 그대로 적혀 있다:
+ *    「우체국 꽃배달은 국내 화훼농가 육성을 위해서 1998년 1월 15일부터 시행된 서비스입니다.」
+ *    ⚠ `꽃배달` 을 검색어에 **반드시 붙인다.** 이름만 넣으면 엉뚱한 것이 나온다 —
+ *      `튤립` → 튤립닭발, `수국` → 수국차, `프리지아` → 후리지아 비누(실측).
+ *      `{이름} 꽃배달` 이면 결과가 전부 꽃배달 칸이고, 없으면 「해당하는 상품이 없습니다」
+ *      안내가 정상으로 뜬다(HTTP 200).
+ *    ⚠ 꽃 칸 안쪽 검색(`flowerSend.do?srchGoodsNm=…`)은 쓰지 마라. 결과가 0건이면
+ *      **500 에러 페이지**가 뜬다(실측). 빈손으로 돌아오는 것과 고장 난 화면은 다르다.
+ *
+ * ② 네이버 지도 `꽃집` 검색
+ *    데스크톱·모바일 웹 양쪽에서 결과가 그대로 뜬다. 카카오맵(`map.kakao.com/?q=`)은
+ *    모바일에서 앱 설치 안내(`applink.map.kakao.com`)로 가로막혀 목록을 못 본다(실측).
+ *    ⚠ 검색어에 꽃 이름을 붙이지 마라. 지도는 **가게 이름**을 찾는다 — `장미 꽃집` 은
+ *      수원·대전·경산·부산의 「장미꽃집」(32~333km)을 끌어온다. 그 가게에 장미가 있다는
+ *      뜻이 전혀 아니면서, 있는 것처럼 읽힌다.
+ *
+ * ③ 재고·가격·배송을 약속하지 않는다. 우리는 파는 사람이 아니라 찾아보는 길만 안내한다.
+ */
+const POST_FLOWER_SEARCH = 'https://mall.epost.go.kr/fo/search/search.do?searchTerm=';
+const MAP_FLORIST_SEARCH = 'https://map.naver.com/p/search/';
+
+/**
+ * 검색에 쓸 대표 이름 — `빨간 장미` → `장미`, `아시아틱 백합` → `백합`,
+ * `미모사(은엽아카시아)` → `미모사`.
+ *
+ * 두 가지를 떼어 낸다. 둘 다 **검색 결과를 좁히기만** 하기 때문이다:
+ *   · 괄호 속 딴이름 — 검색창에 괄호를 넣으면 걸리는 것이 없다
+ *   · 앞에 붙은 색·품종 수식 — `빨간 장미 꽃배달` 은 0건이고 `장미 꽃배달` 은 12건이다
+ * 한 낱말짜리 이름은 그대로 돌려준다.
+ *
+ * ⚠ 도감이 늘어도 이 규칙은 그대로 선다. 이름 목록을 여기 적어 두지 않는 이유다 —
+ *   `content/flowers.csv` 는 계속 자란다(2026-08-17 하루에도 47종 → 59종이 됐다).
+ */
+function mainName(nameKo: string): string {
+  const parts = nameKo.replace(/\([^)]*\)/g, ' ').trim().split(/\s+/);
+
+  return parts[parts.length - 1] || nameKo;
+}
 
 function IconCopy() {
   return (
@@ -59,6 +105,23 @@ function IconArrow() {
       aria-hidden="true"
     >
       <path d="M5 12h13M12.5 6l6 6-6 6" />
+    </svg>
+  );
+}
+
+/** 바깥으로 나가는 링크에만 쓴다 — 같은 탭에서 열리는 우리 화면에는 `IconArrow` 다. */
+function IconExternal() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M7 17 17 7M8.6 7H17v8.4" />
     </svg>
   );
 }
@@ -1280,39 +1343,83 @@ export default function ResultView({ payload, onRestart }: ResultViewProps) {
                   </div>
                 </div>
 
+                {/*
+                  ── 마지막 한 걸음 — 이 꽃 어디서 사지 (2026-08-17) ──────────────
+                  사용자 신고 둘: "꽃집 연결되는 링크가 실제로 안 넘어간다",
+                  "실제 해당 꽃을 살 수 있는 곳으로 연결해줘야 해".
+
+                  여기 있던 두 줄은 둘 다 `href="#"` 였다 — 눌러도 페이지 맨 위로 튀고,
+                  낭독기에는 멀쩡한 링크로 읽힌다(접근성 리뷰 P2-11).
+                  `app/partners/page.tsx` 머리 주석 · `GroupPlanner.tsx` 와 같은 규범이다:
+                  **아직 없는 길은 링크로 만들지 않는다.**
+
+                  지금은 셋이고, 좁은 답에서 넓은 답 순이다:
+                    ① 이 꽃 이름 그대로 공공 창구에서 찾아보기(우체국 꽃배달)
+                    ② 이름을 들고 가까운 꽃집에 물어보기(지도)
+                    ③ 우리가 실제로 확인해 둔 곳들(`/partners#florists`)
+                  검색어를 만드는 규칙과 그렇게 고른 근거는 파일 위 `POST_FLOWER_SEARCH` 주석에
+                  전부 적어 두었다 — **링크를 고치기 전에 반드시 읽어라.**
+
+                  ⚠ 옛 둘째 줄(`내일 도착 꽃 배달 알아보기`)은 살리지 않았다. 우리가 배달을
+                    주선하는 것처럼 읽혔지만 그런 수단이 없다. ①은 우체국이 **자기 서비스로**
+                    배달하는 것이고, 우리는 그 창구를 가리킬 뿐이다.
+                  ⚠ 제휴·할인·재고·배송 보장을 암시하는 문구로 되돌리지 마라. 넷 다 없다.
+
+                  화살표는 두 종류다. 바깥으로 나가면 ↗(`IconExternal`), 같은 탭에서 열리는
+                  우리 화면이면 →(`IconArrow`). 섞으면 어디로 가는지 거짓말이 된다.
+                */}
                 <div className={styles.aff} style={{ marginTop: 18 }}>
-                  <a href="#">
-                    <span className={styles.txt}>이 꽃 주문하러 가기 — 제휴 꽃집 보기</span>
+                  <a
+                    href={`${POST_FLOWER_SEARCH}${encodeURIComponent(
+                      `${mainName(option.nameKo)} 꽃배달`,
+                    )}`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <span className={styles.txt}>
+                      우체국 꽃배달에서 ‘{mainName(option.nameKo)}’ 찾아보기
+                      <span className="sr-only"> (새 창)</span>
+                    </span>
                     <span className={styles.ar} aria-hidden="true">
-                      <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.8"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M7 17 17 7M8.6 7H17v8.4" />
-                      </svg>
+                      <IconExternal />
                     </span>
                   </a>
-                  <a href="#">
-                    <span className={styles.txt}>내일 도착 꽃 배달 알아보기</span>
+                  <a
+                    href={`${MAP_FLORIST_SEARCH}${encodeURIComponent('꽃집')}`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <span className={styles.txt}>
+                      가까운 꽃집 지도에서 찾아보기
+                      <span className="sr-only"> (새 창)</span>
+                    </span>
                     <span className={styles.ar} aria-hidden="true">
-                      <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.8"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M7 17 17 7M8.6 7H17v8.4" />
-                      </svg>
+                      <IconExternal />
                     </span>
                   </a>
+                  <Link href="/partners#florists" prefetch={false}>
+                    <span className={styles.txt}>우리가 찾아본 곳들 — 먼저 알려 드리는 꽃집</span>
+                    <span className={styles.ar} aria-hidden="true">
+                      <IconArrow />
+                    </span>
+                  </Link>
                 </div>
-                <p className={styles.disc}>구매 링크는 제휴 링크로 연결돼요.</p>
+                {/*
+                  ⚠ 이 두 줄은 링크와 한 몸이다. 위 셋 중 어느 것도 "여기 있어요"라고 말하지
+                    못하기 때문에 둔 것이다 — 지우면 링크가 재고를 약속하는 말이 된다.
+                    첫 줄은 빈손으로 돌아왔을 때의 다음 걸음을, 둘째 줄은 우리와 그곳들의
+                    관계를 말한다. 둘째 줄은 `/partners` 의 `NO_AFFILIATION` 과 **같은 사실**을
+                    말해야 한다 — 두 화면이 다른 말을 하면 어느 쪽도 믿을 수 없다.
+                    제휴가 실제로 생기면 그 상수와 **함께** 고친다.
+                    `tests/components/no-dead-links.test.ts` 가 둘이 어긋나는 것을 잡는다.
+                */}
+                <p className={styles.disc}>
+                  꽃은 철 따라 들고 나요. 찾아본 곳에 없으면 가까운 꽃집에 ‘
+                  {mainName(option.nameKo)}’ 있는지 물어보시는 게 제일 빨라요.
+                </p>
+                <p className={styles.disc}>
+                  이어지는 곳들과 아직 제휴 관계는 아니에요 — 좋은 곳을 먼저 알려 드리는 거예요.
+                </p>
               </section>
             </div>
           </div>

@@ -16,8 +16,8 @@ import type { Catalog } from '@/lib/data/types';
  * 행 수 같은 숫자는 "지금 이만큼 실려 있다"는 사실 확인이라 콘텐츠가 늘면 함께 고친다.
  */
 
-const EXPECTED_FLOWERS = 47;
-const EXPECTED_STORIES = 384;
+const EXPECTED_FLOWERS = 59;
+const EXPECTED_STORIES = 445;
 /** 윤년 366일. 하루라도 비면 그 날 태어난 사람에게 보여 줄 것이 없다. */
 const EXPECTED_BIRTH_DAYS = 366;
 
@@ -39,7 +39,7 @@ describe('loadCatalog', () => {
     expect(catalog.meanings.length).toBeGreaterThan(0);
     expect(catalog.templates.length).toBeGreaterThan(0);
     expect(catalog.quotes.length).toBeGreaterThan(0);
-    // 꽃 47종 × cat·dog = 94행 (교차 검증이 강제하는 커버리지)
+    // 꽃 59종 × cat·dog = 118행 (교차 검증이 강제하는 커버리지)
     expect(catalog.petSafety).toHaveLength(EXPECTED_FLOWERS * 2);
     expect(catalog.birthFlowers).toHaveLength(EXPECTED_BIRTH_DAYS);
   });
@@ -78,7 +78,8 @@ describe('loadCatalog', () => {
     const ids = new Set(catalog.flowers.map((flower) => flower.id));
 
     const linked = catalog.birthFlowers.filter((row) => row.flowerId !== undefined);
-    // 조사 결과: 86일이 도감으로 이어지고 카탈로그 47종 중 38종이 걸린다.
+    // 조사 결과: 86일이 도감으로 이어지고 카탈로그 59종 중 38종이 걸린다.
+    // (확장 배치 2 의 12종은 탄생화 표가 가리키는 이름에 없어 연결 수는 그대로다.)
     expect(linked).toHaveLength(86);
     expect(new Set(linked.map((row) => row.flowerId)).size).toBe(38);
     for (const row of linked) {

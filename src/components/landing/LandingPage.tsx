@@ -613,7 +613,7 @@ export default function LandingPage({ data }: { data: LandingData }) {
             §1.6c — 860px 아래에서만 서는 메뉴 버튼(CSS 가 `display` 로 가른다).
             위 `.db-nav-links` 가 그 폭에서 통째로 숨기 때문에, 이 버튼이 없으면 폰에서는
             이야기·도감·편지로 가는 길이 첫 화면에 하나도 없다.
-            규격은 §1.6b 아이콘 버튼(원형 44×44 · 1px 보더 · 스트로크 1.6).
+            규격은 §1.6b **보조 버튼**(pill h44 · 고스트 1px 보더 · hover 배경 8%).
           */}
           <button
             type="button"
@@ -627,6 +627,7 @@ export default function LandingPage({ data }: { data: LandingData }) {
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
               <path d="M4 7.5h16M4 12h16M4 16.5h16" strokeLinecap="round" />
             </svg>
+            <span className="db-nav-menu-t">메뉴</span>
           </button>
         </nav>
 
@@ -1035,8 +1036,10 @@ export default function LandingPage({ data }: { data: LandingData }) {
                 <Link href="/recommend?intent=apology" prefetch={false}>
                   화해의 꽃
                 </Link>
+                {/* ⚠ `제휴 꽃집 안내` 로 되돌리지 마라 — 제휴 관계는 아직 없다(파트너 페이지
+                    `NO_AFFILIATION`). 화면 이름도 그 페이지 제목과 같은 말로 통일한다. */}
                 <Link href="/partners" prefetch={false}>
-                  제휴 꽃집 안내
+                  함께하는 꽃집
                 </Link>
               </nav>
             </div>

@@ -100,6 +100,76 @@ describe('inferCuesFromText — 꽃 이름', () => {
     }
   });
 
+  /**
+   * 최장일치 (2026-08-17) — 이 describe 가 없던 시절의 부채를 못 박는다.
+   *
+   * 부분 일치 사전이라 `수레국화` 한 낱말이 수레국화와 국화를 함께 걸었고, 그래서
+   * 수레국화의 **표준명이 사전에 없었다**(팬지의 `삼색제비꽃` 도 같은 이유로 빠져 있었다).
+   * 이제 `matchKeys` 가 덮인 자리를 버리므로 둘 다 실린다.
+   */
+  describe('긴 이름이 짧은 이름을 품어도 단서는 하나다', () => {
+    it('수레국화는 수레국화만 건다 (국화를 함께 끌고 오지 않는다)', () => {
+      expect(inferCuesFromText('수레국화를 좋아하는 사람이에요').personalCues).toEqual([
+        'flower:cornflower',
+      ]);
+    });
+
+    it('삼색제비꽃은 팬지만 건다 (제비꽃을 함께 끌고 오지 않는다)', () => {
+      expect(inferCuesFromText('삼색제비꽃 화분을 키워요').personalCues).toEqual([
+        'flower:pansy',
+      ]);
+    });
+
+    it('둘을 다 말하면 단서도 둘이다 (덮인 자리만 버리지, 낱말을 지우지 않는다)', () => {
+      // 국화는 덮이지 않은 자리를 따로 가지므로 살아남는다 — 사람이 둘 다 말했으니까.
+      const cues = inferCuesFromText('수레국화도 국화도 좋아해요').personalCues;
+      expect(cues).toContain('flower:cornflower');
+      expect(cues).toContain('flower:chrysanthemum');
+      expect(cues).toHaveLength(2);
+    });
+
+    it('짧은 이름만 말하면 그 꽃만 걸린다 (최장일치가 짧은 쪽을 삼키지 않는다)', () => {
+      expect(inferCuesFromText('국화 향을 좋아해요').personalCues).toEqual([
+        'flower:chrysanthemum',
+      ]);
+      expect(inferCuesFromText('제비꽃을 처음 봤어요').personalCues).toEqual(['flower:violet']);
+    });
+
+    it('같은 꽃의 별칭끼리는 서로를 삼키지 않는다 (`은방울` ⊂ `은방울꽃`)', () => {
+      expect(inferCuesFromText('은방울꽃').personalCues).toEqual(['flower:lily-of-the-valley']);
+      expect(inferCuesFromText('은방울').personalCues).toEqual(['flower:lily-of-the-valley']);
+    });
+  });
+
+  /**
+   * 확장 배치 2(2026-08-17)에서 **일부러 사전에 넣지 않은 낱말**들.
+   *
+   * 위 `모든 키워드가 …` 테스트는 사전에 있는 낱말만 돈다 — 빠뜨린 이유는 지켜 주지 않는다.
+   * 여기서 못 박아 두지 않으면 다음 배치에서 "이름이 빠졌네" 하고 조용히 되살아난다.
+   */
+  describe('겹치는 이름은 넣지 않는다 — 확장 배치 2', () => {
+    it('한국어 어미 `-치자` 를 치자꽃으로 읽지 않는다', () => {
+      expect(inferCuesFromText('같이 고치자고 했어요').personalCues).toEqual([]);
+      expect(inferCuesFromText('치자꽃 향이 진했어요').personalCues).toEqual(['flower:gardenia']);
+    });
+
+    it('철쭉은 진달래가 아니고, 매실은 매화가 아니다', () => {
+      expect(inferCuesFromText('철쭉이 흐드러진 산').personalCues).toEqual([]);
+      expect(inferCuesFromText('매실청을 담갔어요').personalCues).toEqual([]);
+      expect(inferCuesFromText('진달래가 먼저 피었어요').personalCues).toEqual(['flower:azalea']);
+      expect(inferCuesFromText('매화 가지를 꽂아 두었어요').personalCues).toEqual([
+        'flower:plum-blossom',
+      ]);
+    });
+
+    it('목화와 국화는 서로를 건드리지 않는다', () => {
+      expect(inferCuesFromText('목화솜 이불').personalCues).toEqual(['flower:cotton']);
+      expect(inferCuesFromText('국화차를 마셨어요').personalCues).toEqual([
+        'flower:chrysanthemum',
+      ]);
+    });
+  });
+
   it('flowerCueSlug 는 접두사가 붙은 단서만 되돌린다', () => {
     expect(flowerCueSlug('flower:tulip-white')).toBe('tulip-white');
     expect(flowerCueSlug('조용한 사람')).toBeUndefined();

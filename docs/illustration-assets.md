@@ -371,3 +371,157 @@ Commons 파일 페이지가 `PD-old-70`을 걸었지만 **작가 Eugène-Jules E
    전제한다면 문구를 맞출 필요가 있다.
 3. **`geranium` 도판의 Commons 작가 칸이 틀렸다**(§근거를 다시 세운 1종).
    장기적으로는 Commons 파일 페이지를 우리가 고치는 것이 가장 깨끗하다 — 후속 과제로 남긴다.
+
+---
+
+# 정식 도감 확장 배치 2 — 도판 (2026-08-17)
+
+> 카탈로그가 47종에서 **59종**으로 늘었다. 이 절은 새로 들어온 12종의 세밀화를 정리한 것이다.
+> 위 §조사 개요가 세운 기준(PD/CC0 한정 · 크림 판면 · 종 근거 명시 · 자체 호스팅)을 그대로 따랐다.
+
+## 확정 12종
+
+`phalaenopsis` · `alstroemeria` · `anthurium` · `gardenia` · `eucalyptus` · `statice` ·
+`mimosa` · `bouvardia` · `scabiosa` · `plum-blossom` · `azalea` · `cotton`
+
+## 조사 개요
+
+| 항목 | 내용 |
+|---|---|
+| 조사일 | 2026-08-17 |
+| 확보 | **12/12** (미확보 0종) |
+| 호스팅 출처 | Wikimedia Commons 12종 |
+| 검증 | 12종 전부 ① Commons **위키텍스트의 라이선스 틀을 직접 읽어** PD 확인 ② 도판 실물을 컨택트 시트로 육안 확인 ③ 판면 캡션·서명을 잘라 확대해 판독(6종) ④ 직접 URL `HTTP 200` + `image/*` 실측 ⑤ 내려받은 12장을 다시 열어 **파일 이름과 그림이 어긋나지 않았음**을 확인 |
+| 종 정확도 | 종 일치 **7종** · 같은 속 다른 종 4종 · 속까지만 1종(cotton) |
+| 배경톤 | 크림·아이보리 고전 판면 **10종** · 흰 판면 1종(plum-blossom) · 회백 판면 1종(gardenia) |
+| 라이선스 | **12/12 Public domain** — `PD-Art` 3 · `PD-old` 1 · `PD-scan\|PD-old-70-1923` 5 · `PD-1923` 1 · `PD-Art-100-1923` 1 · `Permission: 기계적 스캔` 1 |
+
+## 이번에는 커티스로 몰았다
+
+배치 1 이 《Favourite Flowers》 한 판본으로 몰아 갔다면, 이번 12종의 무게중심은
+**커티스 《보태니컬 매거진》 다섯 장**이다(호접란·유칼립투스·스타티스·스카비오사·진달래).
+이유는 배치 1 과 같다 — 이미 다섯 종(gerbera·lisianthus·magnolia·poinsettia·amaryllis)이
+쓰는 판본이라 크레딧이 그 줄에 얹히고, 커티스는 1787년부터 온실 화훼와 동아시아 수입종을
+계속 실어 왔기 때문에 **난초·상록수·관엽이 섞인 이번 목록에 색 판면이 남아 있는 거의 유일한 자리**다.
+
+나머지도 최대한 기존 판본으로 채웠다.
+
+| flower_id | 판본 | 왜 이 판본인가 |
+|---|---|---|
+| `anthurium` `bouvardia` | Step *Favourite Flowers* | 배치 1 의 12종과 같은 책. 판면 하단에 영문명·학명이 활자로 찍혀 있어 **종 근거가 문자**다 |
+| `alstroemeria` | Witte *Flora* Pl.26 | 기존 7종과 같은 책. 짙은 주홍 화피가 이 세트에서 가장 선명하다 |
+| `gardenia` | Edwards *The Botanical Register* Pl.73 | `camellia` 와 **같은 책·같은 해(1815)·같은 기관**이라 크레딧이 한 줄로 합쳐진다 |
+| `cotton` | Descourtilz *Flore médicale des Antilles* Pl.278 | `jasmine` 과 같은 책·같은 화가 |
+| `mimosa` `plum-blossom` | **새 판본 둘** | 위 판본들에 채색 판면이 없었다. 두 종 모두 종 동정이 가장 위험한 자리(신경초·벚꽃)라 **"종이 문자로 박힌 판면"을 판본 일관성보다 앞에 두었다** |
+
+## 채택 도판 12종
+
+`직접 URL` 은 위키미디어 표준 1280px 썸네일이다. `해상도` 는 **원본** 픽셀이다.
+
+| flower_id | 종 근거 | 종 일치 여부 | 페이지 URL | 출처 작품(연도) | 라이선스 | 해상도 | 비고 |
+|---|---|---|---|---|---|---|---|
+| `phalaenopsis` | Commons 설명·파일명 `Phalaenopsis amabilis`, 원본 캡션 `Curtis' 73 pl. 4297` | **같은 속·원종** (카탈로그는 원예 호접란) | https://commons.wikimedia.org/wiki/File:Phalaenopsis_amabilis_-_Curtis%27_73_(Ser._3_no._3)_pl._4297_(1847).jpg | Fitch / Curtis *Bot. Mag.* t.4297 (1847) | `PD-Art` (PD-old-auto, 사망 1892) | 3519×3965 | ***P. amabilis* 는 현대 호접란 교배종의 원종.** 흰 꽃 여러 송이 + 굵은 기근까지 한 판에 |
+| `alstroemeria` | 판면 활자 `ALSTROEMERIA AURANTIACA` | **종 일치(이명)** — *A. aurantiaca* = *A. aurea* | https://commons.wikimedia.org/wiki/File:WitteHeinrichFlora1868-026-Alstroemeria_aurea.png | A.J. Wendel / Witte *Flora* Pl.26 (1868) | `PD-Art-100-1923` | 3390×4595 | 위쪽 두 화피의 검은 줄무늬가 실사 대표컷과 정확히 겹친다 |
+| `anthurium` | 판면 활자 `FLAMINGO FLOWER (ANTHURIUM SCHERZERIANUM) ⅓ Nat. size PL. 296` | **같은 속·다른 종** (카탈로그는 *A. andraeanum*) | https://commons.wikimedia.org/wiki/File:Favourite_flowers_of_garden_and_greenhouse_(8346053060).jpg | Step, *Favourite Flowers* Pl.296 (1897) — BHL | `PD-scan\|PD-old-70-1923` (+CC-BY-2.0 기계 표기) | 1973×3200 | ⚠ *scherzerianum* 은 **육수꽃차례가 돌돌 말린다** — 하트형 불염포에 곧은 꽃차례인 *andraeanum* 과 다르다. `note` 로 밝혔다 |
+| `gardenia` | Commons 분류 `Gardenia jasminoides - botanical illustrations` | **종 일치(겹꽃 형)** | https://commons.wikimedia.org/wiki/File:The_Botanical_register_(Plate_73)_BHL8494.jpg | Sydenham Edwards, *The Botanical Register* Pl.73 (1815) — BHL | `PD-scan\|PD-old-70-1923` | 3160×5054 | `camellia`(Pl.22, 1815)와 크레딧이 합쳐진다. 겹꽃 형이라 홑꽃 치자와 다르다는 각주를 달았다 |
+| `eucalyptus` | Commons 설명 `Eucalyptus cordata Labill`, 판면 서명 `M.S. del. J.N.Fitch lith` | **같은 속·다른 종** (카탈로그는 *E. cinerea*) | https://commons.wikimedia.org/wiki/File:Curtis%27s_botanical_magazine_(Tab_7835)_(8346194831).jpg | Matilda Smith · J.N. Fitch / Curtis *Bot. Mag.* t.7835 (1902) — BHL | `PD-scan\|PD-old-70-1923` (+CC-BY-2.0 기계 표기) | 1892×3200 | ***E. cordata* 는 줄기를 감싸는 둥근 은청 잎이 cinerea 와 같은 모습**이다 — 우리 실사 셋과 잎 모양이 겹친다. 선택 근거는 아래 §유칼립투스는 왜 이 판인가 |
+| `statice` | 판면 하단 `Pub.d as the Act directs, Jan.y 1 1789 by W. Curtis`, Commons 분류 `Limonium sinuatum - botanical illustrations` | **종 일치(이명)** — *Statice sinuata* = *Limonium sinuatum* | https://commons.wikimedia.org/wiki/File:The_Botanical_Magazine,_Plate_71_(Volume_2,_1788).png | William Curtis, *The Botanical Magazine* Pl.71 (1788) — BHL | `Permission: 기계적 스캔`(PD-old) | 1821×3190 | **날개 달린 줄기와 물결 잎을 따로 그려** *sinuatum* 의 두 특징을 한 판에 담았다 |
+| `mimosa` | Commons 설명 `"Acacia dealbata" by Gertrude Hamilton. Plate 864 in The Garden Volume 42 1892`, 판면에 `ACACIA DEALBATA` 세로 활자 | **종 일치** | https://commons.wikimedia.org/wiki/File:Gardenillustrate4292lond_0023.jpg | Gertrude Hamilton, *The Garden* v.42 Pl.864 (1892) — BHL | `PD-1923` | 1262×1654 | 은녹색 깃꼴 잎 + 노란 방울꽃 — **신경초(*Mimosa pudica*)가 아님을 판면이 스스로 말한다** |
+| `bouvardia` | 판면 활자 `BOUVARDIA LONGIFLORA Nat. size PL. 122` | **같은 속·다른 종** (카탈로그는 *B.* × *domestica*) | https://commons.wikimedia.org/wiki/File:Favourite_flowers_of_garden_and_greenhouse_(10574873714).jpg | Step, *Favourite Flowers* Pl.122 (1897) — BHL | `PD-scan\|PD-old-70-1923` (+CC-BY-2.0 기계 표기) | 1891×3200 | ***B. longiflora* 는 원예 부바르디아의 모종 계열.** 네 갈래 꽃통이 실물 크기로 그려져 **펜타스와 갈리는 지점이 판면에 있다** |
+| `scabiosa` | 판면 하단 `Pub. by W. Curtis, S.t Geo. Crescent, Dec. 1. 1793 — Edwards del. Sansom sculp`, Commons 설명 `Sweet Scabious` | **종 일치** — *Scabiosa atropurpurea* | https://commons.wikimedia.org/wiki/File:The_Botanical_Magazine,_Plate_247_(Volume_7,_1794).png | Sydenham Edwards / *The Botanical Magazine* Pl.247 (1794) — BHL | `Permission: 기계적 스캔`(PD-old) | 1876×3296 | 검붉은 방석 꽃 머리 = *atropurpurea*(CSV 학명·`name_en` `Sweet Scabious` 와 모두 일치) |
+| `plum-blossom` | Commons 설명 `Flora Japonica, Sectio Prima`, 파일명 `Prunus mume SZ11` | **종 일치** | https://commons.wikimedia.org/wiki/File:Prunus_mume_SZ11.png | Siebold · Zuccarini, *Flora Japonica* Tab.11 (1870) | `PD-old` | 1701×2292 | **흰 매화·겹분홍 매화·노랗게 익은 매실을 한 판에.** 열매가 벚꽃과 갈리는 결정적 근거다 |
+| `azalea` | Commons 설명 `Rhododendron mucronulatum, Ericaceae`, 크레딧 `Bot. Mag. vol. 136: Tab. 8304` | **종 일치** | https://commons.wikimedia.org/wiki/File:Rhododendron_mucronulatum_136-8304.jpg | Matilda Smith · J.N. Fitch / Curtis *Bot. Mag.* t.8304 (1910) | `PD-Art` | 2233×3660 | **잎보다 먼저 맨가지에 핀 연분홍 다섯 갈래** — 우리 진달래 그대로다. `magnolia`(t.8428)와 같은 화가·같은 시기 |
+| `cotton` | 판면 활자 `COTONNIER` + 서명 `Théodore Descourtilz Pinx. / Pérée Sculp.`, 우상단 `Pl. 278` | **속까지만** (판면에 종명 없음) | https://commons.wikimedia.org/wiki/File:Flore_m%C3%A9dicale_des_Antilles,_ou,_Trait%C3%A9_des_plantes_usuelles_(9920564033).jpg | J. Théodore Descourtilz, *Flore médicale des Antilles* Pl.278 v.4 (1827) — BHL | `PD-scan\|PD-old-70-1923` (+CC-BY-2.0 기계 표기) | 1490×2579 | **연노랑 꽃과 터진 다래를 함께 그려** 실사(다래만)와 도판(꽃+다래)이 서로를 보완한다. `jasmine`(Pl.447)과 같은 책이지만 **권이 달라 연도가 1827/1828 로 갈린다** |
+
+## 유칼립투스는 왜 이 판인가
+
+이 종만 **정확히 같은 종의 판면을 두고 다른 종을 골랐다.** 그 판단을 여기 남긴다.
+
+*E. cinerea* 의 PD 도판은 실제로 존재한다 — Maiden 《A Critical Revision of the Genus
+Eucalyptus》(1903)의 낱장(Commons `Eucalyptus cinerea from "A critical revision…" (20088927024).jpg`,
+2422×2830). 하지만 그것은 **흰 종이 위 흑백 선묘 해부도**다. 잎·꽃봉오리·열매가 번호를 달고
+흩어져 있을 뿐 식물의 초상이 아니고, 나머지 58장이 전부 채색 판면인 세트에서 혼자 튄다.
+게다가 화면이 도판을 거는 자리는 레인 헤더 44px 과 시트 액자 ≤92px 인데, 그 크기에서
+선묘 해부도는 **회색 얼룩으로만 읽힌다.**
+
+그래서 같은 속에서 **잎 모양이 같은 채색 판면**을 택했다. *E. cordata* 는 cinerea 와 마찬가지로
+둥근 은청색 잎이 줄기를 마주 감싸는 종이라, 도판과 실사가 같은 잎을 보여 준다. 종이 다르다는
+사실은 `note` 로 화면에 그대로 내보낸다 — 이 세트가 11종에서 이미 쓰고 있는 방식이다.
+
+## 검토했으나 제외한 것
+
+| 대상 | 제외 사유 |
+|---|---|
+| Maiden *Critical Revision of Eucalyptus* (E. cinerea, 1903) | 종은 정확하나 **흑백 선묘 해부도** — 위 §유칼립투스는 왜 이 판인가 |
+| *Flore coloriée de poche du littoral méditerranéen* (E. globulus) | 채색이고 예쁘지만 **길쭉한 성엽**이라 우리 유칼립투스의 둥근 잎과 다르다. 새 판본이라 크레딧도 갈린다 |
+| Köhler *Medizinal-Pflanzen* Pl.147 (E. globulus) | 위와 같은 사유 + 원본이 **440×596px** 이라 1100px 정규화에 못 미친다 |
+| Step *Favourite Flowers* Pl.166 `AZALEA (AZALEA INDICA)` | **상록 아잘레아**(*Rhododendron simsii*) — 잎과 함께 피는 화분 아잘레아라 잎보다 꽃이 먼저 피는 진달래와 다르다 |
+| Step *Favourite Flowers* Pl.168 `SEA LAVENDER (STATICE LATIFOLIA)` | 아름다운 크림 판면이지만 **종이 다르다**(*Limonium latifolium*). 커티스 t.71 이 *sinuatum* 정본이라 그쪽을 택했다 |
+| Bodleian MS Sherard 244 f.195 `Statice sinuata` | 종은 맞지만 17~18세기 **필사본 소묘**라 화풍이 세트와 갈리고, 좌측에 제책 여백이 들어온다 |
+| Curtis *Bot. Mag.* Pl.3349 (Gardenia) | 종·화질 모두 양호하나 **커티스에 다섯 장이 이미 몰려** 있어, 한 장뿐이던 《보태니컬 레지스터》(camellia) 쪽으로 균형을 옮겼다 |
+| *The Botanical Register* 1815 낱장 `(20213930848)` (Acacia) | 종은 A. dealbata 로 분류돼 있으나 **판면에 학명이 없고** Commons 라이선스가 `No restrictions`(PD 틀이 아님)다 |
+| *The Floral Cabinet* No.103 (Acacia) | 더 크고 아름답지만 **판면에 종명이 없다** — 근거가 Commons 분류뿐이라 《The Garden》 Pl.864(판면에 `ACACIA DEALBATA` 활자)에 밀렸다 |
+| Blanco *Flora de Filipinas* (Gardenia jasminoides) | 종은 정확하나 20세기 초 채색 재판이라 화풍·종이색이 세트와 다르다 |
+| NYPL `Scabiosa peregrina rubra` (1772) | 고해상(3680×4899)이지만 **종이 다르고**, 스캔 우측에 색보정 차트가 함께 찍혀 있다 |
+| Curtis *Bot. Mag.* Pl.5530 · 6622 (Phalaenopsis) | *schilleriana* · *stuartiana* — 얼룩 잎·점박이 꽃이라 **원예 호접란의 얼굴**과 거리가 있다. *amabilis* 가 원종이자 표준이다 |
+| Hooker *Exotic Flora* Pl.210 · 211 (Anthurium) | 1820년대 판이라 *A. andraeanum*(1877년 기재)보다 앞서고, 꽃차례가 초록빛이라 우리 안스리움과 닮지 않았다 |
+| Köhler / Botanical Register Pl.84 (Gossypium barbadense) | 종이 다르고(해도면), Pl.84 는 **가로 판면**이라 액자에서 다시 잘라야 한다 |
+| Rawpixel 계열 "digitally enhanced" 스캔 | `CC BY-SA 4.0` 주장 — 기존 방침대로 배제 |
+
+## 코드에 반영한 것
+
+| 문서가 말한 것 | 코드가 한 일 | 자리 |
+|---|---|---|
+| 도판 12종 | `FLOWER_PLATES` 에 12줄 추가 — 표는 47 → **59** | `src/lib/plates/index.ts` |
+| 판본 이름 재사용 | `CURTIS`(5) · `STEP_FAVOURITE`(2) · `WITTE`(1) 을 그대로 재사용. `camellia`·`jasmine` 이 문자열로 들고 있던 판본 이름을 **상수로 승격**해(`BOTANICAL_REGISTER` · `DESCOURTILZ`) 새 두 종과 나눠 쓴다 — 같은 문자열을 두 곳에 손으로 적으면 오타 한 글자에 크레딧이 갈린다 | 〃 |
+| 새 판본 둘 | `THE_GARDEN`(mimosa) · `FLORA_JAPONICA`(plum-blossom) | 〃 |
+| 종 불일치는 정직한 한 줄 | 종이 어긋나는 다섯(anthurium·bouvardia·eucalyptus·alstroemeria 이명·cotton 미상)과 형태 주의 둘(gardenia 겹꽃·plum 열매)에 `note` 를 달았다. 화면 각주로 그대로 나간다 | 〃 |
+| 자체 호스팅 | `node scripts/fetch-plates.mjs` 실행 — 12종 본판 + 썸네일을 새로 만들었다. **실패 0건** | `public/plates/` · `public/plates/thumbs/` |
+
+`scripts/fetch-plates.mjs` 는 **한 줄도 고치지 않았다** — 모듈의 `src`·`remoteSrc` 만 보고 그 자리에 파일을 놓는 설계가 이번에도 그대로 작동했다.
+
+## 용량
+
+| 항목 | 이전(47종) | 이후(59종) |
+|---|---|---|
+| 본판 합계 | 11.59 MB | **14.44 MB** (신규 12장 2.85 MB · 평균 243 KB) |
+| 썸네일 합계 | 359 KB | **450 KB** (테스트 상한 512 KB 안 — 남은 여유가 62 KB뿐이다) |
+| 본판 최대 | 354 KB (carnation) | 354 KB (변동 없음 — 신규 최대는 azalea·eucalyptus 337 KB) |
+
+정규화 규격은 그대로다(폭 ≤1100px · 알파 흰 배경 flatten · JPEG q82 mozjpeg · 썸네일 160px).
+위키미디어 PNG 판본 넷(alstroemeria 3.82 MB · statice 4.84 MB · scabiosa 4.83 MB ·
+plum-blossom 3.08 MB)이 이 단계에서 각각 220·251·268·116 KB 로 줄었다 —
+정규화가 없었다면 이 배치만으로 리포에 16 MB 가 더 쌓였다.
+
+## 검증
+
+| 항목 | 결과 |
+|---|---|
+| 취득 URL 12건 | HTTP 200 · `image/jpeg` 8건 · `image/png` 4건 |
+| 라이선스 | Commons **위키텍스트의 라이선스 틀을 직접 읽어** 12/12 Public domain 확인(요약 필드가 아니라 원문) |
+| 종 근거 | 12장 중 **6장은 판면 활자·서명을 잘라 확대해 판독**(anthurium Pl.296 · bouvardia Pl.122 · statice · scabiosa · cotton Pl.278 · eucalyptus 서명). 나머지는 Commons 설명·분류·파일명 |
+| 다운로드 | `node scripts/fetch-plates.mjs` — 정규화 12 · 그대로 둠 47 · **실패 0** |
+| 파일 확인 | 12장을 다시 열어 **파일 이름과 그림이 어긋나지 않았음**을 눈으로 확인(전부 1100px 폭) |
+| 크레딧 합치기 | 59종이 **27줄**로 접힌다(테스트 상한 `< 29.5`) |
+| `npm run lint` · `npm run typecheck` | exit 0 |
+| `npx vitest run tests/components/plates.test.ts tests/components/photos.test.ts` | 2파일 53건 통과 |
+
+## 남은 판단 (Advisor 몫)
+
+1. **크레딧 줄이 27/29.5 다 — 다음 배치가 이 그물에 걸린다.**
+   `plateCredits()` 는 `작품명 + 연도 + 기관` 으로 합치므로 **같은 책이라도 권이 다르면 줄이 갈린다.**
+   지금 커티스가 연도별로 여덟 줄(1788·1791·1794·1836·1838·1847·1889·1902·1910)이고,
+   데스쿠르티도 1827/1828 로 둘이다. 다음 확장 전에 ⑴ 판본 단위로만 합치도록
+   `plateCredit()` 을 고치거나 ⑵ 커티스를 연도 범위 한 줄로 묶는 판단이 필요하다.
+   (이번 배치에서는 기존 47종의 값을 건드리지 않는 쪽을 택했다.)
+2. **`anthurium` 도판이 *A. scherzerianum* 이다.** PD 범위에서 *A. andraeanum*(1877년 기재)의
+   채색 판면을 찾지 못했다 — 후보였던 Hooker *Exotic Flora* 는 반세기 앞선다.
+   실사 갤러리에 `anthurium andraeanum` 명기 컷이 있으니 도감 본문이 그쪽을 기준 삼으면 된다.
+3. **`cotton` 도판의 종을 특정하지 못했다.** 판면 활자가 프랑스어 `COTONNIER` 한 단어뿐이고,
+   앤틸리스 제도라는 산지를 보면 *G. barbadense* 일 가능성이 있다(CSV 는 *G. hirsutum*).
+   `note` 에 "어느 목화 종인지까지는 알 수 없어요" 로 적어 두었다.
+4. **`mimosa` 원본이 1262px 다.** 위키미디어가 1280px 썸네일을 **살짝 확대해** 내주는 것을
+   실측(HTTP 200)으로 확인하고 그대로 썼다 — 차이가 1.4% 라 1100px 정규화에는 영향이 없지만,
+   `/1280px-` 규칙을 지키기 위해 업스케일된 바이트를 받는다는 사실은 남겨 둔다.
+5. **`geranium` 과 같은 종류의 후속 과제.** `mimosa` 의 Commons 파일은 화가·판 번호가
+   정확히 적혀 있는 드문 경우다 — 이 배치에서 Commons 메타데이터를 고칠 일은 없었다.

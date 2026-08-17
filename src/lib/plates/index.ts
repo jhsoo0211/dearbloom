@@ -1,7 +1,8 @@
 /**
- * 꽃 세밀화 도판 47종 — 퍼블릭 도메인 보태니컬 도판의 **단일 원본**.
+ * 꽃 세밀화 도판 59종 — 퍼블릭 도메인 보태니컬 도판의 **단일 원본**.
  *
- * 출처 문서: `docs/illustration-assets.md` (2026-08-15 조사 32종 + 2026-08-16 확장 배치 1 15종 = 47/47).
+ * 출처 문서: `docs/illustration-assets.md`
+ * (2026-08-15 조사 32종 + 2026-08-16 확장 배치 1 15종 + 2026-08-17 확장 배치 2 12종 = 59/59).
  * 이 파일은 그 표를 **코드로 옮긴 사본**이다. 도판을 바꾸거나 늘릴 때는 문서를 먼저 고치고
  * 여기로 옮긴다 — 문서가 라이선스 근거를 들고 있고, 이 파일은 화면이 쓰는 모양만 갖는다.
  *
@@ -19,7 +20,7 @@
  *     plantillustrations.org 는 안정성을 신뢰할 수 없다(문서 §미확보 B).
  *
  * ── 라이선스 ────────────────────────────────────────────────────────
- * 47종 전부 퍼블릭 도메인 또는 CC0 다. 표기 의무는 없지만 **표기를 기본값으로 운용**한다
+ * 59종 전부 퍼블릭 도메인 또는 CC0 다. 표기 의무는 없지만 **표기를 기본값으로 운용**한다
  * (BHL→Flickr 경유 파일 16종에 `CC BY 2.0` 상자가 기계적으로 붙어 있는 이슈를 한 번에 덮는
  * 가장 싼 보험이고, "야간 식물 아카이브" 라는 톤에도 출처 표기가 어울린다).
  * 표기 형식은 문서 사용 규칙 4 그대로 — `Plate: {작품명}, {연도} / {소장·제공 기관}`.
@@ -32,7 +33,7 @@
  *   · 파일을 다시 받는 방법: `node scripts/fetch-plates.mjs`(`--force` 로 덮어쓰기,
  *     `--reencode` 로 재다운로드 없이 다시 정규화). 저장 경로는 이 파일의 `src` 가 정한다 —
  *     스크립트가 `src` 를 읽어 그 자리에 쓴다.
- *   · **47종 전부 `.jpg` 다** — 확장자를 원본대로 두지 않고 한 규격으로 정규화한다.
+ *   · **59종 전부 `.jpg` 다** — 확장자를 원본대로 두지 않고 한 규격으로 정규화한다.
  *     스크립트가 `sharp` 로 폭 ≤1100px · 알파는 흰 배경 flatten · JPEG q82(mozjpeg) 로
  *     **다시 인코딩해** 저장하므로, 파일 바이트 자체가 JPEG 다(이름만 바꾼 게 아니다).
  *     그래서 정적 서버가 말하는 `Content-Type: image/jpeg` 가 사실과 맞는다.
@@ -104,11 +105,22 @@ const WENDEL = 'A.J. Wendel · G. Severeyns';
 const STEP_WAYSIDE = 'Step, Wayside and Woodland Blossoms';
 const REDOUTE = 'Pierre-Joseph Redouté';
 const STEP = 'Edward Step';
+/**
+ * 아래 둘은 2026-08-17 확장 배치 2 에서 **상수로 승격**했다. 그전에는 각각 한 종
+ * (camellia · jasmine)뿐이라 문자열을 그 자리에 적어 두었는데, 이번에 같은 판본을 쓰는
+ * 꽃이 하나씩 더 붙었다 — 두 곳에 손으로 같은 문자열을 적으면 오타 한 글자에
+ * `plateCredits()` 가 크레딧을 두 줄로 갈라 놓는다(머리말의 "판본 이름은 재사용한다").
+ */
+const BOTANICAL_REGISTER = 'Edwards, The Botanical Register';
+const DESCOURTILZ = 'Descourtilz, Flore médicale des Antilles';
+/** 확장 배치 2 에서 새로 들어온 판본 둘 — 나머지 열 종은 기존 판본으로 채웠다. */
+const THE_GARDEN = 'Hamilton, The Garden';
+const FLORA_JAPONICA = 'Siebold · Zuccarini, Flora Japonica';
 
 const COMMONS = 'Wikimedia Commons';
 const BHL = 'Biodiversity Heritage Library';
 
-/** 꽃 id → 도판. 카탈로그 47종 전원이 여기 있다(`tests/components/plates.test.ts` 가 지킨다). */
+/** 꽃 id → 도판. 카탈로그 59종 전원이 여기 있다(`tests/components/plates.test.ts` 가 지킨다). */
 export const FLOWER_PLATES: Record<string, FlowerPlate> = {
   'rose-red': {
     flowerId: 'rose-red',
@@ -393,7 +405,7 @@ export const FLOWER_PLATES: Record<string, FlowerPlate> = {
       'https://commons.wikimedia.org/wiki/File:The_Botanical_register_(Plate_22)_BHL8339.jpg',
     alt: '희고 연분홍빛이 도는 겹동백 한 송이와 짙은 잎 세밀화',
     artist: 'Sydenham Edwards',
-    work: 'Edwards, The Botanical Register',
+    work: BOTANICAL_REGISTER,
     plateNo: 'Pl.22',
     year: '1815',
     institution: BHL,
@@ -464,7 +476,7 @@ export const FLOWER_PLATES: Record<string, FlowerPlate> = {
       'https://commons.wikimedia.org/wiki/File:Flore_médicale_des_Antilles,_ou,_Traité_des_plantes_usuelles_(10421471426).jpg',
     alt: '흰 재스민 꽃가지와 꽃·씨 해부도를 함께 그린 세밀화',
     artist: 'J. Théodore Descourtilz',
-    work: 'Descourtilz, Flore médicale des Antilles',
+    work: DESCOURTILZ,
     plateNo: 'Pl.447',
     year: '1828',
     institution: BHL,
@@ -792,6 +804,211 @@ export const FLOWER_PLATES: Record<string, FlowerPlate> = {
     institution: BHL,
     note: '도판은 같은 속의 붉은 이집트수련(Nymphaea lotus var. rubra)이에요.',
   },
+
+  /* ---------------------------------------------------------------- *
+   * 정식 도감 확장 배치 2 — 12종 (2026-08-17)
+   *
+   * 배치 1 이 《Favourite Flowers》 한 판본으로 몰아 갔다면, 이번 12종의 무게중심은
+   * **커티스 《보태니컬 매거진》 다섯 장**이다(호접란·유칼립투스·스타티스·스카비오사·진달래).
+   * 이유는 같다 — 이미 다섯 종(gerbera·lisianthus·magnolia·poinsettia·amaryllis)이
+   * 쓰는 판본이라 크레딧이 그 줄에 얹히고, 커티스는 온실 화훼와 동아시아 수입종을
+   * 200년 동안 실어 왔기 때문에 이번 12종처럼 **난초·상록수·관엽**이 섞인 목록에
+   * 색 판면이 남아 있는 거의 유일한 자리다.
+   *
+   * 나머지는 이렇게 갈렸다.
+   *   · `anthurium` `bouvardia` — 스텝 《Favourite Flowers》(배치 1 의 12종과 같은 책)
+   *   · `alstroemeria` — 비테 《플로라》(기존 7종과 같은 책)
+   *   · `gardenia` — 에드워즈 《보태니컬 레지스터》(camellia 와 같은 책·같은 해)
+   *   · `cotton` — 데스쿠르티 《앤틸리스 약용식물지》(jasmine 과 같은 책)
+   *   · `mimosa` `plum-blossom` — **새 판본 둘**. 아카시아 데알바타와 매화는 위 판본들에
+   *     채색 판면이 없었고, 두 종 모두 종 동정이 가장 위험한 자리라(신경초·벚꽃)
+   *     "종이 문자로 박힌 판면"을 판본 일관성보다 앞에 두었다.
+   *
+   * 라이선스는 12종 전부 Commons 파일 페이지의 라이선스 틀을 **개별 확인**했다
+   * (`PD-Art` · `PD-old` · `PD-scan|PD-old-70-1923` · `PD-1923`). BHL→플리커 경유 넷에
+   * `CC-BY-2.0` 상자가 함께 붙어 있는 것은 머리말이 말한 그 기계적 이슈다 — 표기를
+   * 기본값으로 운용하는 것으로 덮는다.
+   * ---------------------------------------------------------------- */
+
+  phalaenopsis: {
+    flowerId: 'phalaenopsis',
+    src: '/plates/phalaenopsis.jpg',
+    remoteSrc:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Phalaenopsis_amabilis_-_Curtis%27_73_%28Ser._3_no._3%29_pl._4297_%281847%29.jpg/1280px-Phalaenopsis_amabilis_-_Curtis%27_73_%28Ser._3_no._3%29_pl._4297_%281847%29.jpg',
+    pageUrl:
+      'https://commons.wikimedia.org/wiki/File:Phalaenopsis_amabilis_-_Curtis%27_73_(Ser._3_no._3)_pl._4297_(1847).jpg',
+    alt: '흰 나비 모양 꽃이 줄지어 달린 호접란 꽃대와 굵은 뿌리를 그린 세밀화',
+    artist: 'Walter Hood Fitch',
+    work: CURTIS,
+    plateNo: 't.4297',
+    year: '1847',
+    institution: COMMONS,
+    note: '도판은 원예 호접란의 원종인 팔라이놉시스 아마빌리스(Phalaenopsis amabilis)예요.',
+  },
+  alstroemeria: {
+    flowerId: 'alstroemeria',
+    src: '/plates/alstroemeria.jpg',
+    remoteSrc:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/WitteHeinrichFlora1868-026-Alstroemeria_aurea.png/1280px-WitteHeinrichFlora1868-026-Alstroemeria_aurea.png',
+    pageUrl: 'https://commons.wikimedia.org/wiki/File:WitteHeinrichFlora1868-026-Alstroemeria_aurea.png',
+    alt: '주홍 꽃잎 안쪽에 검붉은 줄무늬가 든 알스트로메리아 꽃대 세밀화',
+    artist: WENDEL,
+    work: WITTE,
+    plateNo: 'Pl.26',
+    year: '1868',
+    institution: COMMONS,
+    note: '판면 활자는 옛 이름 Alstroemeria aurantiaca 예요 — 지금 쓰는 이름은 A. aurea 로, 원예 알스트로메리아의 모종 계열이에요.',
+  },
+  anthurium: {
+    flowerId: 'anthurium',
+    src: '/plates/anthurium.jpg',
+    remoteSrc:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7c/Favourite_flowers_of_garden_and_greenhouse_%288346053060%29.jpg/1280px-Favourite_flowers_of_garden_and_greenhouse_%288346053060%29.jpg',
+    pageUrl:
+      'https://commons.wikimedia.org/wiki/File:Favourite_flowers_of_garden_and_greenhouse_(8346053060).jpg',
+    alt: '주홍 불염포와 노란 육수꽃차례를 세운 안스리움을 뿌리까지 그린 세밀화',
+    artist: STEP,
+    work: STEP_FAVOURITE,
+    plateNo: 'Pl.296',
+    year: '1897',
+    institution: BHL,
+    note: '도판은 같은 속의 홍학꽃(Anthurium scherzerianum)이라, 꽃차례가 하트 모양 불염포의 안스리움과 달리 돌돌 말려 있어요.',
+  },
+  gardenia: {
+    flowerId: 'gardenia',
+    src: '/plates/gardenia.jpg',
+    remoteSrc:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fd/The_Botanical_register_%28Plate_73%29_BHL8494.jpg/1280px-The_Botanical_register_%28Plate_73%29_BHL8494.jpg',
+    pageUrl: 'https://commons.wikimedia.org/wiki/File:The_Botanical_register_(Plate_73)_BHL8494.jpg',
+    alt: '겹겹이 말린 흰 치자꽃 한 송이와 봉오리를 짙은 잎과 함께 그린 세밀화',
+    // camellia 와 **같은 책·같은 해·같은 기관**이라 크레딧이 한 줄로 합쳐진다.
+    artist: 'Sydenham Edwards',
+    work: BOTANICAL_REGISTER,
+    plateNo: 'Pl.73',
+    year: '1815',
+    institution: BHL,
+    note: '도판은 겹꽃으로 개량된 치자예요 — 산에서 보는 홑꽃 치자는 꽃잎이 여섯 장이에요.',
+  },
+  eucalyptus: {
+    flowerId: 'eucalyptus',
+    src: '/plates/eucalyptus.jpg',
+    remoteSrc:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Curtis%27s_botanical_magazine_%28Tab_7835%29_%288346194831%29.jpg/1280px-Curtis%27s_botanical_magazine_%28Tab_7835%29_%288346194831%29.jpg',
+    pageUrl:
+      'https://commons.wikimedia.org/wiki/File:Curtis%27s_botanical_magazine_(Tab_7835)_(8346194831).jpg',
+    alt: '둥근 은청빛 잎이 줄기를 감싼 유칼립투스 가지와 꽃봉오리·열매 세밀화',
+    artist: 'Matilda Smith · J.N. Fitch',
+    work: CURTIS,
+    plateNo: 't.7835',
+    year: '1902',
+    institution: BHL,
+    note: '도판은 같은 속의 Eucalyptus cordata 예요 — 줄기를 감싸는 둥근 은청빛 잎은 우리 유칼립투스(cinerea)와 같은 모습이에요.',
+  },
+  statice: {
+    flowerId: 'statice',
+    src: '/plates/statice.jpg',
+    remoteSrc:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/The_Botanical_Magazine%2C_Plate_71_%28Volume_2%2C_1788%29.png/1280px-The_Botanical_Magazine%2C_Plate_71_%28Volume_2%2C_1788%29.png',
+    pageUrl:
+      'https://commons.wikimedia.org/wiki/File:The_Botanical_Magazine,_Plate_71_(Volume_2,_1788).png',
+    alt: '날개가 달린 줄기 끝에 연보라 꽃이 모여 핀 스타티스와 물결 모양 잎 세밀화',
+    artist: 'William Curtis',
+    work: CURTIS,
+    plateNo: 'Pl.71',
+    year: '1788',
+    institution: BHL,
+    note: '판면 활자는 옛 이름 Statice sinuata 예요 — 지금 쓰는 이름은 Limonium sinuatum 으로, 같은 꽃이에요.',
+  },
+  mimosa: {
+    flowerId: 'mimosa',
+    src: '/plates/mimosa.jpg',
+    // ⚠ 원본이 1262px 라 위키미디어가 1280px 썸네일을 **살짝 확대해** 내준다(HTTP 200 실측).
+    //   폭 규칙(`/1280px-`)을 지키면서 1100px 정규화에도 손실이 없다 — 차이가 1.4% 다.
+    remoteSrc:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cc/Gardenillustrate4292lond_0023.jpg/1280px-Gardenillustrate4292lond_0023.jpg',
+    pageUrl: 'https://commons.wikimedia.org/wiki/File:Gardenillustrate4292lond_0023.jpg',
+    alt: '은녹색 깃꼴 잎 사이로 노란 방울꽃이 흐드러진 미모사 가지 세밀화',
+    artist: 'Gertrude Hamilton',
+    work: THE_GARDEN,
+    plateNo: 'Pl.864',
+    year: '1892',
+    institution: BHL,
+    note: '판면에 Acacia dealbata 라 적혀 있어요 — 꽃집에서 미모사라 부르는 그 나무이고, 잎을 건드리면 접히는 신경초(Mimosa pudica)와는 다른 식물이에요.',
+  },
+  bouvardia: {
+    flowerId: 'bouvardia',
+    src: '/plates/bouvardia.jpg',
+    remoteSrc:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/4/40/Favourite_flowers_of_garden_and_greenhouse_%2810574873714%29.jpg/1280px-Favourite_flowers_of_garden_and_greenhouse_%2810574873714%29.jpg',
+    pageUrl:
+      'https://commons.wikimedia.org/wiki/File:Favourite_flowers_of_garden_and_greenhouse_(10574873714).jpg',
+    alt: '가느다란 꽃통 끝이 네 갈래 별로 벌어진 흰 부바르디아 꽃가지 세밀화',
+    artist: STEP,
+    work: STEP_FAVOURITE,
+    plateNo: 'Pl.122',
+    year: '1897',
+    institution: BHL,
+    note: '도판은 같은 속의 Bouvardia longiflora 예요 — 꽃통이 길고 흰 이 종이 원예 부바르디아의 모종 계열이에요.',
+  },
+  scabiosa: {
+    flowerId: 'scabiosa',
+    src: '/plates/scabiosa.jpg',
+    remoteSrc:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/The_Botanical_Magazine%2C_Plate_247_%28Volume_7%2C_1794%29.png/1280px-The_Botanical_Magazine%2C_Plate_247_%28Volume_7%2C_1794%29.png',
+    pageUrl:
+      'https://commons.wikimedia.org/wiki/File:The_Botanical_Magazine,_Plate_247_(Volume_7,_1794).png',
+    alt: '짙은 자주빛 방석 모양 꽃이 가는 꽃대 위에 선 스카비오사 세밀화',
+    // 판면 하단 서명이 `Edwards del. Sansom sculp` 이라 Commons 의 작가 칸(William Curtis)
+    // 대신 판면 활자를 따랐다 — camellia·gardenia 와 같은 화가다.
+    artist: 'Sydenham Edwards',
+    work: CURTIS,
+    plateNo: 'Pl.247',
+    year: '1794',
+    institution: BHL,
+  },
+  'plum-blossom': {
+    flowerId: 'plum-blossom',
+    src: '/plates/plum-blossom.jpg',
+    remoteSrc: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/Prunus_mume_SZ11.png/1280px-Prunus_mume_SZ11.png',
+    pageUrl: 'https://commons.wikimedia.org/wiki/File:Prunus_mume_SZ11.png',
+    alt: '맨가지에 흰 매화와 진분홍 겹매화가 함께 핀 가지와 노랗게 익은 매실 세밀화',
+    artist: 'Philipp Franz von Siebold · Joseph Gerhard Zuccarini',
+    work: FLORA_JAPONICA,
+    plateNo: 'Tab.11',
+    year: '1870',
+    institution: COMMONS,
+    // 벚꽃 도판(비테 Pl.14)이 종을 단정하지 못한 것과 반대로, 이쪽은 열매까지 그려 종이 분명하다.
+    note: '한 판에 흰 매화·겹분홍 매화와 노랗게 익은 매실을 함께 그렸어요 — 열매가 벚꽃과 갈리는 지점이에요.',
+  },
+  azalea: {
+    flowerId: 'azalea',
+    src: '/plates/azalea.jpg',
+    remoteSrc:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2d/Rhododendron_mucronulatum_136-8304.jpg/1280px-Rhododendron_mucronulatum_136-8304.jpg',
+    pageUrl: 'https://commons.wikimedia.org/wiki/File:Rhododendron_mucronulatum_136-8304.jpg',
+    alt: '잎이 나기 전 맨가지에 연분홍 꽃이 벌어진 진달래 세밀화',
+    artist: 'Matilda Smith · J.N. Fitch',
+    work: CURTIS,
+    plateNo: 't.8304',
+    year: '1910',
+    institution: COMMONS,
+    note: '판면 학명이 Rhododendron mucronulatum — 잎보다 꽃이 먼저 피는 우리 진달래예요.',
+  },
+  cotton: {
+    flowerId: 'cotton',
+    src: '/plates/cotton.jpg',
+    remoteSrc:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5a/Flore_m%C3%A9dicale_des_Antilles%2C_ou%2C_Trait%C3%A9_des_plantes_usuelles_%289920564033%29.jpg/1280px-Flore_m%C3%A9dicale_des_Antilles%2C_ou%2C_Trait%C3%A9_des_plantes_usuelles_%289920564033%29.jpg',
+    pageUrl:
+      'https://commons.wikimedia.org/wiki/File:Flore_m%C3%A9dicale_des_Antilles,_ou,_Trait%C3%A9_des_plantes_usuelles_(9920564033).jpg',
+    alt: '연노랑 목화꽃과 껍질이 벌어져 솜이 드러난 다래를 함께 그린 세밀화',
+    artist: 'J. Théodore Descourtilz',
+    work: DESCOURTILZ,
+    plateNo: 'Pl.278',
+    year: '1827',
+    institution: BHL,
+    note: '판면 활자는 프랑스어 `COTONNIER`(목화) 한 단어뿐이라, 도판이 어느 목화 종인지까지는 알 수 없어요.',
+  },
 };
 
 /**
@@ -863,10 +1080,6 @@ export function plateCredit(plate: FlowerPlate): string {
 }
 
 /**
- * 화면에 실제로 쓴 도판들의 크레딧 — 판본 단위로 합치고 가나다·알파벳 순으로 세운다.
- * 32줄이 아니라 판본 수(14개 안팎)만큼만 나온다 — 그게 "일괄 표기" 의 뜻이다.
- */
-/**
  * 화면으로 내려보낼 **좁힌 한 벌**(코드 리뷰 P1-7).
  *
  * 표(`FlowerPlate`)에는 취득 주소·파일 페이지·작가·판본·연도·기관이 들어 있지만 액자가
@@ -888,11 +1101,63 @@ export function plateViewFor(flowerId: string, width: PlateWidth = 250): PlateVi
   };
 }
 
+/** 연도 범위를 잇는 기호 — 표 안의 `1817–1824` 와 같은 엔 대시다(하이픈이 아니다). */
+const YEAR_DASH = '–';
+
+/**
+ * 여러 도판의 연도 칸을 **한 범위로** 접는다.
+ *
+ * 연도 칸은 단년(`1868`)일 수도 범위(`1802–1816`)일 수도 있어서, 문자열을 파싱하는 대신
+ * 네 자리 수를 전부 긁어 최소·최대만 취한다. 커티스 열 장이 `1788–1912` 한 칸이 되는 자리다.
+ * 최소와 최대가 같으면 범위 기호를 붙이지 않는다(`1868–1868` 은 사실이지만 읽기 나쁘다).
+ */
+function mergeYears(years: readonly string[]): string {
+  const found = years.flatMap((year) => (year.match(/\d{3,4}/g) ?? []).map(Number));
+  if (found.length === 0) return years.join(' · ');
+
+  const from = Math.min(...found);
+  const to = Math.max(...found);
+  return from === to ? `${from}` : `${from}${YEAR_DASH}${to}`;
+}
+
+/**
+ * 화면에 실제로 쓴 도판들의 크레딧 — **판본 단위로** 합치고 알파벳 순으로 세운다.
+ * 59줄이 아니라 판본 수(지금 16)만큼만 나온다 — 그게 "일괄 표기" 의 뜻이다.
+ *
+ * ── 합치는 단위가 왜 판본인가 (2026-08-17) ───────────────────────────
+ * 예전에는 `plateCredit()` 이 만든 **완성된 줄**을 Set 에 넣어 중복만 지웠다. 그래서
+ * 같은 책이라도 권이 다르면 줄이 갈렸다 — 커티스 《보태니컬 매거진》이 연도별로 8줄,
+ * 데스쿠르티가 1827·1828 두 줄이었고, 59종에서 벌써 27줄이었다. 판본을 몰아 고르는
+ * 이 프로젝트의 방침(머리말 "판본 이름은 문자열을 재사용한다")이 화면에서는 전혀
+ * 보이지 않았던 셈이다.
+ *
+ * 이제 `work` 하나가 한 줄이고, 갈렸던 값은 **버리는 대신 합친다** —
+ *   · 연도는 범위로(`1788–1912`). 어느 해 판면을 썼는지가 사라지지 않는다.
+ *   · 기관은 전부 나열한다(` · ` 로 잇고 알파벳 순). 소장처를 임의로 대표시키지 않는다.
+ * 줄을 줄이려고 정보를 지우지 않는 것이 이 함수의 유일한 규칙이다.
+ *
+ * ⚠ 낱장 크레딧(`plateCredit`)은 그대로다 — 도감 상세는 **그 한 장**의 출처를 말하는
+ *   자리라 범위로 뭉개면 오히려 틀린 말이 된다. 합치는 것은 푸터 일괄 표기뿐이다.
+ */
 export function plateCredits(flowerIds: readonly string[]): string[] {
-  const lines = new Set<string>();
+  /** 판본(`work`) → 그 판본으로 실제 화면에 선 도판들. 등장 순서는 아래에서 정렬로 지운다. */
+  const byWork = new Map<string, FlowerPlate[]>();
+
   for (const id of flowerIds) {
     const plate = plateFor(id);
-    if (plate) lines.add(plateCredit(plate));
+    if (!plate) continue;
+    const group = byWork.get(plate.work);
+    if (group) group.push(plate);
+    else byWork.set(plate.work, [plate]);
   }
-  return [...lines].sort((a, b) => a.localeCompare(b, 'en'));
+
+  const lines = [...byWork].map(([work, plates]) => {
+    const years = mergeYears(plates.map((plate) => plate.year));
+    const institutions = [...new Set(plates.map((plate) => plate.institution))]
+      .sort((a, b) => a.localeCompare(b, 'en'))
+      .join(' · ');
+    return `Plate: ${work}, ${years} / ${institutions}`;
+  });
+
+  return lines.sort((a, b) => a.localeCompare(b, 'en'));
 }

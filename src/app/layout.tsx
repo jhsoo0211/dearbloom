@@ -82,7 +82,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
         <link rel="preconnect" href="https://cdn.jsdelivr.net" crossOrigin="" />
         <link rel="preconnect" href="https://hangeul.pstatic.net" crossOrigin="" />
         <link rel="preconnect" href="https://images.unsplash.com" crossOrigin="" />
-        {/* 실사 128컷 중 88컷이 Pexels 에서 온다(2026-08-16 확장 배치 1) — 이제 Unsplash 보다 많다. */}
+        {/* 실사 163컷 중 123컷이 Pexels 에서 온다(2026-08-17 확장 배치 2) — Unsplash 보다 많다. */}
         <link rel="preconnect" href="https://images.pexels.com" crossOrigin="" />
         <link
           rel="stylesheet"

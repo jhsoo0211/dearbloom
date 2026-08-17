@@ -200,12 +200,14 @@ html.lenis body {
 /* ── 내비 ───────────────────────────────────────────────────────────── */
 .db-nav {
   position: fixed;
-  top: 18px;
-  left: 0;
-  right: 0;
+  top: calc(18px + env(safe-area-inset-top, 0px));
+  left: env(safe-area-inset-left, 0px);
+  right: env(safe-area-inset-right, 0px);
   margin-inline: auto;
   width: max-content;
-  max-width: calc(100vw - 24px);
+  max-width: calc(
+    100vw - 24px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)
+  );
   z-index: 60;
   display: flex;
   align-items: center;
@@ -1924,7 +1926,10 @@ body.db-nav-compact .db-nav {
   flex-direction: column;
   width: min(100%, 560px);
   margin-inline: auto;
-  padding: 18px clamp(22px, 7vw, 40px) clamp(28px, 5vh, 44px);
+  padding: calc(18px + env(safe-area-inset-top, 0px))
+    calc(clamp(22px, 7vw, 40px) + env(safe-area-inset-right, 0px))
+    calc(clamp(28px, 5vh, 44px) + env(safe-area-inset-bottom, 0px))
+    calc(clamp(22px, 7vw, 40px) + env(safe-area-inset-left, 0px));
 }
 .db-navsheet-top {
   display: flex;
@@ -1977,23 +1982,25 @@ body.db-nav-compact .db-nav {
   padding-bottom: clamp(20px, 4vh, 36px);
 }
 .db-navsheet-item {
-  display: flex;
-  align-items: baseline;
-  gap: 14px;
+  display: block;
 }
 .db-navsheet-no {
-  flex: none;
-  width: 2.4em;
+  font-family: var(--font-sans);
   font-size: 12px;
   font-weight: 600;
+  line-height: 1;
   letter-spacing: 0.18em;
   color: var(--accent);
 }
 /* 항목은 세리프 대형 — 목차가 화면의 주인공이 되는 자리라 본문 위계를 쓰지 않는다.
-   링크 상자는 **글자 폭만큼**이다: 줄의 남는 자리는 배경이라, 거기를 누르면 닫힌다. */
+   번호와 행 여백까지 링크 안에 넣어 **행 전체**를 안정적인 터치 타깃으로 쓴다. */
 .db-navsheet-item a {
-  display: inline-flex;
-  align-items: center;
+  display: grid;
+  grid-template-columns: 2.4em minmax(0, 1fr);
+  align-items: baseline;
+  align-content: center;
+  gap: 14px;
+  width: 100%;
   min-height: 56px;
   font-family: var(--font-serif);
   font-weight: 300;
@@ -2007,6 +2014,9 @@ body.db-nav-compact .db-nav {
 .db-navsheet-item a:hover,
 .db-navsheet-item a:focus-visible {
   color: var(--accent);
+}
+.db-navsheet-item a:hover .db-navsheet-label,
+.db-navsheet-item a:focus-visible .db-navsheet-label {
   text-decoration: underline;
   text-decoration-thickness: 1px;
   text-underline-offset: 8px;
@@ -2111,31 +2121,25 @@ body.db-nav-compact .db-nav {
   }
 }
 @media (max-width: 860px) {
-  /* 유리 알약 하나에 항목 다섯이 들어가지 않는다 — 줄은 접고, 대신 옆에 문을 낸다(§1.6c). */
+  /* A안 — 중복 CTA를 덜고 `워드마크 + 메뉴`만 남긴 조용한 모바일 레일(§1.6c). */
   .db-nav-links {
+    display: none;
+  }
+  .db-nav-cta {
     display: none;
   }
   .db-nav-menu {
     display: inline-flex;
   }
-  /* 손가락으로 누르는 폭에서는 붙어 선 두 타깃 사이가 8px 이상이어야 한다
-     (ui-ux-pro-max Touch/Touch Spacing). 데스크톱의 6px 은 그대로 둔다 — 거기서는
-     포인터가 누르고, 링크 다섯이 6px 로 붙어 서는 리듬이 이미 서 있다. */
   .db-nav {
+    width: min(
+      560px,
+      calc(
+        100vw - 24px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)
+      )
+    );
+    justify-content: space-between;
     gap: 8px;
-  }
-}
-/* 알약 셋(로고·CTA·메뉴)이 한 줄에 서려면 뷰포트가 333px 은 돼야 한다. 그 아래에서는
-   라벨만 접는다 — 접히면 44×44 아이콘 버튼(radius 9999 = 원)으로 되돌아가므로 새 모양이
-   생기지 않는다. 320px 기기뿐 아니라 **360px 에서 125% 확대**한 화면도 여기로 온다
-   (전체 확대는 CSS 픽셀 폭을 줄인다). 접지 않으면 `.db-nav` 의 `overflow:hidden` 이
-   알약 오른쪽을 깎는다(320px 실측 -1.2px). */
-@media (max-width: 344px) {
-  .db-nav-menu-t {
-    display: none;
-  }
-  .db-nav-menu {
-    padding: 0 14px;
   }
 }
 @media (max-width: 640px) {
@@ -2164,10 +2168,6 @@ body.db-nav-compact .db-nav {
   }
   .db-brand .db-wm {
     font-size: 20px;
-  }
-  .db-nav-cta {
-    padding: 0 16px;
-    font-size: 13px;
   }
   .db-slide {
     flex: 0 0 min(88%, 340px);

@@ -313,9 +313,19 @@ describe('submitRecommendation — §1.5l 맥락 칩은 사용자의 말을 되�
   });
 
   it('예산 `기타` 는 가격대 필터를 걸지 않는다 (band 1~3 전부 후보)', async () => {
+    /*
+     * ⚠ 입력이 기본값(friend/gratitude)이 아니라 spouse/anniversary 인 이유(2026-08-18):
+     * 규칙표가 7 → 151행이 되면서 friend/gratitude 의 상위 3안이 **우연히 전부 band 1**
+     * (알스트로메리아·제라늄·프리지아)이 됐다 — 필터가 없어도 `some(band > 1)` 이 거짓이
+     * 되는 자리다. spouse/anniversary 는 상위 밴드 꽃(작약·호접란·아마릴리스)의 가점
+     * 규칙이 두터워, 필터가 없다는 사실이 3안의 밴드 폭으로 실제로 드러난다.
+     * 이 테스트가 다시 깨진다면 필터가 생긴 게 아니라 데이터가 또 자란 것일 수 있다 —
+     * 그때는 입력을 옮기기 전에 EX_BUDGET 제외가 실제로 0건인지부터 확인하라.
+     */
+    const pricey = { relationship: 'spouse' as const, intent: 'anniversary' as const };
     const [free, cheap] = await Promise.all([
-      submitRecommendation(submission({ budgetKey: 'other' })),
-      submitRecommendation(submission({ budgetKey: 'under20' })),
+      submitRecommendation(submission({ ...pricey, budgetKey: 'other' })),
+      submitRecommendation(submission({ ...pricey, budgetKey: 'under20' })),
     ]);
 
     expect(free.ok).toBe(true);
@@ -365,7 +375,7 @@ describe('멘트 폴백 — 마음 8종의 톤 탭이 빠짐없이 찬다', () =
     }
   });
 
-  it('화면에 서는 톤은 전부 본문과 `함께 담을 한 줄`을 받는다 (빈 탭 0)', async () => {
+  it('화면에 서는 톤은 전부 본문을 받는다 (빈 탭 0)', async () => {
     for (const intent of INTENTS) {
       const response = await submitRecommendation(submission({ intent }));
       if (!response.ok) throw new Error(`${intent}: 추천에 실패했습니다`);
@@ -376,7 +386,6 @@ describe('멘트 폴백 — 마음 8종의 톤 탭이 빠짐없이 찬다', () =
       for (const tone of tones) {
         expect(tone.source, `${intent}/${tone.key}`).toBe('template');
         expect(tone.body?.trim(), `${intent}/${tone.key}`).toBeTruthy();
-        expect(tone.cardLine?.textKo.trim(), `${intent}/${tone.key}`).toBeTruthy();
         expect(tone.emptyNote, `${intent}/${tone.key}`).toBeUndefined();
       }
     }
@@ -406,6 +415,125 @@ describe('멘트 폴백 — 마음 8종의 톤 탭이 빠짐없이 찬다', () =
       expect(toFriend.payload.tones.map((tone) => tone.body), intent).toEqual(
         toColleague.payload.tones.map((tone) => tone.body),
       );
+    }
+  });
+});
+
+/**
+ * 멘트 길이 토글·새로 받기가 **예문 경로에서는 서지 않는** 이유를 데이터로 붙들어 둔다
+ * (2026-08-18).
+ *
+ * 화면은 `짧게 / 보통`과 `새로 받기`를 생성된 멘트에만 세운다. 그 결정은 취향이 아니라
+ * 이 표의 모양에서 나왔다 — 고를 수 있는 다른 예문이 **하나도 없다.** 눌러도 아무 일
+ * 없는 버튼은 갈 곳 없는 링크와 같은 거짓말이라 세우지 않는다.
+ *
+ * 나중에 예문 표가 짧은 벌을 갖추면 이 테스트가 먼저 깨진다. 그때가 `buildTones` 에
+ * 길이 축을 붙이고 화면에서 조건을 푸는 날이다 — 깨진 김에 이 주석도 고쳐라.
+ */
+describe('예문 표에는 고를 여지가 없다 (길이 토글이 생성 경로 전용인 근거)', () => {
+  it('(마음 × 톤) 조합마다 행이 정확히 하나다 — 회전시킬 다른 예문이 없다', async () => {
+    const { loadCatalog } = await import('@/lib/data/catalog');
+    const catalog = await loadCatalog();
+
+    const perCombo = new Map<string, number>();
+    for (const row of catalog.templates) {
+      const key = `${row.intent}|${row.tone}`;
+      perCombo.set(key, (perCombo.get(key) ?? 0) + 1);
+    }
+
+    const duplicated = [...perCombo].filter(([, count]) => count > 1);
+    expect(duplicated).toEqual([]);
+  });
+
+  it('`length` 축으로 갈라 볼 짧은 벌이 없다 — 같은 조합의 short/medium 짝이 0 이다', async () => {
+    const { loadCatalog } = await import('@/lib/data/catalog');
+    const catalog = await loadCatalog();
+
+    const shortKeys = new Set(
+      catalog.templates.filter((t) => t.length === 'short').map((t) => `${t.intent}|${t.tone}`),
+    );
+    const pairs = catalog.templates.filter(
+      (t) => t.length === 'medium' && shortKeys.has(`${t.intent}|${t.tone}`),
+    );
+
+    expect(pairs).toEqual([]);
+  });
+});
+
+/**
+ * §1.5d 색별 꽃말의 **각주가 거짓이 되지 않게** 붙드는 그물 (2026-08-18).
+ *
+ * 결과 화면은 색 칩 아래에 「{색} {꽃}이 품은 말이에요」를 세운다. 그런데 엔진의
+ * `buildColorOptions` 는 그 색 행을 못 찾으면 **색을 가리지 않는 행**으로 조용히
+ * 내려간다(`explain.ts` 의 `findMeaning`). 값만 보면 둘을 구별할 수 없어서, 그대로
+ * 두면 색과 무관한 꽃말에 색 이름이 붙는다 — 없는 꽃말을 지어내는 것과 같은 종류의
+ * 거짓이다. `meaningIsForColor` 가 그 둘을 가르고, 이 테스트가 그 값이 원장과
+ * 어긋나지 않는지 본다.
+ */
+describe('색 칩의 꽃말 각주 (meaningIsForColor)', () => {
+  it('원장에 그 색 행이 있을 때만 참이다 — 색 무관 꽃말에 색 이름을 붙이지 않는다', async () => {
+    const { loadCatalog } = await import('@/lib/data/catalog');
+    const catalog = await loadCatalog();
+
+    const response = await submitRecommendation(submission());
+    expect(response.ok).toBe(true);
+    if (!response.ok) return;
+
+    let checked = 0;
+    for (const option of response.payload.options) {
+      const rows = catalog.meanings.filter((m) => m.flowerId === option.flowerId);
+      for (const chip of option.colors) {
+        if (!chip.meaningKo) {
+          // 꽃말이 없는 칩에는 판정 자체가 붙지 않는다(붙으면 뜻 없는 값이다).
+          expect(chip.meaningIsForColor, `${option.flowerId}/${chip.value}`).toBeUndefined();
+          continue;
+        }
+        const hasColorRow = rows.some(
+          (m) => (m.color ?? '').trim().toLowerCase() === chip.value.trim().toLowerCase(),
+        );
+        expect(Boolean(chip.meaningIsForColor), `${option.flowerId}/${chip.value}`).toBe(
+          hasColorRow,
+        );
+        checked += 1;
+      }
+    }
+    expect(checked, '색 칩을 하나도 못 봤다면 이 테스트는 아무것도 지키지 않는다').toBeGreaterThan(0);
+  });
+
+  it('색 행이 없는 칩에도 꽃말이 실려 온다 — 그래서 각주를 가르는 일이 필요하다', async () => {
+    const { loadCatalog } = await import('@/lib/data/catalog');
+    const { prepareResult, parseSubmission: parse, buildTones: tones, assemblePayload: assemble } =
+      await import('@/app/recommend/build-result');
+    const catalog = await loadCatalog();
+
+    // 색별 행이 하나도 없는 꽃(원장 기준)을 찾아, 그 꽃의 칩이 어떻게 실려 나가는지 본다.
+    const byFlower = new Map<string, { colored: number; plain: number }>();
+    for (const m of catalog.meanings) {
+      const e = byFlower.get(m.flowerId) ?? { colored: 0, plain: 0 };
+      if ((m.color ?? '').trim() === '') e.plain += 1;
+      else e.colored += 1;
+      byFlower.set(m.flowerId, e);
+    }
+    const colorless = [...byFlower].filter(([, v]) => v.colored === 0 && v.plain > 0);
+    // 이런 꽃이 하나도 없어졌다면 이 위험 자체가 사라진 것이다 — 그때는 위 테스트로 충분하다.
+    if (colorless.length === 0) return;
+
+    const received = parse(submission());
+    expect(received.ok).toBe(true);
+    if (!received.ok) return;
+    const prepared = prepareResult(received.answers, catalog);
+    expect(prepared.ok).toBe(true);
+    if (!prepared.ok) return;
+    const payload = assemble(
+      prepared.draft,
+      tones(catalog, prepared.draft.intent, prepared.draft.relationship),
+    );
+    // 추천에 그런 꽃이 안 나올 수도 있다(지금이 그렇다) — 나왔다면 반드시 거짓이어야 한다.
+    for (const option of payload.options) {
+      if (!colorless.some(([id]) => id === option.flowerId)) continue;
+      for (const chip of option.colors) {
+        if (chip.meaningKo) expect(chip.meaningIsForColor, option.flowerId).toBe(false);
+      }
     }
   });
 });

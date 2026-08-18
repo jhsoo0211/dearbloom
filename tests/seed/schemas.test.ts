@@ -82,11 +82,12 @@ function failedColumns(result: SafeParseLike): string[] {
  * ------------------------------------------------------------------ */
 
 describe('content/*.csv 실제 데이터', () => {
-  it('10개 파일이 모두 행 스키마를 통과한다', () => {
+  it('11개 파일이 모두 행 스키마를 통과한다', () => {
     const { issues } = loadDataset();
     expect(issues.map(formatIssue)).toEqual([]);
-    // 2026-08-16 에 birth_photos · birth_stories 가 들어와 8 → 10 이 됐다.
-    expect(SEED_FILE_KEYS).toHaveLength(10);
+    // 2026-08-16 에 birth_photos · birth_stories 가 들어와 8 → 10 이 됐고,
+    // 2026-08-18 에 reads(「읽을거리」 원장)가 들어와 11 이 됐다.
+    expect(SEED_FILE_KEYS).toHaveLength(11);
   });
 
   it('기대한 행 수를 갖는다 (flowers 59, pet_safety 118)', () => {
@@ -231,14 +232,14 @@ describe('content/*.csv 실제 데이터', () => {
     }
   });
 
-  it('교차 검증 8종을 모두 통과한다', () => {
+  it('교차 검증 9종을 모두 통과한다', () => {
     const { dataset } = loadDataset();
     const { checks, issues } = crossValidate(dataset);
     expect(issues.map(formatIssue)).toEqual([]);
     // 참조 무결성 · 반려동물 커버리지 · 공유 어휘 · 탄생화 366일 · 탄생화 도감 연결
     // · 탄생화 사진(날짜·이름·slug) · 탄생화 이야기(이름·id 공간)
-    // · 카탈로그 이야기 story_id 유일성
-    expect(checks).toHaveLength(8);
+    // · 카탈로그 이야기 story_id 유일성 · 읽을거리 read_id·links_to
+    expect(checks).toHaveLength(9);
     expect(checks.every((check) => check.ok)).toBe(true);
   });
 

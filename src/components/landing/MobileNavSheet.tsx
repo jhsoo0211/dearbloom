@@ -38,8 +38,11 @@ import { lockBodyScroll } from './body-scroll-lock';
 const SHEET_ITEMS = [
   { no: '01', label: '오늘의 꽃', href: '#db-today', kind: 'anchor' },
   { no: '02', label: '이야기', href: '/stories', kind: 'anchor' },
-  { no: '03', label: '도감', href: '/flowers', kind: 'link' },
-  { no: '04', label: '편지', href: '/letter', kind: 'link' },
+  // 2026-08-18 — 「읽을거리」 합류. 데스크톱 내비에 항목을 더하면서 여기를 잊으면
+  // 그 화면은 폰에서 영영 닿을 수 없게 된다(`landing-mobile-nav.test.ts` 가 그것을 막는다).
+  { no: '03', label: '읽을거리', href: '/reads', kind: 'link' },
+  { no: '04', label: '도감', href: '/flowers', kind: 'link' },
+  { no: '05', label: '편지', href: '/letter', kind: 'link' },
 ] as const;
 
 /** 순차 등장의 자리 번호. CSS 가 `--db-i` × 55ms 로 지연을 만든다(reduced-motion 이면 없다). */

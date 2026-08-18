@@ -1,8 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { generateMessages } from '@/lib/llm/provider';
-import { buildSystemPrompt, buildUserPrompt } from '@/lib/llm/prompt';
-import type { GenerateRequest } from '@/lib/llm/contracts';
+import { MESSAGE_LENGTH_CHARS, buildSystemPrompt, buildUserPrompt } from '@/lib/llm/prompt';
+import { generateRequestSchema, messageLengthSchema } from '@/lib/llm/contracts';
+import type { GenerateRequest, GenerateRequestParsed } from '@/lib/llm/contracts';
 
 /**
  * 프로바이더 어댑터 테스트.
@@ -12,7 +13,8 @@ import type { GenerateRequest } from '@/lib/llm/contracts';
  * "무엇을 보내는가" 세 가지다.
  */
 
-const REQUEST: GenerateRequest = {
+/** 검증을 통과한 뒤의 모양(`length` 가 채워져 있다) — 프롬프트 조립이 이걸 받는다. */
+const REQUEST: GenerateRequestParsed = {
   relationship: 'lover',
   intent: 'apology',
   flower: {
@@ -22,6 +24,7 @@ const REQUEST: GenerateRequest = {
     meaning_source_id: 'greenaway-1884',
   },
   tones: ['plain', 'romantic', 'sincere'],
+  length: 'medium',
   memory_context: '작년 봄에 함께 걷던 길에 튤립이 피어 있었어요.',
 };
 
@@ -563,5 +566,55 @@ describe('프롬프트', () => {
 
     const body = String((fetchMock.mock.calls[0][1] as RequestInit).body);
     expect(body).toContain('greenaway-1884');
+  });
+});
+
+/**
+ * 멘트 길이 축 (2026-08-18) — 결과 화면의 `짧게 / 보통` 토글이 이 길로 내려온다.
+ *
+ * ⚠ 이 축을 실제로 가르는 것은 **생성 경로뿐**이다. 예문 표(`templates.csv`)에는
+ *   (마음 × 톤) 조합마다 행이 하나씩만 있어서 짧은 벌이 존재하지 않는다 — 그 사실은
+ *   `tests/flow/actions.test.ts` 쪽이 데이터로 직접 붙들고 있다.
+ */
+describe('멘트 길이 축', () => {
+  it('생략하면 보통(medium) 이다 — 기존 호출부가 한 글자도 안 바뀐다', () => {
+    const parsed = generateRequestSchema.parse({
+      relationship: 'lover',
+      intent: 'apology',
+      flower: REQUEST.flower,
+      tones: ['plain', 'romantic', 'sincere'],
+    });
+
+    expect(parsed.length).toBe('medium');
+  });
+
+  it('짧게와 보통은 프롬프트의 글자 수 범위가 실제로 다르다', () => {
+    const short = buildUserPrompt({ ...REQUEST, length: 'short' });
+    const medium = buildUserPrompt({ ...REQUEST, length: 'medium' });
+
+    expect(short).toContain(`${MESSAGE_LENGTH_CHARS.short.min}~${MESSAGE_LENGTH_CHARS.short.max}자`);
+    expect(medium).toContain(
+      `${MESSAGE_LENGTH_CHARS.medium.min}~${MESSAGE_LENGTH_CHARS.medium.max}자`,
+    );
+    expect(short).not.toBe(medium);
+  });
+
+  it('짧게일 때는 보통 분량인 예시를 따라가지 말라고 눌러 둔다', () => {
+    // few-shot 이 medium 길이라, 분량 지시만 바꾸면 모델이 눈앞의 예시를 따라간다.
+    expect(buildUserPrompt({ ...REQUEST, length: 'short' })).toContain('위 예시는 보통 분량이다');
+    expect(buildUserPrompt({ ...REQUEST, length: 'medium' })).not.toContain('위 예시는 보통 분량');
+  });
+
+  it('계약 밖의 길이는 통과하지 못한다 — 액션은 공개 엔드포인트다', () => {
+    expect(messageLengthSchema.safeParse('tiny').success).toBe(false);
+    expect(messageLengthSchema.safeParse('short').success).toBe(true);
+  });
+
+  it('길이를 바꿔도 절대 규칙은 그대로다 (금지선은 길이 축과 무관하다)', () => {
+    const system = buildSystemPrompt();
+    // 분량만 요청마다 다르다 — 시스템 문자열은 고정이라 캐싱을 붙일 수 있다.
+    expect(system).toContain('가격');
+    expect(system).toContain('반려동물');
+    expect(system).not.toMatch(/\d+~\d+자/);
   });
 });

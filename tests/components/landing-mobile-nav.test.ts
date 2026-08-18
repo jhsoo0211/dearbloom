@@ -177,7 +177,8 @@ describe('§1.6c-2 — 모바일 상단은 워드마크 + 메뉴만 남긴다', 
 describe('§1.6c — 목차가 내비를 하나도 빠뜨리지 않는다', () => {
   it('스캔이 실제로 목적지를 찾는다 (정규식이 낡으면 이 줄이 먼저 깨진다)', () => {
     expect(NAV_LINK_HREFS.length).toBeGreaterThanOrEqual(4);
-    expect(SHEET_HREFS).toHaveLength(4);
+    // 2026-08-18 에 「읽을거리」(/reads)가 합류해 4 → 5 가 됐다.
+    expect(SHEET_HREFS).toHaveLength(5);
   });
 
   it('`시작하기`(#db-start)가 내비로 돌아오지 않는다 — CTA 와 같은 일이 둘 서 있었다', () => {

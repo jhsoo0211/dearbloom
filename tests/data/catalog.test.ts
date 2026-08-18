@@ -18,6 +18,8 @@ import type { Catalog } from '@/lib/data/types';
 
 const EXPECTED_FLOWERS = 59;
 const EXPECTED_STORIES = 438;
+/** 2026-08-18 규칙 병합 이후 — 가점 132 + 회피 19. */
+const EXPECTED_RULES = 151;
 /** 윤년 366일. 하루라도 비면 그 날 태어난 사람에게 보여 줄 것이 없다. */
 const EXPECTED_BIRTH_DAYS = 366;
 
@@ -35,7 +37,7 @@ describe('loadCatalog', () => {
 
     expect(catalog.flowers).toHaveLength(EXPECTED_FLOWERS);
     expect(catalog.stories).toHaveLength(EXPECTED_STORIES);
-    expect(catalog.rules.length).toBeGreaterThan(0);
+    expect(catalog.rules).toHaveLength(EXPECTED_RULES);
     expect(catalog.meanings.length).toBeGreaterThan(0);
     expect(catalog.templates.length).toBeGreaterThan(0);
     expect(catalog.quotes.length).toBeGreaterThan(0);

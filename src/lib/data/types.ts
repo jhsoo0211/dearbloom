@@ -217,6 +217,53 @@ export interface BirthStory {
   confidenceLevel: ConfidenceLevel;
 }
 
+/** reads.csv 의 kind 어휘 — **데이터의 종류**다. 원본은 `db/seed/schemas.ts` 의 READ_KINDS. */
+export type ReadKind = 'article' | 'event' | 'guide' | 'trend';
+
+/** reads.csv 의 access 어휘. 원본은 `db/seed/schemas.ts` 의 READ_ACCESS_LEVELS. */
+export type ReadAccess = 'open' | 'paywall' | 'registration';
+
+/**
+ * 「읽을거리」 한 줄 (reads.csv) — 사람이 고른 **외부** 글·행사 하나.
+ *
+ * 다른 표와 결정적으로 다른 점: **본문이 없다.** 제목·출처·우리가 쓴 한 줄·링크가 전부다
+ * (`docs/reads-research.md` §1). 이미지 칸도 일부러 없다 — 남의 썸네일을 걸지 않는다.
+ *
+ * ⚠ `startsAt`·`endsAt` 은 **행사만** 갖는다. 그리고 **만료 판정을 서버에서 하지 마라** —
+ *   정적 배포에서 빌드 시각의 "오늘" 이 HTML 에 굳어, 10월에 배포한 사이트가 12월에도
+ *   10월 기준으로 행사를 보여 준다(§7-2). 거르기는 브라우저의 오늘로만 한다
+ *   (`src/components/reads/expiry.ts`).
+ *
+ * `editorialNote` 는 **일부러 여기 없다**(`Quote.pdBasis` · `BirthFlower.editorialNote` 와 같은
+ * 판단). 그래서 조사 문서 §3-4 가 "사용자의 결정을 바꾸는 사실을 보이지 않는 칸에 묻지 마라"
+ * 를 규범으로 세웠다 — 입장료·예약 필수·`(예정)` 표기는 전부 `summaryKo` 나 `access` 에 있다.
+ */
+export interface CatalogRead {
+  readId: string;
+  kind: ReadKind;
+  /** 그 글·행사의 제목. 원문 표기 그대로다(우리가 다시 짓지 않는다). */
+  title: string;
+  sourceTitle: string;
+  author?: string;
+  sourceUrl: string;
+  /** 원문에 발행일이 **표기된 것만**. 없는 것이 정상 값이다. */
+  publishedAt?: string;
+  /** `kind === 'event'` 일 때만 있다(스키마가 그렇게 묶어 둔다). */
+  startsAt?: string;
+  endsAt?: string;
+  /** 오프라인이면 지역, 온라인/무관이면 `온라인` 또는 없음. */
+  region?: string;
+  /** **우리가 쓴 한 줄.** 원문 요약이 아니다(§1.5d 해요체). */
+  summaryKo: string;
+  access: ReadAccess;
+  confidenceLevel: ConfidenceLevel;
+  reviewedAt: string;
+  /** 화면 칩이 되는 통제 어휘 13종(계절 4 · 결 5 · 자리 4). */
+  tags: string[];
+  /** `flower:<id>` · `color:<색>` · `theme:<계열>`. **비는 것이 정상 값**이다. */
+  linksTo: string[];
+}
+
 /**
  * 반려동물 안전성 한 줄 (pet_safety.csv).
  *
@@ -265,4 +312,9 @@ export interface Catalog extends RuleSet {
    *   사전 시트가 여는 **그 이름의 몇 편**만 서버 액션으로 그때 간다.
    */
   birthStories: BirthStory[];
+  /**
+   * 「읽을거리」 54건. `/reads` 가 서버에서 카드로 좁혀 내려보낸다
+   * (`editorial_note` 는 로더가 이미 떨궜고, 카드는 그중에서도 화면이 그리는 칸만 든다).
+   */
+  reads: CatalogRead[];
 }

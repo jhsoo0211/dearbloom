@@ -322,7 +322,8 @@ export interface WizardProps {
   /** `이전 질문` — 브라우저 뒤로가기와 같은 길로 간다(RecommendFlow.stepBack 머리말). */
   onStepBack: () => void;
   action: (submission: WizardSubmission) => Promise<FlowResponse>;
-  onResult: (payload: ResultPayload) => void;
+  /** 두 번째 인자는 방금 보낸 답 — 결과 화면의 멘트 재생성이 같은 재료를 다시 쓴다. */
+  onResult: (payload: ResultPayload, submission: WizardSubmission) => void;
 }
 
 export default function Wizard({
@@ -518,7 +519,14 @@ export default function Wizard({
     setError(null);
     startSubmit(async () => {
       try {
-        const response = await action({
+        /*
+         * 보낸 답을 그대로 결과 화면까지 딸려 보낸다 — 멘트 `새로 받기` · `짧게/보통`이
+         * 같은 재료로 다시 부탁하려면 이 값이 있어야 한다(2026-08-18). 여기서 한 번
+         * 만들어 넘기는 이유는, 조건부 필드(`직접 쓸게요` 한 줄들)를 비우는 규칙이
+         * 아래 한 곳에만 있어야 두 경로가 어긋나지 않기 때문이다.
+         * ⚠ 이 값은 메모리와 탭 한정 sessionStorage 밖으로 나가지 않는다(§1.5j).
+         */
+        const submission: WizardSubmission = {
           relationship,
           relationshipDetail: relationship === RELATIONSHIP_OTHER ? relationshipDetail : '',
           intent,
@@ -532,8 +540,9 @@ export default function Wizard({
           budgetKey,
           budgetDetail: budgetKey === BUDGET_OTHER ? budgetDetail : '',
           dateISO,
-        });
-        if (response.ok) onResult(response.payload);
+        };
+        const response = await action(submission);
+        if (response.ok) onResult(response.payload, submission);
         else setError(response.message);
       } catch {
         setError('추천을 받아 오다 잠깐 길이 끊겼어요. 조금 뒤에 다시 눌러 주세요.');

@@ -12,6 +12,10 @@ export const MAX_RESULTS = 3;
 /**
  * 추천 파이프라인.
  * 정규화 → 강제 제외 → 적합도 → 다양성 → 설명 순으로 처리한다.
+ *
+ * `scored` 의 total 은 D 이전 소계이고, `diversify()` 가 세 안을 고른 뒤 D 를 얹어
+ * 최종 total 로 바꾼다(`ScoreBreakdown.total` 의 "두 걸음" 주석). 그래서 가중치를
+ * diversify 에도 넘겨야 한다 — 넘기지 않으면 config 로 바꾼 D 가 기본값으로 돈다.
  */
 export function recommend(
   input: RecoInput,
@@ -28,7 +32,7 @@ export function recommend(
     }))
     .sort((a, b) => b.score.total - a.score.total);
 
-  const picked = diversify(scored, MAX_RESULTS);
+  const picked = diversify(scored, MAX_RESULTS, weights);
 
   return buildResults(picked, scored, normalized, data.rules, cautionsByFlower, data.meanings ?? []);
 }

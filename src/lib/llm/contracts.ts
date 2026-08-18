@@ -9,6 +9,18 @@ import { intentSchema, relationshipSchema, toneSchema } from '@/lib/engine/norma
 /** 응답에서 요구하는 톤 개수(항상 3안). */
 export const RESPONSE_TONE_COUNT = 3;
 
+/**
+ * 멘트 길이 축 (2026-08-18) — 결과 화면의 `짧게 / 보통` 토글이 넘기는 값.
+ *
+ * 어휘는 `content/templates.csv` 의 `length` 컬럼(`short|medium`)과 같은 낱말을 쓴다.
+ * 다만 **지금 이 축을 실제로 가르는 것은 생성 경로뿐**이다 — 예문 표에는 (intent × tone)
+ * 조합마다 행이 하나씩만 있어서(2026-08-18 실측: 31행 중 short 는 1행) 고를 것이 없다.
+ * 예문 표가 짧은 벌을 갖추는 날 `buildTones` 가 이 값을 함께 보면 된다.
+ */
+export const MESSAGE_LENGTHS = ['short', 'medium'] as const;
+export type MessageLength = (typeof MESSAGE_LENGTHS)[number];
+export const messageLengthSchema = z.enum(MESSAGE_LENGTHS);
+
 const flowerBriefSchema = z.object({
   id: z.string().min(1),
   name_ko: z.string().min(1),
@@ -59,6 +71,11 @@ export const generateRequestSchema = z.object({
   /** §1.5l 상황 칩의 라벨. 자유 서술과 달리 서비스 어휘라 그대로 실어도 안전하다. */
   episode_hints: z.array(z.string()).max(6).optional(),
   tones: z.array(toneSchema).min(1).max(3),
+  /**
+   * 멘트 한 편의 길이. 생략하면 `medium`(지금까지의 유일한 길이)이라 기존 호출부는
+   * 한 글자도 바뀌지 않는다 — 프롬프트가 이 값으로 글자 수 범위를 갈아 끼운다.
+   */
+  length: messageLengthSchema.default('medium'),
   rules: z.array(z.string()).optional(),
 });
 
@@ -76,6 +93,15 @@ export const generateResponseSchema = z.object({
   tones: z.array(toneMessageSchema).length(RESPONSE_TONE_COUNT),
 });
 
-export type GenerateRequest = z.infer<typeof generateRequestSchema>;
+/**
+ * 호출부가 **만들어 넘기는** 모양 — `length` 처럼 기본값이 있는 필드는 생략할 수 있다
+ * (`z.input`). 그래서 이 축이 생겨도 기존 호출부는 한 글자도 바뀌지 않는다.
+ */
+export type GenerateRequest = z.input<typeof generateRequestSchema>;
+/**
+ * 검증을 **통과한 뒤의** 모양 — 기본값이 채워져 있다(`length` 는 항상 있다).
+ * 프롬프트 조립처럼 "값이 반드시 있다"에 기대는 쪽이 이 타입을 쓴다.
+ */
+export type GenerateRequestParsed = z.output<typeof generateRequestSchema>;
 export type GenerateResponse = z.infer<typeof generateResponseSchema>;
 export type ToneMessage = z.infer<typeof toneMessageSchema>;

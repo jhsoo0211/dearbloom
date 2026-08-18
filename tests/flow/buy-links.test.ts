@@ -46,4 +46,26 @@ describe('사러 가기 목적지 (docs/partners-research.md §6)', () => {
       expect(link.desc, link.key).not.toMatch(/내일 도착|당일 배송|재고 보장|가장 싸/);
     }
   });
+
+  /**
+   * 2026-08-18 실사의 결론을 코드로 붙들어 둔다 — 원장의
+   * 「딥링크에 카테고리 필터를 실을 것인가」 절이 셋 다 기각했다.
+   *
+   * 이 테스트가 지키는 것은 URL 의 생김새가 아니라 **판단**이다: 카테고리 id 는
+   * 빗나가면 0건(빈 화면)이지만 검색어는 빗나가도 결과가 줄 뿐이다. 그래서 우리는
+   * 검색어만 싣는다. 누군가 "필터가 있으면 좋잖아" 하며 id 를 붙이면 여기서 걸린다.
+   */
+  it('카테고리 id 파라미터를 싣지 않는다 — 빗나가면 0건이 되는 손잡이다 (2026-08-18 기각)', () => {
+    for (const link of buildBuyLinks('장미')) {
+      // 네이버 catId · 쿠팡 component · 카카오 categoryCode — 셋 다 기각된 이름이다.
+      expect(link.href, link.key).not.toMatch(/[?&](catId|cat_id|component|categoryCode)=/i);
+    }
+  });
+
+  it('그래도 검색어로 좁히는 일은 계속한다 — 빗나가도 빈 화면이 되지 않는 유일한 손잡이', () => {
+    for (const key of ['naver', 'kakao', 'coupang']) {
+      const link = links.find((item) => item.key === key);
+      expect(link?.query, key).toContain('꽃다발');
+    }
+  });
 });

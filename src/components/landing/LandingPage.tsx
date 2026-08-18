@@ -586,6 +586,14 @@ export default function LandingPage({ data }: { data: LandingData }) {
             <li>
               <a href="/stories">이야기</a>
             </li>
+            {/*
+              2026-08-18 — 「읽을거리」(/reads) 합류. 우리가 쓴 이야기(`/stories`) 옆에
+              **바깥에서 골라 온 것**을 두는 자리라 그 오른쪽이다. 항목이 다섯이 됐으므로
+              860px 접힘 경계를 실측했다(861px 에서 레일 폭 여유 있음 — §1.6c).
+            */}
+            <li>
+              <Link href="/reads" prefetch={false}>읽을거리</Link>
+            </li>
             <li>
               <Link href="/flowers" prefetch={false}>도감</Link>
             </li>

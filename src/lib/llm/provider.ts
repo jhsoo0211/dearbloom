@@ -21,7 +21,7 @@
  */
 
 import { generateRequestSchema, generateResponseSchema } from './contracts';
-import type { GenerateRequest, GenerateResponse } from './contracts';
+import type { GenerateRequest, GenerateRequestParsed, GenerateResponse } from './contracts';
 import { buildGeminiSchema, buildJsonSchema, buildSystemPrompt, buildUserPrompt } from './prompt';
 
 /** 호출 전체(재시도 + 폴백)에 주는 시간. */
@@ -166,7 +166,7 @@ function textOutcome(text: string): CallOutcome {
 
 async function callGemini(
   provider: ResolvedProvider,
-  req: GenerateRequest,
+  req: GenerateRequestParsed,
   signal: AbortSignal,
 ): Promise<CallOutcome> {
   const url =
@@ -208,7 +208,7 @@ async function callGemini(
 
 async function callClaude(
   provider: ResolvedProvider,
-  req: GenerateRequest,
+  req: GenerateRequestParsed,
   signal: AbortSignal,
 ): Promise<CallOutcome> {
   const response = await globalThis.fetch('https://api.anthropic.com/v1/messages', {
@@ -263,7 +263,7 @@ async function callClaude(
  * 붙는 모델마다 지원 여부가 갈려서, 지원하지 않는 모델에 주면 400 으로 통째로 실패한다.
  * 대신 스키마를 그대로 붙여 보여 주고, 펜스나 잡음은 `stripCodeFence` + zod 가 걸러 낸다.
  */
-function buildSchemaPinnedPrompt(req: GenerateRequest): string {
+function buildSchemaPinnedPrompt(req: GenerateRequestParsed): string {
   return [
     buildUserPrompt(req),
     '',
@@ -285,7 +285,7 @@ function buildSchemaPinnedPrompt(req: GenerateRequest): string {
  */
 async function callClova(
   provider: ResolvedProvider,
-  req: GenerateRequest,
+  req: GenerateRequestParsed,
   signal: AbortSignal,
 ): Promise<CallOutcome> {
   const url =
@@ -336,7 +336,7 @@ async function callClova(
  */
 async function callNvidia(
   provider: ResolvedProvider,
-  req: GenerateRequest,
+  req: GenerateRequestParsed,
   signal: AbortSignal,
 ): Promise<CallOutcome> {
   const userContent = buildSchemaPinnedPrompt(req);
@@ -376,7 +376,7 @@ async function callNvidia(
 
 function callProvider(
   provider: ResolvedProvider,
-  req: GenerateRequest,
+  req: GenerateRequestParsed,
   signal: AbortSignal,
 ): Promise<CallOutcome> {
   switch (provider.name) {
@@ -400,7 +400,7 @@ function callProvider(
  */
 async function runProvider(
   provider: ResolvedProvider,
-  req: GenerateRequest,
+  req: GenerateRequestParsed,
   signal: AbortSignal,
 ): Promise<GenerateResponse | null> {
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {

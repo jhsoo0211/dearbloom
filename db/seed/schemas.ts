@@ -133,6 +133,70 @@ export const SOURCE_KINDS = [
 ] as const;
 
 /**
+ * 「읽을거리」의 갈래(reads.kind) — **데이터의 종류**다(조사 문서 §3-1).
+ *   article — 꽃·식물·화훼 산업을 다룬 오래 읽히는 글
+ *   event   — 축제·전시·박람회·식물원 특별전. **날짜가 필수인 유일한 갈래**
+ *   guide   — 절화 관리·꽃 고르는 법 등 실용 정보(공신력 있는 출처만)
+ *   trend   — 올해의 컬러·플로럴 트렌드·비주얼 기획
+ *
+ * ⚠ `kind` 와 `tags` 는 **다른 축**이다. 이쪽은 데이터의 종류, 저쪽은 사람이 고르는 칸이다
+ *   (§3-2). 화면 칩은 `tags` 로 만들고 `kind` 로 만들지 않는다.
+ */
+export const READ_KINDS = ['article', 'event', 'guide', 'trend'] as const;
+
+/**
+ * 그 링크를 눌렀을 때 **글을 읽을 수 있는가**(reads.access) — 조사 문서 §3-4.
+ *   open         — 그냥 읽힌다
+ *   paywall      — 구독·결제가 필요하거나 **열람 횟수 제한이 있어 막힐 수 있다**
+ *   registration — 무료지만 가입·로그인이 필요하다
+ *
+ * ⚠ **행사 입장료는 여기가 아니다.** 그건 콘텐츠 장벽이 아니라 다른 종류의 사실이라
+ *   `summary_ko` 로 간다(그래서 태안 가을꽃박람회의 1만 원이 문장 안에 적혀 있다).
+ * ⚠ "열릴 수도, 막힐 수도" 는 `paywall` 이다 — 막혔을 때의 실망이 열렸을 때의 이득보다 크다.
+ */
+export const READ_ACCESS_LEVELS = ['open', 'paywall', 'registration'] as const;
+
+/**
+ * `reads.tags` — **화면 칩이 되는 통제 어휘 13종**(조사 문서 §3-2, 확정).
+ *
+ * 세 축으로 나뉘고 축마다 규칙이 다르다. 축을 나눠 두는 이유는 검증과 화면이 **같은 묶음**을
+ * 봐야 하기 때문이다(화면 쪽 사본은 `src/components/reads/tags.ts` — 한국어 라벨이 곧 값이라
+ * 두 벌이 어긋나면 칩이 조용히 비어 버린다).
+ *
+ * ⚠ **어휘를 늘리지 마라.** `/stories` 가 8칩 + 5칩으로 굴러가는 선례가 있다. 칩이 스무 개가
+ *   되면 필터가 아니라 벽이 된다 — 새 값이 필요하면 기존 값 하나를 지운다는 각오로 판단한다.
+ */
+export const READ_SEASON_TAGS = ['봄', '여름', '가을', '겨울'] as const;
+/** 결 — **모든 행에 최소 1개.** */
+export const READ_STRAND_TAGS = ['축제', '전시', '이야기', '빛깔', '꽃 다루기'] as const;
+/** 자리 — **모든 행에 정확히 1개.** 물리적으로 갈 곳이 없는 것은 전부 `온라인` 이다. */
+export const READ_PLACE_TAGS = ['서울·수도권', '지방', '해외', '온라인'] as const;
+export const READ_TAGS = [
+  ...READ_SEASON_TAGS,
+  ...READ_STRAND_TAGS,
+  ...READ_PLACE_TAGS,
+] as const;
+
+/**
+ * `reads.links_to` 가 쓸 수 있는 접두사 3종(조사 문서 §3-3).
+ *   `flower:<id>` — 우리 도감의 그 꽃 (`flowers.csv` 의 `id`)
+ *   `color:<색>`  — 우리 색 표기 (`flowers.csv` 의 `colors` 어휘)
+ *   `theme:<계열>` — 화면의 빛깔 5종. **CSV 에는 한글 라벨**을 적는다
+ *
+ * 값이 실재하는지는 행 하나만 봐서 알 수 없으므로 **교차 검증**이 본다(crossValidate 9).
+ * 여기서는 모양(`접두사:값`)만 막는다.
+ */
+export const READ_LINK_PREFIXES = ['flower', 'color', 'theme'] as const;
+
+/**
+ * `theme:` 이 가리키는 계열 라벨 5종.
+ * 코드 키와의 대응(`숲빛`=forest · `상아빛`=ivory · `금빛`=gold · `와인빛`=wine · `보랏빛`=dusk)은
+ * `src/components/stories/categories.ts` 가 단일 원본이다 — CSV 는 사람이 손으로 채우는
+ * 원장이라 영문 slug 가 아니라 화면에 보이는 한국어 라벨을 그대로 적는다.
+ */
+export const READ_THEME_LABELS = ['숲빛', '상아빛', '금빛', '와인빛', '보랏빛'] as const;
+
+/**
  * 탄생화 사진에 허용하는 라이선스 — **재배포와 리사이즈가 둘 다 되는 것만**(§B 라이선스 의무).
  *
  * 우리가 화면에 거는 것은 원본이 아니라 폭을 줄여 다시 인코딩한 **사본**이다. 그러므로
@@ -175,6 +239,9 @@ export type ExcerptType = (typeof EXCERPT_TYPES)[number];
 export type StoryMood = (typeof STORY_MOODS)[number];
 export type StoryType = (typeof STORY_TYPES)[number];
 export type SourceKind = (typeof SOURCE_KINDS)[number];
+export type ReadKind = (typeof READ_KINDS)[number];
+export type ReadAccess = (typeof READ_ACCESS_LEVELS)[number];
+export type ReadTag = (typeof READ_TAGS)[number];
 
 /* ------------------------------------------------------------------ *
  * 변환 코덱
@@ -787,6 +854,133 @@ export const BirthStoryRowSchema = z
     }
   });
 
+/**
+ * reads.csv — 「읽을거리」 섹션의 외부 링크 원장(축제·글·실용·트렌드).
+ *
+ * 근거 원장은 `docs/reads-research.md` 다. 이 표가 다른 콘텐츠 표와 다른 점 하나:
+ * **본문을 담지 않는다.** 제목·출처·우리가 쓴 한 줄·링크가 전부다(§1). 기사 본문을 긁어
+ * 저장하면 그건 인용이 아니라 복제이고, 우리는 크롤링을 하지 않기로 했다.
+ *
+ * ── 이 스키마가 지키는 것 ─────────────────────────────────────────────
+ *  1. **`event` 행은 날짜가 필수다**(§6-2). `ends_at` 이 빈 행사는 만료를 판정할 수 없어
+ *     화면에서 **영원히 사라지지 않는다** — 지난 축제를 12월에 추천하는 서비스가 된다.
+ *     연례 행사인데 다음 회차가 미정이면 행을 만들지 말고 조사 문서 §5-3 대기 목록에 적는다.
+ *  2. **`event` 가 아닌 행에는 날짜가 새어 들어오지 않는다.** 글·트렌드에 종료일이 붙으면
+ *     만료 판정 대상이 되어 조용히 사라진다.
+ *  3. **`tags` 세 축의 규칙**(§3-2) — 자리 정확히 1개 · 결 최소 1개 · 행사면 계절 최소 1개.
+ *     자리 태그가 없으면 「어디서 볼 수 있는가」 칩이 그 항목을 영영 못 잡는다.
+ *  4. **`source_url` 은 https 다.** 전 54건을 실제로 열어 확인했고(§5-1), 그중 http 는 없다.
+ *
+ * `links_to` 의 **값이 실재하는지**는 여기서 못 본다(다른 파일을 함께 읽어야 한다) —
+ * 교차 검증 9 가 `flowers.csv` 를 맞대어 본다.
+ *
+ * `editorial_note` 는 **화면 비노출**이다(`quotes.pd_basis` 와 같은 취급). 그래서 §3-4 는
+ * "사용자의 결정을 바꾸는 사실을 거기 묻지 마라" 를 규범으로 못 박았다 — 입장료·예약 필수·
+ * `(예정)` 표기는 전부 `summary_ko` 나 `access` 로 올라와 있다.
+ */
+export const ReadRowSchema = z
+  .object({
+    read_id: requiredSlug('read_id').refine((value) => value.startsWith('read-'), {
+      error: 'read_id: `read-` 로 시작해야 합니다',
+    }),
+    kind: requiredEnum('kind', READ_KINDS),
+    title: requiredText('title'),
+    source_title: requiredText('source_title'),
+    author: optionalText(),
+    source_url: requiredUrl('source_url').refine((value) => value.startsWith('https://'), {
+      error: 'source_url: https 주소여야 합니다',
+    }),
+    published_at: optionalDate('published_at'),
+    starts_at: optionalDate('starts_at'),
+    ends_at: optionalDate('ends_at'),
+    region: optionalText(),
+    summary_ko: requiredText('summary_ko'),
+    access: requiredEnum('access', READ_ACCESS_LEVELS),
+    confidence: requiredEnum('confidence', CONFIDENCE_LEVELS),
+    reviewed_at: requiredDate('reviewed_at'),
+    tags: requiredEnumList('tags', READ_TAGS),
+    links_to: optionalList(),
+    editorial_note: optionalText(),
+  })
+  .superRefine((row, ctx) => {
+    /* ── 날짜 — 행사만, 행사는 반드시 ───────────────────────────────── */
+    if (row.kind === 'event') {
+      if (row.starts_at === undefined) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['starts_at'],
+          message: 'kind=event 이면 시작일이 필요합니다 (주최 측 공식 안내에서 확인한 날짜)',
+        });
+      }
+      if (row.ends_at === undefined) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['ends_at'],
+          message:
+            'kind=event 이면 종료일이 필요합니다 — 종료일이 없는 행사는 화면에서 영원히 사라지지 않습니다',
+        });
+      }
+      if (row.starts_at !== undefined && row.ends_at !== undefined && row.ends_at < row.starts_at) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['ends_at'],
+          message: `종료일이 시작일보다 앞섭니다 (${row.starts_at} → ${row.ends_at})`,
+        });
+      }
+    } else {
+      for (const column of ['starts_at', 'ends_at'] as const) {
+        if (row[column] !== undefined) {
+          ctx.addIssue({
+            code: 'custom',
+            path: [column],
+            message: `kind=${row.kind} 인 행에는 날짜가 없어야 합니다 — 날짜가 붙으면 만료 판정 대상이 되어 조용히 사라집니다`,
+          });
+        }
+      }
+    }
+
+    /* ── tags 세 축 (§3-2) ─────────────────────────────────────────── */
+    const places = row.tags.filter((tag) => (READ_PLACE_TAGS as readonly string[]).includes(tag));
+    if (places.length !== 1) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['tags'],
+        message: `자리 태그(${READ_PLACE_TAGS.join(' | ')})는 정확히 1개여야 합니다 (지금 ${places.length}개)`,
+      });
+    }
+    if (!row.tags.some((tag) => (READ_STRAND_TAGS as readonly string[]).includes(tag))) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['tags'],
+        message: `결 태그(${READ_STRAND_TAGS.join(' | ')})가 최소 1개 필요합니다`,
+      });
+    }
+    if (
+      row.kind === 'event' &&
+      !row.tags.some((tag) => (READ_SEASON_TAGS as readonly string[]).includes(tag))
+    ) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['tags'],
+        message: '행사는 개최 시기의 계절 태그가 최소 1개 필요합니다',
+      });
+    }
+
+    /* ── links_to 의 모양 (값의 실재는 교차 검증 9) ─────────────────── */
+    for (const link of row.links_to) {
+      const separator = link.indexOf(':');
+      const prefix = separator === -1 ? '' : link.slice(0, separator);
+      const value = separator === -1 ? '' : link.slice(separator + 1).trim();
+      if (!(READ_LINK_PREFIXES as readonly string[]).includes(prefix) || value === '') {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['links_to'],
+          message: `links_to 는 ${READ_LINK_PREFIXES.map((name) => `${name}:값`).join(' · ')} 형식이어야 합니다: ${link}`,
+        });
+      }
+    }
+  });
+
 export type FlowerRow = z.output<typeof FlowerRowSchema>;
 export type MeaningRow = z.output<typeof MeaningRowSchema>;
 export type RuleRow = z.output<typeof RuleRowSchema>;
@@ -797,6 +991,7 @@ export type StoryRow = z.output<typeof StoryRowSchema>;
 export type BirthFlowerRow = z.output<typeof BirthFlowerRowSchema>;
 export type BirthPhotoRow = z.output<typeof BirthPhotoRowSchema>;
 export type BirthStoryRow = z.output<typeof BirthStoryRowSchema>;
+export type ReadRow = z.output<typeof ReadRowSchema>;
 
 /* ------------------------------------------------------------------ *
  * 파일 레지스트리
@@ -813,6 +1008,7 @@ export const SEED_FILE_KEYS = [
   'birth_flowers',
   'birth_photos',
   'birth_stories',
+  'reads',
 ] as const;
 
 export type SeedFileKey = (typeof SEED_FILE_KEYS)[number];
@@ -828,6 +1024,7 @@ export const SEED_FILE_NAMES: Record<SeedFileKey, string> = {
   birth_flowers: 'birth_flowers.csv',
   birth_photos: 'birth_photos.csv',
   birth_stories: 'birth_stories.csv',
+  reads: 'reads.csv',
 };
 
 export const SEED_SCHEMAS = {
@@ -841,6 +1038,7 @@ export const SEED_SCHEMAS = {
   birth_flowers: BirthFlowerRowSchema,
   birth_photos: BirthPhotoRowSchema,
   birth_stories: BirthStoryRowSchema,
+  reads: ReadRowSchema,
 } as const;
 
 /* ------------------------------------------------------------------ *
@@ -902,6 +1100,7 @@ export interface SeedRowMap {
   birth_flowers: BirthFlowerRow;
   birth_photos: BirthPhotoRow;
   birth_stories: BirthStoryRow;
+  reads: ReadRow;
 }
 
 /**
@@ -931,6 +1130,7 @@ export interface SeedDataset {
   birth_flowers: ParsedRow<BirthFlowerRow>[];
   birth_photos: ParsedRow<BirthPhotoRow>[];
   birth_stories: ParsedRow<BirthStoryRow>[];
+  reads: ParsedRow<ReadRow>[];
 }
 
 export interface CrossValidateResult {
@@ -965,6 +1165,11 @@ export interface CrossValidateResult {
  *     `/stories` 아카이브와 사전 시트가 같은 id 로 서로 다른 이야기를 부르게 된다.
  *  8. 카탈로그 이야기 id — stories.csv 안의 story_id 가 유일한가. 같은 id 두 행은 DB의
  *     한 번짜리 upsert를 실패시키고, 화면의 find·Map·React key가 서로 다른 행을 고르게 한다.
+ *  9. 읽을거리 — reads.csv 의 `read_id` 가 유일한가, `links_to` 가 가리키는 우리 데이터가
+ *     실재하는가(`flower:` 는 flowers.csv 의 id · `color:` 는 그 파일의 colors 어휘 ·
+ *     `theme:` 는 계열 5종). 화면이 이 값으로 도감 링크를 걸기 때문에, 없는 id 를 적으면
+ *     **조용히 깨진 링크**가 된다(조사 문서 §3-3). 색·계열은 어휘를 벗어나면 칩이 비고,
+ *     확장 배치가 되돌려지면 `flower:` 쪽이 여기서 먼저 걸린다(§4-2 마지막 경고).
  */
 export function crossValidate(data: SeedDataset): CrossValidateResult {
   const checks: CrossCheckResult[] = [];
@@ -1071,6 +1276,7 @@ export function crossValidate(data: SeedDataset): CrossValidateResult {
   const storyTypes = new Set<string>(STORY_TYPES);
   const sourceKinds = new Set<string>(SOURCE_KINDS);
   const excerptTypes = new Set<string>(EXCERPT_TYPES);
+  const confidenceLevels = new Set<string>(CONFIDENCE_LEVELS);
 
   const check = (
     key: SeedFileKey,
@@ -1118,13 +1324,24 @@ export function crossValidate(data: SeedDataset): CrossValidateResult {
   for (const row of data.quotes) {
     check('quotes', row.line, 'excerpt_type', row.value.excerpt_type, excerptTypes);
   }
+  // reads 의 세 어휘도 같은 자리에서 본다 — 행 스키마가 이미 enum 으로 막지만, 어휘가
+  // 늘어날 때 파일마다 따로 새지 않는다는 사실을 여기서 한 번 더 못 박는다(위 머리말 3).
+  const readKinds = new Set<string>(READ_KINDS);
+  const readAccess = new Set<string>(READ_ACCESS_LEVELS);
+  const readTags = new Set<string>(READ_TAGS);
+  for (const row of data.reads) {
+    check('reads', row.line, 'kind', row.value.kind, readKinds);
+    check('reads', row.line, 'access', row.value.access, readAccess);
+    check('reads', row.line, 'confidence', row.value.confidence, confidenceLevels);
+    checkEach('reads', row.line, 'tags', row.value.tags, readTags);
+  }
   const vocabFailures = issues.length - vocabBefore;
   checks.push({
-    name: '공유 어휘 일치 (relationship·intent·tone·mood·story_type·source_kind·excerpt_type)',
+    name: '공유 어휘 일치 (relationship·intent·tone·mood·story_type·source_kind·excerpt_type·read)',
     ok: vocabFailures === 0,
     detail:
       vocabFailures === 0
-        ? `rules ${data.rules.length}행 · templates ${data.templates.length}행 · stories ${data.stories.length}행 · quotes ${data.quotes.length}행 모두 어휘 안에 있음`
+        ? `rules ${data.rules.length}행 · templates ${data.templates.length}행 · stories ${data.stories.length}행 · quotes ${data.quotes.length}행 · reads ${data.reads.length}행 모두 어휘 안에 있음`
         : `어휘 밖의 값 ${vocabFailures}건`,
   });
 
@@ -1351,6 +1568,76 @@ export function crossValidate(data: SeedDataset): CrossValidateResult {
       storyIdFailures === 0
         ? `${data.stories.length}편의 story_id 중복 0`
         : `중복 story_id ${storyIdFailures}건`,
+  });
+
+  /* 9. 읽을거리 → read_id 유일성 · links_to 참조 무결성 --------------- */
+  const readBefore = issues.length;
+  /** 색 어휘의 원본은 `flowers.csv` 의 `colors` 다 — 여기서 목록을 따로 적지 않는다. */
+  const colorVocab = new Set(data.flowers.flatMap((row) => row.value.colors));
+  const themeVocab = new Set<string>(READ_THEME_LABELS);
+  const readIds = new Map<string, number>();
+  let linkCount = 0;
+  let flowerLinkCount = 0;
+
+  for (const row of data.reads) {
+    const first = readIds.get(row.value.read_id);
+    if (first !== undefined) {
+      issues.push({
+        file: SEED_FILE_NAMES.reads,
+        line: row.line,
+        column: 'read_id',
+        message: `read_id 가 두 번 나옵니다: ${row.value.read_id} (앞선 행: ${first}번째 줄)`,
+      });
+    } else {
+      readIds.set(row.value.read_id, row.line);
+    }
+
+    for (const link of row.value.links_to) {
+      const separator = link.indexOf(':');
+      if (separator === -1) continue; // 모양은 행 스키마가 이미 잡았다
+      const prefix = link.slice(0, separator);
+      const value = link.slice(separator + 1).trim();
+      linkCount += 1;
+
+      if (prefix === 'flower') {
+        flowerLinkCount += 1;
+        if (!flowerIds.has(value)) {
+          issues.push({
+            file: SEED_FILE_NAMES.reads,
+            line: row.line,
+            column: 'links_to',
+            message: `flowers.csv 에 없는 꽃 id 입니다: ${value} — 화면이 이 값으로 도감 링크를 겁니다`,
+          });
+        }
+      } else if (prefix === 'color') {
+        if (!colorVocab.has(value)) {
+          issues.push({
+            file: SEED_FILE_NAMES.reads,
+            line: row.line,
+            column: 'links_to',
+            message: `flowers.csv 의 colors 어휘에 없는 색입니다: ${value}`,
+          });
+        }
+      } else if (prefix === 'theme' && !themeVocab.has(value)) {
+        issues.push({
+          file: SEED_FILE_NAMES.reads,
+          line: row.line,
+          column: 'links_to',
+          message: `계열 라벨 ${READ_THEME_LABELS.join(' | ')} 중 하나여야 합니다: ${value}`,
+        });
+      }
+    }
+  }
+
+  const readFailures = issues.length - readBefore;
+  const eventCount = data.reads.filter((row) => row.value.kind === 'event').length;
+  checks.push({
+    name: '읽을거리 read_id 유일성 · links_to 참조 무결성',
+    ok: readFailures === 0,
+    detail:
+      readFailures === 0
+        ? `${data.reads.length}건(행사 ${eventCount}) · 연결 ${linkCount}개(꽃 ${flowerLinkCount}) 모두 실재하는 값`
+        : `중복 id·끊어진 연결 ${readFailures}건`,
   });
 
   return { checks, issues };

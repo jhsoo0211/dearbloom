@@ -10,7 +10,7 @@ DB는 이 CSV에서 시드(upsert)될 뿐, 반대로 DB를 직접 고치지 않�
 | `flowers.csv` | 꽃 기본 정보 | 59 |
 | `meanings.csv` | 꽃말(출처 필수) | 305 |
 | `stories.csv` | 꽃에 얽힌 일화(창작 외 출처 필수) | 438 |
-| `rules.csv` | 상황 → 꽃 추천/회피 규칙 | 7 |
+| `rules.csv` | 상황 → 꽃 추천/회피 규칙 | 151 |
 | `templates.csv` | 메시지 템플릿 | 31 |
 | `quotes.csv` | 인용문(범용 3 + 문학 발췌 74) | 77 |
 | `pet_safety.csv` | 반려동물 안전성(꽃 × cat/dog 전수) | 118 |
@@ -19,16 +19,31 @@ DB는 이 CSV에서 시드(upsert)될 뿐, 반대로 DB를 직접 고치지 않�
 | `birth_stories.csv` | 탄생화 **이름**에 붙는 이야기 | 407 |
 | `reads.csv` | 「읽을거리」 섹션의 외부 링크 원장(축제·글·실용·트렌드) | 54 |
 
-**앞의 열 파일이 `db/seed/schemas.ts` 의 `SEED_FILE_KEYS` 에 등록돼 있고**, 시드 CLI와 앱
+**열한 파일 전부가 `db/seed/schemas.ts` 의 `SEED_FILE_KEYS` 에 등록돼 있고**, 시드 CLI와 앱
 로더(`src/lib/data/catalog.ts`)가 같은 목록을 읽는다. 파일을 늘릴 때는 그 상수부터 고친다.
-⚠ `reads.csv` 만 아직 등록 전이다 — 「읽을거리」 섹션은 **원장을 먼저 세우고 화면·시드는
-나중에** 붙이기로 한 단계라(2026-08-17), 지금은 시드가 이 파일을 읽지 않는다.
+(`reads.csv` 는 2026-08-18 「읽을거리」 화면 개통과 함께 합류했다 — 마이그레이션은 `0012_reads.sql`.)
 
-`rules.csv` 의 7행은 6종을 다룬다. 5종에는 `fit_score` 추천 규칙이 있고,
-`lily-asiatic` 에는 `avoid_reason` 회피 규칙만 있다. 규칙은 상황·관계 가점의 명시 근거이며,
-규칙이 없는 꽃도 계절·색·분위기 점수로 추천 결과에 오를 수 있다. 회피 행은 점수로 해석하지
-않지만, 조건별 제외·감점에는 아직 연결하지 않았다. 그 동작은 `occasion`·`apology_level` 등
-조건 매칭 규칙을 먼저 확정한 뒤 별도 제외 단계에서 구현한다.
+`rules.csv` 의 151행은 **가점 132행 + 회피 19행**이다(2026-08-18 규칙 병합).
+꽃 59종 중 **58종**이 규칙을 갖는다 — 가점 규칙이 있는 종이 57, 회피 규칙이 있는 종이 15다.
+규칙이 하나도 없는 꽃은 `eucalyptus` 한 종뿐이다 — 꽃말 3줄이 모두 `single_source` 이고
+이야기 5편이 전부 `just_because` 라, 어느 상황·관계에 세울 근거가 나오지 않았다.
+`chrysanthemum` 은 회피 규칙만 있다(국내에서 조문의 꽃이라 축하·고백 자리에 세우지 않는다).
+규칙은 상황·관계 가점의 명시 근거이며, 규칙이 없는 꽃도 계절·색·분위기 점수로 추천 결과에
+오를 수 있다. 회피 행은 점수로 해석하지 않지만, 조건별 제외·감점에는 아직 연결하지 않았다.
+그 동작은 조건 매칭 규칙을 먼저 확정한 뒤 별도 제외 단계에서 구현한다.
+
+**엔진이 실제로 읽는 칸은 `relationship_type`·`intent`·`flower_id`·`fit_score` 넷뿐이다.**
+`occasion`·`apology_level`·`budget_range`·`urgency`·`aesthetic_tags` 는 조건 매칭이 붙을 때를
+대비해 남겨 둔 **예비 칸**으로, 지금은 어느 코드도 읽지 않는다. 그래서 이 칸의 값은 추천
+결과를 바꾸지 않는다 — 채워도 손해는 없지만, 채웠다고 동작이 달라졌다고 읽으면 안 된다.
+(`aesthetic_tags` 는 초기 샘플 6행에만 값이 있고 이후 행은 전부 공란이다. 꽃 쪽
+`flowers.aesthetic_tags` 와 어휘가 맞지 않아 새 행에 채우지 않기로 했다.)
+
+`relationship_type` 은 **근거가 관계 자체를 말할 때만 채운다.** 이 칸을 채우면 그 관계 전반에
+intent 와 무관한 상시 가점(R)이 붙기 때문이다. 꽃말이나 일화가 "우정"·"신부"·"어머니"·"첫사랑"
+처럼 사이를 직접 가리키거나, 어버이날·직장 개업처럼 주고받는 사람이 정해진 관행을 말할 때만
+채우고, 상황·분위기만 말하는 근거로는 비워 둔다(가점은 `intent` 쪽 I 로 이미 들어간다).
+지금은 151행 중 52행에만 값이 있다.
 
 ## 편집 규칙
 
@@ -462,6 +477,14 @@ seed-v6·seed-v7 127행을 더한 **현재 377행 분포는 `history` 290 · `fo
   2월 30일 같은 불가능한 조합은 전부 시드 실패다.
 - `birth_flowers.meaning_ko` 와 `source_url` 은 필수다(꽃말 없는 탄생화는 싣지 않는다).
   반대로 `birth_flowers.flower_id` 는 **비워 두는 것이 정상 값**이다 — 280일이 그렇다.
+- `reads` 의 **날짜는 행사만, 행사는 반드시**다. `kind = event` 이면 `starts_at`·`ends_at` 이
+  둘 다 필수이고(종료일 없는 행사는 화면에서 영영 사라지지 않는다), 다른 갈래에 날짜가
+  붙으면 시드 실패다(만료 판정 대상이 되어 조용히 사라진다). 판정 규칙과 근거는
+  `docs/reads-research.md` §6 이 원본이다.
+- `reads.tags` 는 통제 어휘 13종이고 **자리 정확히 1개 · 결 최소 1개**, 행사는 **계절 최소 1개**다.
+  `reads.links_to` 는 `flower:`(`flowers.csv` 의 id) · `color:`(그 파일의 `colors` 어휘) ·
+  `theme:`(계열 5종 한국어 라벨)만 쓰며, 값이 실재하지 않으면 교차 검증이 막는다 —
+  **비워 두는 것이 정상 값**이다(54건 중 20건).
 
 ## 공유 어휘
 
@@ -481,6 +504,9 @@ seed-v6·seed-v7 127행을 더한 **현재 377행 분포는 `history` 290 · `fo
 | `stories.moods` | `romantic` `tragic` `funny` `mythic` `dramatic` `healing` |
 | `stories.story_type` | `folklore` `history` `literary` `original` |
 | `stories.source_kind` | `paper` `magazine` `museum` `newspaper` `book-pd` `garden` `wiki` `other` |
+| `reads.kind` | `article` `event` `guide` `trend` |
+| `reads.access` | `open` `paywall` `registration` |
+| `reads.tags` | 계절 `봄` `여름` `가을` `겨울` / 결 `축제` `전시` `이야기` `빛깔` `꽃 다루기` / 자리 `서울·수도권` `지방` `해외` `온라인` |
 
 `stories.intents` 는 위 `intent` 어휘를 그대로 쓰되 파이프로 여러 개를 적을 수 있다.
 

@@ -47,7 +47,6 @@ import {
   AVAILABILITY_LABELS,
   BUDGET_DETAIL_MAX_CHARS,
   BUDGET_OTHER,
-  CARD_LINE_NOTES,
   CONFIDENCE_LABELS,
   EPISODE_HINT_DETAIL_MAX_CHARS,
   FALLBACK_QUOTE,
@@ -69,7 +68,6 @@ import {
   episodeHintLabels,
   eraLabel,
   excerptTypeLabel,
-  firstSentence,
   flowerOccasions,
   orderLiterature,
   regionLabel,
@@ -197,8 +195,23 @@ function petBadge(flower: CatalogFlower, catalog: Catalog): PetBadge {
   };
 }
 
-/** 엔진 ColorOption → 화면 색 칩. 색별 꽃말은 출처를 찾은 색에만 붙는다. */
-function toColorChips(result: RecoResult): ResultColorChip[] {
+/**
+ * 엔진 ColorOption → 화면 색 칩.
+ *
+ * ⚠ **`meaningKo` 가 그 색의 것이라는 보장은 없다.** 엔진의 `buildColorOptions` 는
+ *   색이 일치하는 행을 못 찾으면 **색을 가리지 않는 행**(color 빈칸)으로 조용히 내려간다
+ *   (`explain.ts` 의 `findMeaning` — 그쪽 주석에 그렇게 적혀 있다). 값만 보고는 둘을
+ *   구별할 수 없다.
+ *
+ *   화면이 「{색} {꽃}이 품은 말이에요」라고 말하려면 이 둘을 반드시 갈라야 한다 —
+ *   안 가르면 색과 무관한 꽃말에 색 이름을 붙이는 **거짓 각주**가 된다(§1.5d 가 가장
+ *   경계하는 종류의 문장이고, "없는 꽃말을 지어내지 않는다"는 규칙의 실질이다).
+ *   그래서 원장(`meanings.csv`)에 그 색 행이 실제로 있는지 여기서 한 번 더 확인해
+ *   `meaningIsForColor` 로 실어 보낸다. 판정 규칙은 `findMeaning` 의 `exact` 와 같다.
+ */
+function toColorChips(result: RecoResult, meanings: CatalogMeaning[]): ResultColorChip[] {
+  const rows = meanings.filter((m) => m.flowerId === result.flower.id);
+
   return (result.colorOptions ?? []).map((option) => {
     const choice = colorChoice(option.color);
     const chip: ResultColorChip = {
@@ -208,7 +221,11 @@ function toColorChips(result: RecoResult): ResultColorChip[] {
       isSuggested: option.isSuggested,
     };
     if (choice.needsRing) chip.needsRing = true;
-    if (option.meaningKo) chip.meaningKo = option.meaningKo;
+    if (option.meaningKo) {
+      chip.meaningKo = option.meaningKo;
+      const wanted = option.color.trim().toLowerCase();
+      chip.meaningIsForColor = rows.some((m) => (m.color ?? '').trim().toLowerCase() === wanted);
+    }
     if (option.confidenceLevel) chip.confidenceLabel = CONFIDENCE_LABELS[option.confidenceLevel];
     return chip;
   });
@@ -220,12 +237,10 @@ function toColorChips(result: RecoResult): ResultColorChip[] {
  * **정적 데모는 여기까지가 전부다**(LLM 이 없다). 그래서 이 함수는 `export` 다 —
  * 데모 어댑터가 이 결과를 그대로 `assemblePayload` 에 넘긴다.
  *
- * #13 — 예문을 찾은 톤에는 `함께 담을 한 줄`도 그 예문의 **첫 문장**으로 함께 붙인다.
- * `templates.csv` 에 한 줄짜리 컬럼이 따로 없어서(있는 것은 `template_text` 뿐이다)
- * 새 컬럼을 만드는 대신 있는 문장에서 떼어 낸다 — 톤마다 다른 말이 나온다는 것이
- * 목적이고, 그건 예문 자체가 이미 톤별로 다르기 때문에 첫 문장만으로 충족된다.
- * 예문조차 없는 톤(`other` 처럼 templates.csv 에 상황이 없는 경우)은 이 필드가 없고,
- * 화면이 공용 인용(김소월)으로 떨어진다 — 톤별 접미사를 붙여 억지로 변형하지 않는다.
+ * ⚠ `templates.csv` 는 (intent × tone) 한 조합에 **행이 정확히 하나**다(2026-08-18 실측:
+ *   31행 전부 서로 다른 조합). 그래서 여기에는 고를 여지가 없다 — 같은 톤의 "다른 예문"
+ *   도, `length` 축으로 갈라 볼 "짧은 예문"도 존재하지 않는다(30행 medium · 1행 short).
+ *   화면의 길이 토글·새로 받기가 예문 경로에서 서지 않는 이유가 이것이다.
  */
 export function buildTones(
   catalog: Catalog,
@@ -246,10 +261,6 @@ export function buildTones(
     if (hit) {
       view.body = hit.templateText;
       view.source = 'template';
-      view.cardLine = {
-        textKo: firstSentence(hit.templateText),
-        attribution: CARD_LINE_NOTES.template,
-      };
     } else {
       view.emptyNote = '이 톤의 예문은 아직 모으는 중이에요. 다른 톤을 먼저 봐주세요.';
     }
@@ -443,7 +454,7 @@ function toOptionView(
     fragranceLabel: FRAGRANCE_LABELS[flower.fragranceLevel],
     occasions: flowerOccasions(flower.id),
     petBadge: petBadge(flower, catalog),
-    colors: toColorChips(result),
+    colors: toColorChips(result, catalog.meanings),
     colorReason: result.colorSuggestion?.reason ?? '',
     stories: {
       featured: stories.featured ? toStoryCard(stories.featured) : null,
@@ -860,7 +871,9 @@ export function assemblePayload(draft: ResultDraft, tones: ToneView[]): ResultPa
     isApology: draft.intent === 'apology',
     options: draft.options,
     tones,
-    quote: draft.quote,
+    // `draft.quote` 는 payload 에 싣지 않는다 — 화면의 `함께 담을 한 줄` 이 걷히면서
+    // 읽는 곳이 없어졌다(2026-08-18). 서버 안에서는 계속 쓴다: 문학 블록이 그 작가로
+    // "한 화면에 같은 작가 두 번 금지"를 판정한다(pickLiterature).
     messageSource,
     messageNote: MESSAGE_NOTES[messageSource],
     storyCues: draft.storyCues,

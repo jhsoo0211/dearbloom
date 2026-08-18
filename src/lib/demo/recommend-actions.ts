@@ -26,7 +26,7 @@ import {
   prepareResult,
 } from '@/app/recommend/build-result';
 import type { BuyProductsResponse } from '@/components/flow/buy-products';
-import type { FlowResponse, WizardSubmission } from '@/components/flow/types';
+import type { FlowResponse, ToneView, WizardSubmission } from '@/components/flow/types';
 
 import { loadDemoCatalog } from './catalog';
 
@@ -51,6 +51,20 @@ export async function submitRecommendation(
 
   const tones = buildTones(catalog, prepared.draft.intent, prepared.draft.relationship);
   return { ok: true, payload: assemblePayload(prepared.draft, tones) };
+}
+
+/**
+ * 멘트만 다시 받기 — 데모에서는 **언제나 빈손**이다.
+ *
+ * 위 `submitRecommendation` 이 LLM 을 부르지 않는 것과 같은 금지선이다. 새로 쓸 곳이
+ * 없으니 새로 받을 것도 없다. 화면은 이 빈손을 받으면 지금 서 있는 예문을 그대로 두고,
+ * 애초에 `새로 받기` · `짧게/보통` 버튼 자체를 세우지 않는다(예문 경로에는 고를 여지가
+ * 없다 — `templates.csv` 는 조합마다 행이 하나뿐이다).
+ */
+export async function regenerateMessages(): Promise<
+  { ok: true; tones: ToneView[] } | { ok: false }
+> {
+  return { ok: false };
 }
 
 /**

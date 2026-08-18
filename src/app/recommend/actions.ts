@@ -29,12 +29,11 @@ import {
 import { loadCatalog } from '@/lib/data/catalog';
 import type { Catalog } from '@/lib/data/types';
 import type { Intent, RecoResult, Tone } from '@/lib/engine';
-import { RESPONSE_TONE_COUNT } from '@/lib/llm/contracts';
-import type { GenerateRequest } from '@/lib/llm/contracts';
+import { RESPONSE_TONE_COUNT, messageLengthSchema } from '@/lib/llm/contracts';
+import type { GenerateRequest, MessageLength } from '@/lib/llm/contracts';
 import { generateMessages } from '@/lib/llm/provider';
 import { isBlockedForGeneration } from '@/lib/llm/safety';
 import type { BuyProduct, BuyProductsResponse } from '@/components/flow/buy-products';
-import { CARD_LINE_NOTES } from '@/components/flow/labels';
 import type { FlowResponse, ToneView, WizardSubmission } from '@/components/flow/types';
 
 import {
@@ -98,7 +97,11 @@ function generationRules(intent: Intent): string[] {
  *
  * ⚠ `memoryContext` 는 요청 본문에만 들어간다. 로그·에러·반환값 어디에도 싣지 않는다(§1.5j).
  */
-async function buildToneViews(catalog: Catalog, draft: ResultDraft): Promise<ToneView[]> {
+async function buildToneViews(
+  catalog: Catalog,
+  draft: ResultDraft,
+  length: MessageLength = 'medium',
+): Promise<ToneView[]> {
   const { intent, relationship, extras, memoryContext } = draft;
   const views = buildTones(catalog, intent, relationship);
 
@@ -121,7 +124,7 @@ async function buildToneViews(catalog: Catalog, draft: ResultDraft): Promise<Ton
   const tones = views.slice(0, RESPONSE_TONE_COUNT).map((view) => view.key as Tone);
   if (tones.length < RESPONSE_TONE_COUNT) return views;
 
-  const request: GenerateRequest = { relationship, intent, flower, tones };
+  const request: GenerateRequest = { relationship, intent, flower, tones, length };
   const rules = generationRules(intent);
   if (rules.length > 0) request.rules = rules;
   if (memoryContext !== '') request.memory_context = memoryContext;
@@ -146,11 +149,6 @@ async function buildToneViews(catalog: Catalog, draft: ResultDraft): Promise<Ton
     if (!hit) return view;
     const next: ToneView = { ...view, body: hit.message, headline: hit.headline, source: 'llm' };
     delete next.emptyNote;
-    // #13 — 이 톤에 맞춘 `함께 담을 한 줄`. 방금 쓴 첫 마디가 그 자리에 가장 어울린다
-    //       (톤을 바꾸면 문장도 함께 바뀐다는 것을 사용자가 눈으로 확인하는 자리다).
-    if (hit.headline) {
-      next.cardLine = { textKo: hit.headline, attribution: CARD_LINE_NOTES.llm };
-    }
     return next;
   });
 }
@@ -182,6 +180,56 @@ export async function submitRecommendation(
 
   const tones = await buildToneViews(catalog, prepared.draft);
   return { ok: true, payload: assemblePayload(prepared.draft, tones) };
+}
+
+/**
+ * 멘트만 다시 받아 온다 — 결과 화면의 `새로 받기` · `짧게/보통` (2026-08-18).
+ *
+ * 3안·이야기·꽃말은 그대로 두고 **멘트 3~4톤만** 갈아 끼운다. 그래서 반환도 톤 목록
+ * 하나뿐이다(payload 전체를 다시 내려보내면 읽고 있던 이야기·색 선택이 통째로 초기화된다).
+ *
+ * ── 왜 답변(`submission`)을 다시 받나 ────────────────────────────────
+ * 멘트 재료(자유 서술·상황 칩)는 **서버에 남아 있지 않다**(§1.5j — 로그·DB 어디에도
+ * 남기지 않는다). 결과 payload 에도 싣지 않는다. 그러니 다시 쓰려면 그때 그 답을
+ * 다시 받는 수밖에 없고, 그 답은 지금 그 탭의 화면이 들고 있다. 저장하지 않기로 한
+ * 값을 다시 쓰는 유일하게 정직한 방법이다.
+ *
+ * ⚠ 사용자가 **고쳐 쓴 멘트는 여기로 오지 않는다.** 편집본은 화면 상태로만 살고
+ *   어디에도(로그·저장소·다음 프롬프트) 흘리지 않는다 — 우리 문장을 고친 결과를
+ *   다시 모델에 먹이면 그 편집이 다음 생성에 배어든다(에피소드 에코 방지와 같은 선례).
+ *   이 액션이 받는 것은 처음의 답변과 길이뿐이다.
+ *
+ * 실패는 전부 `{ ok: false }` 다 — 화면은 지금 서 있는 멘트를 그대로 둔다.
+ * 키가 없거나 예문 경로면 새로 받을 것이 없으므로 그것도 실패로 돌려준다.
+ */
+export async function regenerateMessages(
+  submission: WizardSubmission,
+  length: MessageLength,
+): Promise<{ ok: true; tones: ToneView[] } | { ok: false }> {
+  // 서버 액션은 공개 엔드포인트다 — 길이도 모양 검사를 통과해야 한다(위 머리말).
+  const parsedLength = messageLengthSchema.safeParse(length);
+  if (!parsedLength.success) return { ok: false };
+
+  const received = parseSubmission(submission);
+  if (!received.ok) return { ok: false };
+
+  let catalog: Catalog;
+  try {
+    catalog = await loadCatalog();
+  } catch (error) {
+    console.error('[recommend] 콘텐츠를 읽지 못했습니다.', error);
+    return { ok: false };
+  }
+
+  const prepared = prepareResult(received.answers, catalog);
+  if (!prepared.ok) return { ok: false };
+
+  const tones = await buildToneViews(catalog, prepared.draft, parsedLength.data);
+  // 한 톤도 새로 못 썼으면(키 없음·타임아웃·전 프로바이더 실패) 예문이 그대로 돌아온 것이다.
+  // 같은 문장을 "새로 받았다"며 내려보내지 않는다 — 화면이 아무 일도 없던 척할 수 있게.
+  if (!tones.some((tone) => tone.source === 'llm')) return { ok: false };
+
+  return { ok: true, tones };
 }
 
 /* ------------------------------------------------------------------ *

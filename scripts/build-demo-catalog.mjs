@@ -198,6 +198,7 @@ async function main() {
    * 빼는 것: 탄생화 세 표(birthFlowers · birthPhotos · birthStories)는 여기 없다 —
    *   추천 경로가 한 번도 읽지 않는다. `/flowers` 가 쓰는 값이라 **따로** 번들한다
    *   (그 화면을, 그중에서도 그 기능을 쓴 사람만 받는다).
+   *   `reads` 도 같은 이유로 비운다 — 아래 `reads.ts` 가 따로 든다.
    */
   const slim = {
     flowers: catalog.flowers,
@@ -210,6 +211,7 @@ async function main() {
     birthFlowers: [],
     birthPhotos: [],
     birthStories: [],
+    reads: [],
   };
 
   const storyDetails = catalog.stories.map(toStoryDetail);
@@ -263,6 +265,28 @@ async function main() {
       ),
       label: `탄생화 상세 (${Object.keys(birthDetails).length}일 · 이야기 ${catalog.birthStories.length}편 · 사진 ${catalog.birthPhotos.filter((photo) => photo.slug).length}장)`,
     },
+    /*
+     * 「읽을거리」 원장 그대로 한 벌.
+     *
+     * ⚠ **정적 데모의 `/reads` 는 이 파일을 읽지 않는다.** 그 화면은 서버 컴포넌트라
+     *   빌드 타임에 HTML 로 굳고, 카드 54장이 이미 그 안에 들어 있다(서버 액션도, 지연
+     *   로드도 없다 — 만료 거르기만 브라우저가 한다). 위 넷과 성질이 다른 자리다.
+     *
+     * 그런데도 굳혀 두는 이유는 **원장이 데모 zip 안에 있어야 하기 때문**이다: 드롭 데모를
+     *   받은 사람이 목록의 근거를 열어 볼 수 있고, Supabase 로 옮긴 뒤에도 이 파일이
+     *   "그때 그 배포가 실제로 들고 있던 54건" 을 그대로 증언한다. 그리고 색인·요약을
+     *   쓰는 화면이 나중에 붙으면 그쪽이 이 번들을 그대로 집으면 된다.
+     *   ⚠ 아무도 import 하지 않으므로 **번들에 실리지 않는다**(용량 0 기여).
+     */
+    {
+      name: 'reads.ts',
+      text: toModule(
+        'DEMO_READS_JSON',
+        catalog.reads,
+        '정적 데모용 읽을거리 원장 — `/reads` 목록의 근거 54건(화면은 서버가 이미 굳혔다).',
+      ),
+      label: `읽을거리 (${catalog.reads.length}건 · 행사 ${catalog.reads.filter((read) => read.kind === 'event').length})`,
+    },
   ];
 
   await mkdir(OUT_DIR, { recursive: true });
@@ -280,7 +304,8 @@ async function main() {
     console.log(`  · ${file.name.padEnd(18)} ${kb(raw).padStart(8)}  (gzip ${kb(gzip)})  — ${file.label}`);
   }
   console.log(`  합계 ${kb(totalRaw)} (gzip ${kb(totalGzip)})`);
-  console.log('  ※ 다섯 다 지연 로드다 — 첫 화면이 아니라 그 기능을 처음 쓸 때 받는다.');
+  console.log('  ※ 앞의 다섯은 지연 로드다 — 첫 화면이 아니라 그 기능을 처음 쓸 때 받는다.');
+  console.log('  ※ reads.ts 는 아무도 import 하지 않는다 — zip 안에 남는 원장이지 번들이 아니다.');
 }
 
 await main();

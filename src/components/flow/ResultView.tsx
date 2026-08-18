@@ -7,7 +7,7 @@
  *   ① 꽃(대표 실사) + 이름 + 꽃말 (+ 색 다시 고르기)
  *   ② 꽃에 얽힌 이야기 + 나라별 꽃말 ← 멘트보다 위. "정보"보다 "이야기"가 먼저다
  *   ③ 추천 이유 · 이런 날 건네보세요
- *   ④ 멘트 3톤 + 함께 담을 한 줄 + 문학 속의 이 꽃
+ *   ④ 멘트 3톤(고쳐 쓰기·길이·새로 받기) + 문학 속의 이 꽃
  *   ⑤ 최하단 참고(작게) — 반려동물 배지 · 계절 · 향 · 관리 · 가격 1줄 ·
  *     「이 꽃 어디서 사지」 세 갈래(우체국 꽃배달 검색 · 지도 · 우리가 찾아본 곳들) + 정직 고지 2줄
  *
@@ -23,13 +23,35 @@ import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import Link from 'next/link';
 
 import { searchBuyProducts } from '@/app/recommend/actions';
+import type { MessageLength } from '@/lib/llm/contracts';
+import { MESSAGE_MAX_CHARS } from '@/lib/llm/prompt';
+import { withParticle } from '@/lib/text';
 import { buildBuyLinks, type BuyLinkKind } from './buy-links';
 import { sortBuyProducts, type BuyProduct, type BuySort } from './buy-products';
 import type { ResultPayload, StoryCard } from './types';
 import styles from './flow.module.css';
 
+/** 색 칩 아래 「그 색이 품은 말」 한 줄. `note` 가 그 말의 출신(색별인지 색 무관인지)을 밝힌다. */
+interface ColorMeaningLine {
+  text: string;
+  note: string;
+  confidenceLabel?: string;
+}
+
 /** 결 필터의 `전체` 칸 — 서버가 내려보내는 필터 목록의 첫 값과 같은 key 다. */
 const MOOD_ALL = 'all';
+
+/**
+ * 고쳐 쓰기 상한 — 멘트 생성 상한(`MESSAGE_MAX_CHARS`)과 **같은 값**을 쓴다.
+ * 우리가 200자로 쓰는 이유(카드 한 장에 담긴다)는 사용자가 고쳐 쓸 때도 그대로다.
+ */
+const MESSAGE_EDIT_MAX = MESSAGE_MAX_CHARS;
+
+/** 멘트 길이 칸 — 어휘는 계약(`MESSAGE_LENGTHS`)과 같고, 라벨만 여기서 붙인다. */
+const MESSAGE_LENGTH_CHOICES: readonly { key: MessageLength; label: string }[] = [
+  { key: 'short', label: '짧게' },
+  { key: 'medium', label: '보통' },
+];
 
 /** 가격 구간 칸 수 — 라벨 사전(`labels.ts` PRICE_BAND_SLOTS)과 같은 값이다(#11). */
 const PRICE_SLOTS = [1, 2, 3] as const;
@@ -624,9 +646,17 @@ export interface ResultViewProps {
   payload: ResultPayload;
   /** 질문 처음으로 돌아가기. */
   onRestart: () => void;
+  /**
+   * 멘트만 다시 받아 온다(§1.5j 재료는 이 화면 밖의 상위가 들고 있다).
+   * `true` 면 새 멘트가 payload 에 갈아 끼워졌고, `false` 면 아무것도 바뀌지 않았다.
+   *
+   * **없을 수 있다** — 정적 데모(서버 없음)와 새로고침으로 복원된 결과가 그렇다.
+   * 그때는 길이·새로 받기 버튼 자체가 서지 않는다.
+   */
+  onRegenerate?: (length: MessageLength) => Promise<boolean>;
 }
 
-export default function ResultView({ payload, onRestart }: ResultViewProps) {
+export default function ResultView({ payload, onRestart, onRegenerate }: ResultViewProps) {
   const [active, setActive] = useState(0);
   const [colorIndex, setColorIndex] = useState<number[]>(() =>
     payload.options.map((option) => {
@@ -635,6 +665,21 @@ export default function ResultView({ payload, onRestart }: ResultViewProps) {
     }),
   );
   const [tone, setTone] = useState(0);
+  /**
+   * §1.5j **고쳐 쓰기 버퍼** — 사용자가 우리 멘트를 손본 결과. `null` 이면 편집 중이 아니다.
+   *
+   * ⚠ 이 값은 **어디에도 남지 않는다.** 로그·서버·sessionStorage·다음 LLM 프롬프트 —
+   *   한 곳도 없다. 새로고침하면 사라지는 것이 고장이 아니라 규격이다. 톤을 바꾸거나
+   *   다른 안으로 옮기면 버려진다(그 편집은 그 문장에 한 것이지 이 화면에 한 것이 아니다).
+   *   재생성에 되먹이지 않는 이유는 `regenerateMessages` 머리말에 적어 두었다.
+   */
+  const [draft, setDraft] = useState<string | null>(null);
+  /** 멘트 길이 축 — 생성 경로에서만 갈린다(예문 표에는 짧은 벌이 없다). */
+  const [msgLength, setMsgLength] = useState<MessageLength>('medium');
+  /** 재생성 진행 중 — 연타를 막고, 도는 동안 도구줄 전체를 잠근다. */
+  const [regenPending, setRegenPending] = useState(false);
+  /** 새로 받기가 빈손으로 돌아온 사실을 화면이 말해 주는 자리(조용히 실패하지 않는다). */
+  const [regenFailed, setRegenFailed] = useState(false);
   const [storiesOpen, setStoriesOpen] = useState(false);
   const [moodFilter, setMoodFilter] = useState<string>(MOOD_ALL);
   const [openStoryId, setOpenStoryId] = useState<string | null>(null);
@@ -663,12 +708,58 @@ export default function ResultView({ payload, onRestart }: ResultViewProps) {
 
   const option = payload.options[active];
   const chip = option.colors[colorIndex[active]];
-  const suggestedChip = option.colors.find((c) => c.isSuggested);
 
   const meaning = chip?.meaningKo ?? option.fallbackMeaning?.meaningKo;
   const confidence = chip?.meaningKo
     ? chip.confidenceLabel
     : option.fallbackMeaning?.confidenceLabel;
+
+  /**
+   * 색 칩 아래에 서는 「그 색이 품은 말」 (2026-08-18).
+   *
+   * 재료는 이미 서버가 색마다 실어 보낸다(`ResultColorChip.meaningKo` — 원본은
+   * `meanings.csv` 의 flower_id × color 행이다). 클라이언트가 새로 부를 것도,
+   * meanings 표를 통째로 번들에 실을 것도 없다.
+   *
+   * ⚠ **지어내지 않는다.** 그 색의 행이 없으면 색 무관 꽃말(`fallbackMeaning`)로
+   *   내려가되 각주가 그 사실을 밝히고, 그것도 없으면 `undefined` 를 돌려준다
+   *   (화면은 문구를 통째로 생략한다). 없는 꽃말을 그럴듯하게 채우는 것이
+   *   이 화면에서 가장 하면 안 되는 일이다.
+   */
+  const colorMeaning = useMemo((): ColorMeaningLine | undefined => {
+    // 조사는 `withParticle` 한 번으로 끝낸다 — 꽃·색 이름은 데이터에서 오므로
+    // 템플릿 리터럴로 이으면 `프리지아이` 같은 말이 화면에 그대로 나간다(src/lib/text.ts).
+    const flower = withParticle(mainName(option.nameKo), 'subject');
+
+    if (chip?.meaningKo) {
+      const line: ColorMeaningLine = {
+        text: chip.meaningKo,
+        /*
+         * 각주가 갈리는 자리 — 여기가 이 블록의 핵심이다.
+         *
+         * 칩에 꽃말이 붙어 있다고 그것이 **그 색의** 꽃말인 것은 아니다. 엔진은 색별
+         * 행을 못 찾으면 색을 가리지 않는 행으로 조용히 내려간다(`meaningIsForColor`
+         * 주석). 그 둘에 같은 각주를 달면 "노랑 백일홍이 품은 말"이라고 써 놓고 실제로는
+         * 색과 상관없는 꽃말을 보여 주게 된다 — 지어내지 않기로 한 그 자리다.
+         */
+        note: chip.meaningIsForColor
+          ? `${chip.label} ${flower} 품은 말이에요`
+          : `색과 무관하게 ${flower} 품은 말이에요`,
+      };
+      if (chip.confidenceLabel) line.confidenceLabel = chip.confidenceLabel;
+      return line;
+    }
+
+    // 칩에 꽃말 자체가 없을 때의 마지막 자리 — 그 꽃에 두루 전해지는 한 줄.
+    const fallback = option.fallbackMeaning;
+    if (!fallback) return undefined;
+    const line: ColorMeaningLine = {
+      text: fallback.meaningKo,
+      note: `색과 무관하게 ${flower} 품은 말이에요`,
+    };
+    if (fallback.confidenceLabel) line.confidenceLabel = fallback.confidenceLabel;
+    return line;
+  }, [chip, option.fallbackMeaning, option.nameKo]);
 
   /** 대표 이야기를 맨 앞에 둔 그 꽃의 이야기 전부(§1.5i — k 제한 없이 내려온다). */
   const allStories = useMemo(() => {
@@ -740,6 +831,9 @@ export default function ResultView({ payload, onRestart }: ResultViewProps) {
   function selectOption(next: number) {
     warmPhoto(next);
     setActive(next);
+    // 꽃이 바뀌면 멘트도 그 꽃의 것이 아니다 — 고쳐 쓰던 글도 함께 버린다.
+    setDraft(null);
+    setRegenFailed(false);
     setStoriesOpen(false);
     setMoodFilter(MOOD_ALL);
     setOpenStoryId(null);
@@ -760,10 +854,21 @@ export default function ResultView({ payload, onRestart }: ResultViewProps) {
     document.getElementById(`opt-tab-${next}`)?.focus();
   }
 
+  /**
+   * 톤을 바꾸면 편집 버퍼는 버린다 — 그 편집은 **그 문장에** 한 것이지 이 칸에 한 것이
+   * 아니다. 담백 톤을 고쳐 쓰다 다정 톤으로 갔는데 고친 글이 따라오면, 어느 문장을
+   * 보고 있는지 알 수 없게 된다.
+   */
+  function selectTone(next: number) {
+    setTone(next);
+    setDraft(null);
+    setRegenFailed(false);
+  }
+
   function moveTone(delta: number) {
     const count = payload.tones.length;
     const next = (tone + delta + count) % count;
-    setTone(next);
+    selectTone(next);
     document.getElementById(`tone-tab-${next}`)?.focus();
   }
 
@@ -779,11 +884,44 @@ export default function ResultView({ payload, onRestart }: ResultViewProps) {
   const toneCopyText = currentTone.headline
     ? `${currentTone.headline}\n\n${currentTone.body ?? ''}`
     : (currentTone.body ?? '');
+
+  const editing = draft !== null;
+
   /**
-   * §1.5e 함께 담을 한 줄 — **고른 톤의 것**(#13).
-   * 그 톤에 맞춘 줄이 없으면(예문도 생성도 없는 상황) 공용 인용으로 떨어진다.
+   * 길이·새로 받기를 세울 수 있는가.
+   *
+   * 두 조건이 함께 맞아야 한다: 상위가 재생성 길을 줬고(정적 데모·복원된 결과에는 없다),
+   * 지금 이 톤이 **생성된 문장**이다. 예문 톤에서는 새로 받을 것도 짧게 할 것도 없다 —
+   * `templates.csv` 가 조합마다 한 행뿐이기 때문이다(2026-08-18 실측).
    */
-  const cardLine = currentTone.cardLine ?? payload.quote;
+  const canRegenerate = onRegenerate !== undefined && currentTone.source === 'llm';
+
+  /** 고쳐 쓰기 열고 닫기. 열 때 지금 보이는 그대로를 버퍼에 담는다(빈 칸에서 시작시키지 않는다). */
+  function toggleEdit() {
+    setDraft((current) => (current === null ? toneCopyText.slice(0, MESSAGE_EDIT_MAX) : null));
+  }
+
+  /**
+   * 멘트를 새로 받아 온다 — `새로 받기` 와 길이 토글이 같은 문을 쓴다(둘 다 "다시 써 줘"다).
+   *
+   * 연타 방지는 `regenPending` 하나로 끝난다(도는 동안 버튼이 전부 비활성).
+   * ⚠ 편집 버퍼는 여기서 버린다 — 새 문장이 왔는데 옛 문장을 고친 글이 남아 있으면
+   *   화면이 두 개의 진실을 들고 있게 된다. 그리고 그 버퍼는 **요청에 실리지 않는다**.
+   */
+  async function requestMessages(length: MessageLength) {
+    if (!onRegenerate || regenPending) return;
+    setMsgLength(length);
+    setRegenPending(true);
+    setRegenFailed(false);
+    try {
+      const ok = await onRegenerate(length);
+      if (ok) setDraft(null);
+      else setRegenFailed(true);
+    } finally {
+      setRegenPending(false);
+    }
+  }
+
   const hasCueBand = Boolean(payload.episodeText) || payload.storyCues.length > 0;
   const featured = option.stories.featured;
 
@@ -1089,30 +1227,52 @@ export default function ResultView({ payload, onRestart }: ResultViewProps) {
                               aria-hidden="true"
                             />
                             <span>{item.label}</span>
+                            {/*
+                              원래 추천이 어느 색이었는지는 이제 칩 자신이 말한다 —
+                              아래 문구가 꽃말로 바뀌면서 `추천은 {색}이었어요` 안내가
+                              사라졌기 때문이다(2026-08-18). 점 하나로 족하다:
+                              §1.6b 안에서 새 표현 언어를 만들지 않는다.
+                              낭독에는 점이 아니라 말로 전한다.
+                            */}
+                            {item.isSuggested ? (
+                              <>
+                                <span className={styles.swSuggested} aria-hidden="true" />
+                                <span className="sr-only"> (추천한 색)</span>
+                              </>
+                            ) : null}
                           </button>
                         ))}
                       </div>
 
-                      {/* 고른 색의 꽃말·신뢰 라벨은 위(꽃 이름 아래)에서 함께 바뀐다 — 여기서 또 쓰지 않는다. */}
-                      <div className={styles.pickOut}>
-                        {chip && suggestedChip && !chip.isSuggested ? (
-                          <p className={styles.pickNote}>
-                            <span className={styles.nic} aria-hidden="true">
-                              <svg
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="1.7"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              >
-                                <circle cx="12" cy="12" r="8.4" />
-                                <path d="M12 8v4.6M12 15.6v.1" />
-                              </svg>
-                            </span>
-                            <span>
-                              추천은 {suggestedChip.label}이었어요 — 고른 색으로도 충분히 전해져요.
-                            </span>
+                      {/*
+                        ═══ 고른 색이 품은 말 (2026-08-18) ═══
+
+                        예전 이 자리는 `추천은 {색}이었어요 — 고른 색으로도 충분히
+                        전해져요` 였다. 추천색을 벗어났을 때만 서는 위로의 말이라,
+                        칩을 고르는 순간 정작 **그 색이 무슨 말을 품고 있는지**는
+                        말해 주지 않았다. 이제 그 자리가 꽃말을 말한다.
+
+                        세 갈래이고, **없는 꽃말을 지어내지 않는 것**이 규칙이다:
+                          · 그 색의 행이 있으면      — 색을 밝혀 그 말을 세운다
+                          · 색 무관 꽃말만 있으면    — 색과 무관함을 드러내고 세운다
+                                                      (`fallbackMeaning` — 서버가 그 꽃의
+                                                       가장 널리 전해지는 한 줄로 채운다)
+                          · 둘 다 없으면            — 문구 자체를 생략한다(빈 자리 유지)
+                        신뢰 라벨은 §1.5d 대로 각주로 내린다(`storyConfidenceLabel` 선례).
+
+                        ⚠ 추천색 안내가 이 자리에서 사라졌으므로, 원래 추천이 어느
+                          색이었는지는 **칩 자신**이 계속 말한다(`swSuggested` 점 표식).
+                      */}
+                      <div className={styles.pickOut} aria-live="polite">
+                        {colorMeaning ? (
+                          <p className={styles.meanNote}>
+                            <span className={styles.meanKo}>‘{colorMeaning.text}’</span>
+                            <span className={styles.meanBy}>{colorMeaning.note}</span>
+                            {colorMeaning.confidenceLabel ? (
+                              <span className={styles.meanTrust}>
+                                {colorMeaning.confidenceLabel}
+                              </span>
+                            ) : null}
                           </p>
                         ) : option.colorReason ? (
                           <p className={styles.footNote}>{option.colorReason}</p>
@@ -1357,7 +1517,7 @@ export default function ResultView({ payload, onRestart }: ResultViewProps) {
                       aria-controls="tone-panel"
                       aria-selected={index === tone}
                       tabIndex={index === tone ? 0 : -1}
-                      onClick={() => setTone(index)}
+                      onClick={() => selectTone(index)}
                       onKeyDown={(e) => {
                         if (e.key === 'ArrowRight') {
                           e.preventDefault();
@@ -1390,7 +1550,36 @@ export default function ResultView({ payload, onRestart }: ResultViewProps) {
                   ) : null}
                   <div className={styles.msg}>
                     <h3 className="sr-only">{currentTone.label} 톤 멘트</h3>
-                    {currentTone.body ? (
+                    {editing ? (
+                      /*
+                        고쳐 쓰기 (§1.5j) — 우리 문장은 출발점일 뿐, 마지막 말은 보내는
+                        사람의 것이다. 상한은 멘트 생성과 **같은 200자**다(카드 한 장).
+
+                        ⚠ 이 글은 어디에도 저장되지 않는다. `onChange` 가 하는 일은
+                          state 하나를 바꾸는 것뿐이고, 저장·전송·로그로 가는 길이 없다.
+                      */
+                      <>
+                        <label className="sr-only" htmlFor="msg-edit">
+                          {currentTone.label} 톤 멘트 고쳐 쓰기
+                        </label>
+                        <textarea
+                          id="msg-edit"
+                          className={styles.msgEdit}
+                          value={draft ?? ''}
+                          maxLength={MESSAGE_EDIT_MAX}
+                          rows={6}
+                          onChange={(e) => setDraft(e.target.value.slice(0, MESSAGE_EDIT_MAX))}
+                        />
+                        <p className={styles.msgCount}>
+                          <span aria-hidden="true">
+                            {(draft ?? '').length} / {MESSAGE_EDIT_MAX}
+                          </span>
+                          <span className="sr-only">
+                            {MESSAGE_EDIT_MAX}자 중 {(draft ?? '').length}자를 썼어요
+                          </span>
+                        </p>
+                      </>
+                    ) : currentTone.body ? (
                       <>
                         {currentTone.headline ? (
                           <p>
@@ -1403,16 +1592,96 @@ export default function ResultView({ payload, onRestart }: ResultViewProps) {
                       <p className={styles.msgEmpty}>{currentTone.emptyNote}</p>
                     )}
                   </div>
+
+                  {/*
+                    멘트 도구줄 (2026-08-18) — 복사 · 고쳐 쓰기 · 길이 · 새로 받기.
+
+                    길이와 새로 받기는 **생성 경로에서만** 선다. 예문 표
+                    (`templates.csv`)는 (마음 × 톤) 조합마다 행이 하나뿐이라 갈아 볼
+                    다른 예문도, 짧은 벌도 아예 없다 — 눌러도 아무 일 없는 버튼은 갈 곳
+                    없는 링크와 같은 거짓말이라(바로 아래 사러 가기 섹션의 그 원칙) 그
+                    자리에서는 세우지 않는다.
+                  */}
                   {currentTone.body ? (
-                    <button
-                      type="button"
-                      className={styles.copy}
-                      onClick={() => copy(toneCopyText, `tone-${tone}`)}
-                    >
-                      <IconCopy />
-                      <span>{copied === `tone-${tone}` ? '복사했어요' : '복사'}</span>
-                    </button>
+                    <div className={styles.msgTools}>
+                      <button
+                        type="button"
+                        className={styles.copy}
+                        onClick={() => copy(editing ? (draft ?? '') : toneCopyText, `tone-${tone}`)}
+                      >
+                        <IconCopy />
+                        <span>{copied === `tone-${tone}` ? '복사했어요' : '복사'}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        className={`${styles.copy} ${styles.copySm}`}
+                        aria-pressed={editing}
+                        onClick={toggleEdit}
+                      >
+                        {editing ? '편집 끝내기' : '고쳐 쓰기'}
+                      </button>
+
+                      {editing && draft !== toneCopyText ? (
+                        <button
+                          type="button"
+                          className={`${styles.copy} ${styles.copySm}`}
+                          onClick={() => setDraft(toneCopyText)}
+                        >
+                          원래대로
+                        </button>
+                      ) : null}
+
+                      {canRegenerate ? (
+                        <>
+                          <span className={styles.msgToolsGap} aria-hidden="true" />
+                          <div
+                            className={styles.moodFilter}
+                            role="group"
+                            aria-label="멘트 길이 고르기"
+                          >
+                            {MESSAGE_LENGTH_CHOICES.map((item) => {
+                              const on = item.key === msgLength;
+                              return (
+                                <button
+                                  key={item.key}
+                                  type="button"
+                                  className={
+                                    on ? `${styles.moodChip} ${styles.moodChipOn}` : styles.moodChip
+                                  }
+                                  aria-pressed={on}
+                                  disabled={regenPending}
+                                  onClick={() => requestMessages(item.key)}
+                                >
+                                  {item.label}
+                                </button>
+                              );
+                            })}
+                          </div>
+                          <button
+                            type="button"
+                            className={`${styles.copy} ${styles.copySm}`}
+                            disabled={regenPending}
+                            onClick={() => requestMessages(msgLength)}
+                          >
+                            {regenPending ? '받는 중…' : '새로 받기'}
+                          </button>
+                        </>
+                      ) : null}
+                    </div>
                   ) : null}
+
+                  {/* 편집본이 어디에도 남지 않는다는 사실은 화면이 먼저 말한다(§1.5j). */}
+                  {editing ? (
+                    <p className={styles.footNote}>
+                      고친 글은 저장하지 않아요 — 복사해서 쓰시고, 화면을 새로 열면 원래
+                      멘트로 돌아와요.
+                    </p>
+                  ) : null}
+                  {/* 조용히 실패하지 않는다 — 빈손으로 돌아왔으면 그 사실을 말한다. */}
+                  <p className={styles.footNote} role="status">
+                    {regenFailed ? '지금은 새로 써 오지 못했어요. 잠시 뒤에 다시 눌러 주세요.' : ''}
+                  </p>
                 </div>
 
                 <p className={styles.footNote}>{payload.messageNote}</p>
@@ -1421,30 +1690,21 @@ export default function ResultView({ payload, onRestart }: ResultViewProps) {
                 ) : null}
 
                 {/*
-                  §1.5e 인용 한 줄 — 멘트가 주인공, 이건 곁들임.
-                  #13 부터 **고른 톤을 따라간다**: 톤을 바꾸면 이 줄도 함께 바뀐다.
-                  `aria-live` 를 두는 이유가 그것이다 — 화면을 못 보는 사람에게도 톤을
-                  바꾼 결과가 여기까지 미쳤다는 사실이 전해져야 한다.
+                  §1.5e `함께 담을 한 줄`(.qline)은 2026-08-18 에 **걷었다.**
+
+                  그 줄의 내용은 고른 톤의 **첫 마디**였다(#13) — 곧 바로 위 멘트 카드의
+                  첫 문장 그대로다. 각주(`CARD_LINE_NOTES`)가 "방금 쓴 멘트의 첫 마디"라고
+                  적어 그 반복이 실수가 아님을 해명해야 했다는 사실 자체가, 같은 문장을 한
+                  화면에 두 번 세우고 있었다는 증거다. 해명이 필요한 중복은 중복이다.
+                  "옮겨 적을 한 줄"이라는 쓸모는 바로 아래 「문학 속의 이 꽃」이 이미 맡고
+                  있고, 그쪽은 검증된 원전이라 인용으로서도 더 단단하다.
+
+                  ⚠ §1.5e 의 인용 절제 원칙과 아래 문학 블록은 그대로다 — 걷은 것은
+                    "멘트의 첫 마디를 다시 세우던 자리" 하나뿐이다.
                 */}
-                <figure className={styles.qline} aria-live="polite">
-                  <figcaption className={styles.qlineLab}>함께 담을 한 줄</figcaption>
-                  <blockquote>
-                    <p className={styles.qlineKo}>{cardLine.textKo}</p>
-                  </blockquote>
-                  <p className={styles.qlineBy}>{cardLine.attribution}</p>
-                  <button
-                    type="button"
-                    className={`${styles.copy} ${styles.copySm}`}
-                    aria-label="함께 담을 한 줄 복사"
-                    onClick={() => copy(cardLine.textKo, 'quote')}
-                  >
-                    <IconCopy />
-                    <span>{copied === 'quote' ? '복사했어요' : '복사'}</span>
-                  </button>
-                </figure>
 
                 {/*
-                  §1.5k 문학 속의 이 꽃 — 함께 담을 한 줄 바로 아래, 같은 "곁들임" 위계다.
+                  §1.5k 문학 속의 이 꽃 — 멘트 바로 아래, "곁들임" 위계다.
                   서버가 발췌를 못 찾았거나 중복 배제에 걸리면 필드가 아예 없고, 그때는
                   블록도 서지 않는다(§1.5k "있을 때만"). 억지로 채우지 않는 것이 규칙이다.
 
@@ -1558,22 +1818,32 @@ export default function ResultView({ payload, onRestart }: ResultViewProps) {
                 생기는 날 그 기능과 함께 되살린다.
               */}
               <section className={`${styles.sect} ${styles.share}`} aria-label="이 꽃 사러 가기">
-                <button
-                  type="button"
-                  className={`${styles.btn} ${styles.btnPrimary}`}
-                  onClick={() => setBuyOpen(true)}
-                >
-                  ‘{mainName(option.nameKo)}’ 사러 가기
-                  <IconArrow />
-                </button>
-                <button
-                  type="button"
-                  className={`${styles.btn} ${styles.btnGhost}`}
-                  style={{ marginTop: 10 }}
-                  onClick={onRestart}
-                >
-                  다시 골라보기
-                </button>
+                {/*
+                  §1.6b 위계 — 주(채움)와 부(아웃라인)를 `.btn` 의 기존 두 변형으로만
+                  가른다. 새 표현 언어를 만들지 않는다.
+
+                  **주 버튼이 언제나 먼저다** — DOM 순서가 곧 낭독 순서이자 모바일의
+                  세로 순서이고, 데스크톱에서도 `.shareRow` 가 자리를 바꾸지 않는다
+                  (`row-reverse` 로 눈과 낭독이 어긋나게 만들지 않았다).
+                  좁은 화면에서는 `flex-wrap` 이 알아서 세로로 쌓는다.
+                */}
+                <div className={styles.shareRow}>
+                  <button
+                    type="button"
+                    className={`${styles.btn} ${styles.btnPrimary}`}
+                    onClick={() => setBuyOpen(true)}
+                  >
+                    ‘{mainName(option.nameKo)}’ 사러 가기
+                    <IconArrow />
+                  </button>
+                  <button
+                    type="button"
+                    className={`${styles.btn} ${styles.btnGhost}`}
+                    onClick={onRestart}
+                  >
+                    다시 골라보기
+                  </button>
+                </div>
               </section>
 
               {/* ═══ ⑤ 최하단 참고 — 작게. 안전·계절·가격·구매는 "찾을 수 있으면 충분"(§1.5i) ═══ */}

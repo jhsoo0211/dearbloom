@@ -16,7 +16,9 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-import { submitRecommendation } from '@/app/recommend/actions';
+import type { MessageLength } from '@/lib/llm/contracts';
+
+import { regenerateMessages, submitRecommendation } from '@/app/recommend/actions';
 import ResultView from './ResultView';
 import Wizard, { TOTAL_STEPS } from './Wizard';
 import {
@@ -28,7 +30,7 @@ import {
   replacePhase,
   saveFlowSession,
 } from './flow-session';
-import type { ResultPayload, WizardOptions } from './types';
+import type { ResultPayload, WizardOptions, WizardSubmission } from './types';
 import styles from './flow.module.css';
 
 /**
@@ -77,6 +79,14 @@ export default function RecommendFlow({ options, defaultDateISO }: RecommendFlow
   const [step, setStep] = useState(1);
   const [payload, setPayload] = useState<ResultPayload | null>(null);
   const [view, setView] = useState<'wizard' | 'result'>('wizard');
+  /**
+   * 방금 보낸 답 — 멘트 `새로 받기`가 같은 재료로 다시 부탁할 때만 쓴다.
+   *
+   * ⚠ **메모리에만 둔다.** 이어가기 저장(sessionStorage)에는 위저드가 자기 몫으로 이미
+   *   답을 넣지만, 여기서 또 넣지 않는다 — 이 값의 쓸모는 지금 이 화면 한 번뿐이고,
+   *   새로고침해서 결과가 복원된 자리에는 재생성 버튼이 서지 않아도 된다(§1.5j 최소 보관).
+   */
+  const [submission, setSubmission] = useState<WizardSubmission | null>(null);
   /** popstate 클로저가 최신 결과를 보게 하는 거울 — 리스너는 마운트에 한 번만 걸기 때문이다. */
   const payloadRef = useRef<ResultPayload | null>(null);
   useEffect(() => {
@@ -112,18 +122,48 @@ export default function RecommendFlow({ options, defaultDateISO }: RecommendFlow
     toTop();
   }
 
-  function showResult(next: ResultPayload) {
+  function showResult(next: ResultPayload, submission: WizardSubmission) {
     setPayload(next);
+    setSubmission(submission);
     setView('result');
     saveFlowSession({ payload: next });
     pushPhase({ view: 'result', depth: (readPhase()?.depth ?? 0) + 1 });
     toTop();
   }
 
+  /**
+   * 멘트만 다시 받아 온다 — 결과 화면의 `새로 받기` · `짧게/보통` (2026-08-18).
+   *
+   * 재료(답변)를 여기서 들고 있는 이유는 두 가지다. ① 서버는 그 답을 저장하지 않으므로
+   * (§1.5j) 다시 부탁하려면 다시 보내는 수밖에 없다. ② 위저드는 결과가 서면 언마운트라
+   * 답이 거기 남아 있을 수 없다.
+   *
+   * 새 톤이 오면 payload 의 `tones` 만 갈아 끼운다 — 3안·이야기·색 선택은 그대로 둔다.
+   * 빈손이면 `false` 를 돌려주고 화면은 지금 멘트를 그대로 세워 둔다.
+   */
+  async function regenerate(length: MessageLength): Promise<boolean> {
+    const current = payloadRef.current;
+    if (!submission || !current) return false;
+
+    let response;
+    try {
+      response = await regenerateMessages(submission, length);
+    } catch {
+      return false;
+    }
+    if (!response.ok) return false;
+
+    const next: ResultPayload = { ...current, tones: response.tones };
+    setPayload(next);
+    saveFlowSession({ payload: next });
+    return true;
+  }
+
   /** 다시 골라보기 — 답·결과와 이어가기 저장을 함께 비운다(처음의 백지로). */
   function restart() {
     clearFlowSession();
     setPayload(null);
+    setSubmission(null);
     setView('wizard');
     setStep(1);
     saveFlowSession({ step: 1 });
@@ -194,7 +234,11 @@ export default function RecommendFlow({ options, defaultDateISO }: RecommendFlow
       </p>
 
       {view === 'result' && payload ? (
-        <ResultView payload={payload} onRestart={restart} />
+        <ResultView
+          payload={payload}
+          onRestart={restart}
+          onRegenerate={submission ? regenerate : undefined}
+        />
       ) : (
         <Wizard
           options={options}

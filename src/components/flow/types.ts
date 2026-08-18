@@ -129,8 +129,17 @@ export interface ResultColorChip {
   label: string;
   hex: string;
   needsRing?: boolean;
-  /** 그 색의 꽃말. 출처를 찾은 색에만 있다. */
+  /** 이 칩에 붙는 꽃말. 출처를 찾은 색에만 있다. */
   meaningKo?: string;
+  /**
+   * 위 `meaningKo` 가 **정말 그 색의 것**인가(= `meanings.csv` 에 그 색 행이 있었나).
+   *
+   * `false` 면 색을 가리지 않는 행에서 온 값이다 — 엔진이 색별 행을 못 찾으면 조용히
+   * 그리로 내려가기 때문이다(`explain.ts` 의 `findMeaning`). 화면은 이 값으로 각주를
+   * 가른다: 참이면 「{색} {꽃}이 품은 말」, 거짓이면 「색과 무관하게 …」.
+   * 갈라 놓지 않으면 색과 상관없는 꽃말에 색 이름을 붙이는 거짓말이 된다.
+   */
+  meaningIsForColor?: boolean;
   /** §1.5d 이야기 톤으로 옮긴 confidence_level. */
   confidenceLabel?: string;
   isSuggested: boolean;
@@ -291,19 +300,15 @@ export interface ToneView {
   source?: 'llm' | 'template';
   /** 템플릿을 못 찾았을 때 보여 줄 안내. */
   emptyNote?: string;
-  /**
-   * §1.5e `함께 담을 한 줄` — **이 톤의 것**(#13).
-   *
-   * 예전에는 3~4톤이 김소월 한 줄을 나눠 썼다. 톤을 바꿔도 카드에 적을 문장이 그대로라
-   * "톤을 고른 보람"이 마지막 칸에서 사라졌다. 이제 LLM 이 쓴 톤은 그 응답의 첫 마디를,
-   * 예문 톤은 그 예문의 첫 문장을 여기에 담는다.
-   * 둘 다 없으면(=`other` 처럼 템플릿이 없는 상황) 이 필드가 없고, 화면은
-   * `ResultPayload.quote`(공용 인용)로 떨어진다.
-   */
-  cardLine?: QuoteView;
 }
 
-/** §1.5e 함께 담을 한 줄. */
+/**
+ * 인용 한 줄(본문 + 각주).
+ *
+ * 화면의 `함께 담을 한 줄` 자리는 2026-08-18 에 걷혔지만(ResultView 의 그 대목 참조)
+ * 이 모양은 **서버 안에서** 아직 산다 — `pickQuote()` 가 고른 공용 인용의 작가를
+ * 문학 블록이 "한 화면에 같은 작가 두 번 금지" 판정에 쓴다(build-result.ts).
+ */
 export interface QuoteView {
   textKo: string;
   attribution: string;
@@ -318,7 +323,6 @@ export interface ResultPayload {
   tones: ToneView[];
   /** 사과 상황에서 유쾌 톤을 껐다는 각주. 끄지 않았으면 없다. */
   toneOffNote?: string;
-  quote: QuoteView;
   /**
    * 멘트가 어디서 왔는지 한 덩이로 본 값.
    *   `llm`      — 한 톤이라도 이번에 새로 쓴 문장이 있다

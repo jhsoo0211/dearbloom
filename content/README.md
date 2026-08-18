@@ -9,8 +9,8 @@ DB는 이 CSV에서 시드(upsert)될 뿐, 반대로 DB를 직접 고치지 않�
 |---|---|---|
 | `flowers.csv` | 꽃 기본 정보 | 59 |
 | `meanings.csv` | 꽃말(출처 필수) | 305 |
-| `stories.csv` | 꽃에 얽힌 일화(창작 외 출처 필수) | 445 |
-| `rules.csv` | 상황 → 꽃 추천/회피 규칙 | 7 |
+| `stories.csv` | 꽃에 얽힌 일화(창작 외 출처 필수) | 444 |
+| `rules.csv` | 상황 → 꽃 추천/회피 규칙 | 151 |
 | `templates.csv` | 메시지 템플릿 | 31 |
 | `quotes.csv` | 인용문(범용 3 + 문학 발췌 74) | 77 |
 | `pet_safety.csv` | 반려동물 안전성(꽃 × cat/dog 전수) | 118 |
@@ -19,24 +19,31 @@ DB는 이 CSV에서 시드(upsert)될 뿐, 반대로 DB를 직접 고치지 않�
 | `birth_stories.csv` | 탄생화 **이름**에 붙는 이야기 | 407 |
 | `reads.csv` | 「읽을거리」 섹션의 외부 링크 원장(축제·글·실용·트렌드) | 54 |
 
-**앞의 열 파일이 `db/seed/schemas.ts` 의 `SEED_FILE_KEYS` 에 등록돼 있고**, 시드 CLI와 앱
+**열한 파일 전부가 `db/seed/schemas.ts` 의 `SEED_FILE_KEYS` 에 등록돼 있고**, 시드 CLI와 앱
 로더(`src/lib/data/catalog.ts`)가 같은 목록을 읽는다. 파일을 늘릴 때는 그 상수부터 고친다.
-⚠ `reads.csv` 만 아직 등록 전이다 — 「읽을거리」 섹션은 **원장을 먼저 세우고 화면·시드는
-나중에** 붙이기로 한 단계라(2026-08-17), 지금은 시드가 이 파일을 읽지 않는다.
+(`reads.csv` 는 2026-08-18 「읽을거리」 화면 개통과 함께 합류했다 — 마이그레이션은 `0012_reads.sql`.)
 
-`rules.csv` 는 5종(`rose-red` `tulip-white` `freesia` `lily-asiatic` `gerbera`)만 다룬다.
-2026-08-14에 들어온 4종(`anemone` `hellebore` `hyacinth` `peony`), 2026-08-15에 들어온 8종
-(`hydrangea` `lavender` `sunflower` `carnation` `lisianthus` `ranunculus` `lily-of-the-valley`
-`chrysanthemum`), 같은 날 seed-v4로 들어온 14종(`narcissus` `forget-me-not` `cherry-blossom`
-`camellia` `violet` `iris` `marigold` `corn-poppy` `jasmine` `babys-breath` `cosmos` `magnolia`
-`pansy` `poinsettia`), seed-v5의 `daisy`, 2026-08-16에 seed-v6로 들어온 15종(`sweet-pea`
-`gladiolus` `dahlia` `zinnia` `aster` `calendula` `cyclamen` `geranium` `primula` `stock`
-`delphinium` `amaryllis` `cornflower` `crocus` `water-lily`) 은 **이야기·도감용으로 먼저 존재**하며,
-추천 규칙은 편집 판단이 끝난 뒤에 붙인다. 규칙이 없는 꽃은 추천 결과에 오르지 않을 뿐 교차 검증에는
-걸리지 않는다(반려동물 판정만 전수로 필요하다). **59종 중 5종만 추천 결과에 오른다** — 카탈로그가
-커질수록 이 불균형이 커진다. 2026-08-17 배치 2로 12종(`phalaenopsis` `alstroemeria` `anthurium`
-`gardenia` `eucalyptus` `statice` `mimosa` `bouvardia` `scabiosa` `plum-blossom` `azalea`
-`cotton`)이 더 들어와 격차가 또 벌어졌다(`docs/flowers-batch2-research.md`).
+`rules.csv` 의 151행은 **가점 132행 + 회피 19행**이다(2026-08-18 규칙 병합).
+꽃 59종 중 **58종**이 규칙을 갖는다 — 가점 규칙이 있는 종이 57, 회피 규칙이 있는 종이 15다.
+규칙이 하나도 없는 꽃은 `eucalyptus` 한 종뿐이다 — 꽃말 3줄이 모두 `single_source` 이고
+이야기 5편이 전부 `just_because` 라, 어느 상황·관계에 세울 근거가 나오지 않았다.
+`chrysanthemum` 은 회피 규칙만 있다(국내에서 조문의 꽃이라 축하·고백 자리에 세우지 않는다).
+규칙은 상황·관계 가점의 명시 근거이며, 규칙이 없는 꽃도 계절·색·분위기 점수로 추천 결과에
+오를 수 있다. 회피 행은 점수로 해석하지 않지만, 조건별 제외·감점에는 아직 연결하지 않았다.
+그 동작은 조건 매칭 규칙을 먼저 확정한 뒤 별도 제외 단계에서 구현한다.
+
+**엔진이 실제로 읽는 칸은 `relationship_type`·`intent`·`flower_id`·`fit_score` 넷뿐이다.**
+`occasion`·`apology_level`·`budget_range`·`urgency`·`aesthetic_tags` 는 조건 매칭이 붙을 때를
+대비해 남겨 둔 **예비 칸**으로, 지금은 어느 코드도 읽지 않는다. 그래서 이 칸의 값은 추천
+결과를 바꾸지 않는다 — 채워도 손해는 없지만, 채웠다고 동작이 달라졌다고 읽으면 안 된다.
+(`aesthetic_tags` 는 초기 샘플 6행에만 값이 있고 이후 행은 전부 공란이다. 꽃 쪽
+`flowers.aesthetic_tags` 와 어휘가 맞지 않아 새 행에 채우지 않기로 했다.)
+
+`relationship_type` 은 **근거가 관계 자체를 말할 때만 채운다.** 이 칸을 채우면 그 관계 전반에
+intent 와 무관한 상시 가점(R)이 붙기 때문이다. 꽃말이나 일화가 "우정"·"신부"·"어머니"·"첫사랑"
+처럼 사이를 직접 가리키거나, 어버이날·직장 개업처럼 주고받는 사람이 정해진 관행을 말할 때만
+채우고, 상황·분위기만 말하는 근거로는 비워 둔다(가점은 `intent` 쪽 I 로 이미 들어간다).
+지금은 151행 중 52행에만 값이 있다.
 
 ## 편집 규칙
 
@@ -96,15 +103,20 @@ DB는 이 CSV에서 시드(upsert)될 뿐, 반대로 DB를 직접 고치지 않�
     두 표가 갈리는 지점(표기 차이·꽃말 차이·철자 교정)에만 158행 붙어 있다.
   - `weekly-research(2026-08-17):` — 두 번째 주간 콘텐츠 리서치. 신규 꽃 대신 **한국 유통
     상위 꽃 심화**(트랙 B)를 택해, `rose-red`·`chrysanthemum`·`carnation` 세 종에 이야기
-    7편을 붙였다(조사 착수 시점 기준 `stories.csv` 377 → 384). 이 세 종은 그 전까지
-    이야기가 0편이었다(`meanings.csv` 는 이번 회차에서 늘지 않았다). 이 회차와 별개로
-    같은 날 카탈로그 확장 배치 2(`docs/flowers-batch2-research.md`, 신규 12종 +
+    7편을 조사해 붙였다(조사 착수 시점 기준 `stories.csv` 377 → 384). 이 세 종은 그
+    전까지 이야기가 0편이었다(`meanings.csv` 는 이번 회차에서 늘지 않았다). 이 회차와
+    별개로 같은 날 카탈로그 확장 배치 2(`docs/flowers-batch2-research.md`, 신규 12종 +
     `stories.csv` 61편)가 먼저 `main` 에 들어가 있었고, 두 작업이 독립적으로 갈라져
-    나갔다가 병합되며 `stories.csv` 최종 행 수는 438 → **445** 가 됐다. 조사 경위·소스
-    유형 분포·제외 목록의 단일 원본은 `docs/weekly-research-2026-08-17.md` 다(이 문서의
-    수치는 조사 착수 시점 기준이며, 병합 후 전체 분포는 아래 표를 따른다). **이 세션은
-    `WebFetch` 가 조직 egress 정책으로 차단돼**(2026-08-15 회차와 같은 제약) `WebSearch`
-    스니펫 교차 확인으로 대체했다 — 문서 §1 참고.
+    나갔다가 병합됐다. 병합 뒤 진행한 두 번째 검증(2026-08-18, `main` 이 story_id
+    유일성 검사를 새로 추가한 배치와 재병합하며 드러남)에서 **`story-chrysanthemum-double-ninth`
+    가 seed-v4(`docs/story-research-2.md` #45, 2026-08-15)와 소재·id가 완전히 겹치는
+    것을 확인해 이번 회차 쪽 행을 뺐다** — 두 행 모두 비장방·환경의 중양절 국화주 설화를
+    다뤄, "같은 소재는 두 번 싣지 않는다" 원칙(§`stories.csv` 절 참고)에 따른 조치다.
+    그래서 이 회차의 실제 기여는 6편이고, `stories.csv` 최종 행 수는 438 → **444** 다.
+    조사 경위·소스 유형 분포·제외 목록의 단일 원본은 `docs/weekly-research-2026-08-17.md`
+    다(이 문서의 수치는 조사 착수 시점 기준이며, 병합·중복 제거 후 전체 분포는 아래
+    표를 따른다). **이 세션은 `WebFetch` 가 조직 egress 정책으로 차단돼**(2026-08-15
+    회차와 같은 제약) `WebSearch` 스니펫 교차 확인으로 대체했다 — 문서 §1 참고.
 
 ## 절대 하지 말 것
 
@@ -231,8 +243,9 @@ seed-v6·seed-v7 127행을 더한 377행 분포는 `history` 290 · `folklore` 5
 `literary` 29 · `original` 0 이었다. weekly-research 2회차 7행(`history` 6 ·
 `folklore` 1)을 더한 **현재 384행 분포는 `history` 296 · `folklore` 59 ·
 `literary` 29 · `original` 0** 이었다(weekly-research 2회차 조사 착수 시점 기준). 같은
-날 병합된 카탈로그 확장 배치 2(신규 12종, `stories.csv` 61편)를 더한 **최종 445행
-분포는 `history` 353 · `folklore` 63 · `literary` 29 · `original` 0** 이다.
+날 병합된 카탈로그 확장 배치 2(신규 12종, `stories.csv` 61편)를 더하고 seed-v4 와
+소재가 겹친 1행(`story-chrysanthemum-double-ninth`)을 뺀 **최종 444행 분포는
+`history` 353 · `folklore` 62 · `literary` 29 · `original` 0** 이다.
 
 #### `source_kind` — 그 출처가 무엇인가 (2026-08-15 신설)
 
@@ -272,8 +285,9 @@ seed-v6·seed-v7 127행을 더한 377행 분포는 `history` 290 · `folklore` 5
   더한 **384행 분포는 `wiki` 166 · `garden` 43 · `museum` 38 · `magazine` 40 ·
   `newspaper` 36 · `book-pd` 23 · `paper` 20 · `other` 18** 이었다(weekly-research 2회차
   조사 착수 시점 기준). 같은 날 병합된 카탈로그 확장 배치 2(신규 12종, `stories.csv`
-  61편)를 더한 **최종 445행 분포는 `wiki` 168 · `garden` 55 · `magazine` 46 ·
-  `newspaper` 44 · `museum` 43 · `other` 31 · `paper` 31 · `book-pd` 27** 이다.
+  61편)를 더하고 seed-v4 와 소재가 겹친 `book-pd` 1행을 뺀 **최종 444행 분포는
+  `wiki` 168 · `garden` 55 · `magazine` 46 · `newspaper` 44 · `museum` 43 ·
+  `other` 31 · `paper` 31 · `book-pd` 26** 이다.
 - 소급 분류의 판단 근거: 위키피디아·위키낱말사전·상징 정리 사이트 → `wiki` / Gutenberg·
   Internet Archive·위키문헌·PD 고서 전문 사이트 → `book-pd` / ASPCA·NC State Extension·
   SANBI·농사로·홍콩 병원관리국 독성식물도감 → `garden` / PMC·KCI·KoreaScience·ScienceON →
@@ -370,12 +384,12 @@ seed-v6·seed-v7 127행을 더한 377행 분포는 `history` 290 · `folklore` 5
 - 당시 남은 미커버 4종(`freesia` `gerbera` `babys-breath` `poinsettia`)은 근대에 명명돼 고전
   문학에 등장하지 않는다. **편집팀 문장으로 메우지 않는다** — §1.5k 가 "있을 때만"이라고
   이미 정해 두었고, 문학 블록에 문학이 아닌 걸 넣으면 위화감만 남는다.
-- **확장 배치 1(seed-v6) 15종에는 문학 발췌가 아직 없다.** 커버는 `28/47종` 이고, 이 파일은
+- **확장 배치 이후 추가된 꽃에는 문학 발췌가 아직 없다.** 현재 커버는 `28/59종` 이고, 이 파일은
   이번 배치에서 한 행도 늘지 않았다. 같은 원칙이 그대로 적용된다 — 있을 때만 싣는다.
 
 ### `birth_flowers.csv` — 날짜별 탄생화 (2026-08-16 신설)
 
-**행의 주인은 꽃이 아니라 날짜다.** 자연키는 `(month, day)` 이고, 366일이 카탈로그 47종보다
+**행의 주인은 꽃이 아니라 날짜다.** 자연키는 `(month, day)` 이고, 366일이 카탈로그 59종보다
 훨씬 많은 종을 부른다(반대로 한 종이 여러 날에 걸리기도 한다 — 장미 10일·국화 4일).
 
 | 컬럼 | 필수 | 뜻 |
@@ -392,7 +406,7 @@ seed-v6·seed-v7 127행을 더한 377행 분포는 `history` 290 · `folklore` 5
 - **366행이다(365가 아니다).** 2월 29일도 실재하는 생일이므로 윤년 달력으로 채운다.
   교차 검증이 **366일 전수 · 중복 0 · 2월 30일 같은 불가능한 조합**을 막는다.
 - **`flower_id` 가 빈 것은 미완성이 아니다.** "카탈로그에 그 꽃이 없다"는 뜻이고, 현재
-  **86일만 도감으로 이어진다**(카탈로그 47종 중 38종 — 확장 배치 1이 57일·24종에서 늘렸다).
+  **86일만 도감으로 이어진다**(카탈로그 59종 중 38종).
   적혀 있으면 반드시 `flowers.csv`
   안에 있어야 한다(교차 검증이 막는다).
 - **`editorial_note` 는 화면에 나가지 않는다.** `quotes.pd_basis` 와 같은 취급이라
@@ -491,7 +505,15 @@ seed-v6·seed-v7 127행을 더한 377행 분포는 `history` 290 · `folklore` 5
 - `birth_flowers` 는 **윤년 366일을 빠짐없이 한 번씩** 채워야 한다. 빠진 날·중복된 날·
   2월 30일 같은 불가능한 조합은 전부 시드 실패다.
 - `birth_flowers.meaning_ko` 와 `source_url` 은 필수다(꽃말 없는 탄생화는 싣지 않는다).
-  반대로 `birth_flowers.flower_id` 는 **비워 두는 것이 정상 값**이다 — 309일이 그렇다.
+  반대로 `birth_flowers.flower_id` 는 **비워 두는 것이 정상 값**이다 — 280일이 그렇다.
+- `reads` 의 **날짜는 행사만, 행사는 반드시**다. `kind = event` 이면 `starts_at`·`ends_at` 이
+  둘 다 필수이고(종료일 없는 행사는 화면에서 영영 사라지지 않는다), 다른 갈래에 날짜가
+  붙으면 시드 실패다(만료 판정 대상이 되어 조용히 사라진다). 판정 규칙과 근거는
+  `docs/reads-research.md` §6 이 원본이다.
+- `reads.tags` 는 통제 어휘 13종이고 **자리 정확히 1개 · 결 최소 1개**, 행사는 **계절 최소 1개**다.
+  `reads.links_to` 는 `flower:`(`flowers.csv` 의 id) · `color:`(그 파일의 `colors` 어휘) ·
+  `theme:`(계열 5종 한국어 라벨)만 쓰며, 값이 실재하지 않으면 교차 검증이 막는다 —
+  **비워 두는 것이 정상 값**이다(54건 중 20건).
 
 ## 공유 어휘
 
@@ -511,6 +533,9 @@ seed-v6·seed-v7 127행을 더한 377행 분포는 `history` 290 · `folklore` 5
 | `stories.moods` | `romantic` `tragic` `funny` `mythic` `dramatic` `healing` |
 | `stories.story_type` | `folklore` `history` `literary` `original` |
 | `stories.source_kind` | `paper` `magazine` `museum` `newspaper` `book-pd` `garden` `wiki` `other` |
+| `reads.kind` | `article` `event` `guide` `trend` |
+| `reads.access` | `open` `paywall` `registration` |
+| `reads.tags` | 계절 `봄` `여름` `가을` `겨울` / 결 `축제` `전시` `이야기` `빛깔` `꽃 다루기` / 자리 `서울·수도권` `지방` `해외` `온라인` |
 
 `stories.intents` 는 위 `intent` 어휘를 그대로 쓰되 파이프로 여러 개를 적을 수 있다.
 
@@ -520,13 +545,7 @@ seed-v6·seed-v7 127행을 더한 377행 분포는 `history` 290 · `folklore` 5
 어휘를 벗어나면 그 꽃은 페르소나 점수를 영영 못 받는다. 한국어 라벨 ↔ slug 대응은
 `src/lib/engine/normalize.ts` 의 `TRAIT_LABELS` 가 단일 원본이다.
 
-`flower_id` 는 `flowers.csv` 의 `id` 를 그대로 참조한다. 현재 47종: `rose-red`, `tulip-white`,
-`freesia`, `lily-asiatic`, `gerbera`, `anemone`, `hellebore`, `hyacinth`, `peony`,
-`hydrangea`, `lavender`, `sunflower`, `carnation`, `lisianthus`, `ranunculus`,
-`lily-of-the-valley`, `chrysanthemum`, `narcissus`, `forget-me-not`, `cherry-blossom`,
-`camellia`, `violet`, `iris`, `marigold`, `corn-poppy`, `jasmine`, `babys-breath`,
-`cosmos`, `magnolia`, `pansy`, `poinsettia`, `daisy`, `sweet-pea`, `gladiolus`, `dahlia`,
-`zinnia`, `aster`, `calendula`, `cyclamen`, `geranium`, `primula`, `stock`, `delphinium`,
-`amaryllis`, `cornflower`, `crocus`, `water-lily`.
+`flower_id` 는 `flowers.csv` 의 `id` 를 그대로 참조한다. 현재 목록과 개수(59종)는 원본
+`flowers.csv` 와 `npm run seed` 검증 결과를 단일 기준으로 삼는다.
 
 `birth_flowers.flower_id` 도 같은 목록을 참조하되 **비어 있어도 된다**(위 §birth_flowers).

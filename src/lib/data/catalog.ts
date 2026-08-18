@@ -35,6 +35,7 @@ import {
   type MeaningRow,
   type PetSafetyRow,
   type QuoteRow,
+  type ReadRow,
   type RuleRow,
   type SeedDataset,
   type SeedFileKey,
@@ -54,6 +55,7 @@ import type {
   CatalogFlower,
   CatalogMeaning,
   CatalogStory,
+  CatalogRead,
   MessageTemplate,
   PetSafetyRecord,
   Quote,
@@ -312,11 +314,43 @@ function mapBirthStory(row: BirthStoryRow): BirthStory {
   };
 }
 
+/**
+ * reads.csv 한 행 → 화면이 쓰는 읽을거리.
+ *
+ * **`editorial_note` 는 일부러 옮기지 않는다**(`mapQuote` 의 `pd_basis` 와 같은 판단).
+ * 채택 근거·봇 차단 이력·왜 그 꽃을 안 이었는지는 편집자가 CSV 에서 읽는 값이다.
+ * 그 칸이 화면에 안 나간다는 사실이 곧 조사 문서 §3-4 의 규범(사용자의 결정을 바꾸는
+ * 사실은 `summary_ko`·`access` 로 올린다)이 존재하는 이유이므로, 여기서 떨어뜨려
+ * **실수로 렌더될 길 자체를 없앤다.**
+ *
+ * 선택 컬럼은 빈 문자열로 메우지 않고 **키 자체를 만들지 않는다**(`mapBirthFlower` 와 같다).
+ */
+function mapRead(row: ReadRow): CatalogRead {
+  return {
+    readId: row.read_id,
+    kind: row.kind,
+    title: row.title,
+    sourceTitle: row.source_title,
+    ...(row.author ? { author: row.author } : {}),
+    sourceUrl: row.source_url,
+    ...(row.published_at ? { publishedAt: row.published_at } : {}),
+    ...(row.starts_at ? { startsAt: row.starts_at } : {}),
+    ...(row.ends_at ? { endsAt: row.ends_at } : {}),
+    ...(row.region ? { region: row.region } : {}),
+    summaryKo: row.summary_ko,
+    access: row.access,
+    confidenceLevel: row.confidence,
+    reviewedAt: row.reviewed_at,
+    tags: row.tags,
+    linksTo: row.links_to,
+  };
+}
+
 /* ------------------------------------------------------------------ *
  * 로드
  * ------------------------------------------------------------------ */
 
-/** 파일 10종을 읽어 행 스키마 → 교차 검증까지 마친 데이터셋. */
+/** 파일 11종을 읽어 행 스키마 → 교차 검증까지 마친 데이터셋. */
 async function readValidatedDataset(contentDir: string): Promise<SeedDataset> {
   const issues: SeedIssue[] = [];
   const dataset: Partial<Record<SeedFileKey, unknown>> = {};
@@ -389,6 +423,9 @@ function toCatalog(dataset: SeedDataset): Catalog {
     birthFlowers: dataset.birth_flowers.map((row) => mapBirthFlower(row.value)),
     birthPhotos: dataset.birth_photos.map((row) => mapBirthPhoto(row.value)),
     birthStories: dataset.birth_stories.map((row) => mapBirthStory(row.value)),
+    // CSV 순서 그대로다. **만료 판정은 여기서 하지 않는다** — 서버가 거르면 그 판정이
+    // 정적 HTML 에 굳는다(조사 문서 §7-2). 화면 순서와 거르기는 `/reads` 가 맡는다.
+    reads: dataset.reads.map((row) => mapRead(row.value)),
   };
 }
 

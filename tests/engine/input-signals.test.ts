@@ -21,6 +21,31 @@ function flowerById(id: string) {
   return flower;
 }
 
+describe('추천 규칙과 회피 규칙의 경계', () => {
+  it('avoidReason만 있는 행은 빈 fitScore를 만점으로 해석하지 않는다', () => {
+    const avoidRule: RecommendationRuleRow = {
+      ruleId: 'AVOID_APOLOGY_LILY',
+      relationship: 'lover',
+      intent: 'apology',
+      apologyLevel: 3,
+      flowerId: 'lily-asiatic',
+      avoidReason: '향이 강하고 장례 연상 가능',
+    };
+
+    const score = scoreCandidate(
+      flowerById('lily-asiatic'),
+      makeInput({ relationship: 'lover', intent: 'apology', apologyLevel: 3 }),
+      [avoidRule],
+      DEFAULT_WEIGHTS,
+    );
+
+    expect(score.parts.I).toBe(0);
+    expect(score.parts.R).toBe(0);
+    expect(score.matched).not.toContain('SC_INTENT');
+    expect(score.matched).not.toContain('SC_RELATIONSHIP');
+  });
+});
+
 describe("intent 'other' — 직접 쓴 마음", () => {
   it('어휘에 들어 있어 정규화를 통과한다', () => {
     expect(INTENTS).toContain('other');

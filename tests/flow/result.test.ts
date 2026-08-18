@@ -1,11 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  CARD_LINE_NOTES,
   PRICE_BAND_NOTES,
   PRICE_BAND_SLOTS,
   PRICE_LABELS,
-  firstSentence,
   interleaveByAuthor,
   literatureLanguage,
   orderLiterature,
@@ -20,7 +18,7 @@ import { FLOWER_PHOTOS, needsDarkOverlay, photoFor, photoSrc } from '@/lib/photo
  * 결과 화면 마감(2026-08-15)의 **판단 규칙**을 지키는 그물.
  *
  * 여기 있는 것은 전부 화면이 아니라 그 앞의 결정이다 — 어느 발췌를 앞에 세울지(#1),
- * 톤마다 어떤 한 줄을 실을지(#13), 가격 구간을 어떻게 말할지(#11), 어떤 사진을 걸지(#14).
+ *  가격 구간을 어떻게 말할지(#11), 어떤 사진을 걸지(#14).
  * 화면은 눈으로 볼 수 있지만 이 결정들은 조합이 많아(꽃 32종 × 상황 8종) 볼 수가 없다.
  *
  * ⚠ 서버 액션(`actions.ts`)은 `'use server'` 라 순수 함수를 내보낼 수 없다. 그래서 규칙은
@@ -158,39 +156,6 @@ describe('§1.5k 문학 고르기 — 대표 1편 + 넘겨 보기 (#1)', () => {
       }
     }
     expect(seen.size).toBeGreaterThan(1);
-  });
-});
-
-describe('§1.5e 함께 담을 한 줄 — 톤별 변형 (#13)', () => {
-  it('첫 문장만 떼어 낸다', () => {
-    expect(firstSentence('지난번 일은 제 잘못이었습니다. 변명 없이 사과드립니다.')).toBe(
-      '지난번 일은 제 잘못이었습니다.',
-    );
-    expect(firstSentence('  받아 줄래?  그리고 커피도.  ')).toBe('받아 줄래?');
-  });
-
-  it('문장부호가 없으면 통째로 돌려준다 — 글자 수로 자르지 않는다', () => {
-    expect(firstSentence('고맙다는 말 너무 오래 미뤘어')).toBe('고맙다는 말 너무 오래 미뤘어');
-    expect(firstSentence('   ')).toBe('');
-  });
-
-  it('예문이 있는 상황에서는 톤마다 다른 한 줄이 나온다', async () => {
-    const catalog = await loadCatalog();
-    const rows = catalog.templates.filter((template) => template.intent === 'apology');
-    expect(rows.length).toBeGreaterThan(1);
-
-    const lines = rows.map((template) => firstSentence(template.templateText));
-    for (const line of lines) expect(line).not.toBe('');
-    // 톤이 다르면 카드에 적을 한 줄도 달라야 한다 — 이것이 #13 의 전부다.
-    expect(new Set(lines).size).toBe(lines.length);
-  });
-
-  it('각주는 출처가 아니라 출신을 말한다 (사람 이름을 흉내 내지 않는다)', () => {
-    for (const note of Object.values(CARD_LINE_NOTES)) {
-      expect(note).toContain('첫 마디');
-      // `김소월, 〈산유화〉(1925)` 같은 인용 각주 형식을 쓰면 우리 문장이 인용처럼 읽힌다.
-      expect(note).not.toMatch(/[〈《(]/);
-    }
   });
 });
 

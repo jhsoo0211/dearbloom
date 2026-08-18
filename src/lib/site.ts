@@ -13,7 +13,26 @@
  * `NEXT_PUBLIC_` 접두사인 이유: 빌드 타임에 값이 인라인돼야 정적 생성(`revalidate`)된
  * 페이지의 메타데이터에도 같은 주소가 박힌다.
  */
-export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000').replace(
-  /\/+$/,
-  '',
-);
+const LOCAL_SITE_URL = 'http://localhost:3000';
+
+/** 빈 env는 로컬 기본값으로, 설정된 env는 검증된 HTTP(S) 절대 주소로 정규화한다. */
+export function resolveSiteUrl(rawValue: string | undefined): string {
+  const candidate = rawValue?.trim() || LOCAL_SITE_URL;
+
+  let parsed: URL;
+  try {
+    parsed = new URL(candidate);
+  } catch {
+    throw new Error(
+      'NEXT_PUBLIC_SITE_URL은 https://example.com 형태의 완전한 절대 주소여야 합니다.',
+    );
+  }
+
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    throw new Error('NEXT_PUBLIC_SITE_URL은 http 또는 https 주소여야 합니다.');
+  }
+
+  return candidate.replace(/\/+$/, '');
+}
+
+export const SITE_URL = resolveSiteUrl(process.env.NEXT_PUBLIC_SITE_URL);

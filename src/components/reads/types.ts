@@ -1,0 +1,61 @@
+/**
+ * `/reads` 가 서버 → 클라이언트로 넘기는 모양.
+ *
+ * `/stories` 의 `components/stories/types.ts` 와 같은 경계다: 화면이 그리는 칸만 담고,
+ * 라벨은 **전부 서버가 붙여 준 값**이다(클라이언트는 사전도 로더도 갖지 않는다).
+ *
+ * ⚠ `editorialNote` 는 여기 없다 — 카탈로그 타입에도 없다(로더가 아예 안 옮긴다).
+ * ⚠ 이미지 칸도 없다. 이 섹션은 활자 카드다 — 남의 썸네일을 걸지 않는다(조사 문서 §2).
+ */
+
+import type { ReadAccess, ReadKind } from '@/lib/data/types';
+
+/** 카드에서 도감으로 건너가는 다리 한 칸. */
+export interface ReadFlowerLink {
+  /** `flowers.csv` 의 id. 교차 검증 9 가 실재를 보증한다. */
+  id: string;
+  nameKo: string;
+}
+
+/**
+ * 화면이 그대로 그리는 읽을거리 한 장.
+ *
+ * 날짜 두 칸(`startsAt`·`endsAt`)이 원본 문자열 그대로 실려 오는 것은 **클라이언트가
+ * 만료를 판정해야 하기 때문**이다(`expiry.ts` 머리말). 사람이 읽는 기간 문구
+ * (`periodLabel`)는 시계를 보지 않으므로 서버가 미리 굳혀 보낸다.
+ */
+export interface ReadCard {
+  id: string;
+  kind: ReadKind;
+  /** 갈래 이름(`지금 가 볼 곳`·`읽을거리`·`알아두면 좋은 것`·`빛깔·트렌드`). */
+  kindLabel: string;
+  title: string;
+  sourceTitle: string;
+  author?: string;
+  /** 외부 원문 주소. 우리 서버가 대신 부르지 않는다 — 브라우저가 그 사이트로 간다. */
+  url: string;
+  /** 우리가 쓴 한 줄. 원문 요약이 아니다. */
+  summary: string;
+  /** 통제 어휘 13종 중 이 항목이 가진 것들. 칩 필터가 이 배열만 본다. */
+  tags: string[];
+  /** 행사만. 만료 판정의 입력이라 **원본 문자열 그대로** 간다. */
+  startsAt?: string;
+  endsAt?: string;
+  /** 사람이 읽는 기간(`2026년 9월 1일 – 9월 6일`). 서버가 굳힌다. */
+  periodLabel?: string;
+  /** 오프라인이면 지역. 온라인 항목은 자리 태그가 대신 말하므로 비어 있다. */
+  region?: string;
+  /** 발행일(`2026. 2. 20.`). 원문에 표기가 있는 항목만. */
+  publishedLabel?: string;
+  access: ReadAccess;
+  /** `open` 이 아닐 때만. 「눌러도 못 읽을 수 있다」를 미리 말하는 한 줄이다. */
+  accessNote?: string;
+  /** 「우리 도감의 그 꽃」. 없는 것이 정상 값이다. */
+  flowers: ReadFlowerLink[];
+}
+
+/** 칩 하나 — 라벨과 그 칩을 눌렀을 때 남는 수. */
+export interface ReadFilterChip {
+  tag: string;
+  count: number;
+}

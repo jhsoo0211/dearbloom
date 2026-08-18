@@ -1095,6 +1095,7 @@
 .envBack {
   position: absolute;
   inset: 0;
+  z-index: 1;
   border-radius: 8px;
   background: var(--env-face);
   box-shadow: 0 26px 60px rgba(11, 12, 10, 0.5);
@@ -1106,6 +1107,7 @@
   right: 7%;
   top: 10%;
   bottom: 12%;
+  z-index: 2;
   border-radius: 3px;
   background: linear-gradient(180deg, var(--paper) 0%, var(--paper-2) 100%);
   box-shadow: 0 10px 26px rgba(11, 12, 10, 0.32);
@@ -1130,19 +1132,21 @@
 .envFront {
   position: absolute;
   inset: 0;
+  z-index: 3;
   border-radius: 8px;
   background: linear-gradient(180deg, var(--env-face) 0%, var(--env-flap) 100%);
   clip-path: polygon(0 26%, 50% 60%, 100% 26%, 100% 100%, 0 100%);
   transform: translateZ(6px);
   box-shadow: 0 -2px 10px rgba(11, 12, 10, 0.18) inset;
 }
-/* 덮개 — 위 모서리를 축으로 뒤로 젖혀진다. */
+/* 덮개 — 위 모서리를 축으로 뒤로 젖혀진다. z-index 는 keyframes 안에서 계단으로 바뀐다(아래 주석). */
 .envFlap {
   position: absolute;
   left: 0;
   right: 0;
   top: 0;
   height: 62%;
+  z-index: 5;
   transform-origin: top center;
   transform-style: preserve-3d;
   transform: translateZ(7px) rotateX(0deg);
@@ -1158,11 +1162,12 @@
   right: 0;
   top: 0;
   height: 62%;
+  z-index: 4;
   transform-origin: top center;
   transform: translateZ(6.6px) rotateX(0deg);
   background: color-mix(in srgb, var(--paper-accent) 78%, #000);
   clip-path: polygon(0 0, 100% 0, 50% 100%);
-  animation: dbEnvFlap 900ms var(--ease) 260ms both;
+  animation: dbEnvLining 900ms var(--ease) 260ms both;
 }
 /* 봉인 — §1.4 대로 골드는 배경이 아니라 테두리·글자다. */
 .envSeal {
@@ -1175,6 +1180,7 @@
   justify-content: center;
   width: 52px;
   height: 52px;
+  z-index: 6;
   border-radius: 9999px;
   border: 1px solid var(--accent-line);
   background: color-mix(in srgb, var(--bg) 72%, transparent);
@@ -1198,12 +1204,58 @@
     opacity: 1;
   }
 }
+/*
+ * 젖혀진 덮개·안감은 **편지지 뒤로 물러나야 한다** (2026-08-18 사용자 신고:
+ * "봉투를 뚫고 편지가 나온다").
+ *
+ * 왜 뚫려 보였나 — 겹의 순서가 translateZ 가 아니라 **DOM 순서**로 그려지고 있었다.
+ * `.envelope` 의 등장 연출(dbEnvTilt)이 opacity 를 함께 애니메이션하는데, opacity 그룹핑은
+ * preserve-3d 를 **평탄화**한다(스펙의 grouping property). 평탄화된 동안 z 값은 원근
+ * 크기에만 남고 앞뒤 순서는 DOM 차례가 정한다 — 편지지(2번째)는 안감(3번째)보다 언제나
+ * 뒤에 깔렸고, 위로 떠오르는 순간 젖혀진 안감 삼각형이 편지지를 덮어 "뚫는" 그림이 됐다
+ * (실측: 계산된 transform 은 안감이 z<0 로 편지지 뒤인데도 화면은 안감이 앞이었다).
+ *
+ * 고침 두 겹 —
+ *   ① **z-index 계단**: 겹마다 z-index 를 명시하고(뒷면1·편지지2·앞면3·안감4·덮개5·봉인6),
+ *      덮개·안감 keyframes 에서 회전이 모로 서는 한중간(50%)에 z-index 를 편지지 아래로
+ *      떨어뜨린다. z-index 애니메이션은 이산(계단)이라 정확히 그 프레임에 갈아탄다 —
+ *      모로 선 순간은 두께 0 이라 갈아타는 것이 보이지 않는다.
+ *   ② **z 후퇴**: 평탄화가 일어나지 않(을 수도 있)는 브라우저는 진짜 3D 로 정렬하므로,
+ *      회전과 함께 경첩 z 를 앞(7px)에서 뒤(-6px)로 옮겨 최종 평면 전체를 편지지(1px)
+ *      뒤로 보낸다(꼭짓점 z ≈ -6 - 0.21×높이). 어느 규칙으로 그리든 결론이 같아진다.
+ * 안감은 덮개보다 0.4px 뒤 간격을 젖힌 뒤에도 그대로 지킨다(덮개는 backface 숨김이라
+ * 젖혀진 뒤 보이는 쪽은 안감이다 — 그 관계가 뒤집히면 안 된다).
+ */
 @keyframes dbEnvFlap {
   from {
+    z-index: 5;
     transform: translateZ(7px) rotateX(0deg);
   }
+  49% {
+    z-index: 5;
+  }
+  51% {
+    z-index: 1;
+  }
   to {
-    transform: translateZ(7px) rotateX(-168deg);
+    z-index: 1;
+    transform: translateZ(-6px) rotateX(-168deg);
+  }
+}
+@keyframes dbEnvLining {
+  from {
+    z-index: 4;
+    transform: translateZ(6.6px) rotateX(0deg);
+  }
+  49% {
+    z-index: 4;
+  }
+  51% {
+    z-index: 1;
+  }
+  to {
+    z-index: 1;
+    transform: translateZ(-6.4px) rotateX(-168deg);
   }
 }
 @keyframes dbEnvPaper {

@@ -556,13 +556,11 @@ export default function LandingPage({ data }: { data: LandingData }) {
         {/* ═══ 내비 ═══
             `inert` 는 대화상자가 떠 있는 동안만 붙는다 — 그 뒤의 것은 Tab 으로도
             스크린리더로도 닿지 않아야 한다(접근성 리뷰 P0-1). 대화상자는 둘이다:
-            로딩 게이트(#21)와 모바일 내비 메뉴(§1.6c). */}
-        <nav
-          className="db-nav db-glass"
-          aria-label="주요 메뉴"
-          data-db-intro
-          inert={gateOpen || menuOpen || undefined}
-        >
+            로딩 게이트(#21)와 모바일 내비 메뉴(§1.6c).
+
+            `<header>` 가 배너 랜드마크를 맡고, `inert` 도 그 안의 내비 전체에 건다. */}
+        <header className="db-site-head" inert={gateOpen || menuOpen || undefined}>
+          <nav className="db-nav db-glass" aria-label="주요 메뉴" data-db-intro>
           <a className="db-brand" href="#db-hero" aria-label="dearbloom 홈">
             <svg className="db-mark" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
               <g fill="currentColor">
@@ -588,6 +586,14 @@ export default function LandingPage({ data }: { data: LandingData }) {
             <li>
               <a href="/stories">이야기</a>
             </li>
+            {/*
+              2026-08-18 — 「읽을거리」(/reads) 합류. 우리가 쓴 이야기(`/stories`) 옆에
+              **바깥에서 골라 온 것**을 두는 자리라 그 오른쪽이다. 항목이 다섯이 됐으므로
+              860px 접힘 경계를 실측했다(861px 에서 레일 폭 여유 있음 — §1.6c).
+            */}
+            <li>
+              <Link href="/reads" prefetch={false}>읽을거리</Link>
+            </li>
             <li>
               <Link href="/flowers" prefetch={false}>도감</Link>
             </li>
@@ -600,9 +606,11 @@ export default function LandingPage({ data }: { data: LandingData }) {
               그대로 살아 있고, 갈림길은 질문 1번 위("몇 분께 드리나요?")로 옮겼다 —
               한 명/여러 명은 랜딩에서 고를 일이 아니라 질문의 첫 줄이다.
             */}
-            <li>
-              <a href="#db-start">시작하기</a>
-            </li>
+            {/*
+              2026-08-17 사용자 지적 — `시작하기`(#db-start 앵커)는 내비에서 뺐다. 바로
+              오른쪽 `추천 시작` CTA 와 같은 일을 하는 항목이 나란히 둘 서 있었다.
+              마무리 절(#db-start)은 그대로다 — 스크롤로 닿는 길만 남기고 중복 진입을 덜었다.
+            */}
           </ul>
 
           <Link className="db-nav-cta" href="/recommend" prefetch={false}>
@@ -611,9 +619,8 @@ export default function LandingPage({ data }: { data: LandingData }) {
 
           {/*
             §1.6c — 860px 아래에서만 서는 메뉴 버튼(CSS 가 `display` 로 가른다).
-            위 `.db-nav-links` 가 그 폭에서 통째로 숨기 때문에, 이 버튼이 없으면 폰에서는
-            이야기·도감·편지로 가는 길이 첫 화면에 하나도 없다.
-            규격은 §1.6b **보조 버튼**(pill h44 · 고스트 1px 보더 · hover 배경 8%).
+            모바일에서는 중복 CTA 를 헤더에서 덜고 `워드마크 + 메뉴`만 남긴다. 추천 진입은
+            바로 아래 히어로와 펼친 시트 하단의 주 CTA가 맡는다.
           */}
           <button
             type="button"
@@ -629,12 +636,13 @@ export default function LandingPage({ data }: { data: LandingData }) {
             </svg>
             <span className="db-nav-menu-t">메뉴</span>
           </button>
-        </nav>
+          </nav>
+        </header>
 
         {/*
           모바일 내비 메뉴 (§1.6c).
 
-          ⚠ 내비 **밖**이다. `.db-nav` 는 `backdrop-filter` 를 쓰는 `.db-glass` 라
+          ⚠ 헤더·내비 **밖**이다. `.db-nav` 는 `backdrop-filter` 를 쓰는 `.db-glass` 라
             고정 위치 자손의 컨테이닝 블록이 되고 `overflow: hidden` 까지 걸려 있어서,
             안에 두면 전면 시트가 알약 크기로 잘린다.
         */}

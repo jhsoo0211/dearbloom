@@ -26,6 +26,11 @@ export const REASON_TEXTS: Record<RuleId, string> = {
   SC_AESTHETIC: '좋아하신다는 색과 분위기에 잘 맞아요.',
   SC_PERSONA: '상대의 분위기와 꽃의 인상이 잘 맞아요.',
   SC_FRAGRANCE: '향기를 좋아한다고 하셔서, 향이 살아 있는 꽃으로 골랐어요.',
+  // §1.5j P(개인화) — 적어 준 이야기가 순위에 실렸다는 말.
+  // 무엇이 걸렸는지(원문·낱말)는 적지 않는다. 그 자리는 결과 화면의 단서 칩이 맡고,
+  // 원문은 로그에도 설명 문장에도 남기지 않는 것이 이 기능의 금지선이다(§1.5j).
+  SC_PERSONAL: '적어 주신 이야기와 결이 닿는 꽃이에요.',
+  SC_MEMORY_FLOWER: '이야기 속에 있던 그 꽃이라 먼저 올렸어요.',
 };
 
 const FALLBACK_REASON = '이 자리에 두루 잘 어울리는 꽃이에요.';
@@ -176,6 +181,9 @@ export function buildColorOptions(
 /**
  * 선정된 안을 최종 응답 형태로 바꾼다.
  * fitScore는 0~1 내부 점수를 0~100 정수로 환산한 값이다.
+ * `picked` 는 `diversify()` 를 지나온 값이라 그 total 에는 D(다양성)까지 실려 있다
+ * (`ScoreBreakdown.total` 의 "두 걸음" 주석). `allScored` 는 대체 꽃 후보를 고르는 데만
+ * 쓰이므로 D 이전 값이어도 상관없다 — 이름만 꺼내 쓴다.
  * substitutes는 같은 intent 규칙에 걸린 차순위 후보 중 아직 추천되지 않은 최대 2개.
  * meanings를 주지 않으면 색과 근거만 제안하고 꽃말은 비운다(출처 없는 꽃말은 싣지 않는다).
  * colorOptions는 사용자가 색을 다시 고를 수 있도록 그 꽃의 색 전체를 함께 싣는다.
@@ -190,8 +198,26 @@ export function buildResults(
 ): RecoResult[] {
   const pickedIds = new Set(picked.map((p) => p.flower.id));
 
+  /*
+   * 대체 꽃 후보 = "이 마음에 **추천 행**이 걸린 꽃".
+   *
+   * ⚠ `fitScore !== undefined` 가드가 이 줄의 요점이다. rules.csv 는 추천 행과 회피 행
+   *   (`avoid_reason` 만 있고 `fit_score` 는 빈 행)을 같은 표에 싣는다. 가드가 없으면
+   *   **피하라고 적어 둔 꽃이 대체안으로 올라온다** — `score.ts` 의 `bestFit` 은 같은 함정을
+   *   이미 막아 두었는데(그 함수 주석) 여기만 빠져 있었다. 회피 행이 rule-006 하나뿐이던
+   *   동안에는 드러나지 않았지만, 규칙표가 150행 규모(회피 ~18행)로 자라면
+   *   `celebration` 요청의 대체안에 국화가 서는 실사고가 된다. (2026-08-18)
+   *
+   * ⚠ 한 꽃에 같은 intent 의 추천 행과 회피 행이 **둘 다** 있으면 지금은 추천 행이 이겨
+   *   후보에 남는다. 그건 데이터가 스스로 모순인 경우라 엔진이 조용히 한쪽을 고르기보다
+   *   CSV 를 고치는 것이 맞다고 보고 그대로 두었다 — 판단이 바뀌면 이 줄 하나가 바뀐다.
+   */
   const intentFlowerIds = new Set(
-    rules.filter((r) => r.intent !== undefined && r.intent === input.intent).map((r) => r.flowerId),
+    rules
+      .filter(
+        (r) => r.intent !== undefined && r.intent === input.intent && r.fitScore !== undefined,
+      )
+      .map((r) => r.flowerId),
   );
 
   const substitutePool = [...allScored]

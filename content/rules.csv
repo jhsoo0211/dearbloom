@@ -6,3 +6,147 @@ rule-004,friend,gratitude,,,fresh|light,1-2,normal,freesia,85,,seed-sample: 편�
 rule-005,colleague,gratitude,job-change,,casual|round,1-2,normal,gerbera,84,,seed-sample: 직장 관계의 무난한 선택
 rule-006,lover,apology,after-argument,3,,2-3,normal,lily-asiatic,,향이 강하고 장례 연상 가능,seed-sample: 회피 규칙
 rule-007,lover,apology,after-argument,2,elegant|calm,2-3,normal,hyacinth,72,,seed-sample: 용서를 구하는 꽃으로 전해지는 히아신스 - 아폴론 설화(apology 이야기)와 연결. 향 강해 향 민감 시 exclude가 거름
+rule-100,lover,anniversary,,,,2-3,normal,rose-red,90,,meanings [red] 열정적인 사랑과 깊은 애정(western/victorian·repeated) · story-rose-aphrodite·story-rose-cleopatra-carpet·story-rose-thornless-korea 세 편 모두 intents 에 anniversary
+rule-101,,anniversary,,,,2-3,normal,rose-red,88,,rule-100 과 같은 근거 · 배우자 쪽은 고백 설화가 아니라 함께 지나온 시간이 중심이라 lover 보다 한 칸 낮춤 · 병합 감사에서 relationship 비움(근거가 결혼·부부를 말하지 않음)
+rule-102,,apology,after-argument,,,2-3,normal,tulip-white,84,,meanings [white] 용서를 구하는 마음과 새로운 시작(korea/modern·varies) · rule-003(lover/apology 88) 과 같은 근거인데 국내 해석이라 영어권 자료와 갈려 한 칸 낮춤 · 병합 감사에서 relationship 비움(근거가 관계를 말하지 않음)
+rule-103,,apology,,,,2-3,normal,tulip-white,78,,rule-102 와 같은 꽃말 근거 · 친구 사이 사과는 격식이 덜해 낮춤 · 병합 감사에서 relationship 비움(근거가 관계를 말하지 않음)
+rule-104,,celebration,job-change,,,2-3,normal,tulip-white,80,,meanings [white] 새로운 시작 봄의 설렘(korea/modern·single_source) 과 [white] 용서를 구하는 마음과 새로운 시작(korea/modern·varies) 두 행이 새로운 시작에서 겹침 · 병합 감사에서 relationship 비움(근거가 상황만 말하고 직장 관계를 말하지 않음)
+rule-105,,celebration,graduation,,,1-2,normal,freesia,90,,story-freesia-graduation-korea(농촌진흥청 출하 시기가 졸업 시즌과 정확히 겹침) · story-freesia-korea-cultivar-share·story-freesia-jeonbuk-heartland·story-freesia-scent-measured-korea 모두 celebration · 병합 감사에서 relationship 비움(졸업 관행은 주는 사람을 가리지 않음)
+rule-106,,celebration,job-change,,,1-2,normal,freesia,80,,meanings [yellow] 새로운 시작과 변함없는 우정(global/modern) · story-freesia-cape-journey(celebration) · 졸업만큼 굳은 관행은 아니라 rule-105 보다 크게 낮춤 · 병합 감사에서 relationship 비움(꽃말이 말하는 것은 우정이지 직장 관계가 아님)
+rule-107,,celebration,,,,1-2,normal,gerbera,86,,story-gerbera-korea-wreath(국내 절화 거래량 상위이고 축하 화환에 가장 자주 꽂히는 꽃) · story-gerbera-korea-cultivar(celebration) · 향이 0 이라 자리를 가리지 않음 · 병합 감사에서 relationship 비움(근거가 관계를 말하지 않음)
+rule-108,,celebration,new-business,,,1-2,normal,gerbera,84,,story-gerbera-korea-wreath·story-krwreath-three-tier 둘 다 개업 화환 · rule-005(colleague/gratitude 84) 와 같은 눈금에 둠 · 병합 감사에서 relationship 비움(화환 이야기는 놓이는 자리만 말하고 보내는 사람을 말하지 않음 — 보내는 쪽까지 적은 rule-170 과 갈림)
+rule-109,,comfort,,,,1-2,normal,gerbera,78,,meanings [pink] 언제나 곁에 있는 밝은 응원(global/modern) · story-gerbera-neck-bend·story-gerbera-25000-tries 둘 다 comfort · 병합 감사에서 relationship 비움(근거가 관계를 말하지 않음)
+rule-110,,comfort,,,,2-3,normal,anemone,76,,story-anemone-windflower·story-anemone-lilies-of-the-field·story-anemone-ancient-woodland 모두 comfort · meanings 바람이 데려간 사랑(greece-rome/ancient·repeated) · 병합 감사에서 relationship 비움(근거가 관계를 말하지 않음)
+rule-111,,apology,,,,2-3,normal,anemone,70,,story-anemone-adonis-blood 의 intents 에 apology · meanings [white] 거짓 없는 진심(japan/modern·single_source) · 단일 출처라 낮게 잡음 · 병합 감사에서 relationship 비움(아도니스 설화는 연인을 잃은 애도지 연인 사이 전반을 말하지 않음)
+rule-112,,celebration,,,,2-3,normal,anemone,,이별과 덧없음의 뜻이 강해 축하 자리에서는 마음이 다르게 읽혀요,meanings [red] 덧없는 사랑 그리고 버려진 마음(uk/victorian) 과 바람이 데려간 사랑(greece-rome/ancient) 두 행의 caution_note 가 모두 축하 자리를 직접 지목
+rule-113,,comfort,,,,3,normal,hellebore,82,,meanings [white] 내 불안을 가라앉혀 주세요(uk/victorian·repeated) 와 겨울을 견디는 조용한 위로(europe/medieval) · story-hellebore-winter-bloom(comfort) · 병합 감사에서 relationship 비움(근거가 관계를 말하지 않음)
+rule-114,,apology,,,,3,normal,hellebore,72,,story-hellebore-madelon-tears 의 intents 에 apology(드릴 게 없어 울었다는 이야기) · rule-007(hyacinth 72) 과 같은 눈금 · 병합 감사에서 relationship 비움(마들롱 이야기는 연인 사이가 아님)
+rule-115,,anniversary,,,,3,normal,hellebore,72,,story-hellebore-sepals 의 intents 에 anniversary(꽃잎이 아니어서 지지 않는다) · 뒷받침이 이야기 한 편뿐이라 낮게 잡음 · 병합 감사에서 relationship 비움(근거가 결혼·부부를 말하지 않음)
+rule-116,,comfort,,,,2-3,normal,hyacinth,76,,story-hyacinth-apollo-discus·story-hyacinth-soul-poem·story-hyacinth-forcing-glass 모두 comfort · meanings [purple] 깊은 슬픔과 애도(greece/ancient·repeated) · 병합 감사에서 relationship 비움(아폴론 설화는 사랑하던 사이의 죽음이라 친구 사이를 말하지 않음)
+rule-117,,apology,after-argument,,,2-3,normal,hyacinth,72,,rule-007(lover/apology 72) 과 같은 아폴론 설화 근거 · meanings [purple] 용서해 주세요(global/modern) · 병합 감사에서 relationship 비움(근거가 결혼·부부를 말하지 않음)
+rule-118,,celebration,,,,3,normal,peony,86,,meanings [pink] 부귀와 영화 꽃 중의 왕(china/tang·repeated) 과 부귀 영화 성실(korea/modern·repeated) · story-peony-ten-days 의 intents 에 celebration · 병합 감사에서 relationship 비움(부귀영화를 비는 말은 받는 사람을 가리지 않음)
+rule-119,,anniversary,,,,3,normal,peony,80,,meanings 부귀 영화 성실(korea/modern·repeated) 의 성실이 부부 쪽 근거 · 이야기 쪽 뒷받침이 없어 rule-118 보다 낮춤 · 병합 감사에서 relationship 비움(부귀·영화와 나란한 성실은 세속의 덕목이지 부부의 언약이 아님)
+rule-120,,confession,,,,3,normal,peony,78,,meanings [red] 수줍음과 부끄러운 마음(western/victorian·repeated) 과 수줍음(korea/modern·repeated) · story-peony-three-postures 의 intents 에 confession · 병합 감사에서 relationship 비움(수줍음은 crush 쪽 신호라 lover 를 가리키지 않음)
+rule-121,,apology,,,,3,normal,peony,,타오르는 분노라는 꽃말이 나란히 붙어 있어 먼저 손 내미는 자리와는 뜻이 어긋나요,meanings [red] 타오르는 분노(uk/victorian) 의 caution_note 가 사과 자리를 직접 지목
+rule-122,spouse,anniversary,,,,2-3,normal,hydrangea,82,,story-hydrangea-manyoshu-eight-fold(여덟 겹으로 피니 여덟 대까지) · meanings [blue] 인내심 있는 사랑 과 [green] 한결같은 사랑(japan/modern)
+rule-123,family,gratitude,,,,2-3,normal,hydrangea,80,,meanings 둘러앉은 자리 가족과 화목(japan/modern) 과 [pink] 진심 말로 다 못 한 고마움(global/modern) · story-hydrangea-amacha 의 intents 에 gratitude
+rule-124,,confession,,,,2-3,normal,hydrangea,,변덕과 바람기라는 뜻이 함께 붙어 있어 마음을 처음 꺼내는 자리에서는 오해되기 쉬워요,meanings [blue] 변덕(japan/modern·repeated) 의 caution_note 가 고백 자리를 직접 지목 · story-hydrangea-otaksa 는 confession 이지만 이루지 못한 사랑이라 반례로 보지 않음
+rule-125,,comfort,,,,1-2,normal,lavender,84,,meanings 씻어 내는 일 하루의 먼지를 내려놓는(rome/ancient·repeated) · story-lavender-lavare·story-lavender-broom-of-the-brain 둘 다 comfort · 병합 감사에서 relationship 비움(근거가 관계를 말하지 않음)
+rule-126,,comfort,,,,1-2,normal,lavender,80,,rule-125 와 같은 근거 · story-lavender-gattefosse-truth(comfort) · 병합 감사에서 relationship 비움(근거가 관계를 말하지 않음)
+rule-127,,apology,,,,1-2,normal,lavender,,의심이라는 꽃말이 오래 따라다녀 화해를 청하는 자리와는 결이 어긋나요,meanings [purple] 의심(uk/victorian·repeated) 의 caution_note 가 사과나 화해 자리를 직접 지목 · story-lavender-distrust-faithful
+rule-128,,gratitude,,,,1-2,normal,sunflower,80,,meanings 존경 그리고 눈부심(japan/modern) · story-sunflower-van-gogh 의 intents 에 gratitude · 꽃말이 single_source 라 carnation 92 와 크게 벌림 · 병합 감사에서 relationship 비움(존경은 받는 사람을 가리지 않고 고흐 이야기는 오히려 친구 쪽)
+rule-129,,gratitude,,,,1-2,normal,sunflower,76,,rule-128 과 같은 존경 근거 · rule-005(gerbera colleague/gratitude 84) 보다 직장 관행이 얕아 낮춤 · 병합 감사에서 relationship 비움(근거에 직장 관행이 없음)
+rule-130,,celebration,,,,1-2,normal,sunflower,76,,story-sunflower-pervomaysk·story-sunflower-hopi-black-dye 둘 다 celebration · meanings [yellow] 핵을 걷어 낸 자리에 심은 꽃 평화(ukraine/modern·repeated) · 병합 감사에서 relationship 비움(근거가 관계를 말하지 않음)
+rule-131,family,gratitude,parents-day,,,1-2,normal,carnation,92,,meanings [red] 5월 8일 가슴에 다는 꽃(korea/modern·repeated) · story-carnation-korea-1956-mothers-day · 국내에서 가장 굳은 짝이라 rule-001 과 같은 눈금에 둠
+rule-132,,gratitude,teachers-day,,,1-2,normal,carnation,84,,story-carnation-korea-teachers-day-gap(스승의 가슴에 카네이션을 달아 드리던 관행) · 은사와 선후배가 colleague 로 묶이는 어휘 한계 때문에 rule-131 보다 낮춤 · 병합 감사에서 relationship 비움(근거가 말하는 것은 스승과 제자 사이인데 어휘에 그 칸이 없어 colleague 로 바꿔 적은 값이었음)
+rule-134,spouse,anniversary,,,,2-3,normal,lisianthus,84,,meanings 변치 않는 사랑(korea/modern·repeated) · story-lisianthus-five-months 의 intents 에 anniversary(다섯 달을 기다려 피는 꽃)
+rule-135,,anniversary,,,,2-3,normal,lisianthus,82,,rule-134 와 같은 근거 · 병합 감사에서 relationship 비움(변치 않는 사랑은 오래 이어진 사이를 가리켜 rule-134 한 자리로 받음)
+rule-136,,confession,,,,2-3,normal,lisianthus,72,,story-lisianthus-good-mouth 의 intents 에 confession · 뒷받침이 이야기 한 편뿐이라 낮게 잡음 · 병합 감사에서 relationship 비움(이름의 유래를 적은 이야기라 관계를 말하지 않음)
+rule-137,crush,confession,,,,2-3,normal,ranunculus,82,,meanings 당신은 매력으로 빛나요(uk/victorian·repeated) · story-ranunculus-radiant-vs-wild·story-ranunculus-persian-prince 둘 다 confession · rule-002(freesia 78) 보다 꽃말이 직접적
+rule-138,,confession,,,,2-3,normal,ranunculus,78,,rule-137 과 같은 근거 · 병합 감사에서 relationship 비움(같은 근거가 가리키는 것은 대답을 못 받은 쪽이라 crush 한 자리로 받음)
+rule-139,,gratitude,,,,2-3,normal,ranunculus,,배은망덕이라는 뜻이 함께 붙어 있어 고맙다는 말을 건네는 자리에는 어긋나요,meanings 배은망덕 그리고 어린 마음(global/modern) 의 caution_note 가 감사 자리를 직접 지목
+rule-140,,celebration,,,,3,normal,lily-of-the-valley,80,,meanings [white] 돌아오는 행복(uk/victorian·repeated) 과 5월 1일에 건네는 행운(france/modern·repeated) · story-lotv-dior 의 intents 에 celebration · 병합 감사에서 relationship 비움(근거가 관계를 말하지 않음)
+rule-141,,confession,,,,3,normal,lily-of-the-valley,76,,story-lotv-tchaikovsky 의 intents 에 confession · meanings [white] 돌아오는 행복(uk/victorian·repeated) · 향이 3 이라 향 민감 시 exclude 가 거름 · 병합 감사에서 relationship 비움(작곡가가 꽃을 두고 쓴 시라 관계를 말하지 않음)
+rule-142,spouse,anniversary,,,,3,normal,lily-of-the-valley,74,,story-lotv-faberge-egg 의 intents 에 anniversary · 뒷받침이 이야기 한 편뿐이라 낮게 잡음
+rule-143,,celebration,,,,1-2,normal,chrysanthemum,,한국에서 국화는 조문의 꽃이라 함께 기뻐하는 자리에는 놓지 않아요,meanings [white] 흰 국화 한 송이 애도(korea/modern·repeated) 의 caution_note 가 축하와 고백 자리를 직접 지목 · story-chrysanthemum-korea-white-funeral
+rule-144,,confession,,,,1-2,normal,chrysanthemum,,한국에서 국화는 조문의 꽃이라 마음을 처음 꺼내는 자리와는 결이 어긋나요,rule-143 과 같은 caution_note · meanings [red] 사랑합니다(uk/victorian) 도 한국에서는 정반대로 읽힌다고 같은 행이 적음
+rule-145,,comfort,,,,1-2,normal,narcissus,78,,story-narcissus-daffodil-day·story-narcissus-behbahan-winter·story-narcissus-jeju-chusa 모두 comfort · meanings 스스로를 귀하게 여기는 일(japan/modern·repeated) · 병합 감사에서 relationship 비움(근거가 관계를 말하지 않음)
+rule-146,crush,confession,,,,1-2,normal,narcissus,70,,meanings 눈여겨보는 마음(uk/victorian·repeated) 과 [yellow] 답장을 기다리는 마음 · 같은 표에 자기애로 읽힐 수 있다는 caution 이 있어 낮게 잡음
+rule-147,,anniversary,,,,1-2,normal,forget-me-not,82,,meanings 진실한 사랑 나를 잊지 말아요(uk/victorian·repeated) 와 [blue] 잊지 않겠다는 약속(western/modern·repeated) 두 갈래가 모두 오래 기억하는 마음 · 병합 감사에서 relationship 비움(어느 쪽도 사이의 갈래를 가리지 않음)
+rule-148,,confession,,,,1-2,normal,forget-me-not,78,,story-forget-me-not-danube·story-forget-me-not-poland-day 둘 다 confession · 병합 감사에서 relationship 비움(도나우 이야기는 이미 연인인 두 사람이라 crush 를 말하지 않음)
+rule-149,,comfort,,,,1-2,normal,forget-me-not,74,,story-forget-me-not-remembrance 의 intents 에 comfort · meanings [blue] 먼저 간 이들을 기억하는 일(armenia/modern) · 병합 감사에서 relationship 비움(근거가 관계를 말하지 않음)
+rule-150,,just_because,,,,2-3,normal,cherry-blossom,78,,meanings 봄이 왔다는 소식(japan/ancient·repeated) 과 [pink] 다정함 그리고 지나가는 것들의 아름다움(japan/modern·repeated) · story-cherry-zensen·story-cherry-hana-yori-dango 둘 다 just_because · 병합 감사에서 relationship 비움(근거가 관계를 말하지 않음)
+rule-151,,just_because,,,,2-3,normal,cherry-blossom,76,,rule-150 과 같은 근거 · 병합 감사에서 relationship 비움(근거가 관계를 말하지 않음)
+rule-152,lover,confession,,,,2-3,normal,camellia,80,,meanings [red] 사랑에 빠진 마음 그리고 기품 있게 지는 일(japan/modern·repeated) · story-camellia-dumas 의 intents 에 confession
+rule-153,lover,anniversary,,,,2-3,normal,camellia,76,,story-camellia-dumas 의 intents 에 anniversary · meanings [white] 기다림(japan/modern·repeated)
+rule-154,crush,confession,,,,2-3,normal,violet,76,,story-violet-sappho 의 intents 에 confession · meanings [purple] 겸손 앞에 나서지 않는 마음(uk/victorian·repeated)
+rule-155,family,gratitude,,,,2-3,normal,violet,74,,story-violet-saintpaulia-father-son 의 intents 에 gratitude(아버지에게 보낸 씨앗 한 봉지)
+rule-156,,just_because,,,,2-3,normal,violet,72,,meanings [yellow] 소박한 행복(uk/victorian) · story-violet-korean-names·story-violet-ionone 둘 다 just_because · 병합 감사에서 relationship 비움(근거가 관계를 말하지 않음)
+rule-157,,just_because,,,,2-3,normal,iris,78,,meanings 전하고 싶은 말 소식(uk/victorian·repeated) 과 좋은 소식 그리고 변치 않음(japan/modern·repeated) · story-iris-message-across 의 intents 에 just_because · 병합 감사에서 relationship 비움(근거가 관계를 말하지 않음)
+rule-158,,anniversary,,,,2-3,normal,iris,74,,story-iris-message-across 의 intents 에 anniversary · meanings 좋은 소식 그리고 변치 않음(japan/modern·repeated) 의 변치 않음 · 병합 감사에서 relationship 비움(변치 않음이 걸린 말은 소식이지 사랑이 아님)
+rule-159,,comfort,,,,2-3,normal,iris,72,,story-iris-van-gogh 의 intents 에 comfort(요양원 정원에서 그린 붓꽃) · 뒷받침이 이야기 한 편뿐이라 낮게 잡음 · 병합 감사에서 relationship 비움(근거가 관계를 말하지 않음)
+rule-160,crush,confession,,,,1-2,normal,daisy,78,,story-daisy-chaucer-days-eye·story-daisy-dickinson-master-letters·story-daisy-latvia-jani-wreath 모두 confession · meanings 숨겨진 사랑 겸손한 아름다움(korea/modern)
+rule-161,spouse,anniversary,,,,1-2,normal,daisy,74,,story-daisy-auld-lang-syne-gowan·story-daisy-russia-family-day 둘 다 anniversary · meanings 믿음(japan/modern·repeated)
+rule-162,,just_because,,,,1-2,normal,daisy,74,,story-daisy-chaucer-days-eye 의 intents 에 just_because · meanings [white] 순수한 마음 티 없음(uk/victorian·repeated) · 병합 감사에서 relationship 비움(근거가 관계를 말하지 않음)
+rule-163,,celebration,graduation,,,1-2,normal,babys-breath,78,,story-babysbreath-korea-graduation-price·story-krbouquet-babysbreath-half 둘 다 졸업 꽃다발 · 오래 곁들이는 꽃이라 불린 자리여서 rule-105(freesia 90) 보다 크게 낮춤 · 병합 감사에서 relationship 비움(졸업 관행은 주는 사람을 가리지 않음)
+rule-164,spouse,anniversary,,,,1-2,normal,babys-breath,74,,story-babysbreath-never-drops-petals 의 intents 에 anniversary(지는 대신 마르기로 한 꽃) · meanings [white] 변치 않는 사랑(korea/modern)
+rule-165,,gratitude,,,,1-2,normal,babys-breath,70,,story-krbouquet-babysbreath-half 의 intents 에 gratitude · 단독 주인공으로는 약한 꽃이라 낮게 잡음 · 병합 감사에서 relationship 비움(근거가 관계를 말하지 않음)
+rule-166,,just_because,,,,1-2,normal,cosmos,74,,meanings [pink] 가을이 왔다는 소식(korea/modern) 과 가지런함 흐트러지지 않은 마음(etymology/18c·repeated) · 이야기 3편이 모두 just_because · 병합 감사에서 relationship 비움(근거가 관계를 말하지 않음)
+rule-167,,just_because,,,,1-2,normal,cosmos,70,,rule-166 과 같은 근거 · 꽃말이 3행뿐이라 낮게 잡음 · 병합 감사에서 relationship 비움(근거가 관계를 말하지 않음)
+rule-168,crush,confession,,,,2-3,normal,magnolia,74,,story-magnolia-north-facing·story-magnolia-champaka-kamadeva 둘 다 confession · 북향화 이야기가 이루지 못한 사랑이라 lover 는 세우지 않고 crush 한 자리만 둠
+rule-169,,just_because,,,,2-3,normal,magnolia,72,,meanings 꾸미지 않은 것(japan/modern·repeated) · story-magnolia-older-than-bees·story-magnolia-magnol 둘 다 just_because · 병합 감사에서 relationship 비움(근거가 관계를 말하지 않음)
+rule-170,colleague,celebration,new-business,,,3,normal,phalaenopsis,88,,story-phalaenopsis-korea-auction-halved(승진하면 보내고 가게를 열면 보내던 난 화분 · 2016년 청탁금지법 뒤 경매가 주 2회에서 1회로) · 국내 직장 관행이 가장 굳은 짝
+rule-171,,celebration,,,,3,normal,phalaenopsis,76,,rule-170 과 같은 이야기 · meanings 행복이 날아듭니다(japan/modern) · 꽃말이 모두 single_source 라 낮게 잡음 · 병합 감사에서 relationship 비움(같은 이야기가 말하는 것은 직장 관행이지 가족이 아님)
+rule-172,spouse,anniversary,wedding,,,2-3,normal,lily-asiatic,76,,story-lily-baihe-wedding(百年好合 백 년을 사이좋게 · 중국에서 오래 가는 결혼의 표시) · 고양이에게 life_threatening 이라 병문안이나 침실 같은 자리에는 가점을 세우지 않고 기념일 한 자리만 둠
+rule-200,family,comfort,memorial,,,1-2,normal,marigold,80,,stories:story-marigold-cempasuchil — 망자의 날에 꽃잎으로 길을 내 가족을 부르는 꽃 · meanings:marigold/wikipedia-tagetes-erecta '떠난 이를 집으로 데려오는 꽃'(mexico·repeated)
+rule-201,,gratitude,,,,1-2,normal,marigold,76,,meanings:marigold/wikipedia-tagetes-erecta '신에게 바치는 꽃'(india·repeated) · stories:story-marigold-india · stories:story-marigold-chornobryvtsi(intents=gratitude|comfort)
+rule-202,,confession,,,,1-2,normal,marigold,,서양 꽃말이 슬픔과 질투라 고백 자리에서 뜻이 뒤집힌다,meanings:marigold/greenaway-1884 은 '슬픔' · 노랑은 '질투'다. 같은 행의 caution_note 가 문화권마다 뜻이 정반대로 갈린다고 이미 경고한다
+rule-203,,comfort,,,,1-2,normal,corn-poppy,84,,meanings:corn-poppy/greenaway-1884 붉은 개양귀비='위로'(repeated) · stories:story-poppy-why-flanders · stories:story-poppy-tower-888246
+rule-204,,gratitude,remembrance,,,1-2,normal,corn-poppy,74,,stories:story-poppy-moina-anna(추모 관습을 만든 두 사람 · intents=gratitude) · meanings:corn-poppy/wikipedia-remembrance-poppy
+rule-205,,celebration,,,,1-2,normal,corn-poppy,,전몰자 추모의 상징이라 축하 자리에서는 자리를 잘못 읽은 꽃이 된다,meanings:corn-poppy/wikipedia-remembrance-poppy '돌아오지 못한 이들을 기억하는 일'(commonwealth·repeated) · stories:story-poppy-in-flanders-fields
+rule-206,lover,confession,,,,2-3,normal,jasmine,80,,meanings:jasmine/greenaway-1884 '당신에게 마음을 맡깁니다' · stories:story-jasmine-night-bloom(저녁 여섯 시에 피는 꽃 · intents=confession) · 향 3단계라 향 민감 시 EX_FRAGRANCE 가 먼저 거른다 — 히아신스(rule-007) 와 같은 취급
+rule-207,spouse,anniversary,,,,2-3,normal,jasmine,78,,meanings:jasmine/wikipedia-jasminum-sambac '순결 — 신부의 꽃'(philippines-indonesia·repeated) · stories:story-jasmine-sampaguita(intents=celebration|anniversary)
+rule-208,family,gratitude,,,,2-3,normal,jasmine,80,,stories:story-jasmine-thailand-mothers-day(어머니날에 재스민을 드린다 · intents=gratitude) · meanings:jasmine/wikipedia-hanakotoba '다정하고 우아함'(repeated)
+rule-209,,just_because,,,,1-2,normal,pansy,86,,meanings:pansy/greenaway-1884 '생각 — 당신을 떠올리고 있어요'(repeated) · stories:story-pansy-pensee(이름 자체가 '생각') — 꽃말과 상황이 1:1 로 겹치는 드문 자리라 높게 잡았다
+rule-210,,comfort,,,,1-2,normal,pansy,74,,stories:story-pansy-ophelia(오필리아가 건넨 꽃 · intents=comfort) · meanings:pansy/wikipedia-pansy '기억 — 잊지 않겠다는 마음'
+rule-211,crush,confession,,,,1-2,normal,pansy,76,,meanings:pansy/dumont-1851 '나를 생각해 주세요'(repeated) · stories:story-pansy-midsummer(사랑 묘약 · intents=confession)
+rule-212,family,celebration,christmas,,,1-2,normal,poinsettia,82,,meanings:poinsettia/wikipedia-poinsettia '거룩한 밤의 꽃'·'축하 — 한 해의 끝에 건네는 마음' · 화분으로만 유통되는 종이라 다발 자리에는 서지 않는다
+rule-213,,apology,,1,,1-2,normal,poinsettia,70,,stories:story-poinsettia-pepita(드릴 게 잡초뿐이었던 밤 · intents=apology|comfort) · 근거가 이야기 한 편뿐이고 꽃말 쪽 뒷받침이 없어 낮게 잡았다
+rule-214,colleague,gratitude,job-change,,,2-3,normal,sweet-pea,84,,meanings:sweet-pea/hanakotoba-yurai-sweetpea '작별 — 그리고 새 출발'(repeated) · 같은 행 caution_note 가 '보내는 자리의 꽃'이라 못 박았고 그 자리가 정확히 여기다 · 병합에서 occasion 을 기존 어휘 job-change 로 통일(farewell 은 이 표에서 이직·퇴사 배웅과 같은 자리였다)
+rule-215,,just_because,,,,2-3,normal,sweet-pea,72,,meanings:sweet-pea/suncheonbay-birth-flowers '다정한 추억'(repeated) · meanings:sweet-pea/greenaway-1884 '섬세한 기쁨'
+rule-216,,confession,,,,2-3,normal,sweet-pea,,작별의 꽃이라 곁에 있어 달라는 자리에는 뜻이 어긋난다,meanings:sweet-pea/hanakotoba-yurai-sweetpea 의 caution_note '곁에 있어 달라는 자리에는 뜻이 어긋납니다' 를 규칙으로 옮겼다
+rule-217,,celebration,,,,2-3,normal,sweet-pea,,보내는 자리의 꽃이라 축하 자리에서는 결이 어긋난다,meanings:sweet-pea/hanakotoba-yurai-sweetpea 의 같은 caution_note. 송별을 겸한 축하(졸업·이직)는 rule-214 의 gratitude 쪽으로 받는다
+rule-218,,celebration,,,,1-2,normal,gladiolus,86,,meanings:gladiolus/hanakotoba-yurai-gladiolus '승리 — 이겨 낸 사람에게'(repeated) · stories:story-gladiolus-via-gladiola(완주자에게 던지는 꽃 · intents=comfort|celebration)
+rule-219,lover,confession,,,,1-2,normal,gladiolus,74,,meanings:gladiolus/suncheonbay-birth-flowers 보라 글라디올러스='정열적인 사랑'(repeated) · hanakotoba-yurai-gladiolus '밀회' · stories:story-gladiolus-liliaceus-dusk(intents=confession|anniversary)
+rule-220,,comfort,recovery,,,1-2,normal,gladiolus,70,,stories:story-gladiolus-aureus-seed-bank(intents=comfort) · '이겨 낸 사람에게' 를 회복 쪽으로 읽은 파생 해석이라 승리 쪽(rule-218)보다 크게 낮다
+rule-221,,celebration,,,,2-3,normal,dahlia,80,,meanings:dahlia/dumont-1851 '우아함과 기품'(repeated) · hanakotoba-yurai-dahlia '화려함'(repeated) · stories:story-dahlia-one-root-cactus(intents=celebration|just_because)
+rule-222,,just_because,,,,2-3,normal,dahlia,72,,stories:story-dahlia-blue-prize-unclaimed · stories:story-dahlia-acocoxochitl-mexico(intents=gratitude|just_because)
+rule-224,friend,just_because,,,,1-2,normal,zinnia,84,,meanings:zinnia/greenaway-1884 '떠나 있는 벗을 생각하며'(repeated) · wikipedia-hanakotoba '변치 않는 마음' — 멀리 있는 친구를 떠올린 자리와 그대로 겹친다
+rule-225,,comfort,,,,1-2,normal,zinnia,74,,stories:story-zinnia-iss-first-bloom(intents=comfort|celebration) · stories:story-zinnia-japan-bon-flower(오래 간다는 이유로 영전에 올랐습니다 · intents=comfort|gratitude)
+rule-226,family,comfort,,,,1-2,normal,aster,78,,stories:story-aster-gwakkot-song-1953(누나는 과꽃을 좋아했지요 · intents=comfort|gratitude) · meanings:aster/suncheonbay-birth-flowers 흰 과꽃='나를 믿어 주세요'(repeated)
+rule-227,,apology,,2,,1-2,normal,aster,72,,meanings:aster/greenaway-1884 '뒤늦게 떠오른 생각'(repeated) 을 늦은 사과로 읽었고 '당신 뜻에 함께합니다' 가 뒤를 받친다 · 해석이 한 단계 들어가 낮게 잡았다
+rule-228,,comfort,,,,1-2,normal,calendula,78,,stories:story-calendula-shakespeare-deathbeds(임종의 침상에서 피는 꽃 · intents=comfort) · meanings:calendula/greenaway-1884 '이별의 슬픔' — 슬픔의 꽃말이 오히려 맞는 유일한 자리다
+rule-229,,celebration,,,,1-2,normal,calendula,,이별의 슬픔과 실망이 꽃말이라 기쁜 자리에 어울리지 않는다,meanings:calendula/greenaway-1884 의 caution_note '기쁜 자리에는 어울리지 않는 꽃말이에요' 를 그대로 옮겼다
+rule-230,,confession,,,,1-2,normal,calendula,,실망과 이별의 슬픔이 고백 자리에서 정반대로 읽힌다,meanings:calendula/hanakotoba-yurai-kinsenka '실망 — 기다림이 어긋난 자리'(repeated)
+rule-231,crush,confession,,,,2-3,normal,cyclamen,74,,meanings:cyclamen/greenaway-1884 '수줍음 — 선뜻 나서지 못하는 마음'(repeated) · suncheonbay-birth-flowers '내성적인 성격'(repeated) · 붉은 시클라멘에는 '질투'가 붙으니(caution_note) 흰 쪽으로 · 화분 종이라 다발 자리에는 서지 않는다
+rule-232,friend,gratitude,,,,1-2,normal,geranium,82,,meanings:geranium/greenaway-1884 '진실한 우정'(repeated) · suncheonbay-birth-flowers 붉은 제라늄='그대가 있어 행복합니다'(repeated)
+rule-233,friend,just_because,,,,1-2,normal,geranium,70,,meanings:geranium/greenaway-1884 노란 제라늄='뜻하지 않은 만남'(repeated) — 한 줄짜리 근거라 낮다
+rule-234,crush,confession,,,,1-2,normal,primula,78,,meanings:primula/suncheonbay-birth-flowers 흰 프리뮬러='첫사랑' · greenaway-1884 '이른 청춘' · stories:story-primula-primrose-day-favourite
+rule-235,,just_because,,,,1-2,normal,primula,72,,meanings:primula/ncstate-primula-polyantha '가장 먼저 피는 꽃이라는 이름' · stories:story-primula-sakurasou-edo-stage(intents=just_because)
+rule-236,,celebration,,,,1-2,normal,primula,,원전이 갈리는 꽃이라 축하 자리에서 '이른 슬픔' 쪽으로 읽힐 수 있다,meanings:primula/dumont-1851 '이른 슬픔'(varies) 의 caution_note '축하 자리에는 어울리지 않는 꽃말이에요' 를 그대로 옮겼다
+rule-237,spouse,anniversary,,,,1-2,normal,stock,84,,meanings:stock/dumont-1851 '영원한 아름다움'(repeated) · hanakotoba-yurai-stock '애정의 끈'(repeated)
+rule-238,crush,confession,,,,1-2,normal,stock,76,,meanings:stock/hanakotoba-yurai-stock 흰 스토크='남몰래 품은 사랑' · 향 3단계라 향 민감 시 EX_FRAGRANCE 가 먼저 거른다
+rule-239,,celebration,,,,2-3,normal,delphinium,76,,meanings:delphinium/hanakotoba-yurai-delphinium '청명 — 맑고 밝음'(repeated) · stories:story-delphinium-chelsea-every-year(intents=celebration|just_because)
+rule-240,,just_because,,,,2-3,normal,delphinium,72,,meanings:delphinium/dumont-1851 '자유로운 상상' · wikipedia-delphinium '돌고래를 닮은 꽃뿔'(repeated) · stories:story-delphinium-navajo-dye-refused(intents=gratitude|just_because)
+rule-241,,apology,,,,2-3,normal,delphinium,,'가벼움'과 '변덕'이 꽃말이라 사과 자리에서 정확히 반대 신호가 된다,meanings:delphinium/greenaway-1884 '가벼움 — 들뜬 마음' 의 caution_note '가볍다는 말이 칭찬으로 읽히지 않을 수 있어요' · 분홍은 '변덕'
+rule-242,,celebration,,,,3,normal,amaryllis,80,,meanings:amaryllis/greenaway-1884 '자랑스러움'(repeated) · hanakotoba-yurai-amaryllis '눈부신 아름다움'(repeated) · stories:story-amaryllis-watchmaker-fire(intents=gratitude|celebration) — 가격대 3 이라 격식 있는 자리에만 선다
+rule-243,lover,confession,,,,3,normal,amaryllis,72,,stories:story-amaryllis-theocritus-ten-apples(사과 열 개를 들고 동굴 앞에서 · intents=confession|just_because) · 옛 꽃말의 주인이 벨라돈나릴리 쪽이라는 caution_note 가 두 행에 붙어 낮게 잡았다
+rule-244,,comfort,,,,1-2,normal,cornflower,78,,stories:story-cornflower-tutankhamun-wreath(intents=comfort) · stories:story-cornflower-bleuet-de-france · meanings:cornflower/wikipedia-centaurea-cyanus '기억 — 돌아오지 못한 이들을 위해'(france)
+rule-245,,gratitude,remembrance,,,1-2,normal,cornflower,72,,stories:story-cornflower-bleuet-de-france(intents=comfort|gratitude) · 다만 같은 꽃이 정치적 상징으로도 읽힌다는 caution_note 가 있어 나라를 가리는 자리에서는 조심해야 한다
+rule-246,,celebration,graduation,,,1-2,normal,crocus,78,,meanings:crocus/greenaway-1884 '청춘의 기쁨'(repeated) · suncheonbay-birth-flowers '후회 없는 청춘'(repeated) · 2~4월에만 나와 봄의 새 출발 자리와 겹친다
+rule-247,crush,confession,,,,1-2,normal,crocus,76,,meanings:crocus/hanakotoba-yurai-crocus '간절함' · greenaway-1884 '지나치지 마세요' · wikipedia-crocus '스밀락스를 사랑하다 꽃이 된 크로코스'
+rule-248,,comfort,,,,2-3,normal,water-lily,70,,stories:story-water-lily-monet-armistice(휴전 이튿날 총리에게 보낸 편지 · intents=comfort|gratitude) · meanings:water-lily/greenaway-1884 '맑고 깨끗한 마음'(repeated) — 수반에 띄우는 꽃이라 건네는 형태가 드물어 낮게 잡았다
+rule-249,friend,gratitude,,,,1-2,normal,alstroemeria,84,,meanings:alstroemeria/hanakotoba-yurai-alstroemeria '우정과 헌신'(western·repeated) · stories:story-alstroemeria-florist-fingertips(intents=gratitude)
+rule-250,spouse,anniversary,,,,1-2,normal,alstroemeria,76,,meanings:alstroemeria/hanakotoba-yurai-alstroemeria '오래 가는 마음 — 지속' · wikipedia-hanakotoba '말로 다 못 할 만큼 깊은 인연' — 둘 다 단일 출처라 우정 쪽(rule-249)보다 낮다
+rule-251,,comfort,recovery,,,1-2,normal,alstroemeria,70,,stories:story-alstroemeria-liuto-chuno(아픈 사람에게 먹이던 뿌리 · intents=comfort) — 먹는 쓰임이라 선물 자리로는 한 단계 건너뛴 해석이다
+rule-252,,celebration,housewarming,,,2-3,normal,anthurium,78,,meanings:anthurium/hanakotoba-yurai-anthurium '따뜻한 환대'(western) · 화분으로 오래 가는 종이라 개업·집들이 자리에 선다
+rule-253,lover,confession,,,,2-3,normal,anthurium,72,,meanings:anthurium/hanakotoba-yurai-anthurium 붉은 안스리움='정열' · '사랑에 애타는 마음' — 이 꽃의 꽃말 여섯 줄이 전부 단일 출처라 낮게 잡았다
+rule-254,crush,confession,,,,2-3,normal,gardenia,78,,meanings:gardenia/wikipedia-hanakotoba '남몰래 품은 사랑' · hanakotoba-yurai-kuchinashi '무도회에 초대받은 마음'(usa — 코르사주 관습) · 향 3단계라 향 민감 시 EX_FRAGRANCE 가 먼저 거른다
+rule-255,,celebration,,,,2-3,normal,gardenia,76,,meanings:gardenia/greenaway-1884 '나는 더없이 행복합니다'(repeated) · suncheonbay-birth-flowers '한없는 즐거움'(repeated)
+rule-256,,comfort,,,,1-2,normal,statice,74,,meanings:statice/hanakotoba-yurai-statice '위로 — 서양이 읽는 스타티스' · '끊기지 않는 기억' — 다만 다발의 주인공이 아니라 곁들이라 낮게 잡았다
+rule-257,,celebration,,,,1-2,normal,statice,,애도 자리에서 오래 쓰인 꽃이라 축하 자리에서는 뜻이 어긋난다,meanings:statice/hanakotoba-yurai-statice 의 caution_note '애도 자리에서 오래 쓰인 말이라 축하 자리에서는 뜻이 어긋날 수 있어요' 를 그대로 옮겼다
+rule-258,,gratitude,womens-day,,,2-3,normal,mimosa,84,,meanings:mimosa/wikipedia-acacia-dealbata '여성의 날에 건네는 꽃'(italy·repeated) · stories:story-mimosa-1946-free-flower(intents=gratitude|celebration) · stories:story-mimosa-wax-stencil(intents=gratitude)
+rule-259,crush,confession,,,,2-3,normal,mimosa,74,,meanings:mimosa/hanakotoba-yurai-mimosa '비밀스러운 사랑'(repeated) — greenaway-1884 줄은 caution_note 대로 신경초(Mimosa pudica)의 꽃말이라 근거로 쓰지 않았다
+rule-260,lover,confession,,,,2-3,normal,bouvardia,74,,meanings:bouvardia/hanakotoba-yurai-bouvardia '정열'(repeated) — 이 꽃에서 repeated 등급인 꽃말은 이 한 줄뿐이다
+rule-261,friend,just_because,,,,2-3,normal,bouvardia,70,,meanings:bouvardia/hanakotoba-yurai-bouvardia '오가는 마음 — 사귐'(single_source) — 단일 출처라 낮다
+rule-262,,comfort,,,,2-3,normal,scabiosa,82,,meanings:scabiosa/greenaway-1884 '홀로 남은 사람의 꽃' · hanakotoba-yurai-scabiosa '나는 모든 것을 잃었습니다'(repeated) · stories:story-scabiosa-mourning-bride(intents=comfort)
+rule-263,,celebration,,,,2-3,normal,scabiosa,,애도 자리에서 오래 쓰인 꽃이라 축하 자리에는 어울리지 않는다,meanings:scabiosa/greenaway-1884 의 caution_note '애도 자리에서 오래 쓰인 말이라 축하 자리에는 어울리지 않아요' 를 그대로 옮겼다
+rule-264,,confession,,,,2-3,normal,scabiosa,,'이루지 못한 사랑'이 꽃말이라 고백 자리에서 정반대로 읽힌다,meanings:scabiosa/greenaway-1884 '이루지 못한 사랑'(repeated) · hanakotoba-yurai-scabiosa '나는 모든 것을 잃었습니다'(repeated)
+rule-265,,comfort,hardship,,,2-3,normal,plum-blossom,82,,meanings:plum-blossom/wikipedia-ko-maesil '추위에 굴하지 않는 절개'(korea·repeated) · stories:story-plum-toegye-water-the-plum(intents=comfort|just_because)
+rule-266,spouse,anniversary,,,,2-3,normal,plum-blossom,76,,meanings:plum-blossom/hanakotoba-yurai-ume '충실 — 날아온 매화' · '약속을 지키는 사람'(western) — greenaway-1884 줄은 caution_note 대로 유럽 자두의 꽃말이라 근거로 쓰지 않았다
+rule-267,,celebration,new-year,,,2-3,normal,plum-blossom,74,,stories:story-plum-reiwa(연호가 매화 잔치에서 나왔습니다 · intents=celebration|just_because) · 1~4월에만 나오는 가지라 나머지 달은 계절 점수 S 가 알아서 내린다
+rule-268,,comfort,,,,1-2,normal,azalea,76,,stories:story-azalea-dugyeon-bird(새가 토한 피가 꽃을 물들였다 · intents=apology|comfort) · stories:story-azalea-sowol-first-edition · meanings:azalea/wikipedia-hanakotoba '참을성 있고 겸손함'(repeated)
+rule-269,crush,confession,,,,1-2,normal,azalea,72,,meanings:azalea/suncheonbay-birth-flowers '사랑의 희열'(korea·repeated) · hanakotoba-yurai-tsutsuji 흰 진달래='첫사랑' — 일본의 ツツジ 가 철쭉류까지 가리킨다는 caution_note 가 붙어 낮게 잡았다
+rule-270,,apology,,2,,1-2,normal,azalea,70,,stories:story-azalea-dugyeon-bird 의 intents 에 apology 가 붙어 있다 · 다만 소월의 「진달래꽃」은 보내는 자리의 시라 사과보다 배웅에 가깝다 — 해석이 갈려 낮게 잡았다
+rule-271,,comfort,,,,1-2,normal,cotton,76,,meanings:cotton/lovegreen-cotton '나를 감싸 주세요' · stories:story-cotton-manchester-1862(intents=gratitude|comfort)
+rule-272,,gratitude,,,,1-2,normal,cotton,70,,stories:story-cotton-manchester-1862(굶으면서 봉쇄를 지지한 사람들 · intents=gratitude|comfort) · 꽃말 '우수'는 한자가 優秀/憂愁 로 갈린다는 caution_note 가 있어 근거로 쓰지 않았다

@@ -83,7 +83,9 @@ export type SeasonStatus = 'in_season' | 'limited' | 'out_of_season' | 'unknown'
  * 규칙 식별자. 현재 사용 중인 값:
  * 'EX_PET_TOXIC' | 'EX_BUDGET' | 'EX_DISLIKED' | 'EX_FRAGRANCE'
  * | 'SC_INTENT' | 'SC_RELATIONSHIP' | 'SC_SEASON' | 'SC_AESTHETIC' | 'SC_PERSONA'
+ * | 'SC_FRAGRANCE' | 'SC_PERSONAL' | 'SC_MEMORY_FLOWER'
  * CSV/DB에서 새 규칙이 유입될 수 있어 string으로 열어 둔다.
+ * 화면에 나가는 문장은 `explain.ts` 의 `REASON_TEXTS` 가 전 규칙을 덮는다.
  */
 export type RuleId = string;
 
@@ -204,6 +206,11 @@ export interface RuleSet {
   stories?: StoryRow[];
 }
 
+/**
+ * 적합도 점수식의 여섯 항. 합은 1.0 이고 `weights.ts` 의 zod refine 이 그것을 지킨다.
+ * 여섯 항이 **전부 실제로 쓰인다** — I·R·S·A·P 는 `scoreCandidate` 가, D 는 세 안이
+ * 정해진 뒤 `diversify()` 가 채운다(2026-08-17 감사 P1-1 의 "죽은 15%" 를 되살린 자리).
+ */
 export interface Weights {
   I: number;
   R: number;

@@ -47,7 +47,12 @@ const MEMBER_SPECIFIC_RULES: ReadonlySet<RuleId> = new Set<RuleId>([
   'EX_DISLIKED',
 ]);
 
-const SCORE_PARTS = ['I', 'R', 'S', 'A', 'P'] as const satisfies readonly ScorePart[];
+/**
+ * 멤버 평균을 낼 때 훑는 항.
+ * D 도 포함하지만 이 단계에서는 늘 0 이다 — 다양성은 부케 3종이 정해진 뒤
+ * `diversify()` 가 채운다(score.ts `ScoreBreakdown.total` 의 "두 걸음" 주석).
+ */
+const SCORE_PARTS = ['I', 'R', 'S', 'A', 'P', 'D'] as const satisfies readonly ScorePart[];
 
 export interface GroupMemberInput {
   name: string;
@@ -245,7 +250,7 @@ function averageScore(
   rules: RecommendationRuleRow[],
   weights: Weights,
 ): ScoreBreakdown {
-  const sums: Record<ScorePart, number> = { I: 0, R: 0, S: 0, A: 0, P: 0 };
+  const sums: Record<ScorePart, number> = { I: 0, R: 0, S: 0, A: 0, P: 0, D: 0 };
   const matched = new Set<RuleId>();
   let total = 0;
 
@@ -257,7 +262,7 @@ function averageScore(
   }
 
   const n = Math.max(contexts.length, 1);
-  const parts = { I: 0, R: 0, S: 0, A: 0, P: 0 } as Record<ScorePart, number>;
+  const parts = { I: 0, R: 0, S: 0, A: 0, P: 0, D: 0 } as Record<ScorePart, number>;
   for (const part of SCORE_PARTS) parts[part] = round4(sums[part] / n);
 
   return { total: round4(total / n), parts, matched: Array.from(matched) };
@@ -323,7 +328,7 @@ export function recommendGroupBouquet(
     .sort((a, b) => b.score.total - a.score.total);
 
   // 3) 최대 3종
-  const picked = diversify(scored, MAX_BOUQUET_FLOWERS);
+  const picked = diversify(scored, MAX_BOUQUET_FLOWERS, weights);
 
   const bouquetInput: RecoInput = {
     relationship: parsed.members[0].relationship ?? DEFAULT_RELATIONSHIP,

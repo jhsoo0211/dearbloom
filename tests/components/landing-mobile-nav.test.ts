@@ -18,8 +18,8 @@ import { describe, expect, it } from 'vitest';
  *   ③ 대화상자 규격이 빠지는 것 — `aria-modal` 만 적고 트랩·`inert` 를 잊는 흔한 실패
  *   ④ 스크롤 잠금이 각자 저장·복원으로 되돌아가는 것 — 겹치면 화면이 잠긴 채 남는다
  *   ⑤ `opacity: 0` 이 미디어 쿼리 밖으로 새는 것 — 모션을 끈 사용자에게 빈 목차가 뜬다
- *   ⑥ (2026-08-17) 여는 버튼이 **다시 원형 아이콘 버튼으로 돌아가는 것** — 채움 알약
- *      바로 옆의 아웃라인 원은 형태와 무게가 동시에 어긋나 딴 시스템 부품처럼 보였다
+ *   ⑥ (2026-08-17) 모바일 상단에 CTA가 다시 들어오는 것 — 히어로 CTA와 겹치며
+ *      `워드마크 + CTA + 메뉴`의 밀도 높은 툴바로 돌아간다
  *
  * (`tests/components/type-floor.test.ts` 와 같은 장치다 — 소스에 없으면 화면에도 없다.)
  */
@@ -89,10 +89,11 @@ const MOTION_BLOCK = (() => {
 })();
 
 describe('§1.6c — 접힌 줄과 그것을 여는 문은 한 몸이다', () => {
-  it('860px 쿼리 한 블록이 링크를 숨기고 버튼을 켠다 (둘이 갈라지지 않는다)', () => {
+  it('860px 쿼리 한 블록이 링크·중복 CTA를 숨기고 메뉴를 켠다', () => {
     const narrow = blockAfter(css, '@media (max-width: 860px)');
 
     expect(narrow).toMatch(/\.db-nav-links\s*\{\s*display:\s*none;/);
+    expect(narrow).toMatch(/\.db-nav-cta\s*\{\s*display:\s*none;/);
     expect(narrow).toMatch(/\.db-nav-menu\s*\{\s*display:\s*inline-flex;/);
   });
 
@@ -117,44 +118,29 @@ describe('§1.6c — 접힌 줄과 그것을 여는 문은 한 몸이다', () =>
   });
 });
 
-/**
- * §1.6c-2 — 여는 버튼은 CTA 와 **같은 알약**이다 (2026-08-17 사용자 지적: "이질적이다").
- *
- * 원인은 하나가 아니라 둘이 겹친 것이었다: 채움 알약(`추천 시작`) 바로 옆에 아웃라인
- * **원**이 서면 ⑴ 형태(pill↔circle)와 ⑵ 무게(filled↔outline)가 동시에 어긋난다. 둘 중
- * 하나만 달랐다면 위계로 읽혔을 텐데 둘 다 다르니 서로 다른 시스템에서 온 부품처럼 보였다.
- * 게다가 유리 알약(radius 9999) 끝에 놓인 원은 그 알약의 오른쪽 캡을 한 번 더 그려
- * 동심원처럼 겹쳤다(실측 스크린샷에서 확인한 자리).
- *
- * 고친 방식은 **형태를 맞추고 무게로만 위계를 주는 것**이다 — §1.6b 표의 `주 CTA`(채움)와
- * `보조 버튼`(고스트 1px 보더) 짝이 이미 그 규격이라, 새 부품을 들이지 않고 표 안에서
- * 한 칸 옮겨 앉힌 것뿐이다.
- */
-describe('§1.6c-2 — 채움 알약 옆에는 아웃라인 알약이 선다 (원이 아니다)', () => {
+/** §1.6c-2 — A안: 모바일 상단은 브랜드와 탐색만 맡는 조용한 레일이다. */
+describe('§1.6c-2 — 모바일 상단은 워드마크 + 메뉴만 남긴다', () => {
   const menuRule = blockAfter(css, '.db-nav-menu {');
   const ctaRule = blockAfter(css, '.db-nav-cta {');
+  const narrow = blockAfter(css, '@media (max-width: 860px)');
 
-  it('여는 버튼과 CTA 가 같은 캡(radius 9999)을 쓴다', () => {
+  it('데스크톱 CTA와 메뉴는 기존 디자인 토큰을 그대로 쓴다', () => {
     expect(menuRule).toMatch(/border-radius:\s*9999px;/);
     expect(ctaRule).toMatch(/border-radius:\s*9999px;/);
-    // 원으로 되돌아가면 이 줄이 먼저 깨진다.
-    expect(menuRule).not.toMatch(/border-radius:\s*50%;/);
-  });
-
-  it('위계는 무게로만 준다 — CTA 는 채움, 여는 버튼은 고스트 1px 보더', () => {
     expect(ctaRule).toMatch(/background:\s*var\(--cta-bg\);/);
     expect(menuRule).toMatch(/border:\s*1px solid var\(--ctrl-line\);/);
-    // 골드 배경 금지선(§1.4)과 팔레트 밖 색을 들이지 않았는지 — 값 하드코딩이 없어야 한다.
     expect(menuRule).not.toMatch(/#[0-9a-fA-F]{3,8}/);
   });
 
-  it('터치 타깃 44px 은 그대로다 (라벨이 붙어도 높이는 규격)', () => {
-    expect(menuRule).toMatch(/min-height:\s*44px;/);
+  it('레일은 화면 폭을 쓰고 양 끝에 브랜드와 메뉴를 놓는다', () => {
+    expect(narrow).toMatch(/\.db-nav\s*\{[\s\S]*?width:\s*min\([\s\S]*?560px,[\s\S]*?100vw - 24px/);
+    expect(narrow).toMatch(/justify-content:\s*space-between;/);
   });
 
-  it('라벨이 실제로 있다 — 아이콘만 남으면 원이 아니어도 뜻이 흐려진다', () => {
+  it('메뉴는 44px 터치 타깃과 보이는 라벨을 유지한다', () => {
+    expect(menuRule).toMatch(/min-height:\s*44px;/);
     expect(page).toContain('<span className="db-nav-menu-t">메뉴</span>');
-    expect(blockAfter(css, '.db-nav-menu {')).toMatch(/font-size:\s*13\.5px;/);
+    expect(menuRule).toMatch(/font-size:\s*13\.5px;/);
   });
 
   it('보이는 라벨이 접근성 이름 안에 있다 (WCAG 2.5.3 Label in Name)', () => {
@@ -164,48 +150,73 @@ describe('§1.6c-2 — 채움 알약 옆에는 아웃라인 알약이 선다 (�
     expect(label).toContain('메뉴');
   });
 
-  it('폰 폭에서는 붙어 선 타깃 사이가 8px 이상이다 (ui-ux-pro-max Touch Spacing)', () => {
-    /* 데스크톱 6px 은 그대로다 — 거기서는 포인터가 누른다. 이 줄이 지키는 것은
-       "손가락 폭에서만 벌린다"는 판단이 통째로 사라지지 않는 것이다. */
-    expect(blockAfter(css, '@media (max-width: 860px)')).toMatch(/\.db-nav\s*\{\s*gap:\s*8px;/);
+  it('320px에서도 라벨을 접지 않는다 — CTA를 덜어 공간을 확보했다', () => {
+    expect(css).not.toMatch(/\.db-nav-menu-t\s*\{\s*display:\s*none;/);
   });
 
-  it('가장 좁은 폭에서는 **라벨만** 접는다 — 버튼째 숨기면 다시 막다른 화면이다', () => {
-    const fold = blockAfter(css, '@media (max-width: 344px)');
+  it('상단 레일과 전면 시트가 노치·홈 인디케이터를 피한다', () => {
+    const nav = blockAfter(css, '.db-nav {');
+    expect(nav).toContain('env(safe-area-inset-top, 0px)');
+    expect(nav).toContain('env(safe-area-inset-left, 0px)');
+    expect(nav).toContain('env(safe-area-inset-right, 0px)');
+    const sheetInner = blockAfter(css, '.db-navsheet-in {');
+    expect(sheetInner).toContain('env(safe-area-inset-top, 0px)');
+    expect(sheetInner).toContain('env(safe-area-inset-bottom, 0px)');
+    expect(sheetInner).toContain('env(safe-area-inset-left, 0px)');
+    expect(sheetInner).toContain('env(safe-area-inset-right, 0px)');
+  });
 
-    expect(fold).toMatch(/\.db-nav-menu-t\s*\{\s*display:\s*none;/);
-    // 버튼 자신에게 `display:none` 이 걸리면 그 폭에서는 메뉴로 가는 길이 사라진다.
-    expect(fold).not.toMatch(/\.db-nav-menu\s*\{[^}]*display:\s*none/);
+  it('헤더에서 덜어낸 추천 CTA는 히어로와 메뉴 시트에 남는다', () => {
+    expect(between(page, '<div className="db-hero-acts"', '</div>')).toContain('href="/recommend"');
+    expect(sheet).toMatch(
+      /className="db-btn db-btn-primary db-navsheet-cta"[\s\S]*?href="\/recommend"/,
+    );
   });
 });
 
 describe('§1.6c — 목차가 내비를 하나도 빠뜨리지 않는다', () => {
   it('스캔이 실제로 목적지를 찾는다 (정규식이 낡으면 이 줄이 먼저 깨진다)', () => {
-    expect(NAV_LINK_HREFS.length).toBeGreaterThanOrEqual(5);
+    expect(NAV_LINK_HREFS.length).toBeGreaterThanOrEqual(4);
+    // 2026-08-18 에 「읽을거리」(/reads)가 합류해 4 → 5 가 됐다.
     expect(SHEET_HREFS).toHaveLength(5);
   });
 
-  it('데스크톱 내비의 콘텐츠 목적지가 전부 시트에 있다', () => {
-    /* `#db-start`(시작하기)만 빠진다 — 같은 일을 시트에서는 아래 주 CTA(`/recommend`)가
-       한다. 랜딩 안쪽 앵커로 내려보내는 대신 곧장 플로우로 보내는 편이 목차의 결론이다. */
-    const expected = NAV_LINK_HREFS.filter((href) => href !== '#db-start');
-
-    expect(expected).toContain('/flowers');
-    expect(expected).toContain('/letter');
-    for (const href of expected) expect(SHEET_HREFS, href).toContain(href);
+  it('`시작하기`(#db-start)가 내비로 돌아오지 않는다 — CTA 와 같은 일이 둘 서 있었다', () => {
+    /* 2026-08-17 사용자 지적: 내비의 `시작하기` 앵커와 `추천 시작` CTA 가 같은 일을 하는
+       진입 둘로 읽혔다. 앵커를 덜었고, 마무리 절(#db-start 섹션)은 스크롤로만 닿는다. */
+    expect(NAV_LINK_HREFS).not.toContain('#db-start');
   });
 
-  it('`여러 명에게`(/groups)가 시트에는 있다 — #20 은 첫 화면 이야기였다', () => {
-    expect(SHEET_HREFS).toContain('/groups');
+  it('데스크톱 내비의 콘텐츠 목적지가 전부 시트에 있다', () => {
+    expect(NAV_LINK_HREFS).toContain('/flowers');
+    expect(NAV_LINK_HREFS).toContain('/letter');
+    for (const href of NAV_LINK_HREFS) expect(SHEET_HREFS, href).toContain(href);
+  });
+
+  it('`여러 명에게`(/groups)는 시트에도 내비에도 없다 (2026-08-17 사용자 확정)', () => {
+    /* 처음에는 시트에 실었지만(#20 은 "첫 화면" 이야기라는 논리) 사용자가 뒤집었다 —
+       "추천받기가 있으니까". 여러 명에게 가는 길은 추천 플로우 1번 질문의 `여러 분께`
+       갈림길이 맡고, 페이지 자체는 살아 있다. 그 근거가 시트 소스 주석에 남아 있어야
+       다음 사람이 다시 넣지 않는다. */
+    expect(SHEET_HREFS).not.toContain('/groups');
     expect(NAV_LINK_HREFS).not.toContain('/groups');
-    // 그 판단의 근거가 코드 옆에 남아 있어야 다음 사람이 다시 지우지 않는다.
-    expect(sheet).toContain('#20');
+    expect(sheet).toContain('2026-08-17 사용자');
   });
 
   it('주 CTA 는 추천 플로우로 간다', () => {
     expect(sheet).toMatch(
       /className="db-btn db-btn-primary db-navsheet-cta"[\s\S]*?href="\/recommend"/,
     );
+  });
+
+  it('번호와 라벨이 링크 안에 있고 행 전체가 56px 이상 터치 타깃이다', () => {
+    const rowLink = blockAfter(css, '.db-navsheet-item a {');
+
+    expect(rowLink).toMatch(/display:\s*grid;/);
+    expect(rowLink).toMatch(/width:\s*100%;/);
+    expect(rowLink).toMatch(/min-height:\s*56px;/);
+    expect(sheet).toMatch(/<Link[\s\S]*?<span className="db-navsheet-no"[\s\S]*?db-navsheet-label/);
+    expect(sheet).toMatch(/<a href=\{item\.href\}[\s\S]*?<span className="db-navsheet-no"/);
   });
 });
 
@@ -233,8 +244,11 @@ describe('§1.6c — 대화상자 규격 (게이트와 같은 문법)', () => {
   });
 
   it('열려 있는 동안 뒤 화면 셋이 전부 `inert` 다', () => {
-    // nav · main · footer — 하나라도 빠지면 Tab 이 시트 밖으로 샌다.
+    // header · main · footer — 하나라도 빠지면 Tab 이 시트 밖으로 샌다.
     expect(page.match(/inert=\{gateOpen \|\| menuOpen \|\| undefined\}/g)).toHaveLength(3);
+    expect(page).toContain(
+      '<header className="db-site-head" inert={gateOpen || menuOpen || undefined}>',
+    );
   });
 
   it('닫으면 연 버튼으로 포커스가 돌아간다 — 그것도 이펙트에서', () => {
@@ -246,8 +260,9 @@ describe('§1.6c — 대화상자 규격 (게이트와 같은 문법)', () => {
     expect(page).toContain('const closeMenu = useCallback(() => setMenuOpen(false), []);');
   });
 
-  it('시트는 내비 **밖**에 그린다 (유리 알약이 전면 시트를 잘라 먹는다)', () => {
+  it('시트는 헤더·내비 **밖**에 그린다 (유리 알약이 전면 시트를 잘라 먹는다)', () => {
     expect(page.indexOf('<MobileNavSheet')).toBeGreaterThan(page.indexOf('</nav>'));
+    expect(page.indexOf('<MobileNavSheet')).toBeGreaterThan(page.indexOf('</header>'));
     expect(page.indexOf('<MobileNavSheet')).toBeLessThan(page.indexOf('<main id="db-main"'));
   });
 

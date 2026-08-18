@@ -148,6 +148,11 @@ export const SEED_TARGETS: Record<string, SeedTarget> = {
     table: 'birth_stories',
     strategy: { kind: 'upsert', onConflict: 'story_id' },
   },
+  /* 0012 와 짝이다. `read_id` 가 자연키이고, 주간 점검이 만료된 행사 행을 **지우기**
+     때문에(조사 문서 §7-3) upsert 만으로는 DB 에 유령 행이 남는다 — 그 청소는 아직
+     사람 몫이다. 표를 통째로 갈아 끼우는 replace 로 바꾸고 싶어지면 `meanings` 의
+     주석부터 읽어라(지운 뒤 실패하면 표가 빈 채로 남는다). */
+  reads: { table: 'reads', strategy: { kind: 'upsert', onConflict: 'read_id' } },
 };
 
 /**

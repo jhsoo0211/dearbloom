@@ -15,7 +15,7 @@
 | 어떻게 | GitHub 리포 연결 (Vercel·Netlify) | `out/` 폴더나 zip을 드롭 |
 | 명령 | `npm run build` | `npm run build:static` |
 | 멘트 | LLM이 그 자리에서 쓴다 | 미리 적어 둔 예문 |
-| 쓰는 때 | 실제 서비스 | 심사·시연·오프라인 리뷰, 키 없이 돌려 볼 때 |
+| 쓰는 때 | 실제 서비스 | 심사·시연·키 없이 정적 화면을 검토할 때 |
 
 **두 갈래를 섞지 마라.** 본배포에서 추천·그룹·멘트 생성은 **서버 액션**으로 돌고,
 그 코드는 정적 호스팅에 올릴 수 없다. 반대로 드롭 데모는 서버가 없으니 LLM을 부를
@@ -91,7 +91,7 @@ Netlify에 드롭할 때는 [app.netlify.com](https://app.netlify.com) → **Sit
 
 **추천 알고리즘이 진짜로 돈다.** 엔진(`src/lib/engine`)이 순수 함수라, 서버가 하던
 계산을 브라우저가 그대로 한다 — 3안 선정·적합도·색 제안·반려동물 제외·제철 판정까지
-같은 코드다. 카탈로그(꽃 31종·꽃말·규칙·이야기·문학)는 빌드할 때 CSV에서 굳혀 함께
+같은 코드다. 카탈로그(꽃 59종·꽃말·규칙·이야기·문학)는 빌드할 때 CSV에서 굳혀 함께
 싣는다(`scripts/build-demo-catalog.mjs`). **다른 꽃이 나오지 않는다.**
 
 | 기능 | 본배포 | 정적 드롭 데모 |
@@ -102,7 +102,7 @@ Netlify에 드롭할 때는 [app.netlify.com](https://app.netlify.com) → **Sit
 | 반려동물 안전·대체 꽃 | ○ | ○ |
 | 그룹 추천 `/groups` (각각·단체 부케) | ○ | **○ 같은 엔진, 같은 결과** |
 | 도감 `/flowers` · 생일 꽃 찾기 | ○ | ○ |
-| 이야기 아카이브 `/stories` · 전문 시트 | ○ | ○ (317편 전부) |
+| 이야기 아카이브 `/stories` · 전문 시트 | ○ | ○ (438편 전부) |
 | 비밀 편지 `/letter` | ○ (브라우저 저장) | ○ (같다 — 원래 서버를 안 쓴다) |
 | **멘트(카드 문구)** | LLM이 들려준 이야기를 담아 그 자리에서 쓴다 | **미리 적어 둔 예문**(`templates.csv`) |
 | 이미지 최적화 `/_next/image` | ○ | 원본 그대로 (서버가 없다) |
@@ -138,11 +138,11 @@ Netlify에 드롭할 때는 [app.netlify.com](https://app.netlify.com) → **Sit
 | `CLOVA_API_KEY` | CLOVA Studio 키 (`nv-…`) | 한국어 특화 폴백 — 선택 |
 | `NVIDIA_API_KEY` | NIM 키 (`nvapi-…`) | 비상 폴백 — 선택 |
 | `ANTHROPIC_API_KEY` | (있으면) | 선택 |
+| `ELEVENST_API_KEY` | 11번가 오픈API 키 (openapi.11st.co.kr, 유효 180일) | 「사러 가기」 실상품 목록 — 없으면 사이트 목록으로 동작 |
 | `NEXT_PUBLIC_SITE_URL` | 배포 주소 (`https://….vercel.app`) | 권장 — OG·sitemap 기준 |
 | `NEXT_PUBLIC_SUPABASE_URL` | `https://<프로젝트>.supabase.co` | Supabase를 붙인 뒤 — 아래 절 |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | 공개(anon) 키 | 위와 한 벌 (브라우저에 나가는 값이 맞다) |
 | `SUPABASE_SERVICE_ROLE_KEY` | 비밀 키 | **호스팅에 넣지 않는다** — 아래 절 참고 |
-| `RESULT_TTL_HOURS` / `DAILY_GEN_LIMIT_PER_UID` | 72 / 20 | 선택 (기본값 동작) |
 
 로컬 `.env` 값을 그대로 옮겨 적으면 된다. **`.env` 파일 자체를 업로드하거나 커밋하지
 않는다** — 리포는 `.gitignore` 3중 규칙으로 이미 막혀 있고, 아래 zip 도 git 추적 파일만
@@ -152,19 +152,21 @@ Netlify에 드롭할 때는 [app.netlify.com](https://app.netlify.com) → **Sit
 줄도 읽지 않는다(쓰는 곳은 로컬 시드 CLI 하나뿐이라 로컬 `.env`에만 둔다). 서버에서 이
 키가 필요해지는 날 이 표를 함께 고친다.
 
-## Supabase 붙이기 (콘텐츠 DB)
+## Supabase 준비하기 (콘텐츠 DB)
 
 지금 앱은 `content/*.csv`를 런타임에 읽어 돌아간다. Supabase는 **그 CSV를 DB로 옮기는
-단계**이며, 아래 4단계를 마치면 켜진다.
+적재 경로와 스키마를 준비한 단계**다. 아래 절차는 DB를 만들고 데이터를 검증·적재하지만,
+앱의 런타임 데이터 소스를 자동으로 바꾸지는 않는다. 실제 전환에는 `src/lib/data/catalog.ts`의
+CSV 로더를 대체할 Supabase 어댑터와 전환 테스트가 추가로 필요하다.
 
 1. [supabase.com](https://supabase.com) → **New project**.
    리전은 `Northeast Asia (Seoul)`, DB 비밀번호는 따로 보관한다(다시 안 보여 준다).
 2. **SQL Editor → New query** 에서 `db/migrations/` 를 **파일 번호 순서대로** 붙여 실행한다:
    `0001_catalog` → `0002_results_share` → `0003_rls` → `0004_stories` → `0005_story_tags`
    → `0006_story_type` → `0007_source_kind` → `0008_quotes_literature` → `0009_letters`
-   → `0010_birth_flowers`.
+   → `0010_birth_flowers` → `0011_birth_photos_stories`.
    **순서가 곧 의존성이다**(0003은 0001·0002의 표를, 0005~0007은 0004의 표를, 0008은
-   `quotes`를, 0010은 `flowers`를 참조한다). `create table` 파일은 두 번 돌리면 에러가
+   `quotes`를, 0010은 `flowers`를, 0011은 `birth_flowers`를 참조한다). `create table` 파일은 두 번 돌리면 에러가
    나는데, 그것이 의도다 — 재실행이 살아 있는 데이터를 덮지 못하게 한다(`db/README.md`).
 3. **Project Settings → API** 의 세 값을 로컬 `.env`에 채운다.
    `NEXT_PUBLIC_SUPABASE_URL` · `NEXT_PUBLIC_SUPABASE_ANON_KEY` · `SUPABASE_SERVICE_ROLE_KEY`.
@@ -205,7 +207,8 @@ powershell -File scripts/package-deploy.ps1 -Static    # 정적 드롭 데모
 | `dearbloom-static-demo-<날짜>.zip` | 빌드된 사이트(`out/`) | 드롭 배포·시연 |
 
 소스 zip은 `git archive` 기반이라 `.env`·`node_modules`·`.next` 는 **구조적으로 포함될
-수 없다**(git 미추적). 빈 키 템플릿은 `.env.example` 로 들어 있으니 받은 쪽은 그걸
+수 없다**(git 미추적). 또한 아직 커밋하지 않은 변경도 포함되지 않으므로 패키징 전
+`git status`로 포함 범위를 확인한다. 빈 키 템플릿은 `.env.example` 로 들어 있으니 받은 쪽은 그걸
 채우면 된다. 정적 zip은 브라우저로 나가는 코드만 담겨서 역시 키가 들어갈 자리가 없다.
 
 ## 배포 전 체크리스트
@@ -216,7 +219,8 @@ powershell -File scripts/package-deploy.ps1 -Static    # 정적 드롭 데모
 - [ ] 호스팅 환경변수 입력 (위 표) — 키는 리포가 아니라 대시보드에
 - [ ] 배포 후 `/recommend` 한 번 완주 — 멘트가 예문이 아니라 생성문인지 (키 연결 확인)
 - [ ] `NEXT_PUBLIC_SITE_URL` 을 발급 주소로 채우고 재배포 (OG·sitemap)
-- [ ] Supabase 를 붙이는 날: 마이그레이션 `0001~0010` 적용 → env 3종 → `npm run seed -- --apply`
+- [ ] Supabase 를 준비하는 날: 마이그레이션 `0001~0011` 적용 → env 3종 → `npm run seed -- --apply`
+- [ ] 콘텐츠 조회를 DB로 전환하는 날: Supabase 어댑터 연결·회귀 테스트 후 CSV 로더 교체
 - [ ] `/letter` 는 현재 기기 저장 단계 — 기기 간 열람은 익명 로그인까지 붙는 날
 
 ### 정적 드롭 데모

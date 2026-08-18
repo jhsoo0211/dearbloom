@@ -12,7 +12,7 @@
  * 이 파일은 문자열만 만든다. 호출·파싱·폴백은 `provider.ts` 가 맡는다.
  */
 
-import type { GenerateRequest } from './contracts';
+import type { GenerateRequestParsed } from './contracts';
 import { RESPONSE_TONE_COUNT } from './contracts';
 
 /** 톤 어휘 → 프롬프트에서 쓸 한국어 이름과 결. 화면 라벨(labels.ts)과는 별개다. */
@@ -46,9 +46,26 @@ const INTENT_KO: Record<string, string> = {
   other: '사용자가 직접 적은 마음',
 };
 
-/** 멘트 한 편의 길이(공백 포함 글자 수). 화면 카드 한 장에 담기는 분량이다. */
+/**
+ * 멘트 한 편의 길이(공백 포함 글자 수). 화면 카드 한 장에 담기는 분량이다.
+ *
+ * `MESSAGE_MAX_CHARS` 는 결과 화면의 **고쳐 쓰기 상한**과 같은 값이다 — 사용자가 우리
+ * 멘트를 손봐서 200자를 넘길 수 있으면, 우리가 200자로 쓴 이유(카드 한 장)가 무너진다.
+ */
 export const MESSAGE_MIN_CHARS = 80;
 export const MESSAGE_MAX_CHARS = 200;
+
+/**
+ * 길이 축별 글자 수 (2026-08-18).
+ *
+ * `short` 는 "짧게" 토글이 요구하는 분량이다 — 문자 한 통에 그대로 얹히는 크기로 잡았다.
+ * 하한을 40 으로 둔 것은 사과처럼 **담아야 할 요소가 정해진 상황**(인정·책임·재발 방지)이
+ * 있기 때문이다. 그보다 짧으면 규칙을 지킬 자리가 없어 모델이 요소를 버린다.
+ */
+export const MESSAGE_LENGTH_CHARS: Record<string, { min: number; max: number }> = {
+  short: { min: 40, max: 90 },
+  medium: { min: MESSAGE_MIN_CHARS, max: MESSAGE_MAX_CHARS },
+};
 
 /**
  * 사과 상황의 예문 한 벌 — `content/templates.csv` 의 `tpl-apology-sincere` 행이다.
@@ -78,7 +95,10 @@ export function buildSystemPrompt(): string {
     '6. 상대를 탓하거나, 용서를 재촉하거나, 선물의 크기로 마음을 재는 표현을 쓰지 않는다.',
     '',
     '## 문장 규칙',
-    `- 멘트(message)는 ${MESSAGE_MIN_CHARS}~${MESSAGE_MAX_CHARS}자. 사람이 그대로 복사해 보낼 수 있어야 한다.`,
+    // 분량만 요청마다 다르다 — 그 한 줄은 <자료> 쪽에 둔다(이 시스템 문자열을 고정해
+    // 두어야 나중에 프롬프트 캐싱을 붙일 수 있다).
+    '- 멘트(message)의 분량은 아래 요청의 `분량` 줄이 정한다. 그 범위를 지킨다.',
+    '- 멘트는 사람이 그대로 복사해 보낼 수 있어야 한다.',
     '- headline 은 20자 이내의 첫 문장. 멘트의 요약이 아니라 말문을 여는 한 마디다.',
     '- 말투는 관계에 맞춘다. 연인·친구·썸이면 편한 말, 가족·동료·선후배면 예의를 갖춘 말.',
     '- why_it_fits 는 서비스가 사용자에게 건네는 한 줄이므로 **다정한 존댓말**로 쓴다.',
@@ -96,7 +116,7 @@ export function buildSystemPrompt(): string {
 }
 
 /** 요청 한 건을 <자료> 블록으로 옮긴다. 자유 서술은 여기에만 들어간다. */
-export function buildUserPrompt(req: GenerateRequest): string {
+export function buildUserPrompt(req: GenerateRequestParsed): string {
   const relationship = RELATIONSHIP_KO[req.relationship] ?? req.relationship;
   const intent = INTENT_KO[req.intent] ?? req.intent;
 
@@ -162,16 +182,26 @@ export function buildUserPrompt(req: GenerateRequest): string {
     lines.push('', '이 상황에서 지켜야 할 것:', ...req.rules.map((rule) => `- ${rule}`));
   }
 
+  const size = MESSAGE_LENGTH_CHARS[req.length] ?? MESSAGE_LENGTH_CHARS.medium;
+
   lines.push(
     '</자료>',
+    '',
+    `분량: 멘트(message)는 ${size.min}~${size.max}자.`,
     '',
     '요청한 톤(이 순서 그대로):',
     ...toneLines,
     '',
     FEW_SHOT,
-    '',
-    `위 <자료> 로 톤 ${req.tones.length}개의 멘트를 써 줘. JSON 만 출력한다.`,
   );
+
+  // 예시는 `medium` 분량으로 적혀 있다. 짧게 달라고 해 놓고 긴 예시를 함께 주면
+  // 모델은 눈앞의 예시를 따라간다 — 그 어긋남을 여기서 한 줄로 눌러 둔다.
+  if (req.length === 'short') {
+    lines.push('', `위 예시는 보통 분량이다. 요청 분량(${size.min}~${size.max}자)에 맞춰 더 줄여라.`);
+  }
+
+  lines.push('', `위 <자료> 로 톤 ${req.tones.length}개의 멘트를 써 줘. JSON 만 출력한다.`);
 
   return lines.join('\n');
 }
@@ -180,7 +210,7 @@ export function buildUserPrompt(req: GenerateRequest): string {
  * 구조화 출력용 JSON 스키마(Anthropic `output_config.format` 용).
  * 파싱의 최종 판정은 zod(`generateResponseSchema`)가 하고, 이건 모델 쪽 가드레일이다.
  */
-export function buildJsonSchema(req: GenerateRequest): Record<string, unknown> {
+export function buildJsonSchema(req: GenerateRequestParsed): Record<string, unknown> {
   return {
     type: 'object',
     properties: {
@@ -209,7 +239,7 @@ export function buildJsonSchema(req: GenerateRequest): Record<string, unknown> {
  * Gemini `generationConfig.responseSchema` 용 스키마.
  * OpenAPI 부분집합이라 `additionalProperties` 를 받지 않고, 키 순서를 따로 알려 줘야 한다.
  */
-export function buildGeminiSchema(req: GenerateRequest): Record<string, unknown> {
+export function buildGeminiSchema(req: GenerateRequestParsed): Record<string, unknown> {
   return {
     type: 'OBJECT',
     properties: {

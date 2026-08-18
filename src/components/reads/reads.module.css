@@ -879,3 +879,8 @@
 .footNav a:hover {
   color: var(--fg);
 }
+
+/* 주소가 없는 축제의 제목 — 링크가 아니므로 밑줄도 화살표도 없다(죽은 링크를 안 만든다). */
+.cardPlain {
+  color: var(--fg);
+}

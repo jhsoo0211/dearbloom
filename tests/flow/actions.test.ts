@@ -420,43 +420,72 @@ describe('멘트 폴백 — 마음 8종의 톤 탭이 빠짐없이 찬다', () =
 });
 
 /**
- * 멘트 길이 토글·새로 받기가 **예문 경로에서는 서지 않는** 이유를 데이터로 붙들어 둔다
- * (2026-08-18).
+ * 예문 경로의 **길이 축** (2026-08-18 개편).
  *
- * 화면은 `짧게 / 보통`과 `새로 받기`를 생성된 멘트에만 세운다. 그 결정은 취향이 아니라
- * 이 표의 모양에서 나왔다 — 고를 수 있는 다른 예문이 **하나도 없다.** 눌러도 아무 일
- * 없는 버튼은 갈 곳 없는 링크와 같은 거짓말이라 세우지 않는다.
+ * 예전에는 (마음 × 톤) 조합마다 행이 하나뿐이라 예문 경로에서 길이를 가를 수가 없었고,
+ * 이 자리의 테스트는 그 사실("고를 여지가 없다")을 붙들고 있었다. 지금은 조합마다
+ * `short`·`medium` 이 한 행씩 있고, `buildTones` 가 사용자가 누른 길이의 행을 고른다.
  *
- * 나중에 예문 표가 짧은 벌을 갖추면 이 테스트가 먼저 깨진다. 그때가 `buildTones` 에
- * 길이 축을 붙이고 화면에서 조건을 푸는 날이다 — 깨진 김에 이 주석도 고쳐라.
+ * 여기서 지키는 것은 **화면이 누른 값을 실제로 따르는가** 하나다. 이 그물이 없으면
+ * 길이 토글이 조용히 같은 문장을 되돌려주는 상태로 퇴행해도 아무도 모른다.
  */
-describe('예문 표에는 고를 여지가 없다 (길이 토글이 생성 경로 전용인 근거)', () => {
-  it('(마음 × 톤) 조합마다 행이 정확히 하나다 — 회전시킬 다른 예문이 없다', async () => {
+describe('예문 경로의 길이 축 (buildTones 가 누른 분량을 고른다)', () => {
+  async function tonesFor(length: 'short' | 'medium') {
     const { loadCatalog } = await import('@/lib/data/catalog');
+    const { buildTones } = await import('@/app/recommend/build-result');
     const catalog = await loadCatalog();
+    return buildTones(catalog, 'gratitude', 'friend', length);
+  }
 
-    const perCombo = new Map<string, number>();
-    for (const row of catalog.templates) {
-      const key = `${row.intent}|${row.tone}`;
-      perCombo.set(key, (perCombo.get(key) ?? 0) + 1);
+  it('같은 조합에서 짧게와 보통이 서로 다른 문장을 준다', async () => {
+    const [short, medium] = await Promise.all([tonesFor('short'), tonesFor('medium')]);
+    expect(short).toHaveLength(medium.length);
+    for (const [index, tone] of short.entries()) {
+      expect(tone.body, tone.key).toBeTruthy();
+      expect(tone.body, tone.key).not.toBe(medium[index].body);
+      // 자른 것이 아니라 따로 쓴 문장이다 — 앞부분이 겹치면 원장이 축약본을 들고 있다는 뜻이다.
+      expect(medium[index].body?.startsWith(tone.body ?? ''), tone.key).toBe(false);
     }
-
-    const duplicated = [...perCombo].filter(([, count]) => count > 1);
-    expect(duplicated).toEqual([]);
   });
 
-  it('`length` 축으로 갈라 볼 짧은 벌이 없다 — 같은 조합의 short/medium 짝이 0 이다', async () => {
+  it('짧게가 실제로 더 짧다', async () => {
+    const [short, medium] = await Promise.all([tonesFor('short'), tonesFor('medium')]);
+    for (const [index, tone] of short.entries()) {
+      expect(tone.body!.length, tone.key).toBeLessThan(medium[index].body!.length);
+    }
+  });
+
+  it('길이를 말하지 않으면 보통이다 — 처음 서는 화면의 기본값과 같다', async () => {
+    const { loadCatalog } = await import('@/lib/data/catalog');
+    const { buildTones } = await import('@/app/recommend/build-result');
+    const catalog = await loadCatalog();
+    expect(buildTones(catalog, 'gratitude', 'friend').map((t) => t.body)).toEqual(
+      (await tonesFor('medium')).map((t) => t.body),
+    );
+  });
+
+  it('관계보다 분량이 먼저다 — 관계를 적어 둔 사과 행이 길이를 이기지 않는다', async () => {
+    const { loadCatalog } = await import('@/lib/data/catalog');
+    const { buildTones } = await import('@/app/recommend/build-result');
+    const catalog = await loadCatalog();
+
+    // `tpl-apology-plain` 은 relationship=lover 이고 length=short 다. 연인이 보통을
+    // 눌렀을 때 그 행이 선택되면, 사용자가 누른 값이 데이터의 곁다리 값에 진 것이다.
+    const medium = buildTones(catalog, 'apology', 'lover', 'medium');
+    const shortRow = catalog.templates.find((t) => t.templateId === 'tpl-apology-plain');
+    expect(medium[0].body).not.toBe(shortRow?.templateText);
+  });
+
+  it('조합마다 길이별로 정확히 한 행이다 — 고를 때 순서에 기대지 않는다', async () => {
     const { loadCatalog } = await import('@/lib/data/catalog');
     const catalog = await loadCatalog();
 
-    const shortKeys = new Set(
-      catalog.templates.filter((t) => t.length === 'short').map((t) => `${t.intent}|${t.tone}`),
-    );
-    const pairs = catalog.templates.filter(
-      (t) => t.length === 'medium' && shortKeys.has(`${t.intent}|${t.tone}`),
-    );
-
-    expect(pairs).toEqual([]);
+    const perCombo = new Map<string, string[]>();
+    for (const row of catalog.templates) {
+      const key = `${row.intent}|${row.tone}|${row.length}`;
+      perCombo.set(key, [...(perCombo.get(key) ?? []), row.templateId]);
+    }
+    expect([...perCombo].filter(([, ids]) => ids.length > 1)).toEqual([]);
   });
 });
 

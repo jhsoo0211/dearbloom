@@ -1,5 +1,5 @@
 {
-  "fetchedAt": "2026-08-18T07:58:42.580Z",
+  "fetchedAt": "2026-08-18T13:45:20.074Z",
   "source": {
     "provider": "한국관광공사",
     "service": "TourAPI 국문 관광정보(KorService2) · searchFestival2",
@@ -9,5 +9,81 @@
     "from": "2026-08-18",
     "to": "2027-02-18"
   },
-  "festivals": []
+  "festivals": [
+    {
+      "id": "festival-3302552",
+      "title": "장항 맥문동 꽃 축제",
+      "startsAt": "2026-08-28",
+      "endsAt": "2026-08-30",
+      "summary": "충남 서천 일대에서 열려요. 저희가 직접 확인한 일정이 아니라서, 가시기 전에 주최 쪽 안내를 한 번 봐 주세요.",
+      "region": "충남 서천",
+      "imageUrl": "https://tong.visitkorea.or.kr/cms/resource/31/4091431_image3_1.jpg",
+      "imageRights": "Type3"
+    },
+    {
+      "id": "festival-1700219",
+      "title": "함평모악산 꽃무릇축제",
+      "startsAt": "2026-09-16",
+      "endsAt": "2026-09-20",
+      "summary": "전남 함평 일대에서 열려요. 저희가 직접 확인한 일정이 아니라서, 가시기 전에 주최 쪽 안내를 한 번 봐 주세요.",
+      "region": "전남 함평",
+      "imageUrl": "https://tong.visitkorea.or.kr/cms/resource/06/4098306_image3_1.jpg",
+      "imageRights": "Type3"
+    },
+    {
+      "id": "festival-1078905",
+      "title": "영광불갑산상사화축제",
+      "startsAt": "2026-09-18",
+      "endsAt": "2026-09-27",
+      "summary": "전남 영광 일대에서 열려요. 저희가 직접 확인한 일정이 아니라서, 가시기 전에 주최 쪽 안내를 한 번 봐 주세요.",
+      "region": "전남 영광",
+      "url": "https://www.xn--vf4bnbz98ad4f37l.com/",
+      "imageUrl": "https://tong.visitkorea.or.kr/cms/resource/32/4041232_image3_1.jpg",
+      "imageRights": "Type3"
+    },
+    {
+      "id": "festival-2746930",
+      "title": "감악산 꽃별 여행",
+      "startsAt": "2026-09-18",
+      "endsAt": "2026-10-11",
+      "summary": "경남 거창 일대에서 열려요. 저희가 직접 확인한 일정이 아니라서, 가시기 전에 주최 쪽 안내를 한 번 봐 주세요.",
+      "region": "경남 거창",
+      "url": "https://starwindhill.com/",
+      "imageUrl": "https://tong.visitkorea.or.kr/cms/resource/19/3539719_image3_1.jpg",
+      "imageRights": "Type3"
+    },
+    {
+      "id": "festival-1105347",
+      "title": "정읍 구절초 꽃축제",
+      "startsAt": "2026-10-08",
+      "endsAt": "2026-10-18",
+      "summary": "전북 정읍 일대에서 열려요. 저희가 직접 확인한 일정이 아니라서, 가시기 전에 주최 쪽 안내를 한 번 봐 주세요.",
+      "region": "전북 정읍",
+      "url": "https://www.jeongeup.go.kr/culture/index.jeongeup?menuCd=DOM_000000602004002001",
+      "imageUrl": "https://tong.visitkorea.or.kr/cms/resource/56/4071256_image3_1.JPG",
+      "imageRights": "Type3"
+    },
+    {
+      "id": "festival-2667707",
+      "title": "2026 제14회 경기정원문화박람회",
+      "startsAt": "2026-10-16",
+      "endsAt": "2026-10-19",
+      "summary": "경기 양평 일대에서 열려요. 저희가 직접 확인한 일정이 아니라서, 가시기 전에 주최 쪽 안내를 한 번 봐 주세요.",
+      "region": "경기 양평",
+      "url": "https://www.gggarden.kr/2026/main",
+      "imageUrl": "https://tong.visitkorea.or.kr/cms/resource/89/4099089_image3_1.jpg",
+      "imageRights": "Type3"
+    },
+    {
+      "id": "festival-4095228",
+      "title": "2026 남도 K-가든 페스티벌",
+      "startsAt": "2026-09-11",
+      "endsAt": "2026-10-31",
+      "summary": "전남 여수 일대에서 열려요. 저희가 직접 확인한 일정이 아니라서, 가시기 전에 주최 쪽 안내를 한 번 봐 주세요.",
+      "region": "전남 여수",
+      "url": "https://ysgarden.kr/",
+      "imageUrl": "https://tong.visitkorea.or.kr/cms/resource/56/4095456_image3_1.jpg",
+      "imageRights": "Type3"
+    }
+  ]
 }

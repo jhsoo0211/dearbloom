@@ -79,6 +79,28 @@ const KIND_GLYPHS: Record<ReadKind, string> = {
  * 말하고, 갈래는 첫 줄의 `.kind` 라벨이 말한다. 여기서 한 번 더 읽으면 54장에서 소음이 된다
  * (`/stories` 레인 헤더의 도판을 장식으로 둔 것과 같은 판단).
  */
+/**
+ * ── API 축제 사진이 이 액자에 합류하는 규칙 (2026-08-18) ────────────────
+ * 우선순위는 **자체 호스팅 도판 → 한국관광공사 장소 사진 → 갈래 선화**다.
+ * 도판이 먼저인 이유: 그것은 우리가 그려 우리 서버에 둔 그림이라 언제나 뜨고, 화면의
+ * 손글씨와 같은 결이다. 사진은 남의 CDN 에 있어 우리가 수명을 보장할 수 없다.
+ *
+ * ═══ 사진 한 장이 규범의 좁은 예외인 이유 ═════════════════════════════
+ * 이 섹션은 활자 카드이고 남의 썸네일을 걸지 않는 것이 §2 다. 원장 54건은 지금도 그렇다.
+ * 다만 TourAPI 의 `firstimage2` 는 **표시를 목적으로 제공되는 공공 API 이미지**라 예외로
+ * 두되, 조건 셋을 전부 지키는 한에서만이다.
+ *   ① **변경하지 않는다.** 공공누리 제3유형이 금지하는 것이 변경이라 다운로드 후 리사이즈·
+ *      크롭·필터가 곧 위반이다. 우리가 정하는 것은 **표시 크기뿐**이고 그 일은 CSS
+ *      (`object-fit`)가 한다 — 파일은 그들 CDN 원본 그대로다.
+ *   ② **받아 두지 않는다.** `public/` 에 복사하는 순간 그것이 사본이자 재배포다.
+ *   ③ **출처를 적는다.** 첫 줄의 `한국관광공사 제공` 라벨과 푸터 각주가 그 일을 한다.
+ * ⚠ 이 예외는 **TourAPI 이미지 한 곳에 한정**된다. 「핫링크 금지」의 철회가 아니다 —
+ *   큐레이션 카드에 남의 사진을 붙이려거든 §2 부터 다시 읽어라.
+ *
+ * `alt=""` 인 이유: 우리가 **보지 않은 사진**이라 무엇이 찍혔는지 말할 수 없다. 지어낸
+ * 설명을 붙이는 것보다 장식으로 두고 제목이 뜻을 지게 하는 쪽이 정직하다.
+ * `loading="lazy"` + 액자의 고정된 자리가 CLS 를 0 으로 묶는다(사진이 늦게 와도 안 밀린다).
+ */
 function PreviewFrame({ card }: { card: ReadCard }) {
   if (card.preview) {
     return (
@@ -87,6 +109,21 @@ function PreviewFrame({ card }: { card: ReadCard }) {
         <img
           className={styles.previewImg}
           src={card.preview.src}
+          alt=""
+          loading="lazy"
+          decoding="async"
+        />
+      </span>
+    );
+  }
+
+  if (card.imageUrl) {
+    return (
+      <span className={styles.preview} data-provider={card.provider ?? ''} aria-hidden="true">
+        {/* eslint-disable-next-line @next/next/no-img-element -- 한국관광공사 CDN 원본을 **변경 없이** 그대로 건다(위 머리말 ①②). next/image 는 크기를 바꾸는 것이 본업이라 이 자리에서 쓸 수 없다. */}
+        <img
+          className={styles.previewImg}
+          src={card.imageUrl}
           alt=""
           loading="lazy"
           decoding="async"
@@ -387,11 +424,21 @@ function ReadItem({ card, today }: { card: ReadCard; today: string | null }) {
               페이지·도감 출처 링크와 같은 패턴이다. `rel="noreferrer"` 는 새 창에서 이 페이지를
               되짚지 못하게 하는 것이라 지우지 마라.
             */}
-            <a className={styles.cardLink} href={card.url} target="_blank" rel="noreferrer">
-              {card.title}
-              <span className={styles.srOnly}> (새 창)</span>
-              <ArrowGlyph />
-            </a>
+            {/*
+              ⚠ **주소가 없으면 앵커를 만들지 않는다.** API 축제 중에는 주최 페이지가 없거나
+                https 로 열리지 않는 것이 있는데(수집 스크립트가 실제로 열어 보고 판정한다),
+                그때 `href` 없는 `<a>` 를 남기면 낭독기가 「링크」라고 읽고 목적지를 못 댄다.
+                제목을 맨 글자로 두는 쪽이 정직하다 — 기간·지역·사진만으로도 카드는 값을 한다.
+            */}
+            {card.url ? (
+              <a className={styles.cardLink} href={card.url} target="_blank" rel="noreferrer">
+                {card.title}
+                <span className={styles.srOnly}> (새 창)</span>
+                <ArrowGlyph />
+              </a>
+            ) : (
+              <span className={styles.cardPlain}>{card.title}</span>
+            )}
           </h3>
         </div>
       </div>

@@ -81,6 +81,13 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
       <head>
         <link rel="preconnect" href="https://cdn.jsdelivr.net" crossOrigin="" />
         <link rel="preconnect" href="https://hangeul.pstatic.net" crossOrigin="" />
+        {/*
+          한국관광공사 이미지 CDN — `/reads` 의 API 축제 카드가 장소 사진을 **이 호스트에서
+          직접** 부른다(받아 두지 않는 것이 공공누리 제3유형을 지키는 방식이라 그렇다 —
+          `components/reads/ReadsBoard.tsx` 의 `FestivalFrame` 머리말). 카드가 화면에 들어올
+          때 lazy 로 요청이 시작되므로, 연결을 미리 트워 두면 첫 사진이 눈에 띄게 빨리 온다.
+        */}
+        <link rel="preconnect" href="https://tong.visitkorea.or.kr" />
         <link rel="preconnect" href="https://images.unsplash.com" crossOrigin="" />
         {/* 실사 163컷 중 123컷이 Pexels 에서 온다(2026-08-17 확장 배치 2) — Unsplash 보다 많다. */}
         <link rel="preconnect" href="https://images.pexels.com" crossOrigin="" />

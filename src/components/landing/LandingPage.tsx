@@ -1069,6 +1069,9 @@ export default function LandingPage({ data }: { data: LandingData }) {
                 <Link href="/partners" prefetch={false}>
                   함께하는 꽃집
                 </Link>
+                <Link href="/bouquet" prefetch={false}>
+                  다발 짜 보기
+                </Link>
               </nav>
             </div>
             {/*

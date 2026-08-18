@@ -191,9 +191,24 @@
   letter-spacing: -0.02em;
   color: var(--fg);
 }
+/**
+ * 글줄 길이 상한은 `ch` 가 아니라 **em** 으로 잡는다 (2026-08-18 · 스왑 CLS).
+ *
+ * 이 화면의 CLS 0.040(@1280 실측)은 **거의 전부 이 한 줄**이었다. `1ch` 는 그 폰트의
+ * 숫자 0 자폭이라, 폴백으로 그리는 동안 `46ch` 상자가 좁아져 리드가 한 줄 더 접히고,
+ * 웹폰트가 붙는 순간 그 아래 화면 전체가 되밀린다(shift source 가 `main` 통째였다).
+ * 근거의 전문은 `components/stories/stories.module.css` 의 같은 자리 주석에 있다 —
+ * `size-adjust` 로는 못 고치고, 상자 쪽을 폰트와 무관한 단위로 바꾸는 것이 유일한 길이다.
+ *
+ * 환산은 Pretendard 실측 `1ch = 0.5956em` 그대로다(이 화면의 본문은 전부 Pretendard 다 —
+ * 세리프는 h1·h2·h3 뿐이고 그쪽에는 `ch` 상자가 없다). 최종 조판은 지금과 같다(46ch = 27.4em
+ * = 438.4px @16px — 반올림 오차 0.04px).
+ * ⚠ 값을 다시 `ch` 로 되돌리지 마라. 이 화면에서 `ch` 를 쓰던 자리는 다섯 곳
+ *   (`.sub` · `.groupSay` · `.ctaLead` · `.creditsLead` · `.footNotes` · `.footSay`)이고 전부 옮겼다.
+ */
 .sub {
   margin-top: 16px;
-  max-width: 46ch;
+  max-width: 27.4em; /* = 46ch */
 }
 .stats {
   display: flex;
@@ -420,7 +435,7 @@
 }
 .groupSay {
   margin-top: 8px;
-  max-width: 52ch;
+  max-width: 31em; /* = 52ch — `.sub` 주석 참고 */
   font-size: 13.5px;
   line-height: 1.75;
   color: var(--fg-50);
@@ -757,7 +772,7 @@
 }
 .ctaLead {
   margin: 14px auto 0;
-  max-width: 44ch;
+  max-width: 26.2em; /* = 44ch — `.sub` 주석 참고 */
 }
 .btn {
   display: inline-flex;
@@ -811,7 +826,7 @@
 }
 .creditsLead {
   margin-top: 10px;
-  max-width: 31em; /* = 52ch */
+  max-width: 31em; /* = 52ch — `.sub` 주석 참고 */
   font-size: 13px;
   line-height: 1.8;
   color: var(--fg-50);
@@ -834,13 +849,13 @@
   gap: 6px;
   padding-bottom: 20px;
   margin-bottom: 22px;
-  max-width: 62ch;
+  max-width: 36.9em; /* = 62ch — `.sub` 주석 참고 */
   border-bottom: 1px solid var(--hair);
   font-size: 13px;
   line-height: 1.8;
 }
 .footSay {
-  max-width: 52ch;
+  max-width: 31em; /* = 52ch — `.sub` 주석 참고 */
   line-height: 1.8;
   color: var(--fg-70);
 }

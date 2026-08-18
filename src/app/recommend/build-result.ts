@@ -26,7 +26,8 @@
 
 import { z } from 'zod';
 
-import type { Catalog, CatalogFlower, CatalogMeaning, CatalogRead, Quote } from '@/lib/data/types';
+import type { Catalog, CatalogFlower, CatalogMeaning, CatalogRead } from '@/lib/data/types';
+import { occasionsFor } from '@/lib/data/occasions';
 /*
  * ⚠ 두 import 다 **순수 모듈**이라 이 파일의 금지선(머리말 — 서버 전용 의존 0)을 지킨다.
  *   `reads-links` 는 타입 하나만 import 하고, `reads/expiry` 는 import 가 아예 없다.
@@ -95,8 +96,6 @@ import {
   colorChoice,
   episodeHintLabels,
   eraLabel,
-  excerptTypeLabel,
-  flowerOccasions,
   orderLiterature,
   regionLabel,
   splitRecipientChips,
@@ -105,6 +104,11 @@ import {
   toxicPartLabel,
 } from '@/components/flow/labels';
 import { decodeSharePlan, encodeSharePlan } from '@/components/flow/share-link';
+/*
+ * ⚠ 순수 모듈이다(타입만 import 한다) — 이 파일의 금지선을 그대로 지킨다.
+ *   도감(`components/flowers/data.ts`)이 **같은 한 벌**을 부른다.
+ */
+import { toLiteratureView } from '@/components/flow/view-format';
 import type {
   CultureMeaningRow,
   FlowOptionView,
@@ -349,37 +353,6 @@ const LITERATURE_STORY_CONFLICTS: Record<string, string> = {
 };
 
 /**
- * `김유정, 「동백꽃」(1936, 《조광》)` 형태의 각주 한 줄.
- * `source_title` 이 이미 연도를 품고 있는 행이 많아, 겹칠 때는 era 를 덧붙이지 않는다.
- */
-function literatureAttribution(quote: Quote): string {
-  const base = [quote.author, quote.sourceTitle]
-    .filter((part): part is string => Boolean(part))
-    .join(', ');
-  const era = quote.era ?? '';
-  if (era === '' || base.includes(era)) return base;
-  return `${base}(${era})`;
-}
-
-/** 카탈로그 한 행 → 화면 발췌 한 편. 없는 필드는 아예 두지 않는다(있는 척하지 않는다). */
-function toLiteratureView(quote: Quote): LiteratureView {
-  const view: LiteratureView = {
-    id: quote.quoteId,
-    textKo: quote.textKo,
-    attribution: literatureAttribution(quote),
-  };
-  if (quote.textOriginal) view.textOriginal = quote.textOriginal;
-  const typeLabel = excerptTypeLabel(quote.excerptType);
-  if (typeLabel) view.typeLabel = typeLabel;
-  // 옮긴이는 사실이 아니라 예의의 문제다 — 우리가 옮긴 문장을 원문인 척 두지 않는다.
-  if (quote.translator) view.translatorNote = `옮김: ${quote.translator}`;
-  if (quote.caveat) view.caveat = quote.caveat;
-  if (quote.sourceTitle) view.sourceTitle = quote.sourceTitle;
-  if (quote.sourceUrl) view.sourceUrl = quote.sourceUrl;
-  return view;
-}
-
-/**
  * 그 꽃의 문학 발췌 — **대표 1편 + 나머지 전부**(§1.5k · #1). 없으면 블록 자체를 생략한다.
  *
  * 거르는 순서
@@ -529,7 +502,7 @@ function toOptionView(
     priceLabel: PRICE_LABELS[flower.priceBand],
     priceBand: flower.priceBand,
     fragranceLabel: FRAGRANCE_LABELS[flower.fragranceLevel],
-    occasions: flowerOccasions(flower.id),
+    occasions: occasionsFor(catalog.occasions, flower.id, 'detail'),
     petBadge: petBadge(flower, catalog),
     colors: toColorChips(result, catalog.meanings),
     colorReason: result.colorSuggestion?.reason ?? '',

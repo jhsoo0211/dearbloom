@@ -200,6 +200,8 @@ async function main() {
    *   · petSafety      — 반려동물 제외 규칙(EX_PET_TOXIC)과 대체 꽃 목록.
    *   · templates      — 데모의 멘트는 전부 이 예문이다(LLM 없음). 745B 밖에 안 된다.
    *   · quotes         — 함께 담을 한 줄(§1.5e) + 문학 속의 이 꽃(§1.5k).
+   *   · occasions      — §1.5h 「이런 날 건네보세요」. 91줄, 6KB 남짓이다. 비워 두면
+   *                      데모에서만 그 구획이 조용히 사라진다(쌍둥이 규칙 위반).
    * 빼는 것: 탄생화 세 표(birthFlowers · birthPhotos · birthStories)는 여기 없다 —
    *   추천 경로가 한 번도 읽지 않는다. `/flowers` 가 쓰는 값이라 **따로** 번들한다
    *   (그 화면을, 그중에서도 그 기능을 쓴 사람만 받는다).
@@ -224,6 +226,7 @@ async function main() {
     birthPhotos: [],
     birthStories: [],
     reads: flowerLinkedReads,
+    occasions: catalog.occasions,
   };
 
   const storyDetails = catalog.stories.map(toStoryDetail);

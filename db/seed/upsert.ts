@@ -153,6 +153,12 @@ export const SEED_TARGETS: Record<string, SeedTarget> = {
      사람 몫이다. 표를 통째로 갈아 끼우는 replace 로 바꾸고 싶어지면 `meanings` 의
      주석부터 읽어라(지운 뒤 실패하면 표가 빈 채로 남는다). */
   reads: { table: 'reads', strategy: { kind: 'upsert', onConflict: 'read_id' } },
+  /* §1.5h 상황 예시. 자연키가 없다 — 한 꽃이 같은 화면에 여러 줄을 갖고, 그 **줄의 순서가
+     화면의 순서**라 (flower_id, occasion_ko) 로 키를 지어내면 문구를 한 글자 고칠 때마다
+     새 행이 생기고 옛 행이 순서 안에 남는다. 그래서 `meanings` 와 같은 replace 다
+     (그 판단의 전문은 이 파일 위쪽 `SeedWriteStrategy` 주석에 있다).
+     ⚠ 짝 마이그레이션은 db/migrations/0013_flower_occasions.sql (2026-08-18). */
+  occasions: { table: 'flower_occasions', strategy: { kind: 'replace' } },
 };
 
 /**

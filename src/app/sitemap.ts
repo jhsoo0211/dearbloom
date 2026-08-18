@@ -4,7 +4,7 @@ import { loadCatalog } from '@/lib/data/catalog';
 import { SITE_URL } from '@/lib/site';
 
 /**
- * `/sitemap.xml` — 정적 라우트 9개 + 도감 상세(카탈로그 전종).
+ * `/sitemap.xml` — 정적 라우트 10개 + 도감 상세(카탈로그 전종).
  *
  * 도감은 `generateStaticParams` 로 종마다 한 장씩 미리 생성되는 실제 페이지들이라
  * (빌드 로그의 `● /flowers/[slug]` 32건) 지도에 그대로 싣는다. 목록을 손으로 적지 않고
@@ -35,6 +35,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
        회차를 넣는다(`docs/reads-research.md` §7-3). 그래서 여기만 weekly 다. */
     { url: `${SITE_URL}/reads`, changeFrequency: 'weekly', priority: 0.7 },
     { url: `${SITE_URL}/letter`, changeFrequency: 'monthly', priority: 0.6 },
+    { url: `${SITE_URL}/bouquet`, changeFrequency: 'monthly', priority: 0.6 },
     { url: `${SITE_URL}/groups`, changeFrequency: 'monthly', priority: 0.6 },
     { url: `${SITE_URL}/partners`, changeFrequency: 'monthly', priority: 0.4 },
   ];

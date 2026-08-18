@@ -10,7 +10,9 @@
  *   (fs 의존은 없다 — 카탈로그는 호출부가 `loadCatalog()` 로 읽어 넘겨준다.)
  *
  * 문구를 여기서 새로 짓지 않는다. 라벨의 원본은 셋뿐이다:
- *   · 꽃말·가격·안전·상황 예시 → `@/components/flow/labels`
+ *   · 꽃말·가격·안전            → `@/components/flow/labels`
+ *     (상황 예시는 2026-08-18 부터 라벨이 아니라 **데이터**다 — `content/occasions.csv`,
+ *      조회는 `@/lib/data/occasions` 의 `occasionsFor`.)
  *   · 이야기 각주 한 줄        → `@/components/stories/meta` 의 `metaNotes`
  *   · 꽃 계열 이름             → `@/components/stories/categories` 의 `storyCategoryLabel`
  * 같은 값이 화면마다 다른 말을 하지 않게 하려는 것이라, 라벨이 필요하면 저기부터 고친다.
@@ -29,13 +31,17 @@ import {
   STORY_MOOD_LABELS,
   colorChoice,
   eraLabel,
-  excerptTypeLabel,
-  flowerOccasions,
   orderLiterature,
   regionLabel,
   storyConfidenceLabel,
   storyTypeLabel,
 } from '@/components/flow/labels';
+/*
+ * 발췌 한 편을 짓는 규칙은 결과 화면과 **같은 한 벌**이다(`flow/view-format.ts`).
+ * 예전에는 이 파일에 몸통을 한 벌 더 세우고 대조 테스트로 어긋남을 잡았다 —
+ * 지금은 부르는 곳이 둘, 몸통이 하나다.
+ */
+import { toLiteratureView } from '@/components/flow/view-format';
 import { categoryOf } from '@/components/landing/landing-data';
 import { storyCategoryLabel } from '@/components/stories/categories';
 import { metaNotes } from '@/components/stories/meta';
@@ -47,6 +53,7 @@ import {
   birthSpeciesCount,
 } from '@/lib/data/birth-flowers';
 import type { Catalog, CatalogFlower, CatalogMeaning, CatalogStory, Quote } from '@/lib/data/types';
+import { occasionsFor } from '@/lib/data/occasions';
 import { pickStories } from '@/lib/engine';
 import { photoSrc, photoSrcSet, photosFor } from '@/lib/photos';
 import { plateCredit, plateFor } from '@/lib/plates';
@@ -351,42 +358,6 @@ function buildStories(flower: CatalogFlower, stories: CatalogStory[]): FlowerSto
  * ------------------------------------------------------------------ */
 
 /**
- * `김유정, 「동백꽃」(1936, 《조광》)` 형태의 각주 한 줄.
- * `source_title` 이 이미 연도를 품고 있는 행이 많아, 겹칠 때는 era 를 덧붙이지 않는다.
- *
- * ⚠ 몸통이 결과 화면(`app/recommend/build-result.ts`)의 같은 이름 함수와 **글자까지
- *   같아야 한다.** 그쪽은 내보내지 않는 파일 내부 함수라 가져다 쓸 길이 없어 한 벌을
- *   여기 세웠다 — 어긋나면 `tests/components/flowers-literature.test.ts` 가 걸어 세운다
- *   (도감의 `buy-name.ts` 가 결과 화면의 `mainName` 과 맺은 관계와 같은 약속이다).
- */
-function literatureAttribution(quote: Quote): string {
-  const base = [quote.author, quote.sourceTitle]
-    .filter((part): part is string => Boolean(part))
-    .join(', ');
-  const era = quote.era ?? '';
-  if (era === '' || base.includes(era)) return base;
-  return `${base}(${era})`;
-}
-
-/** 카탈로그 한 행 → 화면 발췌 한 편. 없는 필드는 아예 두지 않는다(있는 척하지 않는다). */
-function toLiteratureView(quote: Quote): LiteratureView {
-  const view: LiteratureView = {
-    id: quote.quoteId,
-    textKo: quote.textKo,
-    attribution: literatureAttribution(quote),
-  };
-  if (quote.textOriginal) view.textOriginal = quote.textOriginal;
-  const typeLabel = excerptTypeLabel(quote.excerptType);
-  if (typeLabel) view.typeLabel = typeLabel;
-  // 옮긴이는 사실이 아니라 예의의 문제다 — 우리가 옮긴 문장을 원문인 척 두지 않는다.
-  if (quote.translator) view.translatorNote = `옮김: ${quote.translator}`;
-  if (quote.caveat) view.caveat = quote.caveat;
-  if (quote.sourceTitle) view.sourceTitle = quote.sourceTitle;
-  if (quote.sourceUrl) view.sourceUrl = quote.sourceUrl;
-  return view;
-}
-
-/**
  * 그 꽃의 문학 발췌 **전부**를 §1.5k 의 차례로 세운다.
  *
  * 결과 화면(`pickLiterature`)과 다른 것은 **거르기 두 줄뿐**이다. 그쪽은 대표 이야기와
@@ -498,7 +469,7 @@ export function buildFlowerDetail(catalog: Catalog, slug: string): FlowerDetailD
     // §1.5k — 발췌가 없는 23종은 빈 배열이고, 화면은 구획 자체를 세우지 않는다.
     literature: buildLiterature(flower, catalog.quotes),
     // 데이터가 없는 꽃은 빈 배열 — 화면은 섹션 자체를 세우지 않는다(문구를 지어내지 않는다).
-    occasions: flowerOccasions(flower.id),
+    occasions: occasionsFor(catalog.occasions, flower.id, 'detail'),
     pet: buildPetNote(flower),
     seasonLine: buildSeasonLine(flower),
     priceLine: PRICE_LABELS[flower.priceBand],

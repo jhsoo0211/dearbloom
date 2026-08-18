@@ -109,6 +109,14 @@ export default async function FlowersPage() {
               <path d="M5 12h13M12.5 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </Link>
+          {/* 다발 짜기(/bouquet)의 도감 쪽 진입점 — 달력 문과 같은 결·같은 한 줄 규율(§1.5v). */}
+          <Link className={`${styles.calLink} ${styles.calLinkIntro}`} href="/bouquet">
+            내 손으로 다발을 짜 볼 수도 있어요
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M5 12h13M12.5 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </Link>
+
 
           {/*
             ⚠ **여기에 설명 문단을 덧붙이지 마라**(CLS 0 규율, 2026-08-16 실측).

@@ -46,6 +46,7 @@ import { withParticle } from '@/lib/text';
 import { buildBuyLinks, type BuyLinkKind } from './buy-links';
 import { sortBuyProducts, type BuyProduct, type BuySort } from './buy-products';
 import { shareUrl } from './share-link';
+import { buySearchName } from './view-format';
 import type { MessageStreamState, ResultPayload, StoryCard } from './types';
 import styles from './flow.module.css';
 
@@ -138,23 +139,13 @@ function useTodayKst(): string | null {
 const POST_FLOWER_SEARCH = 'https://mall.epost.go.kr/fo/search/search.do?searchTerm=';
 const MAP_FLORIST_SEARCH = 'https://map.naver.com/p/search/';
 
-/**
- * 검색에 쓸 대표 이름 — `빨간 장미` → `장미`, `아시아틱 백합` → `백합`,
- * `미모사(은엽아카시아)` → `미모사`.
- *
- * 두 가지를 떼어 낸다. 둘 다 **검색 결과를 좁히기만** 하기 때문이다:
- *   · 괄호 속 딴이름 — 검색창에 괄호를 넣으면 걸리는 것이 없다
- *   · 앞에 붙은 색·품종 수식 — `빨간 장미 꽃배달` 은 0건이고 `장미 꽃배달` 은 12건이다
- * 한 낱말짜리 이름은 그대로 돌려준다.
- *
- * ⚠ 도감이 늘어도 이 규칙은 그대로 선다. 이름 목록을 여기 적어 두지 않는 이유다 —
- *   `content/flowers.csv` 는 계속 자란다(2026-08-17 하루에도 47종 → 59종이 됐다).
+/*
+ * 검색에 쓸 대표 이름(`빨간 장미` → `장미`)은 **도감과 한 벌**이다 — `./view-format`.
+ * 예전에는 여기 파일 내부 함수 `mainName` 이 한 벌, `flowers/buy-name.ts` 에 또 한 벌이
+ * 서 있었고 대조 테스트가 어긋남을 잡았다(2026-08-18 에 합쳤다). 이름을 그대로 두는 것은
+ * 이 파일 안 호출 여덟 자리를 건드리지 않기 위해서다 — 규칙이 바뀐 것이 아니라 자리만 바뀌었다.
  */
-function mainName(nameKo: string): string {
-  const parts = nameKo.replace(/\([^)]*\)/g, ' ').trim().split(/\s+/);
-
-  return parts[parts.length - 1] || nameKo;
-}
+const mainName = buySearchName;
 
 function IconCopy() {
   return (

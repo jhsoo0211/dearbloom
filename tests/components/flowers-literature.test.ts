@@ -4,6 +4,7 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { buildFlowerDetail } from '@/components/flowers/data';
+import { literatureAttribution, toLiteratureView } from '@/components/flow/view-format';
 import { loadCatalog } from '@/lib/data/catalog';
 import type { Catalog } from '@/lib/data/types';
 
@@ -280,37 +281,41 @@ describe('화면 — 없는 꽃에는 구획도 없다', () => {
 });
 
 /**
- * 뷰 조립 몸통 — 결과 화면과 **글자까지 같아야 한다.**
+ * 뷰 조립 몸통 — **두 화면이 같은 한 벌을 부른다.**
  *
- * `build-result.ts` 의 두 함수는 내보내지 않는 파일 내부 함수라 가져다 쓸 길이 없어
- * 도감 쪽에 한 벌을 세웠다. 그러면 **한쪽만 고쳐지는 날**이 온다 — 두 몸통을 공백만
- * 지워 맞대어 본다. 어긋나면 답은 둘 중 하나다: 같이 고치거나, 한 벌로 합치거나
- * (합치는 쪽이 낫다). `buy-name.ts` ↔ `mainName` 이 맺은 것과 같은 약속이다.
+ * 여기는 원래 `build-result.ts` 와 도감의 두 몸통을 소스로 맞대어 보던 자리였다. 그쪽이
+ * 내보내지 않는 파일 내부 함수라 가져다 쓸 길이 없어 한 벌을 도감에 세웠고, 그러면
+ * **한쪽만 고쳐지는 날**이 오기 때문이었다. 2026-08-18 에 규칙이 `flow/view-format.ts`
+ * 한 벌로 합쳐지면서 이 테스트도 함께 옮겼다 — 지키는 것은 그대로다: **몸통이 두 벌이
+ * 되는 순간을 잡는다.** (`buy-name.ts` ↔ `mainName` 이 맺었던 것과 같은 약속이다.)
  */
-describe('발췌 한 편을 짓는 규칙이 두 화면에서 같다', () => {
-  const pick = (code: string, head: string) => {
-    const blanked = blankComments(code);
-    const start = blanked.indexOf(head);
-    expect(start, head).toBeGreaterThan(-1);
-    const end = blanked.indexOf('\n}', start);
-    expect(end, head).toBeGreaterThan(start);
-    const body = blanked.slice(start + head.length, end).replace(/\s/g, '');
-    // 몸통을 못 집으면 `'' === ''` 로 조용히 통과한다 — 그 함정을 여기서 막는다.
-    expect(body.length, head).toBeGreaterThan(40);
-    return body;
-  };
-
-  it('각주 한 줄(`작가, 제목(연도)`)을 짓는 몸통이 같다', () => {
-    const head = 'function literatureAttribution(quote: Quote): string {';
-    const body = pick(DATA, head);
-    expect(body).toContain('quote.sourceTitle');
-    expect(body).toBe(pick(BUILD_RESULT, head));
+describe('발췌 한 편을 짓는 규칙이 두 화면에서 한 벌이다', () => {
+  it('두 화면 다 공용 조립기를 부르고, 제 몸통을 세우지 않는다', () => {
+    for (const [name, code] of [
+      ['flowers/data.ts', DATA],
+      ['recommend/build-result.ts', BUILD_RESULT],
+    ] as const) {
+      const blanked = blankComments(code);
+      expect(blanked, name).toContain("from '@/components/flow/view-format'");
+      expect(blanked, name).toContain('toLiteratureView');
+      // 몸통이 다시 생기면 여기서 걸린다 — 그것이 이 테스트의 유일한 일이다.
+      expect(blanked, name).not.toMatch(/function\s+toLiteratureView/);
+      expect(blanked, name).not.toMatch(/function\s+literatureAttribution/);
+    }
   });
 
-  it('카탈로그 한 행 → 화면 값으로 옮기는 몸통이 같다', () => {
-    const head = 'function toLiteratureView(quote: Quote): LiteratureView {';
-    const body = pick(DATA, head);
-    expect(body).toContain('view.translatorNote=`옮김:${quote.translator}`');
-    expect(body).toBe(pick(BUILD_RESULT, head));
+  it('그 한 벌이 화면에 실제로 선 값과 한 글자도 다르지 않다', async () => {
+    const data = await catalog();
+    const quote = data.quotes.find((row) => row.quoteId === 'q-lit-azalea-kimsowol');
+    expect(quote).toBeDefined();
+
+    const built = toLiteratureView(quote!);
+    const shown = literatureOf(data, 'azalea').find((item) => item.id === quote!.quoteId);
+
+    expect(shown).toEqual(built);
+    // 각주 한 줄과 옮긴이 각주 — 예전 대조 테스트가 몸통 안에서 확인하던 두 가지다.
+    expect(built.attribution).toBe(literatureAttribution(quote!));
+    expect(built.attribution).toContain('김소월');
+    expect(built.translatorNote).toBe('옮김: dearbloom');
   });
 });

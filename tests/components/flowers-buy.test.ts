@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 
 import { buildBuyLinks } from '@/components/flow/buy-links';
 import { buySearchName } from '@/components/flowers/buy-name';
+import { buySearchName as sharedBuySearchName } from '@/components/flow/view-format';
 import { loadCatalog } from '@/lib/data/catalog';
 
 /**
@@ -83,24 +84,27 @@ describe('검색어 규칙 (docs/partners-research.md §5)', () => {
   });
 
   /**
-   * 같은 규칙이 결과 화면에도 있다(`ResultView.tsx` 의 파일 내부 함수 `mainName`).
-   * 내보내지 않는 함수라 가져다 쓸 길이 없어 도감 쪽에 한 벌을 세웠는데, 그러면
-   * **한쪽만 고쳐지는 날**이 온다. 두 몸통을 공백만 지워 맞대어 본다 —
-   * 어긋나면 여기서 걸리고, 그때 답은 둘 중 하나다: 같이 고치거나, `buy-links.ts` 옆으로
-   * 올려 한 벌로 합치거나(합치는 쪽이 낫다).
+   * 같은 규칙이 결과 화면에도 있었다 — `ResultView.tsx` 의 파일 내부 함수 `mainName`.
+   * 여기는 그 두 몸통을 소스로 맞대어 보던 자리다. 2026-08-18 에 규칙이
+   * `flow/view-format.ts` 한 벌로 합쳐지면서, 이 테스트가 지키는 것도 "두 몸통이 같은가"
+   * 에서 **"두 화면이 같은 한 벌을 부르는가"** 로 바뀌었다. 그물을 걷은 것이 아니라
+   * 옮긴 것이다 — 어느 한쪽이 다시 제 몸통을 세우면 여기서 걸린다.
    */
-  it('결과 화면의 같은 규칙과 몸통이 글자까지 같다', () => {
-    const pick = (code: string, head: string) => {
-      const start = code.indexOf(head);
-      expect(start, head).toBeGreaterThan(-1);
-      const end = code.indexOf('\n}', start);
-      expect(end, head).toBeGreaterThan(start);
-      return code.slice(start + head.length, end).replace(/\s/g, '');
-    };
+  it('도감은 규칙을 베끼지 않는다 — 공용 한 벌을 그대로 내보낸다', () => {
+    const code = blankComments(BUY_NAME);
+    expect(code).toContain("from '@/components/flow/view-format'");
+    expect(code).toContain('buySearchName');
+    // 몸통이 다시 생기면 걸린다.
+    expect(code).not.toMatch(/function\s+buySearchName/);
+    // 그리고 부르는 것이 정말 그 한 벌인가는 소스가 아니라 런타임이 답한다.
+    expect(buySearchName).toBe(sharedBuySearchName);
+  });
 
-    expect(pick(BUY_NAME, 'export function buySearchName(nameKo: string): string {')).toBe(
-      pick(RESULT_VIEW, 'function mainName(nameKo: string): string {'),
-    );
+  it('결과 화면도 그 한 벌을 부른다 — 제 몸통을 세우지 않는다', () => {
+    const code = blankComments(RESULT_VIEW);
+    expect(code).toContain("from './view-format'");
+    expect(code).toContain('buySearchName');
+    expect(code).not.toMatch(/function\s+mainName/);
   });
 
   it('카탈로그 전종이 깨지지 않는 목적지를 얻는다', async () => {

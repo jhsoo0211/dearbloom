@@ -32,6 +32,12 @@
  *   시트에서 고른 꽃은 예전과 똑같이 **그 레인으로 건너뛰고 헤더를 강조**한다(필터 아님 —
  *   레인 뷰에서 꽃을 하나로 좁히면 가로줄 하나만 남은 빈 화면이 된다).
  *
+ * ── 주소로 여는 한 편 (`/stories?story=…`) ────────────────────────────
+ *   상세가 페이지가 아니라 시트라 이야기 한 편에는 가리킬 주소가 없었다. 그래서 다른
+ *   화면이 "그 이야기로" 보내려면 목록까지만 데려다 놓을 수 있었다 — 이 쿼리가 그 자리를
+ *   메운다(`deep-link.ts`). 읽는 것은 **첫 진입 한 번**이고, 그 뒤로는 여닫을 때마다
+ *   `replaceState` 로 주소를 맞춰만 둔다(히스토리에 쌓지 않는다).
+ *
  * 레인 안의 **순서**는 여기서 다시 짠다(`diversifyByMood`). 레인은 앞의 8장만 카드로
  * 세우기 때문에(StoryLane 의 상한), csv 순서 그대로 두면 같은 결이 몰린 꽃은 8장이
  * 전부 한 가지 결로 채워진다 — 아카이브의 값인 "결이 여러 가지구나" 가 안 보인다.
@@ -42,19 +48,36 @@
  * 여기서 문장을 새로 지어내지 않는다 — 라벨은 전부 서버가 붙여 준 값이다.
  */
 
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { flushSync } from 'react-dom';
 
 import ArchiveSearch from './ArchiveSearch';
 import FlowerPicker, { type PickableFlower } from './FlowerPicker';
 import StoryLane from './StoryLane';
 import StorySheet from './StorySheet';
+import { STORY_PARAM, storyIdFromSearch } from './deep-link';
 import { storySearchKey, type SearchableFlower, type SearchableStory } from './search';
 import styles from './stories.module.css';
 import type { ArchiveFilterChip, ArchiveLane, ArchiveStory } from './types';
 
 /** 결 필터의 `전체` 칸. mood 어휘와 겹치지 않는 값이다. */
 const ALL = 'all';
+
+/**
+ * 주소창은 **리액트 바깥의 값**이다 — 서버 스냅숏은 `null`, 클라이언트 스냅숏은 실제 질의.
+ *
+ * 이 문법을 쓰는 이유는 계절 달력·읽을거리와 같다(`BloomCalendar` 머리말):
+ * 이펙트에서 `setState` 를 부르지 않고도(연쇄 렌더 금지 규칙) 하이드레이션 첫 렌더를
+ * 서버 HTML 과 똑같이 맞출 수 있다. 서버 스냅숏이 빈 문자열이 아니라 **`null`** 인 것이
+ * 요점이다 — `''`(질의가 없는 주소)와 "아직 못 읽었다"를 구별해야, 시트를 여닫으며
+ * 주소를 고쳐 쓰는 이펙트가 **주소에 실려 온 값을 읽기 전에 지우는 일**이 없다.
+ *
+ * 구독하지 않는다(`NEVER_CHANGES`). 이 화면에서 주소를 바꾸는 것은 우리 자신뿐이고,
+ * 그때 무엇을 열지는 이미 상태가 알고 있다 — 되받아 읽으면 같은 일을 두 번 하게 된다.
+ */
+const NEVER_CHANGES = () => () => {};
+const searchSnapshot = () => window.location.search;
+const noSearchOnServer = () => null;
 
 function prefersReduce(): boolean {
   return (
@@ -173,6 +196,52 @@ export default function StoriesArchive({
   const everyStory: ArchiveStory[] = useMemo(() => lanes.flatMap((lane) => lane.stories), [lanes]);
 
   const total = everyStory.length;
+
+  /* ── 주소로 곧장 들어온 이야기 (`/stories?story=…`) ──────────────────
+     하이드레이션 첫 렌더에서는 `null` 이라 아무 일도 하지 않고, 그 다음 렌더에서 한 번만
+     읽는다(`linkRead`). **읽는 것은 딱 한 번**이다 — 이 값을 계속 파생 상태로 두면
+     시트를 닫는 순간 주소가 그것을 다시 열어 버린다.
+
+     ⚠ 남이 적어 준 값이라 **실재하는 이야기인지 맞춰 본 뒤에** 연다(`everyStory`).
+       없는 id 면 조용히 목록만 선다 — 주소가 틀렸다고 화면이 사과문을 세우지 않는다.
+     ⚠ 레인을 미리 세우지 않는다. 시트가 여는 목록(`flat`)은 부모가 통째로 들고 있어
+       화면 한참 아래의(아직 지연 렌더 전인) 줄이라도 그대로 열리고, 전문은 시트가
+       그때 한 편만 가져온다 — 지연 렌더·지연 로드 경계를 딥링크가 건드리지 않는다. */
+  const search = useSyncExternalStore<string | null>(
+    NEVER_CHANGES,
+    searchSnapshot,
+    noSearchOnServer,
+  );
+  const [linkRead, setLinkRead] = useState(false);
+  if (!linkRead && search !== null) {
+    setLinkRead(true);
+    const wanted = storyIdFromSearch(search);
+    if (wanted !== '' && everyStory.some((story) => story.id === wanted)) setOpenId(wanted);
+  }
+
+  /**
+   * 열린 이야기를 주소창에 비춘다 — 열면 `?story=…`, 닫으면 뺀다.
+   *
+   * ⚠ **`pushState` 가 아니라 `replaceState` 다.** 시트를 여닫는 일을 히스토리에 쌓으면
+   *   뒤로 가기가 "이 화면을 떠나는 길"이 아니라 "방금 본 이야기들을 거꾸로 되짚는 계단"이
+   *   된다 — 열 편을 넘겨 본 사람은 열 번을 눌러야 나간다. 아카이브는 원래 이것저것 눌러
+   *   보는 화면이라 그 계단이 가장 길어지는 자리이기도 하다.
+   * ⚠ 주소 전체를 다시 쓰지 않고 **그 쿼리 한 칸만** 손댄다(`URL` + `searchParams`).
+   *   다른 쿼리나 해시를 달고 들어온 사람의 주소를 우리가 지울 이유가 없다.
+   * ⚠ `linkRead` 전에는 아무것도 쓰지 않는다 — 읽기 전에 지우면 딥링크가 자기 손으로
+   *   자기 값을 없앤다(이 이펙트가 하이드레이션 직후 먼저 도는 자리라 실제로 그렇게 된다).
+   */
+  useEffect(() => {
+    if (!linkRead) return;
+    const url = new URL(window.location.href);
+    if (openId === null) url.searchParams.delete(STORY_PARAM);
+    else url.searchParams.set(STORY_PARAM, openId);
+
+    const next = `${url.pathname}${url.search}${url.hash}`;
+    const now = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    if (next === now) return;
+    window.history.replaceState(window.history.state, '', next);
+  }, [openId, linkRead]);
 
   /** 계열 칩의 숫자 — **지금 결 필터 아래에서** 남는 편수. */
   const categoryCounts = useMemo(() => {

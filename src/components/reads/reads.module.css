@@ -451,6 +451,17 @@
 .cardEvent {
   border-left: 2px solid var(--accent-line);
 }
+/**
+ * API 축제 카드 — 골드 선을 **흐린 헤어라인**으로 내린다.
+ *
+ * 「덜 좋은 것」이 아니라 「출처가 다른 것」이다. 그래서 크기·여백·글자를 바꾸지 않고
+ * 왼쪽 선 한 줄의 세기만 낮춘다 — 목록을 훑을 때 두 결이 갈리되, 카드를 읽기 시작하면
+ * 차이가 사라지는 정도다. 첫 줄의 `.provider` 라벨이 나머지를 말한다.
+ * ⚠ 이 규칙은 `.cardEvent` **뒤에** 와야 같은 명시도에서 이긴다. 순서를 바꾸지 마라.
+ */
+.cardApi {
+  border-left-color: var(--hair-2);
+}
 
 .cardTop {
   display: flex;
@@ -475,6 +486,21 @@
   color: var(--accent);
   font-weight: 600;
   letter-spacing: 0.06em;
+}
+
+/**
+ * 출처 라벨(`한국관광공사 제공`) — API 로 받아 온 카드에만 선다.
+ *
+ * 공공누리 제1유형의 **출처표시 의무**를 지는 자리라 장식이 아니다. 그래서 `--fg-50` 로
+ * 낮추되 `--fg-30` 같은 더 흐린 값으로 내리지 않는다 — 읽히지 않으면 표시한 것이 아니다.
+ * 눌리지 않는 표시라 `.kind` 와 같이 보더 없는 맨 라벨로 둔다(§1.6b 마지막 항).
+ */
+.provider {
+  padding-left: 10px;
+  border-left: 1px solid var(--hair);
+  color: var(--fg-50);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
 }
 
 /**

@@ -1,0 +1,13 @@
+{
+  "fetchedAt": "2026-08-18T07:58:42.580Z",
+  "source": {
+    "provider": "한국관광공사",
+    "service": "TourAPI 국문 관광정보(KorService2) · searchFestival2",
+    "license": "공공누리 제1유형(출처표시) — 출처: 한국관광공사"
+  },
+  "window": {
+    "from": "2026-08-18",
+    "to": "2027-02-18"
+  },
+  "festivals": []
+}

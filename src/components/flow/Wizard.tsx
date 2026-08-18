@@ -326,6 +326,20 @@ export interface WizardProps {
   onResult: (payload: ResultPayload, submission: WizardSubmission) => void;
 }
 
+/**
+ * 제출 뒤 버튼이 드는 말 — **기다림의 이유를 그대로 말한다**(§1.5d).
+ *
+ * 두 문장인 이유는 실제로 두 가지 일이 벌어지기 때문이다. 자유 서술을 적어 준 사람의
+ * 요청은 엔진보다 먼저 **적어 준 글을 읽는 걸음**을 하나 거치고(§1.5j AI 해석 층),
+ * 그만큼 결과가 늦게 선다. 그 시간에 "꽃을 고르는 중" 이라고 말하면 우리가 지금 하는
+ * 일과 화면의 말이 어긋난다 — 늦어진 이유를 말해 주는 편이 같은 시간을 짧게 만든다.
+ *
+ * ⚠ 아무것도 적지 않은 사람에게는 **읽는 걸음이 아예 없다**(호출을 건너뛴다). 그 사람에게
+ *   "이야기를 읽고 있어요" 는 거짓말이므로 지금까지의 문장을 그대로 쓴다.
+ */
+const SUBMIT_PENDING = '꽃을 고르는 중이에요…';
+const SUBMIT_PENDING_READING = '적어 주신 이야기를 읽고 있어요…';
+
 export default function Wizard({
   options,
   defaultDateISO,
@@ -1026,7 +1040,13 @@ export default function Wizard({
           onClick={next}
           disabled={!canAdvance || pending}
         >
-          {pending ? '꽃을 고르는 중이에요…' : step === TOTAL_STEPS ? '추천받기' : '다음'}
+          {pending
+            ? recipientNote.trim() !== '' || episode.trim() !== ''
+              ? SUBMIT_PENDING_READING
+              : SUBMIT_PENDING
+            : step === TOTAL_STEPS
+              ? '추천받기'
+              : '다음'}
           {pending ? null : <IconArrow />}
         </button>
         <p className={styles.micro}>

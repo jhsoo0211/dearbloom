@@ -8,6 +8,7 @@
     "build:static": "node scripts/build-static.mjs",
     "demo:data": "tsx scripts/build-demo-catalog.mjs",
     "birth:photos": "tsx scripts/fetch-birth-photos.mjs",
+    "reads:festivals": "tsx --env-file-if-exists=.env scripts/fetch-festivals.mjs",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",

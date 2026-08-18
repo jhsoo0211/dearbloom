@@ -190,6 +190,26 @@ export const RECIPIENT_CHIPS: RecipientChip[] = [
   { value: 'minimal', label: '군더더기 없는 걸 좋아해요', trait: 'minimal' },
 ];
 
+/**
+ * 반려동물 종 → 그 칩의 라벨 (`cat` → `반려묘와 살아요`).
+ *
+ * §1.5j 의 "이야기에서 읽었어요" 칩이 **사용자가 고를 수 있었던 칩과 같은 낱말**을
+ * 쓰기 위한 표다. 우리가 읽어 낸 것을 다른 말로 적으면 화면이 같은 사실을 두 가지로
+ * 부르게 된다. 표를 손으로 적지 않고 위 목록에서 뽑는 이유도 같다 — 라벨이 바뀌면
+ * 두 자리가 함께 바뀐다.
+ */
+export const SPECIES_CHIP_LABELS: Record<Species, string> = RECIPIENT_CHIPS.reduce(
+  (table, chip) => {
+    if (chip.pet) table[chip.pet] = chip.label;
+    return table;
+  },
+  {} as Record<Species, string>,
+);
+
+/** 향 민감 칩의 라벨. 위 표와 같은 이유로 목록에서 뽑는다. */
+export const FRAGRANCE_CHIP_LABEL: string =
+  RECIPIENT_CHIPS.find((chip) => chip.fragranceSensitive)?.label ?? '향에 민감해요';
+
 /** 칩 하나를 엔진 입력의 여러 자리로 나눈 결과. */
 export interface RecipientChipSplit {
   /** 엔진 recipientTraits(어휘 검사를 통과하는 값만). */

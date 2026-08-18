@@ -273,6 +273,33 @@ export function readCues(cues: readonly string[] = []): CueSignals {
   };
 }
 
+/**
+ * 사용자가 **이름을 직접 부른 꽃** 중 카탈로그에 실재하는 id 만 (2026-08-18).
+ *
+ * ── 왜 여기에 한 줄을 여는가 ─────────────────────────────────────────
+ * 이 판정은 새로 만든 것이 아니다. `readCues` 가 이미 `flower:` 단서를 골라
+ * `CueSignals.flowerIds` 로 들고 있고, 점수(P)의 이름 축이 그 값을 쓴다. 다만 그 값은
+ * **엔진 안에서만** 살아서, 화면이 "적어 주신 꽃이 3안에 못 들었다"는 사실을 말할 방법이
+ * 없었다 — 규칙이 촘촘한 자리(고백 × 연인)에서는 에피소드에 꽃 이름을 직접 적어도
+ * I·R 가점이 그 이름을 이긴다(2026-08-18 실측).
+ *
+ * 그래서 **점수를 비틀지 않고 화면이 이유를 말하게** 한다. 이 함수가 여는 것은
+ * 그 판정 하나뿐이고, 점수식·사전·가중치는 한 글자도 건드리지 않는다.
+ *
+ * 카탈로그와 대조하는 이유: `infer.ts` 의 사전은 꽃이 늘 때마다 손으로 채우는 표라
+ * 카탈로그보다 앞서거나 뒤처질 수 있다. 없는 꽃의 이름을 화면에 세우고 도감 링크를
+ * 걸면 갈 곳 없는 링크가 된다 — 실재하는 것만 돌려주는 편이 정직하다.
+ *
+ * ⚠ 돌려주는 것은 **id 뿐이다.** 원문 조각은 여기서도 빠져나가지 않는다(§1.5j).
+ */
+export function mentionedFlowerIds(
+  cues: readonly string[] | undefined,
+  flowers: readonly { id: string }[],
+): string[] {
+  const owned = new Set(flowers.map((flower) => flower.id));
+  return readCues(cues).flowerIds.filter((id) => owned.has(id));
+}
+
 /** P 한 송이분. */
 export interface PersonalScore {
   /** 0~1. 읽어 낸 단서가 없으면 `P_NEUTRAL`. */

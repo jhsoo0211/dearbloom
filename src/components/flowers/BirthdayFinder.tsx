@@ -100,6 +100,19 @@ export default function BirthdayFinder({ calendar }: BirthdayFinderProps) {
           <h2 className={styles.sectionTitle} id="birth-title">
             생일 꽃 찾기
           </h2>
+
+          {/*
+            계절로 들어가는 문(`/calendar`) — 진입점 둘 중 둘째다(첫째는 인트로 한 줄).
+            여기 두는 이유: 이 구획이 이미 **날짜로 꽃을 찾는** 자리라, "내 날짜"가 아니라
+            "지금 철"로 찾고 싶은 사람이 자연스럽게 갈아탈 수 있다.
+            내비에는 넣지 않는다(§1.6c 레일이 여섯 항목으로 이미 찼다 — `/calendar` 머리말).
+          */}
+          <Link className={styles.calLink} href="/calendar">
+            이번 달 피는 꽃
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M5 12h13M12.5 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </Link>
         </div>
         <p className={`${styles.lead} ${styles.birthLead}`}>
           날짜를 고르면 그날의 탄생화를 보여드려요. 선물할 사람의 생일도 좋고, 오늘 날짜도

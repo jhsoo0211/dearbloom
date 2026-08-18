@@ -34,6 +34,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { loadCatalog } from '../src/lib/data/catalog.ts';
+import { loadFestivals } from '../src/lib/data/reads-festivals.ts';
 import {
   buildBirthDictDetail,
   buildBirthFlower,
@@ -185,6 +186,9 @@ function kb(bytes) {
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   const catalog = await loadCatalog();
+  /* API 축제는 카탈로그 밖의 **생성 산출물**이라 따로 읽는다(`content/generated/festivals.json`).
+     없으면 빈 배열이다 — 키를 신청하지 않은 저장소에서도 이 스크립트가 그대로 돈다. */
+  const festivals = await loadFestivals();
 
   /*
    * 추천·그룹이 쓰는 카탈로그.
@@ -287,6 +291,27 @@ async function main() {
       ),
       label: `읽을거리 (${catalog.reads.length}건 · 행사 ${catalog.reads.filter((read) => read.kind === 'event').length})`,
     },
+    /*
+     * API 축제 한 벌 — 위 `reads.ts` 와 **같은 성격**의 사이드카다.
+     *
+     * ⚠ 정적 데모의 `/reads` 는 이 파일도 읽지 않는다. 축제 카드는 빌드 타임에 이미
+     *   HTML 로 굳었다(원장 카드와 같은 길을 탄다). 그런데도 굳혀 두는 이유가 원장과
+     *   다르다: 이쪽은 **언제 받아 온 목록인지가 곧 근거**라, 드롭 zip 을 열어 본 사람이
+     *   `fetchedAt` 과 창(`window`)을 확인할 수 있어야 한다. API 가 준 값과 화면에 실린
+     *   값이 어긋났다는 신고가 들어오는 날, 대조할 원본이 zip 안에 있어야 한다.
+     * ⚠ 아무도 import 하지 않으므로 **번들에 실리지 않는다**(용량 0 기여).
+     * 목록이 비면 `[]` 한 줄이다 — 파일 자체는 늘 만든다(없는 파일과 빈 목록이 데모에서
+     * 같은 모양이어야 한다).
+     */
+    {
+      name: 'festivals.ts',
+      text: toModule(
+        'DEMO_FESTIVALS_JSON',
+        festivals,
+        '정적 데모용 API 축제 — 한국관광공사 TourAPI 에서 받아 굳힌 목록(화면은 서버가 이미 굳혔다).',
+      ),
+      label: `API 축제 (${festivals.length}건 · 한국관광공사)`,
+    },
   ];
 
   await mkdir(OUT_DIR, { recursive: true });
@@ -305,7 +330,7 @@ async function main() {
   }
   console.log(`  합계 ${kb(totalRaw)} (gzip ${kb(totalGzip)})`);
   console.log('  ※ 앞의 다섯은 지연 로드다 — 첫 화면이 아니라 그 기능을 처음 쓸 때 받는다.');
-  console.log('  ※ reads.ts 는 아무도 import 하지 않는다 — zip 안에 남는 원장이지 번들이 아니다.');
+  console.log('  ※ reads.ts · festivals.ts 는 아무도 import 하지 않는다 — zip 안에 남는 근거지 번들이 아니다.');
 }
 
 await main();

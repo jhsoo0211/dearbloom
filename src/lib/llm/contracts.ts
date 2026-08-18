@@ -21,6 +21,29 @@ export const MESSAGE_LENGTHS = ['short', 'medium'] as const;
 export type MessageLength = (typeof MESSAGE_LENGTHS)[number];
 export const messageLengthSchema = z.enum(MESSAGE_LENGTHS);
 
+/**
+ * 멘트 한 편의 **글자 수 상한**(공백 포함) — 2026-08-18 사용자 요구 "너무 길지 않게".
+ *
+ * ── 이 상수가 계약 쪽에 사는 이유 ────────────────────────────────────
+ * 상한은 세 곳이 함께 지켜야 한 번이라도 지켜진다: 프롬프트가 요구하고(`prompt.ts`),
+ * 응답 검증이 막고(`generateResponseSchemaFor`), 화면이 사용자에게 같은 수를 말한다
+ * (`ResultView` 의 길이 칸). 셋이 각자 숫자를 들고 있으면 어느 한 곳만 늘어난 채 남는다 —
+ * 여기 한 벌만 두고 나머지가 읽어 간다.
+ *
+ * 수치는 **관측을 굳힌 값**이지 새로 조인 값이 아니다(2026-08-18 실측: 짧게 54~61자,
+ * 보통 91~110자). 즉 지금 모델들이 이미 내고 있는 분량이고, 상한은 그 위로 새는 편만 막는다.
+ *
+ * ⚠ **넘긴 멘트는 잘라 쓰지 않는다.** 중간에서 끊긴 문장은 긴 문장보다 나쁘다 —
+ *   계약 위반으로 다루어 한 번 더 부탁하고(같은 프로바이더), 그래도 넘치면 다음
+ *   프로바이더로 넘긴다(`provider.ts` 의 `runProvider`). 잘라 붙이는 코드는 없다.
+ * ⚠ 결과 화면 **고쳐 쓰기**의 200자는 이 값과 별개다(`prompt.ts` 의 `MESSAGE_MAX_CHARS`).
+ *   우리가 쓰는 분량과 사용자가 고쳐 쓸 수 있는 분량은 다른 약속이다.
+ */
+export const MESSAGE_LENGTH_MAX_CHARS: Record<MessageLength, number> = {
+  short: 60,
+  medium: 120,
+};
+
 const flowerBriefSchema = z.object({
   id: z.string().min(1),
   name_ko: z.string().min(1),
@@ -79,19 +102,40 @@ export const generateRequestSchema = z.object({
   rules: z.array(z.string()).optional(),
 });
 
-const toneMessageSchema = z.object({
-  tone: toneSchema,
-  headline: z.string().min(1),
-  message: z.string().min(1),
-  why_it_fits: z.string().min(1),
-  // 플래그가 없으면 필드째 생략하고 보내는 모델이 있다(CLOVA HCX 실측 — 매 호출 재현).
-  // "없음 = 빈 배열" 이므로 생략을 관용한다. 파싱 후에는 항상 배열이다.
-  safety_flags: z.array(z.string()).default([]),
-});
+/**
+ * 응답 한 톤. `length` 를 받는 이유는 **message 상한이 길이 축마다 다르기 때문**이다
+ * (`MESSAGE_LENGTH_MAX_CHARS`). 나머지 칸은 길이와 무관하다.
+ *
+ * `message` 만 `.trim()` 을 먼저 건다 — 모델이 끝에 붙이는 줄바꿈 한두 칸 때문에
+ * 멀쩡한 멘트가 상한에 걸리는 것은 분량 문제가 아니라 공백 문제다.
+ */
+function toneMessageSchemaFor(length: MessageLength) {
+  return z.object({
+    tone: toneSchema,
+    headline: z.string().min(1),
+    message: z.string().trim().min(1).max(MESSAGE_LENGTH_MAX_CHARS[length]),
+    why_it_fits: z.string().min(1),
+    // 플래그가 없으면 필드째 생략하고 보내는 모델이 있다(CLOVA HCX 실측 — 매 호출 재현).
+    // "없음 = 빈 배열" 이므로 생략을 관용한다. 파싱 후에는 항상 배열이다.
+    safety_flags: z.array(z.string()).default([]),
+  });
+}
 
-export const generateResponseSchema = z.object({
-  tones: z.array(toneMessageSchema).length(RESPONSE_TONE_COUNT),
-});
+/**
+ * 요청한 길이에 맞는 응답 계약.
+ *
+ * 상한을 넘긴 멘트는 여기서 **파싱 실패와 같은 자리**로 떨어진다 — 부르는 쪽
+ * (`provider.ts` 의 `parseResponse`)이 `null` 을 받고, 그 뒤는 기존 재시도·폴백 선례
+ * 그대로다. 잘라 붙이는 길은 어디에도 열어 두지 않는다.
+ */
+export function generateResponseSchemaFor(length: MessageLength) {
+  return z.object({
+    tones: z.array(toneMessageSchemaFor(length)).length(RESPONSE_TONE_COUNT),
+  });
+}
+
+/** 길이를 말하지 않은 자리의 기본 계약(= `medium`). 타입의 원본이기도 하다. */
+export const generateResponseSchema = generateResponseSchemaFor('medium');
 
 /**
  * 호출부가 **만들어 넘기는** 모양 — `length` 처럼 기본값이 있는 필드는 생략할 수 있다
@@ -104,4 +148,5 @@ export type GenerateRequest = z.input<typeof generateRequestSchema>;
  */
 export type GenerateRequestParsed = z.output<typeof generateRequestSchema>;
 export type GenerateResponse = z.infer<typeof generateResponseSchema>;
-export type ToneMessage = z.infer<typeof toneMessageSchema>;
+/** 응답 한 톤의 모양. 길이 축과 무관한 타입이라 기본 계약에서 뽑는다. */
+export type ToneMessage = GenerateResponse['tones'][number];

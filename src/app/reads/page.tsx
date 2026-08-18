@@ -9,6 +9,12 @@ import {
 import styles from '@/components/reads/reads.module.css';
 import type { ReadCard, ReadFlowerLink } from '@/components/reads/types';
 import { loadCatalog } from '@/lib/data/catalog';
+import {
+  FESTIVAL_PROVIDER_LABEL,
+  hideDuplicates,
+  loadFestivals,
+  toFestivalCard,
+} from '@/lib/data/reads-festivals';
 import type { CatalogRead, ReadAccess, ReadKind } from '@/lib/data/types';
 
 /**
@@ -125,28 +131,61 @@ function toCard(read: CatalogRead, names: Map<string, string>): ReadCard {
  *
  * ⚠ **여기서 "오늘"을 보지 마라.** 열린 행사를 위로 올리고 싶어지겠지만, 그 정렬은 빌드
  *   시각의 오늘로 굳는다(§7-2). 정렬은 데이터만으로 정해지는 값이어야 한다.
+ *
+ * 종료일이 같으면 **큐레이션이 먼저 선다**(`provider` 가 없는 쪽). 기계가 모아 온 카드가
+ * 사람이 고른 카드를 밀어내지 않게 하는 한 칸이고, 정렬을 실행마다 흔들리지 않게 한다.
  */
 function inScreenOrder(cards: ReadCard[]): ReadCard[] {
   const events = cards
     .filter((card) => card.kind === 'event')
-    .sort((a, b) => (a.endsAt ?? '').localeCompare(b.endsAt ?? ''));
+    .sort(
+      (a, b) =>
+        (a.endsAt ?? '').localeCompare(b.endsAt ?? '') ||
+        Number(a.provider !== undefined) - Number(b.provider !== undefined),
+    );
   const rest = cards.filter((card) => card.kind !== 'event');
   return [...events, ...rest];
+}
+
+/**
+ * API 축제를 카드로 — **비어 있는 것이 정상 값이다.**
+ *
+ * `content/generated/festivals.json` 이 없거나(=아직 한 번도 안 받아 왔거나 키가 없거나)
+ * 목록이 비면 빈 배열이 돌아오고, 그 결과 화면에는 **아무 흔적도 남지 않는다** — 안내
+ * 문구도, 빈 구획도 두지 않는다. 사용자는 그런 것이 있었다는 사실 자체를 모르는 편이
+ * 자연스럽다(파일이 깨져 있을 때만 로더가 던진다 — `reads-festivals.ts` 머리말).
+ *
+ * 중복은 **원장이 이긴다.** 같은 축제가 `reads.csv` 에도 있으면 API 쪽을 통째로 뗀다
+ * (제목 근사 + 기간 근사 — 판정 규칙은 `hideDuplicates` 머리말).
+ */
+async function festivalCards(curated: ReadCard[]): Promise<ReadCard[]> {
+  const records = await loadFestivals();
+  if (records.length === 0) return [];
+
+  const curatedEvents = curated.filter((card) => card.kind === 'event');
+  return hideDuplicates(records, curatedEvents).map((record) =>
+    toFestivalCard(record, KIND_LABELS.event),
+  );
 }
 
 export default async function ReadsPage() {
   const catalog = await loadCatalog();
   const names = new Map(catalog.flowers.map((flower) => [flower.id, flower.nameKo]));
-  const cards = inScreenOrder(catalog.reads.map((read) => toCard(read, names)));
+  const curated = catalog.reads.map((read) => toCard(read, names));
+  const fromApi = await festivalCards(curated);
+  const cards = inScreenOrder([...curated, ...fromApi]);
 
   /*
-   * 인트로 숫자는 **원장 그대로**다(만료를 반영하지 않는다).
-   * 반영하려면 서버가 오늘을 알아야 하는데, 그 순간 §7-2 가 경고한 대로 빌드 날짜가
-   * HTML 에 굳는다. 그래서 여기 숫자는 "모아 둔 것" 을 말하고, **지금 볼 수 있는 수**는
-   * 필터 바 아래 `.count` 가 브라우저의 오늘로 말한다.
+   * 인트로 숫자는 **원장 54건만** 센다(만료도, API 축제도 반영하지 않는다).
+   *
+   * 만료를 반영하지 않는 이유: 반영하려면 서버가 오늘을 알아야 하는데, 그 순간 §7-2 가
+   * 경고한 대로 빌드 날짜가 HTML 에 굳는다.
+   * API 축제를 세지 않는 이유: 이 세 줄이 말하는 것은 「저희가 직접 열어 보고 고른 것」의
+   * 크기다. 기계가 모아 온 수를 여기 더하면 그 문장이 그 자리에서 거짓이 된다.
+   * **지금 볼 수 있는 수**는 필터 바 아래 `.count` 가 브라우저의 오늘로 말한다.
    */
-  const eventCount = cards.filter((card) => card.kind === 'event').length;
-  const bridged = cards.filter((card) => card.flowers.length > 0).length;
+  const eventCount = curated.filter((card) => card.kind === 'event').length;
+  const bridged = curated.filter((card) => card.flowers.length > 0).length;
 
   return (
     <div className={styles.page}>
@@ -174,7 +213,7 @@ export default async function ReadsPage() {
 
           <ul className={styles.stats}>
             <li className={styles.stat}>
-              <span className={styles.statNum}>{cards.length}</span>
+              <span className={styles.statNum}>{curated.length}</span>
               <span className={styles.statLabel}>건을 모았어요</span>
             </li>
             <li className={styles.stat}>
@@ -229,6 +268,19 @@ export default async function ReadsPage() {
               행사 날짜는 주최 측 공식 안내를 따라 적었어요. 바뀌었을 수 있으니 가기 전에 한 번
               확인해 주세요.
             </p>
+            {/*
+              ⚠ 공공누리 제1유형의 **출처표시 의무**를 지는 줄이다. 지우지 마라.
+                카드마다 붙는 `한국관광공사 제공` 라벨이 개별 출처를 말하고, 이 각주가
+                그 목록이 어디서 왔는지를 한 번 더 밝힌다.
+              ⚠ **API 카드가 하나도 없으면 이 줄도 없다.** 있지도 않은 것을 설명하는 문장은
+                사용자에게 아무 뜻이 없다(빈 배열이면 구획째 조용히 사라진다는 규칙과 한 짝).
+            */}
+            {fromApi.length > 0 ? (
+              <p>
+                {FESTIVAL_PROVIDER_LABEL}이라고 적힌 축제는 한국관광공사 TourAPI 에서 받아 온
+                것이라 저희가 직접 열어 보지는 못했어요(공공누리 제1유형).
+              </p>
+            ) : null}
           </div>
 
           <p className={styles.footSay}>

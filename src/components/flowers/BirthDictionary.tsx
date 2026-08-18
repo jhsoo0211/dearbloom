@@ -144,7 +144,13 @@ export default function BirthDictionary({
   }
 
   return (
-    <section className={styles.dict} aria-labelledby="dict-title">
+    /*
+       `id` 는 계절 달력(`/calendar`)의 다리 한 줄이 가리키는 자리다 — 달마다 그달의
+       탄생화 날 수를 말하고 여기로 보낸다. ⚠ 그 링크는 **구획을 열 뿐 달을 골라 주지는
+       않는다.** 자동으로 한 달을 펼치려면 마운트 시점에 서버 액션을 부르게 되는데,
+       그것이 바로 위 머리말이 접어 둔 그 비용이다(그리고 이펙트 안 setState 가 된다).
+    */
+    <section className={styles.dict} id="birth-dict" aria-labelledby="dict-title">
       <div className={styles.wrap}>
         <div className={styles.sectionHead}>
           <h2 className={styles.sectionTitle} id="dict-title">

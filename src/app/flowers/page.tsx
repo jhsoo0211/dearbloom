@@ -95,6 +95,22 @@ export default async function FlowersPage() {
           </ul>
 
           {/*
+            계절로 들어가는 문(`/calendar`) — 진입점 둘 중 하나다(다른 하나는 바로 아래
+            생일 찾기 옆). 상단 내비에는 넣지 않는다: 항목이 이미 여섯이고(§1.6c 는 다섯을
+            860px 레일에 겨우 세웠다) 달력은 도감의 곁문이지 본류의 목차가 아니다.
+
+            ⚠ **줄 수가 늘 하나여야 한다**(CLS 0 규율 — 바로 아래 경고와 같은 자리).
+              그래서 `.calLink` 가 `white-space: nowrap` 을 걸고 있다. 문구를 길게 고치면
+              390px 에서 두 줄이 되면서 그 규율이 깨진다 — 늘리려거든 폭부터 재라.
+          */}
+          <Link className={`${styles.calLink} ${styles.calLinkIntro}`} href="/calendar">
+            이번 달엔 어떤 꽃이 필까요
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M5 12h13M12.5 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </Link>
+
+          {/*
             ⚠ **여기에 설명 문단을 덧붙이지 마라**(CLS 0 규율, 2026-08-16 실측).
             인트로는 `<main>` **위**에 있어서, 이 자리의 텍스트가 웹폰트 교체로 한 줄만
             늘어도 아래 화면 전체가 밀린다. 실제로 두 티어를 설명하는 3줄짜리 문단을

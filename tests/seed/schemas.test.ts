@@ -100,14 +100,14 @@ describe('content/*.csv 실제 데이터', () => {
     expect(dataset.rules.length).toBeGreaterThanOrEqual(6);
     // 사과 3톤(유쾌 제외) + 나머지 7마음 × 4톤. 아래 커버리지 테스트가 그 격자를 지킨다.
     expect(dataset.templates).toHaveLength(31);
-    // 편집팀 자작 3행 + §1.5k 문학 발췌 74행(한국·동아시아 43행 + 외국 문학 확장 31행).
-    expect(dataset.quotes).toHaveLength(77);
+    // 편집팀 자작 3행 + §1.5k 문학 발췌 86행(한국·동아시아 43 + 외국 확장 31 + 배치 2 신규 12종분 12).
+    expect(dataset.quotes).toHaveLength(89);
   });
 
-  it('문학 발췌 74행은 전부 꽃·갈래·퍼블릭 도메인 근거를 갖는다 (§1.5k)', () => {
+  it('문학 발췌 86행은 전부 꽃·갈래·퍼블릭 도메인 근거를 갖는다 (§1.5k)', () => {
     const { dataset } = loadDataset();
     const literature = dataset.quotes.filter((row) => row.value.excerpt_type !== undefined);
-    expect(literature).toHaveLength(74);
+    expect(literature).toHaveLength(86);
 
     for (const row of literature) {
       // 꽃이 없으면 결과 화면의 문학 블록이 이 행을 영영 못 찾는다.
@@ -119,10 +119,12 @@ describe('content/*.csv 실제 데이터', () => {
       expect(row.value.pd_basis).toBeDefined();
     }
 
-    // 32종 중 28종 커버. 나머지는 근대에 명명돼 고전 문학에 등장하지 않는다
-    // (freesia · gerbera · babys-breath · poinsettia) — 블록을 생략하는 쪽이 맞다.
+    // 59종 중 36종 커버(배치 2 에서 매화·진달래·치자·목화 등 8종 합류). 못 채운 나머지는
+    // 근대 원예종이라 퍼블릭 도메인 문학에 등장하지 않는다(freesia · gerbera · babys-breath ·
+    // poinsettia · phalaenopsis · anthurium · alstroemeria · bouvardia 등) — 억지로 채우지
+    // 않고 블록을 생략하는 쪽이 맞다(docs/literature-research-2.md §4).
     const covered = new Set(literature.map((row) => row.value.flower_id));
-    expect(covered.size).toBe(28);
+    expect(covered.size).toBe(36);
     for (const id of ['freesia', 'gerbera', 'babys-breath', 'poinsettia']) {
       expect(covered.has(id)).toBe(false);
     }

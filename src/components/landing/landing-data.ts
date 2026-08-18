@@ -254,6 +254,30 @@ export interface BirthFlowerLine {
  */
 export const BIRTH_FINDER_HREF = '/flowers#birth-title';
 
+/**
+ * 리드 맺음(㉢)을 **실제 길로** 만드는 조각 — `todayReason` 의 마지막 문장이 링크가 된다.
+ *
+ * 맺음 네 벌(`HOOK_CLOSINGS`)은 전부 "나머지는 도감에 있어요" 라고 말한다. 그 말이 참인
+ * 근거는 카드가 덮개 링크로 `/flowers/{id}` 에 가기 때문인데, **문장 자체는 갈 곳이 없는
+ * 글자**였다 — 초대해 놓고 문을 손가락으로만 가리킨 셈이다. 그래서 그 한 문장을 링크로
+ * 세운다. 카드가 이미 같은 곳으로 가지만, 초대에 응하는 가장 짧은 길이 그 문장 위여야 한다.
+ *
+ * ⚠ **문구를 바꾸지 않는다.** `text` 는 `HOOK_CLOSINGS` 원문 그대로이고, `lead` 는
+ *   `todayReason` 에서 그 문장만 뺀 나머지다 — 둘을 이어 붙이면 리드 문단과 글자 하나까지
+ *   같다. 조각으로 자르는 것은 탄생화 각주(`BirthFlowerLine.lead`/`tail`)와 같은 이유다:
+ *   문장 한 낱말·한 마디만 링크일 때 문자열 하나로는 낼 수 없다.
+ * ⚠ 맺음이 없는 날(이야기 훅이 없어 ③ 이 꽃말이나 침묵으로 물러난 날)은 **키 자체가 없다.**
+ *   그런 날 화면은 리드를 통짜 문자열로 그대로 세운다 — 없는 길을 만들지 않는다.
+ */
+export interface TodayReasonLink {
+  /** 링크 앞에 서는 조각. 맺음 문장 바로 앞의 공백까지 포함한다. */
+  lead: string;
+  /** 링크가 되는 맺음 문장 — `HOOK_CLOSINGS` 원문 그대로다. */
+  text: string;
+  /** 그 꽃의 도감 상세(`/flowers/{id}`). 카드 덮개 링크와 **같은 목적지**다. */
+  href: string;
+}
+
 export interface LandingData {
   /** KST 기준 오늘(YYYY-MM-DD). */
   todayISO: string;
@@ -284,6 +308,14 @@ export interface LandingData {
    *   히어로 캡션과 탄생화 줄의 몫이고, 날씨·기온은 우리에게 데이터가 없어 쓰지 않는다.
    */
   todayReason: string;
+  /**
+   * 리드 맺음(㉢)이 가리키는 곳 — 그 문장 자체가 **그 꽃의 도감 상세로 가는 링크**가 된다.
+   *
+   * 이야기 훅이 있는 날에만 있다(맺음이 서는 날). 화면은 `lead` 를 그대로 찍고 `text` 를
+   * 링크로 감싸면 되고, 키가 없으면 `todayReason` 을 통짜로 찍는다 — 두 경로가 만드는
+   * 글자는 **완전히 같다**(문구를 바꾸지 않는다는 뜻이다).
+   */
+  todayReasonLink?: TodayReasonLink;
   /**
    * 리드 아래 한 단 흐린 줄 — **화면 빛깔 한 마디**(`.db-today-aside`).
    *

@@ -8,11 +8,11 @@ DB는 이 CSV에서 시드(upsert)될 뿐, 반대로 DB를 직접 고치지 않�
 | 파일 | 내용 | 현재 행 수 |
 |---|---|---|
 | `flowers.csv` | 꽃 기본 정보 | 59 |
-| `meanings.csv` | 꽃말(출처 필수) | 305 |
+| `meanings.csv` | 꽃말(출처 필수) | 369 |
 | `stories.csv` | 꽃에 얽힌 일화(창작 외 출처 필수) | 438 |
 | `rules.csv` | 상황 → 꽃 추천/회피 규칙 | 151 |
 | `templates.csv` | 메시지 템플릿 | 31 |
-| `quotes.csv` | 인용문(범용 3 + 문학 발췌 74) | 77 |
+| `quotes.csv` | 인용문(범용 3 + 문학 발췌 86) | 89 |
 | `pet_safety.csv` | 반려동물 안전성(꽃 × cat/dog 전수) | 118 |
 | `birth_flowers.csv` | 날짜별 탄생화(윤년 366일 달력) | 366 |
 | `birth_photos.csv` | 탄생화의 실사 한 장(확보 274 · 미확보 6) | 280 |
@@ -101,6 +101,12 @@ intent 와 무관한 상시 가점(R)이 붙기 때문이다. 꽃말이나 일�
   - `birth-v1:` — 날짜별 탄생화 366일 (2026-08-16, `docs/birth-flowers-research.md`).
     `birth_flowers.csv` 전 행. 다른 회차와 달리 **파일 하나가 통째로 이 회차**라, 메모는
     두 표가 갈리는 지점(표기 차이·꽃말 차이·철자 교정)에만 158행 붙어 있다.
+  - `seed-v8:` — 색별 꽃말 확충 64행 + 문학 발췌 12행 (2026-08-18,
+    `docs/meanings-research-2.md` · `docs/literature-research-2.md`).
+    `meanings.csv` 64행(경고 꽃말 12·colors 밖 4행 포함)과 `quotes.csv` 12행(배치 2 신규
+    12종 중 8종 — 근대 원예종 4종은 PD 문학 부재로 정직하게 비움)이 여기 해당한다.
+    같은 회차에 **출처 정정 22행**: `suncheonbay-birth-flowers` 로 잘못 표기됐던 행들을
+    실근거(로얄플라워 표)로 바로잡았다(`meanings-research-2.md` §9).
 
 ## 절대 하지 말 것
 
@@ -132,7 +138,10 @@ npm run seed:apply    # 실제 upsert (Supabase 환경변수 필요)
   다만 색 선택 UI 는 `flowers.colors` 를 기준으로 그리므로, 그런 행은 `editorial_note` 에
   그 사실을 남긴다. **2026-08-15 (seed-v3) 에 어긋난 행 4건을 해소했다** — `tulip-white` 의
   `colors` 에 `cream|yellow|red|variegated|pink|purple` 을, `rose-red` 에 `yellow|white` 를 더했다.
-  현재 어긋나는 행은 없다.
+  **2026-08-18 (seed-v8) 부터는 의도된 어긋남 4행이 있다** — 파란 장미·주황 장미·빨간
+  코스모스·노란 개양귀비. 색 칩을 세우지 않으려고 `colors` 를 일부러 안 늘렸고(파란 장미
+  칩이 생기면 유통 실물과 어긋난다), 네 행 모두 `editorial_note` 가 스스로 그 사실을 밝힌다
+  (`docs/meanings-research-2.md` §7).
 - **출처가 확실치 않은 공공 자료는 단어만 참조하고 문장은 직접 쓴다.** 국립원예특작과학원
   꽃말사전 유래 행은 `source_id` 를 `nihhs-*` 로 통일해 두었다(공공누리 유형 미확정 —
   근거와 판단은 `docs/meanings-research.md` §2).

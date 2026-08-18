@@ -30,8 +30,41 @@ import {
   replacePhase,
   saveFlowSession,
 } from './flow-session';
-import type { ResultPayload, WizardOptions, WizardSubmission } from './types';
+import type {
+  FlowResponse,
+  MessageStreamState,
+  ResultPayload,
+  WizardOptions,
+  WizardSubmission,
+} from './types';
 import styles from './flow.module.css';
+
+/**
+ * 정적 드롭 데모인가 — 빌드 타임에 값이 박힌다.
+ *
+ * 데모에는 멘트 스트리밍 라우트(`/recommend/stream`)가 **없다.** Next 는 정적 export 에서
+ * POST 라우트 핸들러를 산출물에 넣지 않기 때문이다(2026-08-18 실측). 그 사실을 알고
+ * 아예 부르지 않는다 — 부르면 404 한 번을 낭비하고 그만큼 결과가 늦어진다.
+ * 데모의 멘트는 어차피 언제나 예문이라 흘려보낼 글자 자체가 없다.
+ */
+const STATIC_DEMO = process.env.NEXT_PUBLIC_STATIC_DEMO === '1';
+
+/** 멘트 스트림의 주소. 라우트 파일은 `src/app/recommend/stream/route.ts` 다. */
+const STREAM_URL = '/recommend/stream';
+
+/** 스트림이 흘려보내는 줄 하나. 프로토콜의 정본은 라우트 핸들러 머리말에 있다. */
+type StreamLine =
+  | { kind: 'result'; payload: ResultPayload }
+  | { kind: 'draft'; tones: MessageStreamState['drafts'] }
+  | { kind: 'tones'; tones: ResultPayload['tones']; messageSource?: unknown; messageNote?: unknown }
+  | { kind: 'settled' }
+  | { kind: 'error'; message?: unknown };
+
+/** 멘트가 확정되면 payload 에 이만큼만 갈아 끼운다(3안·이야기·색 선택은 그대로). */
+type SettledMessages = Pick<ResultPayload, 'tones' | 'messageSource' | 'messageNote'>;
+
+/** 아직 아무것도 흘러오지 않은 상태. `pending` 만 참이면 화면이 "쓰는 중" 을 세운다. */
+const STREAM_START: MessageStreamState = { pending: true, drafts: {} };
 
 /**
  * 결과가 도착했다는 것을 화면을 못 보는 사람에게도 알리는 한 줄.
@@ -53,6 +86,42 @@ function clampStep(value: unknown): number {
  */
 function toTop() {
   window.scrollTo({ top: 0 });
+}
+
+/**
+ * NDJSON 한 줄씩 읽어 넘긴다.
+ *
+ * 줄이 청크 경계에 걸쳐 오는 것이 정상이라(그러라고 스트림이다) 버퍼에 모았다가
+ * 개행에서만 자른다. 반쪽 줄을 파싱하려 들면 그때부터 화면이 거짓말을 하기 시작한다.
+ */
+async function readNdjson(response: Response, onLine: (line: StreamLine) => void): Promise<void> {
+  const body = response.body;
+  if (!body) return;
+
+  const reader = body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+
+  const take = (raw: string) => {
+    const text = raw.trim();
+    if (text === '') return;
+    try {
+      onLine(JSON.parse(text) as StreamLine);
+    } catch {
+      // 우리가 만든 줄이 아니다(프록시가 끼워 넣은 무엇이거나 잘렸다). 지나간다.
+    }
+  };
+
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    for (let nl = buffer.indexOf('\n'); nl !== -1; nl = buffer.indexOf('\n')) {
+      take(buffer.slice(0, nl));
+      buffer = buffer.slice(nl + 1);
+    }
+  }
+  take(buffer);
 }
 
 export interface RecommendFlowProps {
@@ -87,11 +156,26 @@ export default function RecommendFlow({ options, defaultDateISO }: RecommendFlow
    *   새로고침해서 결과가 복원된 자리에는 재생성 버튼이 서지 않아도 된다(§1.5j 최소 보관).
    */
   const [submission, setSubmission] = useState<WizardSubmission | null>(null);
+  /**
+   * 흘러나오는 중인 멘트 — **표시용**이다(`MessageStreamState` 주석의 경계).
+   * `null` 이면 스트리밍이 도는 중이 아니고, 화면은 확정된 톤만 세운다.
+   */
+  const [stream, setStream] = useState<MessageStreamState | null>(null);
   /** popstate 클로저가 최신 결과를 보게 하는 거울 — 리스너는 마운트에 한 번만 걸기 때문이다. */
   const payloadRef = useRef<ResultPayload | null>(null);
   useEffect(() => {
     payloadRef.current = payload;
   }, [payload]);
+  /**
+   * 결과 화면이 서기 **전에** 멘트가 확정되면 여기서 기다린다.
+   *
+   * 스트림의 첫 줄이 위저드의 제출을 풀어 주고, 그 뒤 리액트가 결과 화면을 세운다.
+   * 두 일 사이는 마이크로태스크 한 칸이라 실제로 겹칠 일은 없지만, 겹치면 **새로 쓴
+   * 멘트가 조용히 사라진다** — 그 종류의 버그는 재현이 안 돼서 영영 안 잡힌다.
+   */
+  const pendingSettleRef = useRef<SettledMessages | null>(null);
+  /** 도는 중인 스트림. `다시 골라보기` · 새 제출이 앞의 것을 끊는다. */
+  const streamAbortRef = useRef<AbortController | null>(null);
 
   /** 다음·프리셋 건너뛰기 — 걸음 하나 = 히스토리 엔트리 하나. */
   function goToStep(next: number) {
@@ -123,12 +207,143 @@ export default function RecommendFlow({ options, defaultDateISO }: RecommendFlow
   }
 
   function showResult(next: ResultPayload, submission: WizardSubmission) {
-    setPayload(next);
+    // 결과가 서기 전에 멘트가 확정됐다면(위 `pendingSettleRef`) 여기서 함께 얹는다.
+    const early = pendingSettleRef.current;
+    pendingSettleRef.current = null;
+    const merged = early ? { ...next, ...early } : next;
+
+    setPayload(merged);
+    payloadRef.current = merged;
     setSubmission(submission);
     setView('result');
-    saveFlowSession({ payload: next });
+    saveFlowSession({ payload: merged });
     pushPhase({ view: 'result', depth: (readPhase()?.depth ?? 0) + 1 });
     toTop();
+  }
+
+  /** 확정된 멘트를 지금 결과에 갈아 끼운다. 결과가 아직 없으면 세워질 때까지 들고 있는다. */
+  function settleMessages(settled: SettledMessages) {
+    if (payloadRef.current === null) {
+      pendingSettleRef.current = settled;
+      return;
+    }
+    const next = { ...payloadRef.current, ...settled };
+    payloadRef.current = next;
+    setPayload(next);
+    saveFlowSession({ payload: next });
+  }
+
+  /**
+   * 멘트 스트림 한 판.
+   *
+   * 돌려주는 값은 **첫 결과**다(`messagesOnly` 면 `undefined`). 나머지 줄은 이 함수가
+   * 끝난 뒤에도 계속 들어오고, 그때마다 위 상태를 갈아 끼운다 — 그래서 반환은
+   * "화면을 세울 수 있게 됐다" 는 신호일 뿐 "다 끝났다" 가 아니다.
+   *
+   * 스트림을 못 열면 `null` 이다. 부르는 쪽은 **지금까지의 서버 액션 경로로 그대로
+   * 내려간다** — 폴백 체인은 서버 안에 그대로 있고, 여기 실패는 "흘려보내지 못했다" 일 뿐
+   * "멘트를 못 받았다" 가 아니다.
+   */
+  async function runStream(
+    body: {
+      submission: WizardSubmission;
+      length?: MessageLength;
+      messagesOnly?: boolean;
+      /** 지금 화면에 서 있는 3안 — 멘트만 다시 받을 때 서버가 첫 안을 되돌리는 데 쓴다. */
+      flowerIds?: string[];
+    },
+  ): Promise<{ payload?: ResultPayload; settled: boolean } | null> {
+    if (STATIC_DEMO) return null;
+
+    streamAbortRef.current?.abort();
+    const controller = new AbortController();
+    streamAbortRef.current = controller;
+
+    let response: Response;
+    try {
+      response = await fetch(STREAM_URL, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      });
+    } catch {
+      return null;
+    }
+    // 본문은 읽지 않는다 — 오류 응답 본문 미독취 규칙(프로바이더 어댑터와 같은 선례).
+    if (!response.ok || !response.body) return null;
+
+    setStream(STREAM_START);
+
+    let first: ResultPayload | undefined;
+    let settled = false;
+    let failed = false;
+
+    /** 첫 결과가 오면 풀리는 문 — 위저드의 제출을 여기서 놓아 준다. */
+    let openGate: () => void = () => {};
+    const gate = new Promise<void>((resolve) => {
+      openGate = resolve;
+    });
+
+    const pump = (async () => {
+      try {
+        await readNdjson(response, (line) => {
+          switch (line.kind) {
+            case 'result':
+              first = line.payload;
+              openGate();
+              break;
+            case 'draft':
+              setStream({ pending: true, drafts: line.tones });
+              break;
+            case 'tones':
+              settled = true;
+              settleMessages({
+                tones: line.tones,
+                messageSource: 'llm',
+                messageNote:
+                  typeof line.messageNote === 'string'
+                    ? line.messageNote
+                    : (payloadRef.current?.messageNote ?? ''),
+              });
+              break;
+            case 'error':
+              failed = true;
+              openGate();
+              break;
+            default:
+              // `settled` — 새로 쓴 문장이 없다. 예문이 그대로 선다.
+              break;
+          }
+        });
+      } catch {
+        // 중간에 끊겼다. 이미 세운 화면은 그대로 두고 "쓰는 중" 표시만 내린다.
+      } finally {
+        if (streamAbortRef.current === controller) streamAbortRef.current = null;
+        setStream(null);
+        openGate();
+      }
+    })();
+
+    // `messagesOnly` 는 세울 결과가 없으므로 끝까지 기다린다(멘트가 곧 반환값이다).
+    if (body.messagesOnly) await pump;
+    else await gate;
+
+    if (failed) return null;
+    if (!body.messagesOnly && first === undefined) return null;
+    return first === undefined ? { settled } : { payload: first, settled };
+  }
+
+  /**
+   * 위저드가 부르는 제출 — **스트리밍을 먼저 시도하고, 안 되면 지금까지의 길로 간다.**
+   *
+   * 스트리밍 경로에서는 결과가 멘트보다 먼저 온다(예문이 서 있는 채로). 그래서 사용자는
+   * 3안·이야기를 곧바로 읽기 시작하고, 멘트는 그 아래에서 글자로 흘러 들어온다.
+   */
+  async function runSubmit(next: WizardSubmission): Promise<FlowResponse> {
+    const streamed = await runStream({ submission: next });
+    if (streamed?.payload) return { ok: true, payload: streamed.payload };
+    return submitRecommendation(next);
   }
 
   /**
@@ -145,9 +360,24 @@ export default function RecommendFlow({ options, defaultDateISO }: RecommendFlow
     const current = payloadRef.current;
     if (!submission || !current) return false;
 
+    /*
+     * 지금 화면에 서 있는 3안을 함께 보낸다 (2026-08-18).
+     *
+     * 서버는 이 답변으로 3안을 다시 계산하는데, §1.5j 해석 층이 붙은 뒤로 그 계산이
+     * 결정적이지 않다 — 다시 고른 첫 안이 지금 화면의 첫 안과 다를 수 있고, 그러면
+     * 새로 받은 멘트가 **화면에 없는 꽃**을 이야기한다. 우리가 아는 것을 넘겨주면
+     * 서버가 다시 읽을 이유가 없어진다(그쪽 4초도 함께 사라진다).
+     * ⚠ 꽃 id 는 우리 어휘다 — 자유 서술과 달리 실어 보내도 되는 값이다(§1.5j).
+     */
+    const flowerIds = current.options.map((option) => option.flowerId);
+
+    // 새로 받기도 글자로 흘러 들어온다 — 첫 도착과 다른 규격을 쓸 이유가 없다.
+    const streamed = await runStream({ submission, length, messagesOnly: true, flowerIds });
+    if (streamed) return streamed.settled;
+
     let response;
     try {
-      response = await regenerateMessages(submission, length);
+      response = await regenerateMessages(submission, length, flowerIds);
     } catch {
       return false;
     }
@@ -155,14 +385,20 @@ export default function RecommendFlow({ options, defaultDateISO }: RecommendFlow
 
     const next: ResultPayload = { ...current, tones: response.tones };
     setPayload(next);
+    payloadRef.current = next;
     saveFlowSession({ payload: next });
     return true;
   }
 
   /** 다시 골라보기 — 답·결과와 이어가기 저장을 함께 비운다(처음의 백지로). */
   function restart() {
+    streamAbortRef.current?.abort();
+    streamAbortRef.current = null;
+    pendingSettleRef.current = null;
     clearFlowSession();
+    setStream(null);
     setPayload(null);
+    payloadRef.current = null;
     setSubmission(null);
     setView('wizard');
     setStep(1);
@@ -238,6 +474,7 @@ export default function RecommendFlow({ options, defaultDateISO }: RecommendFlow
           payload={payload}
           onRestart={restart}
           onRegenerate={submission ? regenerate : undefined}
+          stream={stream}
         />
       ) : (
         <Wizard
@@ -246,7 +483,7 @@ export default function RecommendFlow({ options, defaultDateISO }: RecommendFlow
           step={step}
           onStepChange={goToStep}
           onStepBack={stepBack}
-          action={submitRecommendation}
+          action={runSubmit}
           onResult={showResult}
         />
       )}

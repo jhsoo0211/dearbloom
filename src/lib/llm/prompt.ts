@@ -13,7 +13,7 @@
  */
 
 import type { GenerateRequestParsed } from './contracts';
-import { RESPONSE_TONE_COUNT } from './contracts';
+import { MESSAGE_LENGTH_MAX_CHARS, RESPONSE_TONE_COUNT } from './contracts';
 
 /** 톤 어휘 → 프롬프트에서 쓸 한국어 이름과 결. 화면 라벨(labels.ts)과는 별개다. */
 const TONE_GUIDE: Record<string, { name: string; hint: string }> = {
@@ -47,24 +47,31 @@ const INTENT_KO: Record<string, string> = {
 };
 
 /**
- * 멘트 한 편의 길이(공백 포함 글자 수). 화면 카드 한 장에 담기는 분량이다.
+ * **고쳐 쓰기**의 상한 — 결과 화면 편집칸(`ResultView` 의 `MESSAGE_EDIT_MAX`)이 쓰는 값이다.
  *
- * `MESSAGE_MAX_CHARS` 는 결과 화면의 **고쳐 쓰기 상한**과 같은 값이다 — 사용자가 우리
- * 멘트를 손봐서 200자를 넘길 수 있으면, 우리가 200자로 쓴 이유(카드 한 장)가 무너진다.
+ * ⚠ 2026-08-18 부터 이 값은 **우리가 쓰는 분량이 아니다.** 사용자 요구("너무 길지 않게")로
+ *   생성 상한이 길이 축마다 따로 정해졌고(`MESSAGE_LENGTH_MAX_CHARS` — 계약 쪽), 200 은
+ *   "사용자가 우리 문장을 손봐서 얼마까지 늘릴 수 있나" 하나만 뜻하게 됐다. 둘을 다시
+ *   한 숫자로 합치지 마라 — 우리가 지키는 약속과 사용자에게 허용한 자유는 다른 값이다.
  */
-export const MESSAGE_MIN_CHARS = 80;
 export const MESSAGE_MAX_CHARS = 200;
 
 /**
- * 길이 축별 글자 수 (2026-08-18).
+ * 길이 축별 글자 수 (2026-08-18 개정).
  *
- * `short` 는 "짧게" 토글이 요구하는 분량이다 — 문자 한 통에 그대로 얹히는 크기로 잡았다.
- * 하한을 40 으로 둔 것은 사과처럼 **담아야 할 요소가 정해진 상황**(인정·책임·재발 방지)이
- * 있기 때문이다. 그보다 짧으면 규칙을 지킬 자리가 없어 모델이 요소를 버린다.
+ * 상한(`max`)은 **계약이 정한다** — 프롬프트가 요구한 수와 검증이 막는 수가 다르면
+ * 모델은 매번 계약에 걸리고 사용자는 폴백만 보게 된다. 그래서 여기서는
+ * `MESSAGE_LENGTH_MAX_CHARS` 를 그대로 읽어 문장으로 옮긴다.
+ *
+ * 하한(`min`)만 이 파일의 판단이다. `short` 40 은 사과처럼 **담아야 할 요소가 정해진
+ * 상황**(인정·책임·재발 방지) 때문이다 — 그보다 짧으면 규칙을 지킬 자리가 없어 모델이
+ * 요소를 버린다. `medium` 80 은 카드 한 장이 허전해 보이지 않는 최소치다.
  */
+export const MESSAGE_MIN_CHARS = 80;
+
 export const MESSAGE_LENGTH_CHARS: Record<string, { min: number; max: number }> = {
-  short: { min: 40, max: 90 },
-  medium: { min: MESSAGE_MIN_CHARS, max: MESSAGE_MAX_CHARS },
+  short: { min: 40, max: MESSAGE_LENGTH_MAX_CHARS.short },
+  medium: { min: MESSAGE_MIN_CHARS, max: MESSAGE_LENGTH_MAX_CHARS.medium },
 };
 
 /**
@@ -98,6 +105,7 @@ export function buildSystemPrompt(): string {
     // 분량만 요청마다 다르다 — 그 한 줄은 <자료> 쪽에 둔다(이 시스템 문자열을 고정해
     // 두어야 나중에 프롬프트 캐싱을 붙일 수 있다).
     '- 멘트(message)의 분량은 아래 요청의 `분량` 줄이 정한다. 그 범위를 지킨다.',
+    '  상한을 넘긴 답은 쓰이지 않고 버려진다. 길게 쓰느니 할 말만 남기고 줄여라.',
     '- 멘트는 사람이 그대로 복사해 보낼 수 있어야 한다.',
     '- headline 은 20자 이내의 첫 문장. 멘트의 요약이 아니라 말문을 여는 한 마디다.',
     '- 말투는 관계에 맞춘다. 연인·친구·썸이면 편한 말, 가족·동료·선후배면 예의를 갖춘 말.',
@@ -187,7 +195,7 @@ export function buildUserPrompt(req: GenerateRequestParsed): string {
   lines.push(
     '</자료>',
     '',
-    `분량: 멘트(message)는 ${size.min}~${size.max}자.`,
+    `분량: 멘트(message)는 ${size.min}~${size.max}자. ${size.max}자를 넘기지 않는다(공백 포함).`,
     '',
     '요청한 톤(이 순서 그대로):',
     ...toneLines,

@@ -50,6 +50,7 @@ import {
   type LandingData,
   type SlideImage,
   type SlideView,
+  type TodayReasonLink,
 } from './landing-data';
 
 /* ------------------------------------------------------------------ *
@@ -1125,6 +1126,31 @@ export function composeTodayReason(input: {
   return beats.join(' ');
 }
 
+/**
+ * 리드 문단에서 **맺음 문장만 떼어** 링크 조각으로 만든다 (§1.5n · 크로스 링크 2026-08-18).
+ *
+ * 맺음 네 벌(`HOOK_CLOSINGS`)은 전부 "나머지는 도감에 있어요" 라고 말한다. 그 초대가
+ * 글자로만 남아 있던 자리라, 그 한 문장을 그 꽃의 도감 상세로 가는 링크로 세운다.
+ *
+ * ⚠ **문장을 다시 짓지 않는다.** 이미 지어진 문단의 꼬리를 알아보는 일만 한다 —
+ *   맺음을 고르는 씨앗 계산(`pickVariant(HOOK_CLOSINGS, …)`)을 여기 한 벌 더 두면
+ *   `composeTodayReason` 의 회전 규칙이 두 곳으로 갈라져 언젠가 조용히 어긋난다.
+ *   붙여 놓은 문자열에서 되찾는 편이 **틀릴 수 없는** 쪽이다.
+ * ⚠ 맺음이 없는 날(훅이 없어 ③ 이 꽃말이나 침묵으로 물러난 날)은 `undefined` 다.
+ *   그런 날 화면은 리드를 통짜로 찍는다 — 없는 길을 만들지 않는다.
+ */
+export function todayReasonLinkOf(reason: string, flowerId: string): TodayReasonLink | undefined {
+  const text = HOOK_CLOSINGS.find((closing) => reason.endsWith(closing));
+  if (text === undefined) return undefined;
+
+  return {
+    lead: reason.slice(0, reason.length - text.length),
+    text,
+    // 카드 덮개 링크와 **같은 목적지**여야 초대와 카드가 같은 곳을 가리킨다.
+    href: `/flowers/${flowerId}`,
+  };
+}
+
 /** 리드 아래 흐린 한 줄 — 화면 빛깔 (§1.5n 리듬 ②). */
 export function composeTodayAside(todayISO: string): string {
   return pickVariant(ASIDE_LINES, `${todayISO}:aside`);
@@ -1292,6 +1318,11 @@ export function buildLandingData(catalog: Catalog, todayISO: string): LandingDat
       : {}),
     meaning: todayTheme?.meaning ?? meaningFor(todayCatalogFlower, catalog)?.meaningKo,
   });
+  /**
+   * 리드 맺음을 실제 길로 — 문단은 그대로 두고 **꼬리 문장만** 링크 조각으로 갈라 둔다.
+   * 목적지는 카드 덮개 링크와 같은 `/flowers/{id}` 다(`today.flowerId` = 카탈로그 id).
+   */
+  const todayReasonLink = todayReasonLinkOf(todayReason, today.flowerId);
   const rest = catalog.flowers
     .filter((flower) => flower.id !== todayCatalogFlower.id)
     .map((flower) => toSlide(flower, catalog, false));
@@ -1350,6 +1381,7 @@ export function buildLandingData(catalog: Catalog, todayISO: string): LandingDat
     todayLabel: todayISO.replaceAll('-', '.'),
     basis: picked.basis,
     todayReason,
+    ...(todayReasonLink ? { todayReasonLink } : {}),
     todayAside: composeTodayAside(todayISO),
     category: today.category,
     themeSlug: categoryTheme.slug,

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { cache, type CSSProperties } from 'react';
 
+import FlowerBuy from '@/components/flowers/FlowerBuy';
 import FlowerGallery from '@/components/flowers/FlowerGallery';
 import FlowerPlate from '@/components/flowers/FlowerPlate';
 import { CATEGORY_TONE } from '@/components/flowers/category';
@@ -13,7 +14,8 @@ import { loadCatalog } from '@/lib/data/catalog';
 /**
  * `/flowers/[slug]` — 도감 상세.
  *
- * 위계는 §1.5i 그대로다: **꽃(실사 → 세밀화) → 꽃말 → 이야기 → 상황 → 참고(작게) → CTA.**
+ * 위계는 §1.5i 그대로다:
+ * **꽃(실사 → 세밀화) → 꽃말 → 이야기 → 상황 → 참고(작게) → 사러 가기 → CTA.**
  * 히어로 맨 위는 그 꽃의 **실사 갤러리**다 — 도감이 먼저 답해야 하는 질문이
  * "이 꽃이 어떻게 생겼나"이기 때문이다(2026-08-15). 2026-08-16 에 한 장에서 2~4장으로
  * 늘었고(색 변형 우선), 세밀화 액자는 히어로 안이 아니라 **바로 아래 제 소절**로 내려왔다.
@@ -26,6 +28,10 @@ import { loadCatalog } from '@/lib/data/catalog';
  * · 이야기 펼치기는 **`<details>` 다.** §1.5i 의 전면 시트(포커스 트랩·스크롤 잠금)는
  *   추천 결과 화면의 몫이고, 도감은 "한 번 눌러 이어 읽는" 인라인 확장으로 충분하다 —
  *   JS 가 아직 안 붙었거나 꺼져 있어도 그대로 열린다.
+ * · 2026-08-18 에 **「사러 가기」가 붙었다**(참고 아래·CTA 위). 도감으로 곧장 들어온
+ *   사람에게 이 화면은 여태 막다른 길이었다 — 다 읽고 나면 남는 질문이 "그래서 어디서
+ *   사지"인데 그 답이 결과 화면에만 있었다. 목적지는 결과 화면과 **같은 데이터 모듈**
+ *   (`components/flow/buy-links.ts`)에서 오고, 시트 UI 만 도감 쪽에 따로 세웠다.
  */
 
 export const revalidate = 3600;
@@ -419,6 +425,37 @@ export default async function FlowerDetailPage(props: PageProps<'/flowers/[slug]
                 <span className={styles.birthDaysNote}>널리 통하는 탄생화 표에서 가져왔어요.</span>
               </p>
             )}
+          </div>
+        </section>
+
+        {/* ── ⑤-b 사러 가기 (2026-08-18) ─────────────────────────── */}
+        {/*
+          결과 화면의 「사러 가기」와 **같은 목적지**를 도감에서도 연다. 도감으로 곧장
+          들어온 사람(추천 플로우를 거치지 않은 사람)에게 이 화면은 지금까지 갈 곳이 없는
+          막다른 길이었다 — 꽃말과 이야기를 다 읽고 나면 남는 질문이 "그래서 이건 어디서
+          사지"인데, 그 답이 결과 화면에만 있었다.
+
+          자리는 **참고 아래·CTA 위**다. 위계로는 결과 화면과 같은 순서다(읽을 것이 다
+          끝난 뒤 마지막 걸음). 추천 CTA 보다 위인 이유는, 이미 이 꽃으로 마음이 정해진
+          사람에게 "다시 추천받기"가 먼저 보이면 뒤로 돌리는 말이 되기 때문이다.
+
+          ⚠ §1.6b **보조 버튼**이다(주 CTA 는 아래 한 벌뿐이다 — 같은 화면에 주 CTA 가
+            둘이면 어느 쪽이 이 화면의 다음 걸음인지 사라진다).
+          ⚠ 목적지·검색어 규칙의 단일 원본은 `components/flow/buy-links.ts` 다.
+            여기서도, 시트에서도 URL 을 새로 적지 마라.
+        */}
+        <section className={styles.buy} aria-labelledby="buy-title">
+          <div className={styles.wrap}>
+            <div className={styles.sectionHead}>
+              <h2 className={styles.sectionTitle} id="buy-title">
+                이 꽃 어디서 살까요
+              </h2>
+            </div>
+            <p className={styles.buyLead}>
+              값을 한눈에 견주는 곳부터, 저희가 직접 열어 보고 좋았던 곳까지 모아 두었어요.
+              어느 곳과도 제휴 관계는 아니에요.
+            </p>
+            <FlowerBuy nameKo={flower.nameKo} />
           </div>
         </section>
 

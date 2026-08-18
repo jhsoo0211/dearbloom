@@ -85,7 +85,9 @@ export async function buildToneViews(
   onPartial?: PartialSink,
 ): Promise<ToneView[]> {
   const { intent, relationship, extras, memoryContext } = draft;
-  const views = buildTones(catalog, intent, relationship);
+  // 예문 밑바닥도 **요청한 분량**으로 깐다. 생성이 실패해 이 값이 그대로 화면에 서는
+  // 자리가 있고(키 없음·차단·계약 위반), 그때 짧게를 누른 사람에게 보통이 가면 안 된다.
+  const views = buildTones(catalog, intent, relationship, length);
 
   // 심각한 상황은 생성 호출 **전에** 차단한다(기획안 v2 후퇴 금지선).
   // 직접 적은 사이·마음·상황도 사용자가 쓴 글이라 모두 같은 문을 통과해야 한다.

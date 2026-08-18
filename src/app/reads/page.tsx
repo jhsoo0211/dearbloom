@@ -340,7 +340,9 @@ export default async function ReadsPage() {
             {fromApi.length > 0 ? (
               <p>
                 {FESTIVAL_PROVIDER_LABEL}이라고 적힌 축제는 한국관광공사 TourAPI 에서 받아 온
-                것이라 저희가 직접 열어 보지는 못했어요(공공누리 제1유형).
+                것이라 저희가 직접 열어 보지는 못했어요(공공누리 제1유형). 그 카드의 장소
+                사진도 한국관광공사가 제공한 것을 원본 그대로 걸었어요(공공누리 제3유형 —
+                크기나 색을 바꾸지 않았어요).
               </p>
             ) : null}
           </div>

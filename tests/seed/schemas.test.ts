@@ -99,8 +99,8 @@ describe('content/*.csv 실제 데이터', () => {
     expect(dataset.meanings.length).toBeGreaterThanOrEqual(20);
     expect(dataset.stories.length).toBeGreaterThanOrEqual(55);
     expect(dataset.rules.length).toBeGreaterThanOrEqual(6);
-    // 사과 3톤(유쾌 제외) + 나머지 7마음 × 4톤. 아래 커버리지 테스트가 그 격자를 지킨다.
-    expect(dataset.templates).toHaveLength(31);
+    // (사과 3톤(유쾌 제외) + 나머지 7마음 × 4톤) × 길이 2벌. 아래 커버리지 테스트가 그 격자를 지킨다.
+    expect(dataset.templates).toHaveLength(62);
     // 편집팀 자작 3행 + §1.5k 문학 발췌 86행(한국·동아시아 43 + 외국 확장 31 + 배치 2 신규 12종분 12).
     expect(dataset.quotes).toHaveLength(89);
   });
@@ -184,6 +184,43 @@ describe('content/*.csv 실제 데이터', () => {
     expect(filled.size).toBe(expected);
   });
 
+  /*
+   * 길이 축까지의 격자 (2026-08-18).
+   *
+   * 화면의 `짧게 / 보통` 토글은 `buildTones` 가 그 길이의 행을 찾아 준다는 전제 위에 선다.
+   * 한 칸이라도 비면 그 조합에서 토글이 조용히 아무 일도 하지 않거나(같은 행으로 되돌아옴)
+   * 사용자가 누른 것과 다른 분량이 선다 — 둘 다 화면이 거짓말을 하는 자리다.
+   */
+  it('모든 (마음 × 톤) 칸이 짧게·보통을 한 행씩 갖는다', () => {
+    const { dataset } = loadDataset();
+    const grid = new Map<string, { short: number; medium: number }>();
+    for (const row of dataset.templates) {
+      const key = `${row.value.intent}/${row.value.tone}`;
+      const cell = grid.get(key) ?? { short: 0, medium: 0 };
+      // length 를 비워 둔 행은 어느 길이로도 안 골라지므로 여기서 드러나야 한다.
+      if (row.value.length === 'short') cell.short += 1;
+      if (row.value.length === 'medium') cell.medium += 1;
+      grid.set(key, cell);
+    }
+
+    for (const intent of INTENTS) {
+      for (const tone of expectedTones(intent)) {
+        expect(grid.get(`${intent}/${tone}`), `${intent}/${tone}`).toEqual({ short: 1, medium: 1 });
+      }
+    }
+  });
+
+  it('짧게가 보통보다 실제로 짧다 (라벨만 붙은 축이 아니다)', () => {
+    const { dataset } = loadDataset();
+    const lengths = (kind: string) =>
+      dataset.templates
+        .filter((row) => row.value.length === kind)
+        .map((row) => row.value.template_text.length);
+
+    // 겹치면 토글을 눌러 본 사람이 "뭐가 달라졌지" 하게 된다 — 두 무리가 갈라져 있어야 한다.
+    expect(Math.max(...lengths('short'))).toBeLessThan(Math.min(...lengths('medium')));
+  });
+
   it('사과에는 유쾌 톤 예문을 두지 않는다 (화면이 내리는 톤이라 죽은 데이터가 된다)', () => {
     const { dataset } = loadDataset();
     const playful = dataset.templates.filter(
@@ -192,10 +229,10 @@ describe('content/*.csv 실제 데이터', () => {
     expect(playful).toEqual([]);
   });
 
-  it('§1.5l `직접 쓸게요`(other)도 네 톤을 모두 갖는다', () => {
+  it('§1.5l `직접 쓸게요`(other)도 네 톤을 길이마다 모두 갖는다', () => {
     const { dataset } = loadDataset();
     const rows = dataset.templates.filter((row) => row.value.intent === 'other');
-    expect(rows).toHaveLength(4);
+    expect(rows).toHaveLength(8);
     for (const row of rows) expect(row.value.template_text.trim()).not.toBe('');
   });
 

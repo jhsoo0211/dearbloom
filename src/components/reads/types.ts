@@ -58,8 +58,14 @@ export interface ReadCard {
   title: string;
   sourceTitle: string;
   author?: string;
-  /** 외부 원문 주소. 우리 서버가 대신 부르지 않는다 — 브라우저가 그 사이트로 간다. */
-  url: string;
+  /**
+   * 외부 원문 주소. 우리 서버가 대신 부르지 않는다 — 브라우저가 그 사이트로 간다.
+   *
+   * ⚠ **원장 카드는 늘 갖고, API 축제 카드는 없을 수 있다.** 없으면 제목이 링크가 아닌
+   *   **정보 카드**로 선다(기간·지역·사진만). 갈 곳 없는 자리를 링크처럼 세우지 않는다는
+   *   규범(접근성 리뷰 P2-11)은 링크를 **아예 만들지 않는 것**으로 지킨다.
+   */
+  url?: string;
   /** 우리가 쓴 한 줄. 원문 요약이 아니다. */
   summary: string;
   /** 통제 어휘 13종 중 이 항목이 가진 것들. 칩 필터가 이 배열만 본다. */
@@ -85,6 +91,16 @@ export interface ReadCard {
    * (`@/lib/data/reads-festivals` 머리말).
    */
   provider?: string;
+  /**
+   * 장소 사진 한 장 — **API 축제 카드에만** 붙는다(`firstimage2`).
+   *
+   * ⚠ 한국관광공사 CDN 원본 주소를 그대로 건다. 받아 두지도, 크기를 바꾸지도 않는다 —
+   *   공공누리 제3유형이 금지하는 것이 **변경**이라 리사이즈·크롭이 곧 위반이다.
+   *   표시 크기는 CSS(`object-fit`)가 맞춘다(원본 파일은 손대지 않는다).
+   * ⚠ **원장 카드에는 이 칸을 채우지 마라.** 이 예외는 공공 API 한 곳에 한정된다
+   *   (`@/lib/data/reads-festivals` 의 `FestivalRecord` 머리말).
+   */
+  imageUrl?: string;
   /** 「우리 도감의 그 꽃」. 없는 것이 정상 값이다. */
   flowers: ReadFlowerLink[];
   /**

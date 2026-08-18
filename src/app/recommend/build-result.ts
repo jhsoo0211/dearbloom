@@ -62,6 +62,9 @@ import {
   MEMORY_CONTEXT_MAX_CHARS,
   RELATIONSHIP_DETAIL_MAX_CHARS,
 } from '@/lib/llm/contracts';
+// 길이 축의 **어휘만** 가져온다(값이 아니라 타입) — 계약 파일은 순수 모듈이라 데모 번들
+// 금지선(머리말)에 걸리지 않지만, 필요한 것이 타입뿐이면 타입만 가져오는 편이 정확하다.
+import type { MessageLength } from '@/lib/llm/contracts';
 /*
  * ⚠ **타입만** 가져온다. `@/lib/llm/extract` (실제 호출부)는 서버 전용이고, 이 파일은
  *   브라우저 번들에 들어간다(머리말의 "서버 전용 의존이 한 줄도 없어야 한다").
@@ -269,26 +272,35 @@ function toColorChips(result: RecoResult, meanings: CatalogMeaning[]): ResultCol
 }
 
 /**
- * 멘트 3~4톤의 밑바닥 — 카탈로그 템플릿에서 상황·톤이 맞는 문장을 고른다.
+ * 멘트 3~4톤의 밑바닥 — 카탈로그 템플릿에서 상황·톤·**분량**이 맞는 문장을 고른다.
  *
  * **정적 데모는 여기까지가 전부다**(LLM 이 없다). 그래서 이 함수는 `export` 다 —
  * 데모 어댑터가 이 결과를 그대로 `assemblePayload` 에 넘긴다.
  *
- * ⚠ `templates.csv` 는 (intent × tone) 한 조합에 **행이 정확히 하나**다(2026-08-18 실측:
- *   31행 전부 서로 다른 조합). 그래서 여기에는 고를 여지가 없다 — 같은 톤의 "다른 예문"
- *   도, `length` 축으로 갈라 볼 "짧은 예문"도 존재하지 않는다(30행 medium · 1행 short).
- *   화면의 길이 토글·새로 받기가 예문 경로에서 서지 않는 이유가 이것이다.
+ * ── 2026-08-18: `length` 축이 붙었다 ────────────────────────────────
+ * 예전 원장은 (intent × tone) 조합마다 행이 하나뿐이라 고를 여지가 없었다. 지금은
+ * 조합마다 `short`·`medium` 이 한 행씩(62행) 있어서, **길이 토글이 예문 경로에서도
+ * 실제로 다른 문장을 부른다.** 생성이 실패해 예문으로 떨어질 때도 사용자가 누른 길이가
+ * 지켜진다 — 짧게를 눌렀는데 폴백만 길어지는 자리를 없앤다.
+ *
+ * 고르는 순서는 **분량이 먼저, 관계가 나중**이다. 관계를 적어 둔 행은 사과 두 줄뿐이라
+ * (`tests/seed/schemas.test.ts`) 관계를 먼저 보면 그 두 줄이 길이를 이겨 버린다 —
+ * 사용자가 방금 누른 값(길이)이 데이터의 곁다리 값(관계)에 지는 것은 뒤집힌 순서다.
+ * 그 분량의 행이 아예 없으면 조합 전체로 물러난다(빈 탭보다는 다른 분량이 낫다).
  */
 export function buildTones(
   catalog: Catalog,
   intent: Intent,
   relationship: Relationship,
+  length: MessageLength = 'medium',
 ): ToneView[] {
   // 사과 자리에서 유쾌 톤은 내린다(§1.5).
   const tones: Tone[] = TONE_ORDER.filter((tone) => !(intent === 'apology' && tone === 'playful'));
 
   return tones.map((tone) => {
-    const rows = catalog.templates.filter((t) => t.intent === intent && t.tone === tone);
+    const all = catalog.templates.filter((t) => t.intent === intent && t.tone === tone);
+    const sized = all.filter((t) => t.length === length);
+    const rows = sized.length > 0 ? sized : all;
     const hit =
       rows.find((t) => t.relationship === relationship) ??
       rows.find((t) => t.relationship === undefined) ??

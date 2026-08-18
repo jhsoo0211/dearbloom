@@ -37,7 +37,7 @@ import type {
 } from '@/components/flow/types';
 
 import { loadDemoCatalog } from './catalog';
-import { demoVariantBody } from './message-variants';
+import { demoVariantBody, hasDemoVariant } from './message-variants';
 import { sampleBuyProducts } from './sample-products';
 
 /** 질문 5문항 → 추천 결과. 실패도 예외 대신 값으로 돌려준다(원본과 같은 규칙). */
@@ -59,6 +59,7 @@ export async function submitRecommendation(
   const prepared = prepareResult(received.answers, catalog);
   if (!prepared.ok) return { ok: false, message: prepared.message };
 
+  // 처음 서는 화면은 `보통`이다(화면의 길이 토글 기본값과 같은 값 — `buildTones` 의 기본).
   const tones = buildTones(catalog, prepared.draft.intent, prepared.draft.relationship);
   /*
    * `canReword` 는 **데모에서만** 켠다 — 아래 `regenerateMessages` 가 실제로 다른 문장을
@@ -91,9 +92,9 @@ let rewordRound = 0;
  * ⚠ 톤의 `source` 는 계속 `template` 이다 — 화면의 "당신의 이야기를 담아 썼어요" 배지가
  *   데모에서 서면 그건 거짓말이 된다. 각주도 예문 문구 그대로 남는다.
  *
- * 회전 규칙(`demoVariantBody`)
- *   · `short`  — 손으로 쓴 두 벌을 오간다.
- *   · `medium` — 원장의 문장 ↔ 손으로 쓴 다른 한 벌.
+ * 회전 규칙(`demoVariantBody`) — 2026-08-18 개정으로 **두 길이가 같은 규칙**이 됐다.
+ * 원장이 조합마다 `short`·`medium` 을 한 행씩 갖췄으므로(62행), 각 길이는
+ * `원장의 문장 ↔ 손으로 쓴 다른 한 벌`을 오간다.
  * 변주가 없는 조합은 그 톤만 지금 문장을 그대로 둔다(없는 문장을 지어내지 않는다).
  */
 export async function regenerateMessages(
@@ -125,7 +126,9 @@ export async function regenerateMessages(
   if (!prepared.ok) return { ok: false };
 
   const { intent, relationship } = prepared.draft;
-  const base = buildTones(catalog, intent, relationship);
+  // 밑바닥은 **누른 길이의 원장 문장**이다. 짝수 차례에 변주가 빈손을 돌려주면 이 값이
+  // 그대로 서므로, 여기서 길이를 넘기지 않으면 길이 토글이 데모에서 아무 일도 하지 않는다.
+  const base = buildTones(catalog, intent, relationship, length);
   rewordRound += 1;
 
   const tones = base.map((tone) => {
@@ -139,12 +142,14 @@ export async function regenerateMessages(
   /*
    * 갈아 끼울 것이 있는 조합인가.
    *
-   * ⚠ "이번 반환이 원장과 다른가" 로 재면 안 된다 — `medium` 의 짝수 번째는 **원장으로
-   *   되돌아오는 차례**라 원장과 같아지는데, 그것도 화면에서는 문장이 바뀐 것이다
-   *   (직전에 서 있던 것은 변주였다). 그 자리에서 실패를 돌려주면 화면이 "새로 써 오지
-   *   못했어요" 라고 거짓말을 한다. 그래서 **회전이 성립하는지**만 본다.
+   * ⚠ "이번 반환이 원장과 다른가" 로 재면 안 된다 — 짝수 번째는 **원장으로 되돌아오는
+   *   차례**라 원장과 같아지는데, 그것도 화면에서는 문장이 바뀐 것이다(직전에 서 있던
+   *   것은 변주였다). 그 자리에서 실패를 돌려주면 화면이 "새로 써 오지 못했어요" 라고
+   *   거짓말을 한다. 그래서 **회전이 성립하는지**만 본다.
+   * ⚠ `demoVariantBody(..., 0)` 으로 재지도 마라 — 0 은 언제나 "원장 차례"라 늘 빈손이다.
+   *   표에 그 조합이 있는지를 묻는 것이 이 판정의 뜻이고, 그 질문은 `hasDemoVariant` 다.
    */
-  const rotatable = base.some((tone) => demoVariantBody(intent, tone.key, 'short', 0) !== undefined);
+  const rotatable = base.some((tone) => hasDemoVariant(intent, tone.key));
   return rotatable ? { ok: true, tones } : { ok: false };
 }
 

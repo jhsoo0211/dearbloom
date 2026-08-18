@@ -45,10 +45,15 @@ import { resolveContentDir } from './catalog';
 /**
  * 굳혀 둔 축제 한 건.
  *
- * ⚠ **이미지 칸이 없다.** TourAPI 는 `firstimage` 를 주지만 이 섹션은 활자 카드이고
- *   (조사 문서 §2), 남의 서버 이미지를 화면에 거는 것은 핫링크다. 칸을 만들지 않는 것이
- *   가장 싼 방어다 — 원장 스키마가 `image_url` 을 모르는 것과 같은 이유다.
- * ⚠ **API 소개문 칸도 없다.** `summary` 는 우리가 사실만으로 지어낸 한 줄이다
+ * ⚠ **이미지 칸은 여기 하나뿐이고, 이 한 칸이 좁은 예외다.** 「남의 이미지를 걸지 않는다」는
+ *   이 섹션의 규범인데(조사 문서 §2), TourAPI 의 `firstimage2` 는 **표시를 목적으로 제공되는
+ *   공공 API 이미지**라 그 규범의 예외로 둔다. 예외의 조건은 셋이고 하나라도 어기면 위반이다:
+ *   ① 원본을 **변경 없이** 그대로 건다(공공누리 제3유형 = 변경 금지),
+ *   ② 받아 두지 않는다(그들 CDN 을 그대로 부른다),
+ *   ③ 출처를 화면에 적는다(`한국관광공사 제공` 라벨 + 푸터 각주).
+ *   ⚠ **큐레이션 카드에는 적용하지 않는다** — 원장 54건은 여전히 활자 카드다. 이 예외는
+ *     「핫링크 금지」의 철회가 아니라 공공 API 한 곳에 대한 좁은 구멍이다.
+ * ⚠ **API 소개문 칸은 없다.** `summary` 는 우리가 사실만으로 지어낸 한 줄이다
  *   (`composeSummary`). 공공누리가 허용하더라도 남의 문장을 그대로 옮기지 않는다.
  */
 export interface FestivalRecord {
@@ -60,8 +65,24 @@ export interface FestivalRecord {
   endsAt: string;
   /** `전남 함평` 꼴. 주소를 못 읽으면 키 자체가 없다. */
   region?: string;
-  /** 주최 쪽 공식 페이지. https 만 싣는다 — 없으면 그 축제는 아예 담기지 않는다. */
-  url: string;
+  /**
+   * 주최 쪽 공식 페이지(https 로 실제 열리는 것만).
+   *
+   * ⚠ **없을 수 있다.** 첫 판은 없으면 축제를 통째로 버렸는데, 실측에서 그 규칙이 가장 좋은
+   *   꽃 축제들을 지웠다(`homepageCandidate` 머리말). 지금은 **링크 없는 정보 카드**로 싣는다 —
+   *   기간·지역·사진은 그 자체로 값이고, 갈 곳 없는 링크를 세우지 않는다는 규범은 「링크를
+   *   만들지 않는 것」으로 지켜진다(링크처럼 보이는 죽은 자리를 만드는 것이 금지였다).
+   */
+  url?: string;
+  /**
+   * 장소 사진 — **한국관광공사 CDN 원본을 그대로 건다**(`firstimage2`).
+   *
+   * ⚠ 받아 두지도, 크기를 바꾸지도 않는다. 공공누리 제3유형은 **변경 금지**라 리사이즈·크롭·
+   *   필터가 곧 파생물이고, 그 순간 허락 범위를 벗어난다. 표시 크기만 CSS 로 맞춘다.
+   */
+  imageUrl?: string;
+  /** 그 사진의 공공누리 유형(`Type1`·`Type3`…). 화면 각주가 이 값을 근거로 말한다. */
+  imageRights?: string;
   /** 우리가 쓴 한 줄. API 원문이 아니다. */
   summary: string;
 }
@@ -88,8 +109,10 @@ const FestivalRecordSchema = z.object({
   startsAt: z.string().regex(YMD),
   endsAt: z.string().regex(YMD),
   region: z.string().min(1).optional(),
-  url: z.string().regex(/^https:\/\//),
+  url: z.string().regex(/^https:\/\//).optional(),
   summary: z.string().min(1),
+  imageUrl: z.string().regex(/^https:\/\//).optional(),
+  imageRights: z.string().min(1).optional(),
 });
 
 export const FestivalsFileSchema = z.object({
@@ -135,8 +158,8 @@ export const FESTIVAL_FLOWER_WORDS: readonly string[] = [
   '무궁화', '코스모스', '해바라기', '라벤더', '백합', '작약', '모란', '수선화',
   '동백', '배롱', '메밀', '구절초', '상사화', '꽃무릇', '맥문동', '핑크뮬리',
   '양귀비', '아이리스', '창포', '연산홍', '영산홍', '개나리', '목련', '복사꽃',
-  '살구꽃', '이팝', '조팝', '금계국', '수레국화', '천일홍', '백일홍', '해국',
-  '달맞이', '芍藥',
+  '살구꽃', '이팝', '조팝', '금계국', '수레국화', '천일홍', '백일홍',
+  '달맞이',
 ];
 
 /**
@@ -158,6 +181,29 @@ export const FESTIVAL_NEGATIVE_WORDS: readonly string[] = [
   '억새꽃', '갈대꽃', '단풍꽃',
   // 사람·행사 이름의 비유
   '꽃보다', '꽃길만', '인생꽃',
+  /* 농악의 꽃대 — 꽃을 보러 가는 자리가 아니라 꽃대를 세우는 의례다(실측 2026-08-18,
+     「제7회 고창농악 꽃대림축제」가 이 어휘 없이 통과했다). */
+  '꽃대림', '꽃상여', '꽃가마',
+];
+
+/**
+ * 거부 어휘 — **행사의 성격 자체가 다른 것.**
+ *
+ * 위 부정 어휘와 하는 일이 다르다. 부정 어휘는 「꽃 글자를 품은 꽃 아닌 말」을 지우는
+ * 자이고(지운 뒤 남은 글자에서 꽃을 찾는다), 이쪽은 **꽃 어휘가 진짜로 있어도 탈락**시킨다.
+ * 정원에서 여는 야시장은 「가든」이 이름에 있고 실제로 정원에서 열리지만 꽃을 보러 가는
+ * 자리가 아니다 — 지우기로는 못 거르고, 성격으로 걸러야 한다.
+ *
+ * 실측 근거(2026-08-18 · 206건 조사):
+ *   · `가든 나이트 마켓` [울산 남] — 정원에서 여는 야시장. `가든` 으로 통과했다.
+ *   · `김해 국가유산 야행` — 야간 개방 행사. `김**해국**가유산야행` 의 `해국` 이 걸렸다.
+ *     (그 어휘는 아예 뺐지만, 야행 계열 8건이 창에 있어 성격으로도 막아 둔다.)
+ *
+ * ⚠ 짧고 흔한 말을 여기 넣지 마라. 거부는 꽃 어휘를 이기므로 진짜 꽃 축제를 조용히
+ *   지울 수 있다 — 「축제」·「문화」 같은 말은 절대 금지다.
+ */
+export const FESTIVAL_VETO_WORDS: readonly string[] = [
+  '나이트마켓', '야시장', '국가유산야행', '먹거리축제', '맥주축제', '치맥',
 ];
 
 /** 비교용 정규화 — 공백·구두점을 지우고 소문자로 만든다(한글에는 대소문자가 없어 영문만 준다). */
@@ -169,13 +215,16 @@ function flatten(text: string): string {
  * 이 제목(+소개)이 꽃 축제인가.
  *
  * 순서가 규칙이다.
+ *   ⓪ **거부 어휘**가 있으면 그 자리에서 탈락한다 — 행사의 성격이 다르다.
  *   ① 부정 어휘를 **지운다** — 「서산 꽃게 축제」의 `꽃`이 여기서 사라진다.
  *   ② 남은 글자에서 꽃 어휘를 찾는다 — 「불꽃과 꽃무릇 축제」는 `불꽃`만 지워지고
  *      `꽃무릇`이 남아 통과한다.
- * 두 단계를 뒤집으면(먼저 찾고 나중에 배제) 위 두 번째 제목이 통째로 버려진다.
+ * ①②를 뒤집으면(먼저 찾고 나중에 배제) 위 두 번째 제목이 통째로 버려진다.
+ * ⓪이 맨 앞인 이유는 그것이 **꽃 어휘를 이기는 판정**이기 때문이다(위 머리말 참조).
  */
 export function isFlowerFestival(...texts: (string | undefined)[]): boolean {
   let text = flatten(texts.filter(Boolean).join(' '));
+  if (FESTIVAL_VETO_WORDS.some((word) => text.includes(flatten(word)))) return false;
   for (const bad of FESTIVAL_NEGATIVE_WORDS) {
     text = text.split(flatten(bad)).join(' ');
   }
@@ -209,6 +258,12 @@ const PROVINCE_SHORT: Record<string, string> = {
   경상남도: '경남',
   제주도: '제주',
   제주특별자치도: '제주',
+  /* 2026 통합 광역 명칭. 실측(2026-08-18)에서 여수·영광·함평이 이 이름으로 왔다.
+     ⚠ 광주 도심 행사도 같은 첫 마디를 달고 오므로 이 매핑은 **시군구가 전남 쪽일 때만**
+       맞다. 원장이 `전남 함평`·`광주 동`처럼 적혀 있어 둘을 가르는 값은 두 번째 마디인데,
+       그 마디가 `광주`인 행이 오면 아래 `shortRegion` 이 `전남 광주`로 적는다 —
+       실측 표본에 그 행이 없어 지금은 손대지 않는다. 나오면 여기서 갈라라. */
+  전남광주통합특별시: '전남',
 };
 
 /** 수도권 시도 — 자리 태그를 가르는 유일한 기준이다. */
@@ -310,22 +365,48 @@ export function composeSummary(region?: string): string {
 }
 
 /**
- * `detailCommon2` 의 `homepage` 에서 주소 하나를 꺼낸다.
+ * `detailCommon2` 의 `homepage` 에서 **https 후보 주소**를 꺼낸다.
  *
- * 그 칸은 주소가 아니라 **앵커 태그 문자열**이 온다(`<a href="https://…" target="_blank">…</a>`).
- * 게다가 여러 개가 이어 붙어 오기도 하고, `http://` 만 있는 곳도 있다.
- * **https 만 받는다** — 원장이 전 건을 https 로 확인해 실은 것과 같은 자다(§5-1).
- * 못 찾으면 `undefined` 이고, 그 축제는 카드를 세우지 않는다(제목이 곧 링크인 화면이다).
+ * ═══ 왜 이 함수를 다시 썼는가 (2026-08-18 실측) ════════════════════════
+ * 첫 판은 `https://` 로 시작하는 문자열만 받았다. 첫 실수집에서 꽃 축제 10건 중 **5건이
+ * 「주최 페이지 없음」으로 탈락**했는데, 열어 보니 **다섯 건 모두 홈페이지가 있었다.**
+ *
+ *   `www.hpftf.or.kr`            (함평 꽃무릇 — 스킴이 아예 없다)
+ *   `www.상사화축제.com/`         (영광 상사화 — 스킴도 없고 한글 도메인이다)
+ *   `http://mmdfestival.kr/`     (장항 맥문동 — http 다)
+ *
+ * 즉 탈락의 원인은 데이터가 아니라 **우리 정규식**이었다. 그리고 그 5건이 하필 이 창에서
+ * 가장 좋은 꽃 축제들이었다 — 규칙 하나가 알맹이만 골라 버린 셈이다.
+ *
+ * 그래서 이제 **스킴이 없거나 http 여도 후보로 받고**, https 로 바꿔 둔다. 다만 「https 로
+ * 열린다」는 우리가 지어내면 안 되는 사실이라, **실제로 열리는지는 수집 스크립트가
+ * 네트워크로 확인한다**(`verifyHttps`). 원장이 전 건을 손으로 열어 본 것과 같은 자를
+ * 기계가 대신 대는 것이고, 확인에 실패하면 그 축제는 링크 없이 실린다.
+ *
+ * ⚠ 이 함수는 **네트워크를 타지 않는다.** 후보를 만들기만 한다(테스트가 짚는 경계다).
  */
-export function firstHttpsUrl(homepage?: string): string | undefined {
+export function homepageCandidate(homepage?: string): string | undefined {
   if (typeof homepage !== 'string' || homepage.length === 0) return undefined;
-  const fromHref = /href\s*=\s*["']?(https:\/\/[^"'\s>]+)/i.exec(homepage)?.[1];
-  const bare = /(https:\/\/[^\s"'<>]+)/i.exec(homepage)?.[1];
+
+  // 앵커가 오면 href 가 가장 믿을 만하다. 없으면 본문에서 주소처럼 생긴 첫 토막을 줍는다.
+  const fromHref = /href\s*=\s*["']?((?:https?:\/\/)?[^"'\s>]+\.[^"'\s>]+)/i.exec(homepage)?.[1];
+  const bare = /((?:https?:\/\/)?(?:www\.)?[^\s"'<>]+\.[a-z가-힣]{2,}[^\s"'<>]*)/i.exec(homepage)?.[1];
   const found = fromHref ?? bare;
   if (found === undefined) return undefined;
+
   // 앵커에서 잘라 온 주소 끝에 문장부호가 붙어 오는 일이 있다.
-  const cleaned = found.replace(/[.,)"'\]]+$/, '');
-  return cleaned.length > 'https://'.length ? cleaned : undefined;
+  const cleaned = found.replace(/[.,)"'\]]+$/, '').trim();
+  const withScheme = /^https?:\/\//i.test(cleaned) ? cleaned : `https://${cleaned}`;
+  const asHttps = withScheme.replace(/^http:\/\//i, 'https://');
+
+  try {
+    const url = new URL(asHttps);
+    // 호스트에 점이 없으면 주소가 아니다(`홈페이지없음` 같은 값이 실제로 온다).
+    if (!url.hostname.includes('.')) return undefined;
+    return url.toString();
+  } catch {
+    return undefined;
+  }
 }
 
 /** `20260901` → `2026-09-01`. 여덟 자리가 아니거나 달·일이 범위를 벗어나면 `undefined`. */
@@ -447,7 +528,10 @@ export function toFestivalCard(record: FestivalRecord, kindLabel: string): ReadC
     kindLabel,
     title: record.title,
     sourceTitle: FESTIVAL_PROVIDER,
-    url: record.url,
+    /* 링크가 없는 축제는 **제목이 링크가 아닌 카드**로 선다. 빈 문자열을 넣지 않는 이유:
+       `''` 는 「주소가 있는데 비어 있다」로 읽혀 화면이 죽은 앵커를 세운다. */
+    ...(record.url ? { url: record.url } : {}),
+    ...(record.imageUrl ? { imageUrl: record.imageUrl } : {}),
     summary: record.summary,
     tags: festivalTags(record),
     startsAt: record.startsAt,

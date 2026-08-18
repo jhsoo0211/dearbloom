@@ -15,7 +15,7 @@ import {
   festivalSeasonTags,
   festivalTags,
   festivalTitleKey,
-  firstHttpsUrl,
+  homepageCandidate,
   hideDuplicates,
   isFlowerFestival,
   isNearPeriod,
@@ -83,6 +83,19 @@ describe('꽃 어휘 판정 — 부정 어휘를 먼저 지우고 찾는다', ()
     expect(isFlowerFestival('불 꽃 축제')).toBe(false);
   });
 
+  it('거부 어휘는 꽃 어휘를 이긴다 — 성격이 다른 행사다 (2026-08-18 실측 오탐)', () => {
+    /* 「가든 나이트 마켓」은 정원에서 여는 야시장이고, 「김해 국가유산 야행」은
+       `김**해국**가유산야행` 의 `해국` 이 걸린 것이었다. 지우기로는 못 거른다. */
+    expect(isFlowerFestival('가든 나이트 마켓')).toBe(false);
+    expect(isFlowerFestival('김해 국가유산 야행')).toBe(false);
+    expect(isFlowerFestival('서천국가유산야행')).toBe(false);
+    // 농악의 꽃대는 꽃이 아니다 — 이쪽은 부정 어휘로 뗀다.
+    expect(isFlowerFestival('제7회 고창농악 꽃대림축제')).toBe(false);
+    // 반대편 — 진짜 정원 축제는 그대로 통과한다(거부가 너무 넓지 않다는 증거).
+    expect(isFlowerFestival('2026 남도 K-가든 페스티벌')).toBe(true);
+    expect(isFlowerFestival('2026 제14회 경기정원문화박람회')).toBe(true);
+  });
+
   it('빈 입력·undefined 는 꽃 축제가 아니다', () => {
     expect(isFlowerFestival()).toBe(false);
     expect(isFlowerFestival('', undefined)).toBe(false);
@@ -100,6 +113,8 @@ describe('주소 → 원장 문법의 지역 두 마디', () => {
     expect(shortRegion('서울특별시 강서구 마곡동로 161')).toBe('서울 강서');
     expect(shortRegion('강원특별자치도 평창군 봉평면')).toBe('강원 평창');
     expect(shortRegion('경기도 고양시 일산동구')).toBe('경기 고양');
+    // 2026 통합 광역 명칭 — 실측에서 여수·영광·함평이 이 이름으로 왔다.
+    expect(shortRegion('전남광주통합특별시 여수시 소호동')).toBe('전남 여수');
   });
 
   it('시군구가 없는 곳은 시도 한 마디로 끝난다', () => {
@@ -173,17 +188,27 @@ describe('원본 값 읽기', () => {
     expect(toYmd(undefined)).toBeUndefined();
   });
 
-  it('앵커 문자열에서 https 주소 하나를 꺼낸다 — http 는 받지 않는다', () => {
-    expect(firstHttpsUrl('<a href="https://example.com/fest" target="_blank">공식</a>')).toBe(
+  it('앵커에서 주소를 꺼낸다', () => {
+    expect(homepageCandidate('<a href="https://example.com/fest" target="_blank">공식</a>')).toBe(
       'https://example.com/fest',
     );
-    expect(firstHttpsUrl("<a href='https://example.com/a'>a</a><a href='https://b.kr'>b</a>")).toBe(
-      'https://example.com/a',
-    );
-    expect(firstHttpsUrl('https://example.com/fest')).toBe('https://example.com/fest');
-    expect(firstHttpsUrl('<a href="http://example.com">평문</a>')).toBeUndefined();
-    expect(firstHttpsUrl('')).toBeUndefined();
-    expect(firstHttpsUrl(undefined)).toBeUndefined();
+    expect(
+      homepageCandidate("<a href='https://example.com/a'>a</a><a href='https://b.kr'>b</a>"),
+    ).toBe('https://example.com/a');
+  });
+
+  it('스킴이 없거나 http 여도 후보로 받는다 — 첫 실수집에서 5/10 을 날린 그 규칙이다', () => {
+    /* 2026-08-18 실측: 「주최 페이지 없음」으로 탈락한 다섯 건이 전부 홈페이지를 갖고
+       있었다. 원인은 데이터가 아니라 우리 정규식이었다(§8-5). 이 세 줄이 그 회귀 가드다. */
+    expect(homepageCandidate('www.hpftf.or.kr')).toBe('https://www.hpftf.or.kr/');
+    expect(homepageCandidate('http://mmdfestival.kr/')).toBe('https://mmdfestival.kr/');
+    expect(homepageCandidate('<a href="http://ulsan.com/">울산</a>')).toBe('https://ulsan.com/');
+  });
+
+  it('주소가 아닌 값은 버린다', () => {
+    expect(homepageCandidate('홈페이지없음')).toBeUndefined();
+    expect(homepageCandidate('')).toBeUndefined();
+    expect(homepageCandidate(undefined)).toBeUndefined();
   });
 });
 
@@ -290,6 +315,25 @@ describe('카드로 옮기기', () => {
 
   it('도감으로 건너가는 다리는 비어 있다 — 사람이 손으로 잇는 값이다', () => {
     expect(toFestivalCard(SAMPLE, '지금 가 볼 곳').flowers).toEqual([]);
+  });
+
+  it('주소가 없으면 링크 없는 정보 카드가 된다 — 죽은 앵커를 만들지 않는다', () => {
+    const { url: _url, ...noLink } = SAMPLE;
+    void _url;
+    const card = toFestivalCard(noLink, '지금 가 볼 곳');
+    expect('url' in card).toBe(false);
+    // 기간·지역은 그대로 남는다 — 링크가 없어도 카드는 값을 한다.
+    expect(card.periodLabel).toBeDefined();
+    expect(card.region).toBe('전남 함평');
+  });
+
+  it('장소 사진 주소를 그대로 옮긴다 (변경하지 않는다)', () => {
+    const withImage = { ...SAMPLE, imageUrl: 'https://tong.visitkorea.or.kr/x.jpg' };
+    expect(toFestivalCard(withImage, '지금 가 볼 곳').imageUrl).toBe(
+      'https://tong.visitkorea.or.kr/x.jpg',
+    );
+    // 사진이 없으면 칸 자체를 만들지 않는다(화면이 선화 액자를 세우는 신호다).
+    expect('imageUrl' in toFestivalCard(SAMPLE, '지금 가 볼 곳')).toBe(false);
   });
 
   it('지역을 모르면 키 자체를 만들지 않는다', () => {
@@ -404,7 +448,10 @@ describe('content/generated/festivals.json 실물', () => {
     const records = await loadFestivals();
     for (const record of records) {
       expect(record.id.startsWith('festival-'), record.id).toBe(true);
-      expect(record.url.startsWith('https://'), record.id).toBe(true);
+      if (record.url) expect(record.url.startsWith('https://'), record.id).toBe(true);
+      if (record.imageUrl) {
+        expect(record.imageUrl.startsWith('https://'), record.id).toBe(true);
+      }
       expect(record.endsAt >= record.startsAt, record.id).toBe(true);
       const card = toFestivalCard(record, '지금 가 볼 곳');
       for (const tag of card.tags) expect(READ_TAGS, `${record.id} / ${tag}`).toContain(tag);

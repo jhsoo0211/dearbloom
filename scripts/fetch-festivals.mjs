@@ -8,8 +8,10 @@
  *   약속이 거짓이 된다 — `docs/reads-research.md` §1).
  * · **API 소개문(`overview`)을 옮기지 않는다.** 카드의 한 줄은 우리가 사실만으로
  *   짓는다(`composeSummary`). 공공누리가 허용하더라도 남의 문장은 전재하지 않는다.
- * · **이미지 주소를 담지 않는다.** `firstimage` 가 와도 버린다 — 이 섹션은 활자 카드이고
- *   남의 서버 이미지를 거는 것은 핫링크다(§2).
+ * · **이미지를 받아 두지 않는다.** `firstimage2` 는 **주소만** 담아 그들 CDN 원본을 그대로
+ *   걸고, 크기·비율·색을 바꾸지 않는다 — 공공누리 제3유형이 금지하는 것이 변경이다.
+ *   (「남의 이미지 핫링크 금지」(§2)의 **좁은 예외**다. 표시를 목적으로 제공되는 공공 API
+ *   이미지 한 곳에 한정되고, 큐레이션 카드에는 적용하지 않는다.)
  *
  * ═══ 키가 없어도 성립한다 (이 설계의 요점) ═════════════════════════════
  * 어떤 실패에서도 **exit 0** 이고 기존 JSON 을 지우지 않는다. 파일이 아예 없으면 빈
@@ -25,21 +27,24 @@
  *   GET .../B551011/KorService1/searchFestival1  → 400 NO_OPENAPI_SERVICE_ERROR (폐기)
  *   GET .../B551011/KorService2/<없는이름>       → 400 NO_OPENAPI_SERVICE_ERROR
  *
- * 즉 **KorService2 가 살아 있는 판(TourAPI 4.0)** 이고, 우리 공용 인증키는 이 서비스에
- * **활용신청이 안 돼 있다.** 신청 뒤 다시 돌리면 그날부터 목록이 찬다.
+ * 즉 **KorService2 가 살아 있는 판(TourAPI 4.0)** 이다. 활용신청은 2026-08-18 승인됐고
+ * 첫 실수집이 창 6개월에서 206건을 받았다(조사 문서 §8-2·§8-4 에 판정 표가 있다).
  *
  * ═══ 라이선스 ══════════════════════════════════════════════════════════
  * data.go.kr 15101578(한국관광공사_국문 관광정보 서비스_GW) 안내 기준:
  * 이용허락범위 **제한 없음**, **공공누리 제1유형**(이미지만 제3유형), 무료,
  * 활용신청은 개발단계 자동승인 · 운영단계 심의승인.
  * 제1유형은 **출처표시**가 의무다 — 화면에서는 카드마다 `한국관광공사 제공` 라벨이,
- * 푸터에서는 각주 한 줄이 그 의무를 진다. 우리는 사진을 쓰지 않으므로 제3유형은
- * 애초에 적용될 자리가 없다.
+ * 푸터에서는 각주 한 줄이 그 의무를 진다.
+ * **사진은 제3유형**(출처표시 + **변경 금지**)이다. 실측한 축제 전 건이 `cpyrhtDivCd: Type3`
+ * 였다. 그래서 우리는 원본을 그대로 걸고 **아무것도 바꾸지 않는다** — 리사이즈·크롭·필터가
+ * 곧 파생물이고 그 순간 허락 범위를 벗어난다. 표시 크기만 CSS 가 맞춘다.
  *
  * ═══ 실행 ══════════════════════════════════════════════════════════════
  *   npm run reads:festivals                 # 앞으로 6개월
  *   npm run reads:festivals -- --months 12  # 창을 넓힌다
- *   npm run reads:festivals -- --keep-all   # 꽃 어휘 필터를 끄고 전량을 본다(조사용)
+ *   npm run reads:festivals -- --keep-all   # 꽃 어휘 필터를 끄고 전량을 적재한다(조사용)
+ *   npm run reads:festivals -- --survey     # 전량을 판정과 함께 찍기만 한다(**쓰지 않는다**)
  *
  * ⚠ **tsx 로 돈다.** `src/lib/data/reads-festivals.ts` 를 import 하고 그쪽이 다시
  *   `db/seed/*` 로 내려가는데, 그 import 들은 확장자가 없어 순수 ESM 해석기가 못 찾는다
@@ -56,7 +61,7 @@ import { fileURLToPath } from 'node:url';
 import {
   composeSummary,
   festivalsFilePath,
-  firstHttpsUrl,
+  homepageCandidate,
   isFlowerFestival,
   shortRegion,
   toYmd,
@@ -95,9 +100,10 @@ const OUT_FILE = festivalsFilePath();
  * ------------------------------------------------------------------ */
 
 function parseArgs(argv) {
-  const args = { months: 6, keepAll: false };
+  const args = { months: 6, keepAll: false, survey: false };
   for (let i = 0; i < argv.length; i += 1) {
     if (argv[i] === '--keep-all') args.keepAll = true;
+    if (argv[i] === '--survey') args.survey = true;
     if (argv[i] === '--months') {
       args.months = Number(argv[i + 1]);
       i += 1;
@@ -329,9 +335,41 @@ async function fetchDetail(key, contentId) {
   const item = itemsOf(payload)[0];
   if (!item) return null;
   return {
-    url: firstHttpsUrl(item.homepage),
+    url: homepageCandidate(item.homepage),
     overview: typeof item.overview === 'string' ? item.overview : '',
   };
+}
+
+/**
+ * 그 주소가 **https 로 실제 열리는가.**
+ *
+ * TourAPI 의 `homepage` 는 스킴이 없거나(`www.hpftf.or.kr`) http 인 경우가 많다. 우리는
+ * https 만 싣기로 했는데, 「https 로 바꿔 적기」와 「https 로 열림」은 다른 사실이라
+ * 지어내면 안 된다 — 원장이 전 건을 손으로 열어 본 그 자리를 기계가 대신 대는 것이다.
+ *
+ * `HEAD` 를 먼저 던지고, 그것을 막는 서버가 흔해서 405/501 이면 `GET` 으로 한 번 더 본다.
+ * 4xx·5xx·타임아웃·인증서 오류는 전부 실패로 친다(리다이렉트는 따라가되 **최종 주소가
+ * https 일 때만** 통과 — http 로 떨어지면 우리가 https 라고 적을 수 없다).
+ */
+async function verifyHttps(url) {
+  for (const method of ['HEAD', 'GET']) {
+    try {
+      await waitForSlot();
+      const response = await fetch(url, {
+        method,
+        redirect: 'follow',
+        signal: AbortSignal.timeout(TIMEOUT_MS),
+      });
+      if (method === 'HEAD' && (response.status === 405 || response.status === 501)) continue;
+      if (!response.ok) return undefined;
+      const final = response.url || url;
+      return final.startsWith('https://') ? final : undefined;
+    } catch {
+      // HEAD 가 네트워크 층에서 막히는 서버도 있어 GET 으로 한 번 더 본다.
+      if (method === 'GET') return undefined;
+    }
+  }
+  return undefined;
 }
 
 /* ------------------------------------------------------------------ *
@@ -440,6 +478,26 @@ async function main() {
 
   console.log(`  · 창에 걸치는 축제 ${raw.items.length}건 (게이트웨이가 말한 전체 ${raw.total}건)`);
 
+  /*
+   * `--survey` — **거르기를 검증하는 자리.** 1차만 돌고 전량을 판정과 함께 찍은 뒤 끝낸다.
+   *
+   * ⚠ **아무것도 쓰지 않는다.** 어휘 목록은 실데이터를 보고 다듬어야 하는데, 그러자고
+   *   206건을 산출물에 부어 버리면 화면이 그 사이 꽃 아닌 축제로 덮인다. 조사와 적재는
+   *   다른 일이라 파일을 만지지 않는 모드를 따로 둔다(조사 문서 §8-4 의 재조사 절차).
+   */
+  if (args.survey) {
+    const rows = raw.items.map((item) => ({
+      pass: isFlowerFestival(item.title),
+      title: String(item.title ?? '').trim(),
+      where: shortRegion(item.addr1) ?? '-',
+    }));
+    rows.sort((a, b) => Number(b.pass) - Number(a.pass) || a.title.localeCompare(b.title, 'ko'));
+    for (const row of rows) console.log(`${row.pass ? '  ○' : '  ·'} ${row.title}  [${row.where}]`);
+    console.log(`  — 통과 ${rows.filter((row) => row.pass).length} / 전체 ${rows.length}`);
+    console.log('  ※ 조사 모드입니다 — 산출물을 쓰지 않았습니다.');
+    return;
+  }
+
   /* 1차 — 제목으로 거른다. 여기서 대부분이 빠지므로 상세 호출이 몇 십 건으로 줄어든다. */
   const candidates = args.keepAll
     ? raw.items
@@ -448,7 +506,8 @@ async function main() {
 
   /* 2차 — 상세를 열어 주최 페이지 주소를 찾고, 소개문으로 오탐을 한 번 더 턴다. */
   const festivals = [];
-  const dropped = { noDate: 0, noUrl: 0, negative: 0, failed: 0 };
+  const dropped = { noDate: 0, negative: 0, failed: 0 };
+  const stat = { linked: 0, unlinked: 0, withImage: 0 };
 
   for (const item of candidates) {
     const startsAt = toYmd(item.eventstartdate);
@@ -467,15 +526,20 @@ async function main() {
       continue;
     }
 
-    if (!detail?.url) {
-      // 갈 곳이 없으면 카드를 세우지 않는다 — 제목이 곧 링크인 화면이다.
-      dropped.noUrl += 1;
-      continue;
-    }
-    if (!args.keepAll && !isFlowerFestival(item.title, detail.overview)) {
+    if (!args.keepAll && !isFlowerFestival(item.title, detail?.overview)) {
       dropped.negative += 1;
       continue;
     }
+
+    /*
+     * 주소는 **열어 보고** 싣는다.
+     *
+     * 첫 실수집에서 10건 중 5건이 「주최 페이지 없음」으로 탈락했는데, 열어 보니 다섯 건
+     * 모두 홈페이지가 있었다 — 스킴이 없거나(`www.hpftf.or.kr`) http 였을 뿐이다. 그래서
+     * 지금은 후보를 https 로 바꿔 두고 **실제로 열리는지 확인**한 뒤에만 싣는다.
+     * 확인에 실패해도 축제는 버리지 않는다: 링크 없는 정보 카드로 선다(기간·지역·사진).
+     */
+    const verified = detail?.url ? await verifyHttps(detail.url) : undefined;
 
     const region = shortRegion(item.addr1);
     const record = {
@@ -483,10 +547,26 @@ async function main() {
       title: String(item.title ?? '').trim(),
       startsAt,
       endsAt,
-      url: detail.url,
       summary: composeSummary(region),
     };
     if (region) record.region = region;
+    if (verified) record.url = verified;
+    /*
+     * 장소 사진 — `firstimage2`(썸네일 판)를 **주소만** 담는다. 받아 두지 않는다.
+     * ⚠ `firstimage`(큰 판)가 아니라 `firstimage2` 인 이유: 목록에 수십 장이 서는 자리라
+     *   원본 대판을 부르면 그들 CDN 에 불필요한 부담이고 우리 화면도 느려진다. 둘 다
+     *   **그들이 제공하는 원본 파일**이라 어느 쪽을 고르든 「변경」이 아니다 — 우리가
+     *   크기를 바꾸는 것이 아니라 그들이 만들어 둔 두 파일 중 하나를 고르는 것이다.
+     * `cpyrhtDivCd` 는 그 사진의 공공누리 유형이다(실측 전 건 `Type3` = 변경 금지).
+     */
+    const image = typeof item.firstimage2 === 'string' ? item.firstimage2.trim() : '';
+    if (image.startsWith('https://')) {
+      record.imageUrl = image;
+      if (item.cpyrhtDivCd) record.imageRights = String(item.cpyrhtDivCd);
+      stat.withImage += 1;
+    }
+    if (verified) stat.linked += 1;
+    else stat.unlinked += 1;
     festivals.push(record);
   }
 
@@ -502,7 +582,10 @@ async function main() {
 
   console.log(`  · 담은 축제 ${festivals.length}건 → ${path.relative(ROOT, OUT_FILE)}`);
   console.log(
-    `    (뺀 것 — 날짜 결손 ${dropped.noDate} · 주최 페이지 없음 ${dropped.noUrl} · 소개문 재검 탈락 ${dropped.negative} · 상세 실패 ${dropped.failed})`,
+    `    (뺀 것 — 날짜 결손 ${dropped.noDate} · 소개문 재검 탈락 ${dropped.negative} · 상세 실패 ${dropped.failed})`,
+  );
+  console.log(
+    `    (실은 것 — 링크 있음 ${stat.linked} · 링크 없는 정보 카드 ${stat.unlinked} · 장소 사진 ${stat.withImage})`,
   );
   console.log('  ※ 화면 표기 의무: 카드 라벨과 푸터 각주가 출처(한국관광공사)를 답니다.');
 }

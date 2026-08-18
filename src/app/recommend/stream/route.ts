@@ -151,7 +151,12 @@ export async function POST(request: Request): Promise<Response> {
   // 멘트를 뺀 결과는 지금 당장 보낼 수 있다 — 화면은 이것으로 먼저 선다.
   const firstPayload = messagesOnly
     ? null
-    : assemblePayload(draft, buildTones(catalog, draft.intent, draft.relationship));
+    : assemblePayload(
+        draft,
+        // 첫 줄의 예문 밑바닥도 요청 분량으로 깐다 — 멘트가 끝내 안 오면(키 없음·차단)
+        // 이 값이 그대로 화면에 남는다.
+        buildTones(catalog, draft.intent, draft.relationship, parsedLength.data),
+      );
 
   const encoder = new TextEncoder();
 

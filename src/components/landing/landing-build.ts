@@ -20,6 +20,7 @@
  */
 
 import { birthDateLabel, birthFlowerOn } from '@/lib/data/birth-flowers';
+import { occasionsFor } from '@/lib/data/occasions';
 import type { Catalog, CatalogFlower, CatalogStory } from '@/lib/data/types';
 import { pickStories } from '@/lib/engine/stories';
 /**
@@ -64,54 +65,15 @@ const CONFIDENCE_LABEL: Record<'repeated' | 'varies' | 'single_source', string> 
   single_source: '드물게 전해지는 이야기예요',
 };
 
-/**
- * "이런 날 건네보세요" (§1.5h 표).
+/* ── "이런 날 건네보세요" (§1.5h) — 걷어 냄 (2026-08-18) ──────────────────
+ * `OCCASIONS` 하드코딩 33종이 여기 있었다. 원장은 이제 `content/occasions.csv` 이고,
+ * 고르는 일은 `@/lib/data/occasions` 의 `occasionsFor` 가 한다.
  *
- * 표에 있는 5종은 스펙 문구 그대로다. 나머지 4종(장미·거베라·히아신스·작약)은 표에 없어
- * rules.csv 의 intent 태그와 meanings/stories 의 결에 맞춰 새로 썼다.
- * ⚠ 기술부채: §1.5h 가 예고한 대로 flowers.csv `occasions` 컬럼으로 이관해야 한다.
+ * ⚠ 이 화면의 문구는 `surface=landing` 행이다. 결과 화면·도감이 쓰는 `detail` 행과
+ *   **문구가 다른 꽃이 12종 있다** — 이관 시점에 두 하드코딩이 이미 갈라져 있었고,
+ *   한쪽으로 접는 것은 편집 작업이라 문구를 그대로 두고 화면만 갈랐다.
+ *   합치기로 정해지면 CSV 에서 이긴 쪽만 남기고 `surface` 를 비우면 된다.
  */
-const OCCASIONS: Record<string, string[]> = {
-  'tulip-white': ['다툰 다음 날 아침에', '새 출발을 앞둔 사람에게', '오래 미룬 사과를 전할 때'],
-  'lily-asiatic': ['새로 시작하는 자리에(결혼·개업)', '오래 존경한 분께'],
-  freesia: ['첫 출근을 축하할 때', '고마운 친구에게 가볍게'],
-  anemone: ['오래 기다린 마음을 전할 때', '먼저 떠난 이를 기억하는 날에'],
-  hellebore: ['위로가 필요한 겨울에', '말없이 곁을 지키고 싶을 때'],
-  'rose-red': ['오래 미뤄 둔 고백을 할 때', '처음 만난 날을 함께 세는 자리에'],
-  gerbera: ['새 자리로 옮기는 동료에게', '기운을 북돋아 주고 싶은 날에'],
-  hyacinth: ['봄이 왔다고 먼저 알리고 싶을 때', '조용히 애도를 건네는 자리에'],
-  peony: ['귀한 자리를 크게 축하할 때', '수줍은 마음을 대신 전할 때'],
-  // 카탈로그 확장분(seed-v3). 위와 같은 기준으로 새로 쓴 문구 — 편집 검수 대상.
-  hydrangea: ['비 오는 날 안부를 물을 때', '오래 함께한 가족에게'],
-  lavender: ['잠 못 드는 사람에게', '잠깐 쉬어 가라고 말하고 싶을 때'],
-  sunflower: ['기운이 필요한 사람에게', '멀리서 응원을 보낼 때'],
-  carnation: ['부모님께 감사를 전할 때', '가르쳐 준 분께 인사드릴 때'],
-  lisianthus: ['흰 튤립을 구하기 어려운 계절에', '차분한 축하가 필요한 자리에'],
-  ranunculus: ['봄맞이 인사를 건넬 때', '화사한 축하가 필요한 날에'],
-  'lily-of-the-valley': ['5월의 첫날, 행운을 빌어 줄 때', '오래 기다린 소식을 축하할 때'],
-  chrysanthemum: ['고인을 기억하는 자리에', '어른께 절기 인사를 드릴 때'],
-  // 카탈로그 확장분(seed-v5). 꽃말 '순수한 마음'·'같은 마음이에요 — 당신 뜻에 함께합니다' 에서 왔다.
-  daisy: ['괜찮냐고 묻고 싶은 날에', '같은 편이라고 말해주고 싶을 때'],
-  /* ── 확장 배치 1 (2026-08-16, seed-v6 15종) ────────────────────────────────
-   * 같은 기준이다 — `meanings.csv` 에 실린 그 꽃의 꽃말에서만 끌어왔고, 꽃말이 슬픈 쪽인
-   * 꽃(금잔화·스위트피)은 축하 자리로 데려가지 않았다(`caution_note` 가 이미 그렇게 적혀 있다).
-   * 편집 검수 대상. */
-  'sweet-pea': ['졸업하는 사람에게', '떠나는 이를 웃으며 배웅할 때'],
-  gladiolus: ['오래 준비한 시험이 끝난 날에', '큰 무대를 마치고 내려온 사람에게'],
-  dahlia: ['한껏 차려입은 자리에', '오래 기억될 축하를 하고 싶을 때'],
-  zinnia: ['멀리 있는 친구를 떠올릴 때', '오래된 사이라고 말하고 싶을 때'],
-  aster: ['믿고 있다고 말해주고 싶을 때', '가을 초입의 안부를 물을 때'],
-  calendula: ['아쉬운 이별을 담담히 건널 때', '달이 바뀌는 첫날에 안부를 물을 때'],
-  cyclamen: ['말수 적은 사람에게', '겨울 창가에 둘 화분을 고를 때'],
-  geranium: ['오래된 친구에게 고맙다고 말할 때', '새집 창가를 밝혀 주고 싶을 때'],
-  primula: ['봄이 오기 전에 먼저 인사할 때', '첫 마음을 조심스레 꺼낼 때'],
-  stock: ['오래 함께한 사이를 기념할 때', '향으로 방을 채워 주고 싶을 때'],
-  delphinium: ['훌쩍 떠나는 사람에게', '맑은 여름 인사를 건넬 때'],
-  amaryllis: ['자랑스러운 소식을 들었을 때', '연말에 오래 두고 볼 선물을 고를 때'],
-  cornflower: ['섬세한 사람에게', '기억하고 있다고 전하고 싶을 때'],
-  crocus: ['새 학기를 시작하는 사람에게', '눈 속에서 봄을 기다리는 날에'],
-  'water-lily': ['마음을 가라앉히고 싶은 사람에게', '한여름의 안부를 물을 때'],
-};
 
 /** toxic_parts → 한국어. 각주 한 줄을 데이터에서 만들기 위한 표. */
 const PART_LABEL: Record<string, string> = {
@@ -1177,7 +1139,7 @@ function toSlide(flower: CatalogFlower, catalog: Catalog, isToday: boolean): Sli
       (meaningRow ? CONFIDENCE_LABEL[meaningRow.confidenceLevel] : '아직 갈래를 고르는 중이에요'),
     storyTitle: story?.title,
     storyHook: story?.hook,
-    occasions: OCCASIONS[flower.id] ?? [],
+    occasions: occasionsFor(catalog.occasions, flower.id, 'landing'),
     // 테마 상수의 각주가 있으면 그것을(편집 검수를 거친 문장), 없으면 데이터에서 만든다.
     petCaveat: theme?.caveat ?? petCaveatFor(flower),
     image: slideImage(flower.id),

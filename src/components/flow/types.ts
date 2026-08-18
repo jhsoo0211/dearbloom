@@ -226,6 +226,39 @@ export interface LiteratureView {
   sourceUrl?: string;
 }
 
+/**
+ * §1.5t 「이 꽃과 이어지는 읽을거리」 — 결과 화면에 붙는 바깥 읽을거리 한 장 (2026-08-18).
+ *
+ * 원장은 `content/reads.csv` 이고, 이 꽃을 가리키는 행만 서버가 골라 싣는다
+ * (`lib/data/reads-links.ts` 의 `readsForFlower`). **54건을 통째로 내려보내지 않는다** —
+ * 결과 화면은 읽을거리 목록이 아니라 그 꽃의 곁들임이고, 3안이면 그 무게가 세 배가 된다.
+ *
+ * ⚠ 날짜 두 칸이 **원본 문자열 그대로** 실려 오는 것은 `/reads` 카드와 같은 이유다:
+ *   만료 판정은 **보는 사람의 브라우저**가 자기 오늘로 한다(`components/reads/expiry.ts`
+ *   머리말). 서버가 걸러 보내면 배포한 날의 "오늘" 이 정적 HTML 에 굳는다.
+ * ⚠ 이미지 칸이 없다. 이 섹션은 `/reads` 와 같은 활자 카드다 — 남의 썸네일을 걸지 않는다.
+ * ⚠ 갈래 라벨(`지금 가 볼 곳` 따위)도 없다. 카드 두 장짜리 곁들임에 칩을 더 세우면
+ *   본문을 이긴다. 행사인지 아닌지는 기간 문구(`periodLabel`)가 이미 말한다.
+ */
+export interface ResultReadCard {
+  /** `reads.csv` 의 read_id. React 키이자, 같은 꽃에 두 번 실리지 않는다는 보증이다. */
+  id: string;
+  title: string;
+  /** 어디서 온 글인가(`한국관광공사`·`국립중앙박물관` …). 제목 아래 한 줄로 선다. */
+  sourceTitle: string;
+  /** 외부 원문 주소. 우리가 대신 부르지 않는다 — 브라우저가 그 사이트로 간다(새 창). */
+  url: string;
+  /** **우리가 쓴 한 줄.** 원문 요약이 아니다(§1.5d 해요체). */
+  summary: string;
+  /** 행사만 갖는다. 만료 판정의 입력이라 원본 문자열 그대로다. */
+  startsAt?: string;
+  endsAt?: string;
+  /** 사람이 읽는 기간(`2026년 10월 31일 – 11월 8일`). 시계를 안 보므로 서버가 굳힌다. */
+  periodLabel?: string;
+  /** 오프라인 행사면 지역. `온라인` 은 싣지 않는다(`/reads` 와 같은 규칙). */
+  region?: string;
+}
+
 /** 추천 한 안(3안 중 하나). */
 export interface FlowOptionView {
   /** 0·1·2 — RecoResult 순서 그대로다(안심 → 의미 → 대담). */
@@ -282,6 +315,15 @@ export interface FlowOptionView {
    * 뒤에서 넘겨 본다. 이야기(`stories`)와 같은 `{ featured, others }` 모양을 쓴다.
    */
   literature?: { featured: LiteratureView; others: LiteratureView[] };
+  /**
+   * §1.5t 이 꽃을 가리키는 읽을거리 — **없는 것이 정상 값**이다(59종 중 25종만 이어져 있다).
+   *
+   * 서버가 **최대 세 장**만 싣고 화면은 그중 만료를 뺀 앞의 두 장을 세운다. 한 장 여유를
+   * 두는 이유가 있다: 화면이 지난 행사를 브라우저의 오늘로 거르므로, 서버가 딱 두 장만
+   * 보내면 그 둘이 다 끝난 행사인 날 구획이 통째로 사라진다 — 뒤에 서 있던 글 한 편이
+   * 그 자리를 대신할 수 있는데도. 한 장은 그 대타다(용량은 카드 한 장, 200바이트 남짓).
+   */
+  reads?: ResultReadCard[];
 }
 
 /** 멘트 한 톤. */

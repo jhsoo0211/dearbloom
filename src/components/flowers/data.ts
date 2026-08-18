@@ -10,7 +10,9 @@
  *   (fs 의존은 없다 — 카탈로그는 호출부가 `loadCatalog()` 로 읽어 넘겨준다.)
  *
  * 문구를 여기서 새로 짓지 않는다. 라벨의 원본은 셋뿐이다:
- *   · 꽃말·가격·안전·상황 예시 → `@/components/flow/labels`
+ *   · 꽃말·가격·안전            → `@/components/flow/labels`
+ *     (상황 예시는 2026-08-18 부터 라벨이 아니라 **데이터**다 — `content/occasions.csv`,
+ *      조회는 `@/lib/data/occasions` 의 `occasionsFor`.)
  *   · 이야기 각주 한 줄        → `@/components/stories/meta` 의 `metaNotes`
  *   · 꽃 계열 이름             → `@/components/stories/categories` 의 `storyCategoryLabel`
  * 같은 값이 화면마다 다른 말을 하지 않게 하려는 것이라, 라벨이 필요하면 저기부터 고친다.
@@ -29,11 +31,17 @@ import {
   STORY_MOOD_LABELS,
   colorChoice,
   eraLabel,
-  flowerOccasions,
+  orderLiterature,
   regionLabel,
   storyConfidenceLabel,
   storyTypeLabel,
 } from '@/components/flow/labels';
+/*
+ * 발췌 한 편을 짓는 규칙은 결과 화면과 **같은 한 벌**이다(`flow/view-format.ts`).
+ * 예전에는 이 파일에 몸통을 한 벌 더 세우고 대조 테스트로 어긋남을 잡았다 —
+ * 지금은 부르는 곳이 둘, 몸통이 하나다.
+ */
+import { toLiteratureView } from '@/components/flow/view-format';
 import { categoryOf } from '@/components/landing/landing-data';
 import { storyCategoryLabel } from '@/components/stories/categories';
 import { metaNotes } from '@/components/stories/meta';
@@ -44,7 +52,8 @@ import {
   birthDaysOf,
   birthSpeciesCount,
 } from '@/lib/data/birth-flowers';
-import type { Catalog, CatalogFlower, CatalogMeaning, CatalogStory } from '@/lib/data/types';
+import type { Catalog, CatalogFlower, CatalogMeaning, CatalogStory, Quote } from '@/lib/data/types';
+import { occasionsFor } from '@/lib/data/occasions';
 import { pickStories } from '@/lib/engine';
 import { photoSrc, photoSrcSet, photosFor } from '@/lib/photos';
 import { plateCredit, plateFor } from '@/lib/plates';
@@ -55,6 +64,7 @@ import type {
   FlowerIndexData,
   FlowerStory,
   FlowerSummary,
+  LiteratureView,
   MeaningGroup,
   PetNote,
 } from './types';
@@ -335,6 +345,41 @@ function buildStories(flower: CatalogFlower, stories: CatalogStory[]): FlowerSto
   return ordered;
 }
 
+/* ------------------------------------------------------------------ *
+ * §1.5k 문학 속의 이 꽃 (2026-08-18)
+ *
+ * quotes.csv 의 문학 발췌 86행(36종)은 여태 **결과 화면에서만** 보였다. 그 꽃을 알아보러
+ * 온 사람이 정작 도감에서는 못 보는 자료였다 — 데이터가 화면을 앞서 있던 자리다.
+ *
+ * ⚠ **차례를 여기서 다시 정하지 마라.** 무엇을 앞에 세우고 나머지를 어떤 순서로 넘길지는
+ *   `orderLiterature`(flow/labels.ts) 한 곳이 정한다. 도감이 제 순서를 따로 가지면 같은
+ *   꽃에서 두 화면이 다른 편을 앞세우고, 같은 작가의 연작이 붙어 나오는 것도 도감에서만
+ *   되살아난다(그 규칙의 근거는 그 파일 머리말에 있다).
+ * ------------------------------------------------------------------ */
+
+/**
+ * 그 꽃의 문학 발췌 **전부**를 §1.5k 의 차례로 세운다.
+ *
+ * 결과 화면(`pickLiterature`)과 다른 것은 **거르기 두 줄뿐**이다. 그쪽은 대표 이야기와
+ * 같은 작품·「함께 담을 한 줄」과 같은 작가를 빼는데, 둘 다 "한 화면에 같은 이름이 두 번
+ * 서지 않게" 하는 결과 화면 사정이고 도감에는 그 두 자리가 없다. 도감은 아카이브라
+ * **그 꽃에 붙은 행을 하나도 버리지 않는다.**
+ *
+ * 상황(intent)이 없는 화면이라 `just_because` 로 부른다 — 이야기 쪽(`buildStories`)이
+ * `pickStories` 를 부르는 방식과 같다. 어느 단계에도 난수가 없어 새로고침해도 같은 차례다.
+ */
+function buildLiterature(flower: CatalogFlower, quotes: Quote[]): LiteratureView[] {
+  // `excerptType` 이 있는 행 = 문학 발췌. 없으면 꽃을 가리지 않는 범용 인용이라 이 자리가 아니다.
+  const mine = quotes.filter(
+    (quote) => quote.flowerId === flower.id && quote.excerptType !== undefined,
+  );
+
+  const ordered = orderLiterature(mine, flower.id, 'just_because');
+  if (!ordered) return [];
+
+  return [ordered.featured, ...ordered.others].map(toLiteratureView);
+}
+
 /**
  * 반려동물 칸 — §1.5h 위계 강등. **배지 하나 + 접힌 상세**가 전부다.
  *
@@ -421,8 +466,10 @@ export function buildFlowerDetail(catalog: Catalog, slug: string): FlowerDetailD
     meaningGroups,
     meaningCount,
     stories: buildStories(flower, catalog.stories),
+    // §1.5k — 발췌가 없는 23종은 빈 배열이고, 화면은 구획 자체를 세우지 않는다.
+    literature: buildLiterature(flower, catalog.quotes),
     // 데이터가 없는 꽃은 빈 배열 — 화면은 섹션 자체를 세우지 않는다(문구를 지어내지 않는다).
-    occasions: flowerOccasions(flower.id),
+    occasions: occasionsFor(catalog.occasions, flower.id, 'detail'),
     pet: buildPetNote(flower),
     seasonLine: buildSeasonLine(flower),
     priceLine: PRICE_LABELS[flower.priceBand],

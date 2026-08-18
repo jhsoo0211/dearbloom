@@ -860,37 +860,17 @@ export function flowerForm(flowerId: string): FlowerForm {
   return FLOWER_FORMS[flowerId] ?? 'rose';
 }
 
-/**
- * §1.5h `이런 날 건네보세요`.
+/* ------------------------------------------------------------------ *
+ * §1.5h `이런 날 건네보세요` — 걷어 냄 (2026-08-18)
  *
- * ⚠ 기술부채: 스펙은 이 표의 자리를 `src/lib/theme/flowers.ts` 로 정해 두었고(이후
- * `flowers.csv` 의 `occasions` 컬럼으로 이관), 이 작업은 `src/lib` 을 읽기만 할 수 있어
- * 화면 쪽에 둔다. 컬럼이 생기면 이 상수는 지우고 카탈로그에서 읽는다.
- * 흰 튤립·흰 백합·프리지아·아네모네·헬레보어 다섯 줄은 스펙 표 그대로다.
- */
-export const FLOWER_OCCASIONS: Record<string, string[]> = {
-  'tulip-white': ['다툰 다음 날 아침에', '새 출발을 앞둔 사람에게', '오래 미룬 사과를 전할 때'],
-  'lily-asiatic': ['새로 시작하는 자리에(결혼·개업)', '오래 존경한 분께'],
-  freesia: ['첫 출근을 축하할 때', '고마운 친구에게 가볍게'],
-  anemone: ['오래 기다린 마음을 전할 때', '먼저 떠난 이를 기억하는 날에'],
-  hellebore: ['위로가 필요한 겨울에', '말없이 곁을 지키고 싶을 때'],
-  'rose-red': ['마음을 처음 꺼내는 날에', '함께 지나온 날을 세는 자리에'],
-  gerbera: ['기운을 북돋아 주고 싶을 때', '가볍게 축하하고 싶은 날에'],
-  hyacinth: ['봄을 먼저 건네고 싶을 때', '오래 기억되길 바라는 자리에'],
-  peony: ['크게 축하할 일이 생겼을 때', '초여름의 짧은 계절을 선물할 때'],
-  hydrangea: ['집들이에 한 아름 들고 갈 때', '장마 끝의 안부를 물을 때'],
-  lavender: ['잠 못 드는 사람에게', '먼 길을 떠나는 이를 배웅할 때'],
-  sunflower: ['기운을 크게 북돋고 싶을 때', '한여름의 응원을 보낼 때'],
-  carnation: ['부모님께 마음을 전할 때', '오래 돌봐 주신 분께'],
-  lisianthus: ['격식이 필요한 자리에', '차분한 축하를 건넬 때'],
-  ranunculus: ['봄에 마음을 고백할 때', '작지만 화사한 선물을 하고 싶을 때'],
-  'lily-of-the-valley': ['다시 찾아온 행복을 축하할 때', '오월의 인사를 건넬 때'],
-  chrysanthemum: ['먼저 떠난 이를 기억하는 날에', '가을의 안부를 물을 때'],
-};
-
-export function flowerOccasions(flowerId: string): string[] {
-  return FLOWER_OCCASIONS[flowerId] ?? [];
-}
+ * `FLOWER_OCCASIONS` 와 `flowerOccasions()` 가 여기 있었다. 스펙이 예고한 대로
+ * (§1.5h "이후 `occasions` 컬럼으로 이관") 원장이 `content/occasions.csv` 로 옮겨 갔고,
+ * 고르는 규칙은 `@/lib/data/occasions` 의 `occasionsFor` 한 곳이 갖는다.
+ *
+ * ⚠ 여기 다시 표를 세우지 마라. 그 순간 원장이 둘이 되고, 그것이 바로 이번에 푼 부채다 —
+ *   이 파일의 표와 `landing-build.ts` 의 표가 각자 자라 **겹치는 17종 중 12종의 문구가
+ *   달라져 있었다**(그 경위는 `db/seed/schemas.ts` 의 `OCCASION_SURFACES` 주석에 있다).
+ * ------------------------------------------------------------------ */
 
 /* ------------------------------------------------------------------ *
  * 인용
@@ -910,23 +890,16 @@ export const FALLBACK_QUOTE = {
   attribution: '김소월, 〈산유화〉(1925)',
 };
 
-/**
- * §1.5k 문학 발췌의 갈래 라벨 — quotes.excerpt_type 어휘와 1:1.
- * `classic` 이 "고전"인 이유: 『시경』·오비디우스·KJV 성경처럼 시·소설·희곡 어느 쪽으로도
- * 안 떨어지는 원전을 억지로 접으면 각주가 거짓이 된다(어휘 원본은 db/seed/schemas.ts).
- */
-export const EXCERPT_TYPE_LABELS: Record<string, string> = {
-  poem: '시',
-  novel: '소설',
-  play: '희곡',
-  essay: '산문',
-  classic: '고전',
-};
-
-export function excerptTypeLabel(type: string | undefined): string | undefined {
-  if (type === undefined) return undefined;
-  return EXCERPT_TYPE_LABELS[type];
-}
+/* ------------------------------------------------------------------ *
+ * §1.5k 문학 발췌의 갈래 라벨 — 옮김 (2026-08-18)
+ *
+ * `EXCERPT_TYPE_LABELS` · `excerptTypeLabel()` 이 여기 있었다. 지금은
+ * `./view-format.ts` 에 있다 — 그 파일이 발췌 한 편을 조립하는(`toLiteratureView`)
+ * **유일한 자리**가 되면서 라벨도 같이 갔다. 자리를 옮긴 진짜 이유는 번들이다:
+ * view-format 은 `'use client'` 인 결과 화면이 부르므로 값 import 가 한 줄도 없어야
+ * 하는데, 라벨이 이 파일에 남아 있으면 view-format 이 여기를(→ `@/lib/engine` 배럴을)
+ * 끌어오게 된다.
+ * ------------------------------------------------------------------ */
 
 /* ------------------------------------------------------------------ *
  * §1.5k 문학 발췌 고르기 — 순서 규칙 (#1)

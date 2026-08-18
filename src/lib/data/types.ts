@@ -265,6 +265,22 @@ export interface CatalogRead {
 }
 
 /**
+ * §1.5h 「이런 날 건네보세요」 한 줄 (occasions.csv).
+ *
+ * `source_note` 는 **일부러 여기 없다**(`Quote.pdBasis` 와 같은 판단) — 그 칸은 문구의
+ * 출신을 적어 두는 편집 메모지 화면에 나가는 값이 아니다.
+ *
+ * 조회는 `@/lib/data/occasions` 의 `occasionsFor` 로만 한다. 이 배열을 직접 훑는 코드를
+ * 화면마다 새로 쓰면 `surface` 를 가리는 규칙이 화면마다 갈린다.
+ */
+export interface CatalogOccasion {
+  flowerId: string;
+  /** `detail`(결과·도감) · `landing`(랜딩 슬라이드). **빈 문자열이면 모든 화면**이다. */
+  surface: string;
+  occasionKo: string;
+}
+
+/**
  * 반려동물 안전성 한 줄 (pet_safety.csv).
  *
  * 꽃별 판정은 `FlowerData.petSafety` 에도 들어가지만, 그쪽에는 대체 꽃 목록이 없다.
@@ -317,4 +333,9 @@ export interface Catalog extends RuleSet {
    * (`editorial_note` 는 로더가 이미 떨궜고, 카드는 그중에서도 화면이 그리는 칸만 든다).
    */
   reads: CatalogRead[];
+  /**
+   * §1.5h 상황 예시. **CSV 순서가 화면 순서다** — 고르는 일은
+   * `@/lib/data/occasions` 의 `occasionsFor` 한 곳이 한다.
+   */
+  occasions: CatalogOccasion[];
 }

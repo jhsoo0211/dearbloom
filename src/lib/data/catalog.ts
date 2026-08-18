@@ -35,6 +35,7 @@ import {
   type MeaningRow,
   type PetSafetyRow,
   type QuoteRow,
+  type OccasionRow,
   type ReadRow,
   type RuleRow,
   type SeedDataset,
@@ -55,6 +56,7 @@ import type {
   CatalogFlower,
   CatalogMeaning,
   CatalogStory,
+  CatalogOccasion,
   CatalogRead,
   MessageTemplate,
   PetSafetyRecord,
@@ -346,11 +348,26 @@ function mapRead(row: ReadRow): CatalogRead {
   };
 }
 
+/**
+ * occasions.csv 한 행 → 상황 예시 한 줄.
+ *
+ * `source_note` 는 옮기지 않는다 — 편집 메모지 화면 값이 아니다(`pd_basis` 와 같은 처리).
+ * `surface` 는 빈 칸을 `undefined` 가 아니라 **빈 문자열**로 받는다: 여기서 뜻하는 것이
+ * "값이 없다" 가 아니라 "모든 화면" 이라는 **하나의 값**이라서다.
+ */
+function mapOccasion(row: OccasionRow): CatalogOccasion {
+  return {
+    flowerId: row.flower_id,
+    surface: row.surface ?? '',
+    occasionKo: row.occasion_ko,
+  };
+}
+
 /* ------------------------------------------------------------------ *
  * 로드
  * ------------------------------------------------------------------ */
 
-/** 파일 11종을 읽어 행 스키마 → 교차 검증까지 마친 데이터셋. */
+/** 파일 12종을 읽어 행 스키마 → 교차 검증까지 마친 데이터셋. */
 async function readValidatedDataset(contentDir: string): Promise<SeedDataset> {
   const issues: SeedIssue[] = [];
   const dataset: Partial<Record<SeedFileKey, unknown>> = {};
@@ -426,6 +443,8 @@ function toCatalog(dataset: SeedDataset): Catalog {
     // CSV 순서 그대로다. **만료 판정은 여기서 하지 않는다** — 서버가 거르면 그 판정이
     // 정적 HTML 에 굳는다(조사 문서 §7-2). 화면 순서와 거르기는 `/reads` 가 맡는다.
     reads: dataset.reads.map((row) => mapRead(row.value)),
+    // CSV 순서 그대로다 — 그 순서가 화면에 서는 순서다(`occasionsFor` 는 다시 정렬하지 않는다).
+    occasions: dataset.occasions.map((row) => mapOccasion(row.value)),
   };
 }
 

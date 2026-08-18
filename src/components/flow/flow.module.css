@@ -2334,6 +2334,22 @@
   font-size: 13.5px;
   color: var(--fg-50);
 }
+/*
+  예시 상품 고지 — **목록보다 먼저, 각주(.disc)보다 또렷하게.**
+  각주 톤(12px·fg-50)으로 내리면 값을 다 읽은 뒤에야 눈에 들어오고, 그때는 이미 진짜로
+  읽힌 뒤다. 그래서 테두리를 두른 한 덩이로 세운다 — 액센트 선은 §1.4 가 골드를
+  「보더·라벨」로만 허용한 그 쓰임이다(배경으로 쓰지 않는다).
+*/
+.sampleNote {
+  margin-top: 14px;
+  padding: 11px 13px;
+  border: 1px solid var(--accent-line);
+  border-radius: 12px;
+  background: var(--surface);
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--fg-70);
+}
 
 .sheetNav {
   display: flex;
@@ -2466,6 +2482,70 @@
   margin-top: 10px;
   font-size: 13.5px;
   line-height: 1.75;
+  color: var(--fg-50);
+}
+
+/* ── §1.5t 이 꽃과 이어지는 읽을거리 (2026-08-18) ─────────────────────
+   「사러 가기」 시트의 `.buyRow` 와 **같은 문법**이다: 헤어라인으로만 나뉜 행,
+   화살표는 오른쪽 끝, 바깥으로 나가는 링크. 같은 성격의 목록(우리 화면 밖으로
+   보내는 줄)이 화면마다 다른 모양이면 §1.6b 가 말하는 실패다.
+   다른 점은 하나 — 이쪽은 시트가 아니라 본문 안이라 행이 조금 더 여유롭다. */
+.readList {
+  display: grid;
+  margin-top: 14px;
+}
+.readRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 15px 2px;
+  border-top: 1px solid var(--hair);
+  transition: background-color var(--dur) var(--ease);
+}
+.readRow:last-child {
+  border-bottom: 1px solid var(--hair);
+}
+.readRow:hover {
+  background: var(--surface);
+}
+.readBody {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+/* 제목은 원문 표기 그대로라 길다(최장 85자) — 두 줄까지 세우고 자른다. */
+.readTitle {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--fg);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+/* 기간·지역 — 갈지 말지를 가르는 값이라 제목 바로 아래, 액센트로 또렷하게. */
+.readWhen {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--accent);
+}
+.readWhen .sep {
+  padding: 0 6px;
+  opacity: 0.6;
+}
+.readDesc {
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--fg-50);
+}
+/* 출처 — 우리가 쓴 글이 아니라는 사실. §1.6b 글자 하한 12px 이 여기 바닥이다. */
+.readFrom {
+  font-size: 12px;
   color: var(--fg-50);
 }
 

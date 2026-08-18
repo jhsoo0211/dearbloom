@@ -32,6 +32,7 @@ import styles from './reads.module.css';
 import { hasEnded, readStatus, readStatusLabel, todayInKst } from './expiry';
 import { READ_TAG_GROUPS, type ReadTagAxis } from './tags';
 import type { ReadCard, ReadFilterChip } from './types';
+import type { ReadKind } from '@/lib/data/types';
 
 /** 축마다 고른 칩 하나. `null` 이면 그 축은 거르지 않는다. */
 type Selection = Record<ReadTagAxis, string | null>;
@@ -43,6 +44,67 @@ function ArrowGlyph() {
     <svg width="16" height="9" viewBox="0 0 18 10" fill="none" aria-hidden="true">
       <path d="M0 5h16M12 1l4 4-4 4" stroke="currentColor" strokeWidth="1.2" />
     </svg>
+  );
+}
+
+/**
+ * 갈래 표식 — **도감과 이어지지 않은 카드**의 액자에 들어가는 선화 넷.
+ *
+ * 남의 썸네일을 걸지 않기로 한 화면이라(§1.5q 「하지 않는다」 표) 여기서 쓸 수 있는 것은
+ * 우리가 그리는 선 몇 개뿐이다. 사진 대신 세우는 것이므로 **네 갈래가 서로 갈리되 넷 다
+ * 같은 손글씨**여야 한다 — 24×24 격자·스트로크 1.2·라운드 캡, 카드 제목 옆 화살표
+ * (`ArrowGlyph`)와 같은 굵기다. 색·바탕은 CSS(`.mark`)가 한 곳에서 건다.
+ *
+ * ⚠ 도판 크롭을 미리 만들어 여기 걸지 마라. 그 순간 「이 글이 그 꽃 이야기다」라는 거짓말이
+ *   된다(액자에 도판이 서는 카드는 실제로 그 꽃과 이어진 24건뿐이라는 것이 이 화면의 규칙이다).
+ */
+const KIND_GLYPHS: Record<ReadKind, string> = {
+  /** 지금 가 볼 곳 — 지도 핀. 「어디로 간다」가 이 갈래를 가른다. */
+  event: 'M12 21.2C12 21.2 19 15.4 19 10.4A7 7 0 0 0 5 10.4C5 15.4 12 21.2 12 21.2ZM12 13a2.7 2.7 0 1 0 0-5.4 2.7 2.7 0 0 0 0 5.4Z',
+  /** 읽을거리 — 펼친 책. */
+  article: 'M12 7.6A3.6 3.6 0 0 0 8.4 4H3.2v12.2h5.2A3.6 3.6 0 0 1 12 19.8 3.6 3.6 0 0 1 15.6 16.2h5.2V4h-5.2A3.6 3.6 0 0 0 12 7.6ZM12 7.6v12.2',
+  /** 알아두면 좋은 것 — 물방울. 절화를 오래 두는 법이 이 갈래의 절반이다. */
+  guide: 'M12 3.2S17.4 9 17.4 12.9A5.4 5.4 0 0 1 6.6 12.9C6.6 9 12 3.2 12 3.2ZM9.7 13.4a2.4 2.4 0 0 0 2.4 2.4',
+  /** 빛깔·트렌드 — 겹친 색 스와치 셋. */
+  trend: 'M9.2 14.4a4.8 4.8 0 1 1 0-9.6 4.8 4.8 0 0 1 0 9.6ZM14.8 14.4a4.8 4.8 0 1 1 0-9.6 4.8 4.8 0 0 1 0 9.6ZM12 19.4a4.8 4.8 0 1 1 0-9.6 4.8 4.8 0 0 1 0 9.6Z',
+};
+
+/**
+ * 카드 액자 한 칸 — **모든 카드에 정확히 하나**가 선다.
+ *
+ * 두 갈래(도판 · 갈래 표식)의 상자는 크기도 테두리도 같다. 다른 것은 안에 든 것뿐이라,
+ * 54장을 훑을 때 눈이 같은 격자를 따라간다 — 카드마다 다른 문법이면 없느니만 못하다.
+ *
+ * **장식이다(`aria-hidden`).** 도판이 말하는 「그 꽃」은 카드 아래 다리 링크가 이미 이름으로
+ * 말하고, 갈래는 첫 줄의 `.kind` 라벨이 말한다. 여기서 한 번 더 읽으면 54장에서 소음이 된다
+ * (`/stories` 레인 헤더의 도판을 장식으로 둔 것과 같은 판단).
+ */
+function PreviewFrame({ card }: { card: ReadCard }) {
+  if (card.preview) {
+    return (
+      <span className={styles.preview} data-plate={card.preview.flowerId} aria-hidden="true">
+        {/* eslint-disable-next-line @next/next/no-img-element -- 자체 호스팅 도판 160px 썸네일(`public/plates/thumbs`). next/image 최적화는 도입하지 않았다(docs/illustration-assets.md). */}
+        <img
+          className={styles.previewImg}
+          src={card.preview.src}
+          alt=""
+          loading="lazy"
+          decoding="async"
+        />
+      </span>
+    );
+  }
+
+  return (
+    <span
+      className={`${styles.preview} ${styles.mark}`}
+      data-kind={card.kind}
+      aria-hidden="true"
+    >
+      <svg className={styles.markGlyph} viewBox="0 0 24 24" aria-hidden="true">
+        <path d={KIND_GLYPHS[card.kind]} />
+      </svg>
+    </span>
   );
 }
 
@@ -258,6 +320,9 @@ export default function ReadsBoard({ cards }: ReadsBoardProps) {
  * 제목이 곧 외부 링크다. 카드 전체를 링크로 감싸지 않는 이유: 안쪽에 도감으로 가는 내부
  * 링크가 함께 서므로 링크가 중첩되고, 그 순간 낭독기가 하나의 목적지를 말할 수 없게 된다.
  *
+ * 왼쪽에는 **액자 한 칸**이 선다(`PreviewFrame`). 도감과 이어진 카드는 그 꽃의 세밀화,
+ * 나머지는 같은 크기의 액자에 갈래 표식 — 둘 다 장식이라 낭독기는 지나친다.
+ *
  * ── `provider` 가 있는 카드 (API 축제) ──────────────────────────────
  * 사람이 열어 보고 고른 카드와 **기계가 모아 온 카드**는 화면에서 갈려야 한다. 가르는
  * 방법이 둘인데 둘 다 조용하다: 왼쪽 골드 선을 흐린 헤어라인으로 바꾸고(`.cardApi`),
@@ -280,42 +345,56 @@ function ReadItem({ card, today }: { card: ReadCard; today: string | null }) {
 
   return (
     <li className={shell} data-testid="reads-card" data-provider={card.provider ?? ''}>
-      <div className={styles.cardTop}>
-        {isEvent ? (
-          <>
-            {card.periodLabel ? <span className={styles.when}>{card.periodLabel}</span> : null}
-            {card.region ? <span className={styles.where}>{card.region}</span> : null}
-          </>
-        ) : (
-          <>
-            <span className={styles.kind}>{card.kindLabel}</span>
-            {card.publishedLabel ? (
-              <span className={styles.where}>{card.publishedLabel}</span>
-            ) : null}
-          </>
-        )}
-        {card.provider ? <span className={styles.provider}>{card.provider}</span> : null}
-        {statusText ? (
-          <span
-            className={status === 'open' ? `${styles.status} ${styles.statusOpen}` : styles.status}
-          >
-            {statusText}
-          </span>
-        ) : null}
-      </div>
+      {/*
+        액자는 **첫 줄·제목과 한 덩이**로 묶는다(카드 폭의 나머지는 요약문이 넓게 쓴다).
+        액자를 카드 맨 위 띠로 깔지 않은 이유가 여기 있다 — 54장이 한 화면에 실리는 목록이라
+        카드마다 100px 짜리 띠가 붙으면 스크롤이 그만큼 길어지고, 그림이 제목을 밀어낸다.
+        자리는 CSS 가 `aspect-ratio` 로 미리 잡아 두므로 그림이 늦게 와도 줄이 밀리지 않는다(CLS 0).
+      */}
+      <div className={styles.cardHead}>
+        <PreviewFrame card={card} />
 
-      <h3 className={styles.cardTitle}>
-        {/*
-          새 탭으로 열리는 링크는 그 사실을 **미리** 알린다(접근성 리뷰 P1-6) — 파트너
-          페이지·도감 출처 링크와 같은 패턴이다. `rel="noreferrer"` 는 새 창에서 이 페이지를
-          되짚지 못하게 하는 것이라 지우지 마라.
-        */}
-        <a className={styles.cardLink} href={card.url} target="_blank" rel="noreferrer">
-          {card.title}
-          <span className={styles.srOnly}> (새 창)</span>
-          <ArrowGlyph />
-        </a>
-      </h3>
+        <div className={styles.cardHeadText}>
+          <div className={styles.cardTop}>
+            {isEvent ? (
+              <>
+                {card.periodLabel ? <span className={styles.when}>{card.periodLabel}</span> : null}
+                {card.region ? <span className={styles.where}>{card.region}</span> : null}
+              </>
+            ) : (
+              <>
+                <span className={styles.kind}>{card.kindLabel}</span>
+                {card.publishedLabel ? (
+                  <span className={styles.where}>{card.publishedLabel}</span>
+                ) : null}
+              </>
+            )}
+            {card.provider ? <span className={styles.provider}>{card.provider}</span> : null}
+            {statusText ? (
+              <span
+                className={
+                  status === 'open' ? `${styles.status} ${styles.statusOpen}` : styles.status
+                }
+              >
+                {statusText}
+              </span>
+            ) : null}
+          </div>
+
+          <h3 className={styles.cardTitle}>
+            {/*
+              새 탭으로 열리는 링크는 그 사실을 **미리** 알린다(접근성 리뷰 P1-6) — 파트너
+              페이지·도감 출처 링크와 같은 패턴이다. `rel="noreferrer"` 는 새 창에서 이 페이지를
+              되짚지 못하게 하는 것이라 지우지 마라.
+            */}
+            <a className={styles.cardLink} href={card.url} target="_blank" rel="noreferrer">
+              {card.title}
+              <span className={styles.srOnly}> (새 창)</span>
+              <ArrowGlyph />
+            </a>
+          </h3>
+        </div>
+      </div>
 
       <p className={styles.cardSummary}>{card.summary}</p>
 

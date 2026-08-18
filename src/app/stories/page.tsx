@@ -19,6 +19,7 @@ import { buildFlowerThemes, buildThemeChips } from '@/components/stories/themes'
 import type { ArchiveFilterChip, ArchiveLane, ArchiveStory } from '@/components/stories/types';
 import { loadCatalog } from '@/lib/data/catalog';
 import { plateCredits, plateViewFor } from '@/lib/plates';
+import { photoCredits, photoSrc, photosFor } from '@/lib/photos';
 import type { CatalogFlower, CatalogStory } from '@/lib/data/types';
 
 /**
@@ -50,6 +51,19 @@ export const metadata: Metadata = {
 
 /** 필터의 `전체` 칸. 꽃 id·mood 어휘와 겹치지 않는 값이다(라벨 사전과 같은 키). */
 const ALL = 'all';
+
+/**
+ * 레인 카드 액자에 거는 실사의 폭.
+ *
+ * 화면에서 60px 로 서는 자리에 640 은 커 보이지만, `photoSrc()` 가 허용하는 **가장 좁은
+ * 폭이 640** 이다(CDN 캐시가 갈라지지 않게 네 폭으로 묶어 둔 그 표 — `PHOTO_SOURCES`).
+ * 도감 카드·개화 달력 칩·탄생화 사전 썸네일이 전부 같은 값을 쓰므로, 그 화면들을 거쳐 온
+ * 사람에게는 **이미 받아 둔 사본을 그대로 재사용**하게 된다. 임의 폭을 새로 만들면
+ * 오히려 캐시가 갈리고, 그것이 이 표가 있는 이유다.
+ *
+ * 한 레인의 카드 여덟 장은 **같은 주소 한 벌**을 물므로, 늘어나는 요청은 레인당 하나다.
+ */
+const CARD_PHOTO_WIDTH = 640 as const;
 
 /**
  * stories.csv 한 행 + 꽃 이름 → 화면이 그대로 쓰는 **카드**.
@@ -111,10 +125,18 @@ function buildLanes(flowers: CatalogFlower[], stories: ArchiveStory[]): ArchiveL
     // 이 화면이 도판을 거는 자리는 레인 헤더 44px 과 시트 액자 ≤92px 뿐이라 썸네일 한 벌이면
     // 충분하다(기본값 250 = 썸네일). 예전에는 44px 칸이 200KB 본판을 통째로 물었다.
     const plate = plateViewFor(flower.id);
+    /*
+     * 카드 액자에 걸 실사 — **첫 컷**이다(`photosFor()[0]` = `photoFor()` 와 같은 컷).
+     * 랜딩 카드·도감 상세의 첫 장과 같은 사진이라야 세 화면이 한 꽃을 가리키는 것이
+     * 눈으로 읽힌다(`photosFor()` 머리말의 약속). 컷이 없는 꽃이면 이 칸이 없고,
+     * 카드는 레인 헤더와 같은 도판을 대신 건다.
+     */
+    const [shot] = photosFor(flower.id);
     lanes.push({
       flowerId: flower.id,
       flowerNameKo: flower.nameKo,
       ...(plate ? { plate } : {}),
+      ...(shot ? { shotSrc: photoSrc(shot, CARD_PHOTO_WIDTH) } : {}),
       // 꽃 계열(§1.4c v3.2) — 랜딩의 테마 배정과 **같은 함수**를 쓴다.
       // 화면마다 "이 꽃은 무슨 계열" 이 갈리면 같은 서비스가 두 가지 분류를 갖게 된다.
       category: categoryOf(flower),
@@ -189,6 +211,17 @@ export default async function StoriesPage() {
   const laneStoryCount = lanes.reduce((sum, lane) => sum + lane.stories.length, 0);
   // 도판 크레딧 — 화면에 실제로 쓴 꽃의 판본만, 판본 단위로 합쳐서(illustration-assets 사용 규칙 4).
   const credits = plateCredits(lanes.map((lane) => lane.flowerId));
+  /*
+   * 사진 크레딧 — **카드 액자에 실사를 건 꽃만**(2026-08-18 B-2).
+   *
+   * 표기 의무는 Unsplash·Pexels 어느 쪽에도 없지만 이 저장소는 **표기를 기본값으로**
+   * 운용한다(`docs/image-assets.md` §사용 규칙 2). 사진을 새 화면에 걸었으면 그 화면이
+   * 크레딧을 함께 진다 — 실사가 서는 자리마다 표기가 따라붙는 것이 이 저장소의 규칙이고,
+   * 그래서 `lanes` 가 아니라 `shotSrc` 가 실제로 붙은 레인만 센다(안 건 사진은 안 적는다).
+   */
+  const photoLines = photoCredits(
+    lanes.flatMap((lane) => (lane.shotSrc ? [lane.flowerId] : [])),
+  );
 
   return (
     <div className={styles.page}>
@@ -285,6 +318,32 @@ export default async function StoriesPage() {
                 </li>
               ))}
             </ul>
+
+            {/*
+              사진 크레딧은 **접어 둔다** — 결과 화면·도감 갤러리·랜딩과 같은 문법이다
+              (2026-08-15 피드백: `Photo: … / Unsplash` 전문이 상시 노출되면 화면이 크레딧에
+              먹힌다). 도판은 판본 단위로 합쳐 열몇 줄이지만 사진은 작가 단위라 마흔 줄이
+              넘어, 펼쳐 두면 푸터가 이야기보다 길어진다.
+              표기가 사라지는 게 아니다: `<details>` 는 JS 없이 열리고, 검색엔진·스크린리더는
+              접힌 내용까지 읽는다.
+            */}
+            {photoLines.length > 0 ? (
+              <details className={styles.creditFold}>
+                <summary className={styles.creditSum}>
+                  카드에 걸린 사진 {photoLines.length}건의 출처
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="m9 6 6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </summary>
+                <ul className={styles.creditList}>
+                  {photoLines.map((credit) => (
+                    <li className={styles.creditItem} key={credit}>
+                      {credit}
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            ) : null}
           </section>
 
           <p className={styles.footSay}>

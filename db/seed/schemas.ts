@@ -981,6 +981,47 @@ export const ReadRowSchema = z
     }
   });
 
+/* ------------------------------------------------------------------ *
+ * occasions.csv — §1.5h 「이런 날 건네보세요」
+ * ------------------------------------------------------------------ */
+
+/**
+ * 상황 예시가 서는 화면.
+ *
+ * 빈 칸이 기본이고 **모든 화면**을 뜻한다. 값을 적으면 그 화면에서만 쓰는 문구가 된다.
+ *
+ * ⚠ 이 칸이 왜 필요한가 (2026-08-18 이관 시점의 사실) ────────────────────
+ * 표는 원래 **두 벌**이었다 — `components/flow/labels.ts` 의 `FLOWER_OCCASIONS`(결과
+ * 화면·도감 상세)와 `components/landing/landing-build.ts` 의 `OCCASIONS`(랜딩 슬라이드).
+ * 둘 다 §1.5h 표 5줄에서 출발했지만 그 뒤로 각자 자랐고, 겹치는 17종 가운데 **12종의
+ * 문구가 서로 다르다**(예: `rose-red` — `마음을 처음 꺼내는 날에` ↔ `오래 미뤄 둔 고백을
+ * 할 때`). 한 벌로 접으려면 어느 한쪽 문구를 버려야 하는데 그것은 이관이 아니라 편집이라,
+ * **원장은 한 파일로 합치되 문구는 한 글자도 바꾸지 않는 길**을 골랐다. 그 자리가 이 칸이다.
+ *
+ * 두 화면의 문구를 실제로 합치기로 정해지면(편집 작업) 이긴 쪽만 남기고 `surface` 를
+ * 비우면 된다 — 그날 이 어휘는 저절로 쓸모가 없어진다.
+ */
+export const OCCASION_SURFACES = ['detail', 'landing'] as const;
+
+/**
+ * occasions.csv — 꽃 한 종에 붙는 「이런 날 건네보세요」 한 줄.
+ *
+ * 한 꽃이 여러 행을 갖는다(화면은 2~3줄을 세운다). **행의 순서가 화면의 순서다** —
+ * 로더도 시드도 CSV 순서를 그대로 지킨다.
+ *
+ *   flower_id    — flowers.csv 의 id(교차 검증 1 이 실재를 본다).
+ *   surface      — 위 어휘. 비어 있으면 모든 화면.
+ *   occasion_ko  — 화면에 그대로 나가는 한 줄.
+ *   source_note  — 이 문구가 어디서 왔는지. **데이터 레이어 전용이라 화면에 안 나간다**
+ *                  (로더가 `Catalog` 로 옮기지 않는다 — quotes 의 `pd_basis` 와 같은 처리).
+ */
+export const OccasionRowSchema = z.object({
+  flower_id: requiredSlug('flower_id'),
+  surface: optionalEnum('surface', OCCASION_SURFACES),
+  occasion_ko: requiredText('occasion_ko'),
+  source_note: optionalText(),
+});
+
 export type FlowerRow = z.output<typeof FlowerRowSchema>;
 export type MeaningRow = z.output<typeof MeaningRowSchema>;
 export type RuleRow = z.output<typeof RuleRowSchema>;
@@ -992,6 +1033,7 @@ export type BirthFlowerRow = z.output<typeof BirthFlowerRowSchema>;
 export type BirthPhotoRow = z.output<typeof BirthPhotoRowSchema>;
 export type BirthStoryRow = z.output<typeof BirthStoryRowSchema>;
 export type ReadRow = z.output<typeof ReadRowSchema>;
+export type OccasionRow = z.output<typeof OccasionRowSchema>;
 
 /* ------------------------------------------------------------------ *
  * 파일 레지스트리
@@ -1009,6 +1051,7 @@ export const SEED_FILE_KEYS = [
   'birth_photos',
   'birth_stories',
   'reads',
+  'occasions',
 ] as const;
 
 export type SeedFileKey = (typeof SEED_FILE_KEYS)[number];
@@ -1025,6 +1068,7 @@ export const SEED_FILE_NAMES: Record<SeedFileKey, string> = {
   birth_photos: 'birth_photos.csv',
   birth_stories: 'birth_stories.csv',
   reads: 'reads.csv',
+  occasions: 'occasions.csv',
 };
 
 export const SEED_SCHEMAS = {
@@ -1039,6 +1083,7 @@ export const SEED_SCHEMAS = {
   birth_photos: BirthPhotoRowSchema,
   birth_stories: BirthStoryRowSchema,
   reads: ReadRowSchema,
+  occasions: OccasionRowSchema,
 } as const;
 
 /* ------------------------------------------------------------------ *
@@ -1101,6 +1146,7 @@ export interface SeedRowMap {
   birth_photos: BirthPhotoRow;
   birth_stories: BirthStoryRow;
   reads: ReadRow;
+  occasions: OccasionRow;
 }
 
 /**
@@ -1131,6 +1177,7 @@ export interface SeedDataset {
   birth_photos: ParsedRow<BirthPhotoRow>[];
   birth_stories: ParsedRow<BirthStoryRow>[];
   reads: ParsedRow<ReadRow>[];
+  occasions: ParsedRow<OccasionRow>[];
 }
 
 export interface CrossValidateResult {
@@ -1141,8 +1188,8 @@ export interface CrossValidateResult {
 /**
  * 파일을 가로지르는 규칙 검증.
  *
- *  1. flower_id 참조 무결성 — meanings / stories / rules / pet_safety 가 가리키는 꽃이 flowers 에 있는가.
- *     pet_safety 가 제안하는 대체 꽃(safe_alternative_flower_ids)도 같이 본다.
+ *  1. flower_id 참조 무결성 — meanings / stories / rules / pet_safety / occasions 가 가리키는 꽃이
+ *     flowers 에 있는가. pet_safety 가 제안하는 대체 꽃(safe_alternative_flower_ids)도 같이 본다.
  *     quotes 는 flower_id 가 **선택**이라(꽃 비연동 인용이 정상 값) 적힌 행만 골라 본다.
  *  2. 반려동물 안전성 커버리지 — 모든 꽃이 cat·dog 두 종 모두에 대해 판정을 갖는가.
  *     "모르면 표시 안 함"이 아니라 "모르면 시드 실패"로 막는다.
@@ -1170,6 +1217,10 @@ export interface CrossValidateResult {
  *     `theme:` 는 계열 5종). 화면이 이 값으로 도감 링크를 걸기 때문에, 없는 id 를 적으면
  *     **조용히 깨진 링크**가 된다(조사 문서 §3-3). 색·계열은 어휘를 벗어나면 칩이 비고,
  *     확장 배치가 되돌려지면 `flower:` 쪽이 여기서 먼저 걸린다(§4-2 마지막 경고).
+ * 10. 상황 예시 — `occasions.csv` 의 공용 행(surface 빈 칸)과 화면별 행이 한 꽃에 섞여 있지
+ *     않은가, 같은 꽃·같은 화면에 같은 줄이 두 번 적혀 있지 않은가. 앞의 것은 **CSV 에는
+ *     있는데 어느 화면에도 안 서는 유령 행**을 만들고(화면별이 있으면 공용은 안 쓰인다),
+ *     뒤의 것은 화면에 같은 줄을 두 번 세운다. 둘 다 화면을 열어 봐야만 드러나는 종류다.
  */
 export function crossValidate(data: SeedDataset): CrossValidateResult {
   const checks: CrossCheckResult[] = [];
@@ -1185,6 +1236,7 @@ export function crossValidate(data: SeedDataset): CrossValidateResult {
     { key: 'stories', rows: data.stories },
     { key: 'rules', rows: data.rules },
     { key: 'pet_safety', rows: data.pet_safety },
+    { key: 'occasions', rows: data.occasions },
   ];
   let refCount = 0;
   for (const { key, rows } of refSources) {
@@ -1638,6 +1690,63 @@ export function crossValidate(data: SeedDataset): CrossValidateResult {
       readFailures === 0
         ? `${data.reads.length}건(행사 ${eventCount}) · 연결 ${linkCount}개(꽃 ${flowerLinkCount}) 모두 실재하는 값`
         : `중복 id·끊어진 연결 ${readFailures}건`,
+  });
+
+  /* 10. 상황 예시 — surface 가리기 · 같은 줄 두 번 ------------------- */
+  const occasionBefore = issues.length;
+  /**
+   * 화면별 문구(`surface` 가 적힌 행)가 있으면 **공용 행은 그 화면에서 영영 안 나온다**
+   * (`occasionsFor` 의 규칙: 화면별이 있으면 그쪽만 쓴다). 그러니 한 꽃이 공용 행과
+   * 화면별 행을 함께 가지면, 공용 쪽 문구는 CSV 에 적혀 있는데 아무 데도 안 서는 유령이 된다.
+   * 여기서 막지 않으면 그 사실이 화면을 열어 봐야만 드러난다.
+   */
+  const bySurface = new Map<string, Set<string>>();
+  /** 같은 꽃·같은 화면에 같은 줄이 두 번 적히면 화면에 두 번 선다. */
+  const seenLines = new Map<string, number>();
+
+  for (const row of data.occasions) {
+    const surface = row.value.surface ?? '';
+    const surfaces = bySurface.get(row.value.flower_id) ?? new Set<string>();
+    surfaces.add(surface);
+    bySurface.set(row.value.flower_id, surfaces);
+
+    const lineKey = `${row.value.flower_id}\u0000${surface}\u0000${row.value.occasion_ko}`;
+    const first = seenLines.get(lineKey);
+    if (first !== undefined) {
+      issues.push({
+        file: SEED_FILE_NAMES.occasions,
+        line: row.line,
+        column: 'occasion_ko',
+        message: `같은 꽃·같은 화면에 같은 줄이 두 번 있습니다 (앞선 행: ${first}번째 줄)`,
+      });
+    } else {
+      seenLines.set(lineKey, row.line);
+    }
+  }
+
+  for (const [flowerId, surfaces] of bySurface) {
+    if (!surfaces.has('') || surfaces.size === 1) continue;
+    const named = [...surfaces].filter((surface) => surface !== '').join(' · ');
+    const line = data.occasions.find(
+      (row) => row.value.flower_id === flowerId && (row.value.surface ?? '') === '',
+    )!.line;
+    issues.push({
+      file: SEED_FILE_NAMES.occasions,
+      line,
+      column: 'surface',
+      message: `${flowerId}: 공용 행(surface 빈 칸)과 화면별 행(${named})이 섞여 있습니다 — 화면별이 있으면 공용 행은 어느 화면에도 서지 않습니다`,
+    });
+  }
+
+  const occasionFailures = issues.length - occasionBefore;
+  const occasionFlowers = bySurface.size;
+  checks.push({
+    name: '상황 예시 surface 가리기 · 중복 줄',
+    ok: occasionFailures === 0,
+    detail:
+      occasionFailures === 0
+        ? `${data.occasions.length}줄 / ${occasionFlowers}종 — 공용·화면별이 섞인 꽃 없음`
+        : `가려지는 행·중복 줄 ${occasionFailures}건`,
   });
 
   return { checks, issues };

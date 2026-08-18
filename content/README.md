@@ -18,10 +18,13 @@ DB는 이 CSV에서 시드(upsert)될 뿐, 반대로 DB를 직접 고치지 않�
 | `birth_photos.csv` | 탄생화의 실사 한 장(확보 274 · 미확보 6) | 280 |
 | `birth_stories.csv` | 탄생화 **이름**에 붙는 이야기 | 407 |
 | `reads.csv` | 「읽을거리」 섹션의 외부 링크 원장(축제·글·실용·트렌드) | 54 |
+| `occasions.csv` | §1.5h 「이런 날 건네보세요」 상황 예시 | 91 |
 
-**열한 파일 전부가 `db/seed/schemas.ts` 의 `SEED_FILE_KEYS` 에 등록돼 있고**, 시드 CLI와 앱
+**열두 파일 전부가 `db/seed/schemas.ts` 의 `SEED_FILE_KEYS` 에 등록돼 있고**, 시드 CLI와 앱
 로더(`src/lib/data/catalog.ts`)가 같은 목록을 읽는다. 파일을 늘릴 때는 그 상수부터 고친다.
-(`reads.csv` 는 2026-08-18 「읽을거리」 화면 개통과 함께 합류했다 — 마이그레이션은 `0012_reads.sql`.)
+(`reads.csv` 는 2026-08-18 「읽을거리」 화면 개통과 함께 합류했다 — 마이그레이션은 `0012_reads.sql`.
+`occasions.csv` 는 같은 날 §1.5h 상황 예시 **하드코딩 두 벌**을 걷어 오며 합류했다 —
+짝 마이그레이션은 `0013_flower_occasions.sql` 이다.)
 
 `rules.csv` 의 151행은 **가점 132행 + 회피 19행**이다(2026-08-18 규칙 병합).
 꽃 59종 중 **58종**이 규칙을 갖는다 — 가점 규칙이 있는 종이 57, 회피 규칙이 있는 종이 15다.
@@ -494,6 +497,42 @@ seed-v6·seed-v7 127행을 더한 377행 분포는 `history` 290 · `folklore` 5
   같은 이름의 여러 날은 **같은 이야기**를 펼친다(이야기는 식물에 붙지 날짜에 붙지 않는다).
 - 판정 원장은 `docs/birth-stories-research-{1,2,3}.md`.
 
+### `occasions.csv` — 「이런 날 건네보세요」 (2026-08-18 신설)
+
+§1.5h 의 상황 예시. 스펙이 예고한 대로("이후 `occasions` 컬럼으로 이관") 화면 하드코딩을
+걷어 온 원장이다. 다만 **`flowers.csv` 의 컬럼이 아니라 별도 파일**이다 — 한 꽃이 여러 줄을
+갖고 그 **줄의 순서가 화면의 순서**라, 한 칸에 파이프로 이어 붙이면 편집자가 순서를 세는 일이
+어려워지고 줄마다 다른 메모(`source_note`)를 남길 자리도 사라진다.
+
+| 컬럼 | 필수 | 뜻 |
+|---|---|---|
+| `flower_id` | **필수** | `flowers.csv` 의 id(교차 검증 1). |
+| `surface` | 선택 | `detail`(결과 화면·도감 상세) · `landing`(랜딩 슬라이드). **비우면 모든 화면.** |
+| `occasion_ko` | **필수** | 화면에 그대로 나가는 한 줄. |
+| `source_note` | 선택 | 이 문구가 어디서 왔는지. **화면 비노출**(로더가 옮기지 않는다). |
+
+- **행 순서가 화면 순서다.** 로더도 시드도 다시 정렬하지 않는다. 화면은 한 꽃에 2~3줄을 세운다.
+- **`surface` 가 왜 있나.** 이관 전에 표는 두 벌이었다 — `flow/labels.ts` 의
+  `FLOWER_OCCASIONS`(결과·도감)와 `landing/landing-build.ts` 의 `OCCASIONS`(랜딩). 둘 다
+  §1.5h 표 5줄에서 출발했지만 각자 자랐고, **겹치는 17종 중 12종의 문구가 서로 달랐다**
+  (예: `rose-red` — `마음을 처음 꺼내는 날에` ↔ `오래 미뤄 둔 고백을 할 때`). 한 벌로 접으려면
+  어느 한쪽 문구를 버려야 하는데 그것은 **이관이 아니라 편집**이라, 원장만 한 파일로 합치고
+  문구는 한 글자도 바꾸지 않았다. §1.5h 표 그대로인 5종(흰 튤립·흰 백합·프리지아·아네모네·
+  헬레보어)만 공용 한 벌(`surface` 빈 칸)로 서 있다.
+  - **두 화면 문구를 실제로 합치는 것은 남은 편집 과제다.** 합치면 이긴 쪽만 남기고
+    `surface` 를 비우면 되고, 그날 이 컬럼은 저절로 쓸모가 없어진다.
+  - ⚠ 공용 행과 화면별 행을 **한 꽃에 섞지 마라.** 화면별이 하나라도 있으면 그 화면은
+    공용 행을 보지 않는다(`occasionsFor` 의 규칙) — 교차 검증 10 이 막는다.
+- **59종 중 33종에만 있다.** 나머지 26종은 비어 있고 **그게 정상이다** — 화면은 빈 배열이면
+  구획 자체를 세우지 않는다. 문구 짓기는 편집 작업이고, §1.5h 는 "rules·stories 의 intent
+  태그와 결이 같아야 함"을 요구하므로 급히 메우면 그냥 지어낸 말이 된다.
+  - seed-v4 확장 14종: `narcissus` `forget-me-not` `cherry-blossom` `camellia` `violet` `iris`
+    `marigold` `corn-poppy` `jasmine` `babys-breath` `cosmos` `magnolia` `pansy` `poinsettia`
+  - **정식 도감 확장 배치 2 의 12종**: `phalaenopsis` `alstroemeria` `anthurium` `gardenia`
+    `eucalyptus` `statice` `mimosa` `bouvardia` `scabiosa` `plum-blossom` `azalea` `cotton`
+- 문구가 바뀌지 않았다는 사실은 `tests/data/occasions.test.ts` 가 **이관 직전의 두 표를
+  글자 그대로 들고** 지킨다. 그 테스트가 깨지면 이관이 아니라 편집이 일어났다는 뜻이다.
+
 ### 특히 자주 걸리는 규칙
 
 - `meanings.source_url` 이 비면 **시드 실패**. 출처 없는 꽃말은 싣지 않는다.
@@ -523,6 +562,9 @@ seed-v6·seed-v7 127행을 더한 377행 분포는 `history` 290 · `folklore` 5
   `reads.links_to` 는 `flower:`(`flowers.csv` 의 id) · `color:`(그 파일의 `colors` 어휘) ·
   `theme:`(계열 5종 한국어 라벨)만 쓰며, 값이 실재하지 않으면 교차 검증이 막는다 —
   **비워 두는 것이 정상 값**이다(54건 중 20건).
+- `occasions.surface` 는 `detail` · `landing` 두 값뿐이고 **비우는 것이 기본**(= 모든 화면)이다.
+  한 꽃에 공용 행과 화면별 행을 섞으면 공용 쪽이 어느 화면에도 서지 않아 시드가 막는다.
+  같은 꽃·같은 화면에 같은 줄을 두 번 적는 것도 막는다(화면에 두 번 선다).
 
 ## 공유 어휘
 

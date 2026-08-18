@@ -35,6 +35,7 @@ import { fileURLToPath } from 'node:url';
 
 import { loadCatalog } from '../src/lib/data/catalog.ts';
 import { loadFestivals } from '../src/lib/data/reads-festivals.ts';
+import { readFlowerIds } from '../src/lib/data/reads-links.ts';
 import {
   buildBirthDictDetail,
   buildBirthFlower,
@@ -202,8 +203,15 @@ async function main() {
    * 빼는 것: 탄생화 세 표(birthFlowers · birthPhotos · birthStories)는 여기 없다 —
    *   추천 경로가 한 번도 읽지 않는다. `/flowers` 가 쓰는 값이라 **따로** 번들한다
    *   (그 화면을, 그중에서도 그 기능을 쓴 사람만 받는다).
-   *   `reads` 도 같은 이유로 비운다 — 아래 `reads.ts` 가 따로 든다.
+   * 반쯤 담는 것: `reads` 는 **도감을 가리키는 행만**(아래 `flowerLinkedReads`).
+   *   §1.5t 로 결과 화면이 그 꽃의 읽을거리를 세우면서 추천 경로가 이 표를 읽기 시작했다 —
+   *   통째로 비워 두면 데모에서만 그 구획이 조용히 사라진다(쌍둥이 규칙 위반).
+   *   그렇다고 54건을 다 실을 이유도 없다: 나머지 30건은 어떤 꽃도 가리키지 않아
+   *   `readsForFlower` 가 영영 고르지 않는다. 목록 화면의 근거인 **전 54건은 아래
+   *   `reads.ts` 사이드카**가 그대로 들고 있다(그쪽은 아무도 import 하지 않는다).
    */
+  const flowerLinkedReads = catalog.reads.filter((read) => readFlowerIds(read).length > 0);
+
   const slim = {
     flowers: catalog.flowers,
     rules: catalog.rules,
@@ -215,7 +223,7 @@ async function main() {
     birthFlowers: [],
     birthPhotos: [],
     birthStories: [],
-    reads: [],
+    reads: flowerLinkedReads,
   };
 
   const storyDetails = catalog.stories.map(toStoryDetail);
@@ -231,7 +239,7 @@ async function main() {
         slim,
         '정적 데모용 슬림 카탈로그 — 추천(/recommend)·그룹(/groups) 계산의 재료.',
       ),
-      label: `카탈로그 (이야기 ${slim.stories.length}편 / 전체 ${catalog.stories.length}편)`,
+      label: `카탈로그 (이야기 ${slim.stories.length}편 / 전체 ${catalog.stories.length}편 · 읽을거리 ${slim.reads.length}건 — 도감을 가리키는 행만)`,
     },
     {
       name: 'story-details.ts',

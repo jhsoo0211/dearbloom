@@ -26,7 +26,15 @@
 
 import { z } from 'zod';
 
-import type { Catalog, CatalogFlower, CatalogMeaning, Quote } from '@/lib/data/types';
+import type { Catalog, CatalogFlower, CatalogMeaning, CatalogRead, Quote } from '@/lib/data/types';
+/*
+ * ⚠ 두 import 다 **순수 모듈**이라 이 파일의 금지선(머리말 — 서버 전용 의존 0)을 지킨다.
+ *   `reads-links` 는 타입 하나만 import 하고, `reads/expiry` 는 import 가 아예 없다.
+ *   `lib/data/reads-festivals` 를 대신 가져오면 `node:fs` 가 딸려 와 정적 데모가 죽는다
+ *   (그 판단의 전문은 `reads-links.ts` 머리말에 있다).
+ */
+import { readsForFlowerInScreenOrder } from '@/lib/data/reads-links';
+import { readPeriodLabel } from '@/components/reads/expiry';
 import {
   FLOWER_CUE_PREFIX,
   exclude,
@@ -107,6 +115,7 @@ import type {
   QuoteView,
   ResultColorChip,
   ResultPayload,
+  ResultReadCard,
   ShareResponse,
   SharedFlowerView,
   StoryCard,
@@ -435,6 +444,50 @@ function photoView(flowerId: string): FlowerPhotoView | undefined {
 }
 
 /* ------------------------------------------------------------------ *
+ * §1.5t 이 꽃과 이어지는 읽을거리
+ * ------------------------------------------------------------------ */
+
+/**
+ * 한 안에 싣는 읽을거리 수의 상한 — 화면이 세우는 수(2)보다 **한 장 많다.**
+ *
+ * 화면이 지난 행사를 브라우저의 오늘로 거르기 때문이다(`ResultReadCard` 머리말).
+ * 딱 둘만 보내면 그 둘이 다 끝난 날 구획이 통째로 사라지는데, 원장에는 그 자리를
+ * 대신할 글이 뒤에 서 있다. 반대로 여섯 장(국화가 그렇다)을 다 실으면 결과 payload 가
+ * 3안 × 6장이 되어 곁들임이 본문만큼 무거워진다 — 셋이 그 사이의 자리다.
+ */
+const RESULT_READ_LIMIT = 3;
+
+/**
+ * 원장 한 행 → 결과 화면이 그대로 그리는 카드.
+ *
+ * `/reads` 의 `toCard` 와 **같은 규칙**을 쓰되 담는 칸이 더 적다(갈래 라벨·태그·발행일·
+ * 접근 고지·도감 다리가 없다 — 이 자리는 목록이 아니라 곁들임이라 카드 두 장에 칩을
+ * 세 겹 세우면 본문을 이긴다). 겹치는 두 규칙은 글자까지 같다:
+ *   · 기간 문구는 `readPeriodLabel` **한 함수**를 지난다 — 두 화면이 「7월 – 9월」과
+ *     「9월 1일 – 9월 30일」을 다르게 말하면 같은 행사가 다른 행사처럼 읽힌다.
+ *   · `온라인` 지역은 싣지 않는다. 갈 곳이 있다는 뜻이 아닌 값을 지역 자리에 세우면
+ *     「어디로 가면 되는가」에 거짓으로 답하는 셈이다.
+ */
+function toResultRead(read: CatalogRead): ResultReadCard {
+  const card: ResultReadCard = {
+    id: read.readId,
+    title: read.title,
+    sourceTitle: read.sourceTitle,
+    url: read.sourceUrl,
+    summary: read.summaryKo,
+  };
+
+  if (read.startsAt) card.startsAt = read.startsAt;
+  if (read.endsAt) card.endsAt = read.endsAt;
+  if (read.region && read.region !== '온라인') card.region = read.region;
+
+  const period = readPeriodLabel(read.startsAt, read.endsAt);
+  if (period) card.periodLabel = period;
+
+  return card;
+}
+
+/* ------------------------------------------------------------------ *
  * 한 안 만들기
  * ------------------------------------------------------------------ */
 
@@ -506,6 +559,13 @@ function toOptionView(
     sideQuoteAuthor,
   );
   if (literature) view.literature = literature;
+
+  /*
+   * §1.5t — 이 꽃을 가리키는 읽을거리. **없으면 필드 자체가 없다**(59종 중 25종만 있다).
+   * 문학 블록과 같은 규칙이다: 있을 때만 서고, 빈 자리를 우리 문장으로 메우지 않는다.
+   */
+  const reads = readsForFlowerInScreenOrder(flower.id, catalog.reads).slice(0, RESULT_READ_LIMIT);
+  if (reads.length > 0) view.reads = reads.map(toResultRead);
 
   return view;
 }

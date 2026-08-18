@@ -16,6 +16,7 @@ import {
   toFestivalCard,
 } from '@/lib/data/reads-festivals';
 import type { CatalogRead, ReadAccess, ReadKind } from '@/lib/data/types';
+import { plateCredits, plateViewFor } from '@/lib/plates';
 
 /**
  * `/reads` — 읽을거리.
@@ -119,6 +120,26 @@ function toCard(read: CatalogRead, names: Map<string, string>): ReadCard {
   const accessNote = ACCESS_NOTES[read.access];
   if (accessNote) card.accessNote = accessNote;
 
+  /*
+   * 카드 액자 — **도감과 이어진 카드만** 그 꽃의 도판을 건다(54건 중 24건).
+   *
+   * 여러 종이 걸린 카드는 **첫 종**이다(`links_to` 의 순서 = 편집자가 적은 순서). 두 장을
+   * 나란히 걸면 액자가 카드마다 한 장이었다 두 장이었다 하고, 그 순간 목록이 한 화면으로
+   * 읽히지 않는다 — 나머지 종은 카드 아래 다리(`.bridge`)가 이미 전부 이름으로 말한다.
+   *
+   * 도판이 없는 꽃이면 액자도 없다(=갈래 표식으로 간다). 지금은 카탈로그 59종 전원에
+   * 도판이 있어 이 갈래로 빠지지 않지만, 꽃이 늘고 도판이 늦는 날을 위해 남겨 둔다.
+   *
+   * ⚠ 폭을 여기서 정한다(기본값 250 = **160px 썸네일**). 화면이 이 그림을 거는 자리는
+   *   64px 액자 하나뿐이라 본판(≤1100px · 장당 200KB)을 물릴 이유가 없다 —
+   *   `/stories` 레인 헤더가 예전에 그 값을 되돌려 첫 화면에서만 1.4MB 를 받았다.
+   */
+  const [firstFlower] = card.flowers;
+  if (firstFlower) {
+    const plate = plateViewFor(firstFlower.id);
+    if (plate) card.preview = { flowerId: plate.flowerId, src: plate.src };
+  }
+
   return card;
 }
 
@@ -187,6 +208,19 @@ export default async function ReadsPage() {
   const eventCount = curated.filter((card) => card.kind === 'event').length;
   const bridged = curated.filter((card) => card.flowers.length > 0).length;
 
+  /*
+   * 도판 크레딧 — **화면에 실제로 액자를 세운 꽃**만, 판본 단위로 합쳐서
+   * (`docs/illustration-assets.md` 사용 규칙 4 · `/stories` 푸터와 같은 함수·같은 형식).
+   *
+   * `card.flowers` 가 아니라 `card.preview` 를 세는 이유: 여러 종이 걸린 카드는 액자에
+   * 첫 종만 걸린다. 걸지도 않은 도판의 판본을 크레딧에 적으면 그 줄이 그 자리에서 거짓이 된다.
+   * 만료로 숨은 카드까지 세는 것은 의도다 — 거르기는 브라우저의 오늘이 하는 일이라
+   * 서버가 크레딧을 그 시계에 맞추면 §7-2 가 경고한 "빌드 날짜 굳기" 를 다시 부른다.
+   */
+  const credits = plateCredits(
+    cards.flatMap((card) => (card.preview ? [card.preview.flowerId] : [])),
+  );
+
   return (
     <div className={styles.page}>
       <span className={styles.grain} aria-hidden="true" />
@@ -253,6 +287,34 @@ export default async function ReadsPage() {
       {/* ── 4. 푸터 ─────────────────────────────────────────────── */}
       <footer className={styles.siteFoot}>
         <div className={styles.wrap}>
+          {/*
+            도판 크레딧 — 카드 액자에 그림을 걸었으니 이 화면도 출처를 진다
+            (`docs/illustration-assets.md` 사용 규칙 4 · `/stories` 푸터와 **같은 형식**).
+            59종 전부 퍼블릭 도메인·CC0 라 표기 의무는 없지만, BHL→Flickr 경유 파일에
+            `CC BY 2.0` 상자가 기계적으로 붙어 있어 분쟁 여지를 0으로 만드는 가장 싼 보험이다.
+            ⚠ 액자를 하나도 안 건 날에는 이 구획도 없다 — 있지도 않은 것을 설명하는 문장은
+              사용자에게 아무 뜻이 없다(아래 API 각주와 한 짝인 규칙).
+          */}
+          {credits.length > 0 ? (
+            <section className={styles.credits} aria-labelledby="reads-credits-title">
+              <h2 className={styles.creditsTitle} id="reads-credits-title">
+                <span className={styles.eyebrow}>Image credits</span>
+                <span className={styles.srOnly}>도판 출처</span>
+              </h2>
+              <p className={styles.creditsLead}>
+                카드 왼쪽의 작은 그림은 그 글과 이어진 꽃의 세밀화예요. 19세기 전후 식물
+                도감에서 온 퍼블릭 도메인·CC0 도판이고, 어느 판본에서 왔는지 아래에 적어 둘게요.
+              </p>
+              <ul className={styles.creditList}>
+                {credits.map((credit) => (
+                  <li className={styles.creditItem} key={credit}>
+                    {credit}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
+
           {/*
             ⚠ 정직 각주 — 이 문장을 장식으로 읽지 마라.
               여기 실린 곳들과 우리는 아무 관계가 없고, 링크를 눌러도 우리에게 돌아오는 것이

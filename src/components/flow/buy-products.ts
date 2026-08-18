@@ -20,7 +20,24 @@ export interface BuyProduct {
   price: number | null;
 }
 
-export type BuyProductsResponse = { ok: true; products: BuyProduct[] } | { ok: false };
+/**
+ * 상품 검색의 응답.
+ *
+ * `sample` 이 이 타입에서 가장 조심스러운 칸이다 — **지어낸 목록임을 화면에 강제하는 표식**이다
+ * (2026-08-18, 정적 드롭 데모). 실상품 공급원이 없는 자리에서 시트의 상품 칸이 늘 비어 있어
+ * 데모를 보는 사람은 그 기능이 없는 줄 알았고, 사용자 확정은 "모든 기능이 작동하는 것처럼
+ * 보여야 한다" 였다. 그래서 데모는 예시 목록을 세우되 **예시라고 말한다.**
+ *
+ * ⚠ 본배포는 이 값을 **절대 켜지 않는다**(`app/recommend/actions.ts` 에는 켜는 줄이 없다).
+ *   실서비스에서 지어낸 상품을 파는 것은 데모에서 예시를 보여 주는 것과 완전히 다른 일이다 —
+ *   키가 없으면 지금처럼 조용히 빈손이고 화면은 사이트 목록으로 내려간다.
+ * ⚠ 켜져 있으면 화면은 두 가지를 **반드시** 한다: ① 목록 위에 예시라고 적고,
+ *   ② 행을 개별 상품 상세가 아니라 **그 판매처**로 보낸다(존재하지 않는 상품 페이지로
+ *   사람을 보내지 않는다). 그 계약은 `ResultView` 의 BuySheet 가 지킨다.
+ */
+export type BuyProductsResponse =
+  | { ok: true; products: BuyProduct[]; sample?: boolean }
+  | { ok: false };
 
 export type BuySort = 'recommended' | 'priceAsc' | 'priceDesc';
 

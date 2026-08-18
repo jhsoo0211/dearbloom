@@ -38,6 +38,7 @@ import type {
 
 import { loadDemoCatalog } from './catalog';
 import { demoVariantBody } from './message-variants';
+import { sampleBuyProducts } from './sample-products';
 
 /** 질문 5문항 → 추천 결과. 실패도 예외 대신 값으로 돌려준다(원본과 같은 규칙). */
 export async function submitRecommendation(
@@ -174,12 +175,30 @@ export async function describeShare(code: string): Promise<ShareResponse> {
 }
 
 /**
- * 「사러 가기」 실상품 검색 — 데모에서는 **언제나 빈손**이다.
+ * 「사러 가기」 상품 목록 — 데모는 **예시 한 벌을 세운다** (2026-08-18).
  *
- * 상품 검색(11번가 오픈API)은 서버 전용 키를 요구하고, 서버가 없는 드롭 데모에서
- * 그 키를 둘 자리는 브라우저뿐이다 — 멘트 LLM 과 같은 금지선이라 부르지 않는다.
- * 화면(BuySheet)은 이 빈손을 받으면 사이트 목록으로 조용히 내려간다.
+ * ── 무엇이 바뀌었나 ──────────────────────────────────────────────────
+ * 예전에는 언제나 빈손이었다. 상품 검색은 서버 전용 키를 요구하고 서버가 없는 드롭
+ * 데모에서 그 키를 둘 자리는 브라우저뿐이라(멘트 LLM 과 같은 금지선) 부를 수 없었기
+ * 때문이다. 그런데 지금은 **본배포에도 공급원이 없다** — 11번가는 셀러 전용으로 바뀌었고
+ * 네이버 쇼핑 API 는 끝났으며 쿠팡 파트너스는 수수료 링크라 「제휴 아님」 고지와 충돌한다
+ * (`.env.example` 에 기록). 그래서 그 칸은 어디서도 서 본 적이 없고, 데모를 보는 사람에게는
+ * 그 기능이 아예 없는 것으로 읽혔다. 사용자 확정("모든 기능이 작동하는 것처럼")에 따라
+ * §1.5s ⑤ 의 예문 변주와 같은 처방을 쓴다 — **예시를 세우되 예시라고 말한다.**
+ *
+ * ⚠ **금지선은 그대로다.** 여기서도 바깥 API 를 부르지 않는다(키 없음). 바뀐 것은
+ *   "보여 줄 목록이 하나도 없다" 는 사정이지 "브라우저에 키를 심는다" 가 아니다.
+ * ⚠ `sample: true` 를 **반드시** 함께 돌려준다. 그 한 칸이 화면에 예시 고지를 세우고
+ *   행의 목적지를 판매처 쪽으로 돌린다(계약은 `buy-products.ts` 머리말).
+ * ⚠ 본배포 쌍둥이(`app/recommend/actions.ts`)는 이 파일을 부르지 않는다 —
+ *   실서비스에 예시 상품은 안 된다. 그쪽은 키가 없으면 지금처럼 `{ ok: false }` 다.
+ *
+ * 이름 인자는 원본과 같은 자리다. 원본은 검색어로 쓰고 여기서는 상품명·판매처 주소를
+ * 세우는 데 쓴다 — 시그니처는 한 글자도 다르지 않다(이 파일은 쌍둥이다 — 머리말).
  */
-export async function searchBuyProducts(): Promise<BuyProductsResponse> {
-  return { ok: false };
+export async function searchBuyProducts(flowerName: string): Promise<BuyProductsResponse> {
+  const products = sampleBuyProducts(typeof flowerName === 'string' ? flowerName : '');
+  // 이름을 못 읽으면 예시도 세우지 않는다 — 빈손이면 화면은 사이트 목록으로 내려간다.
+  if (products.length === 0) return { ok: false };
+  return { ok: true, products, sample: true };
 }

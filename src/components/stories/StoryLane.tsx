@@ -40,6 +40,8 @@
  *
  * ── 카드 한 장의 위계 (§1.5i 2026-08-15 사용자 16차) ──────────────────
  * 위에서 아래로 **꽃 이름·결 칩 → 제목 → hook → 각주 줄 → "이야기 펼쳐 보기"**.
+ * (2026-08-18 B-2 로 첫 줄 왼쪽에 **그 꽃의 실사 액자**가 한 칸 붙었다 — 위계는 그대로다.
+ *  액자는 첫 줄과 같은 높이의 작은 도장이라 제목보다 앞에 읽히지 않는다.)
  *
  * 예전에는 "케냐 · 현대" 같은 문화권·시대 꼬리표가 제목과 같은 무게의 칩으로 붙어 있었다.
  * 그러면 이야기를 읽으러 온 사람이 분류표부터 읽게 된다 — 아카이브의 값은 분류가 아니라
@@ -135,6 +137,24 @@ export default function StoryLane({ lane, stories, jumped, onOpen, onMount }: St
    * 아직 도판이 없는 꽃이면 헤더는 그대로 이름만 세운다.
    */
   const plate = lane.plate;
+
+  /**
+   * 카드 액자에 걸 그림 — **실사가 먼저, 없으면 도판**(2026-08-18 B-2).
+   *
+   * 레인 헤더에는 이미 도판이 44px 로 서 있으므로, 카드까지 같은 그림이면 한 줄에 같은
+   * 그림이 아홉 번 선다. 실사는 그 줄에서 **다른 결**을 하나 더해 준다 — 헤더는 판면(종이),
+   * 카드는 그 꽃의 얼굴(사진).
+   *
+   * ⚠ 도판 폴백은 **지금 한 줄도 타지 않는다**(2026-08-18 기준 카탈로그 59종 전원에 컷이
+   *   있다). 그래도 남겨 두는 이유는 자산이 늘 카탈로그를 따라오지는 않기 때문이다 —
+   *   꽃이 먼저 들어오고 사진이 늦는 날, 이 한 줄이 없으면 그 레인의 카드가 통째로 빈
+   *   상자를 여덟 개 세운다. 빈 상자보다는 헤더와 같은 도판이 언제나 낫다.
+   *
+   * 한 레인의 카드는 전부 **같은 주소**를 문다. 브라우저가 한 번만 받아 오므로 카드가
+   * 여덟 장이어도 요청은 레인당 하나이고, 그 한 장이 곧 "이 줄은 이 꽃" 이라는 표식이 된다.
+   */
+  const shot = lane.shotSrc ?? plate?.src;
+  const shotIsPlate = lane.shotSrc === undefined;
 
   /**
    * 레인 노드를 잡는 자리. 관측(IntersectionObserver)과 부모의 건너뛰기가 **같은 노드**를 본다.
@@ -457,14 +477,42 @@ export default function StoryLane({ lane, stories, jumped, onOpen, onMount }: St
                     data-testid="story-card"
                     onClick={() => onOpen(story.id)}
                   >
-                    {/* 상단은 꽃 이름 + 결 칩까지만 — 지역·시대 칩 금지(§1.5i 16차). */}
-                    <span className={styles.cardTop}>
-                      <span className={styles.cardFlower}>{story.flowerNameKo}</span>
-                      {story.moodLabels.map((label) => (
-                        <span className={`${styles.tag} ${styles.tagMood}`} key={label}>
-                          {label}
+                    {/*
+                      상단은 액자 + 꽃 이름 + 결 칩까지만 — 지역·시대 칩 금지(§1.5i 16차).
+
+                      액자는 **장식이다**(`aria-hidden`). 바로 옆에 꽃 이름이 텍스트로 서 있어
+                      낭독기가 같은 말을 두 번 하게 된다 — 레인 헤더의 도판을 장식으로 둔 것과
+                      같은 판단이다(카드가 최대 8장 × 59줄이라 소음이 그만큼 배가된다).
+                      ⚠ 그림 위에 글자를 얹지 마라(§1.5g · illustration-assets 사용 규칙 3).
+                        액자는 첫 줄 **옆**에 서고, 겹치는 텍스트가 하나도 없다.
+                    */}
+                    <span className={styles.cardHead}>
+                      {shot ? (
+                        <span
+                          className={
+                            shotIsPlate ? `${styles.cardShot} ${styles.cardShotPlate}` : styles.cardShot
+                          }
+                          aria-hidden="true"
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element -- 두 갈래가 섞인다: 원격 CDN(Unsplash·Pexels — 핫링크가 권장 사용법)과 자체 호스팅 도판 썸네일. next/image 최적화 엔드포인트는 정적 데모(output:'export')에서 서지 않는다. */}
+                          <img
+                            className={styles.cardShotImg}
+                            src={shot}
+                            alt=""
+                            loading="lazy"
+                            decoding="async"
+                          />
                         </span>
-                      ))}
+                      ) : null}
+
+                      <span className={styles.cardTop}>
+                        <span className={styles.cardFlower}>{story.flowerNameKo}</span>
+                        {story.moodLabels.map((label) => (
+                          <span className={`${styles.tag} ${styles.tagMood}`} key={label}>
+                            {label}
+                          </span>
+                        ))}
+                      </span>
                     </span>
 
                     {/* 카드의 주인공 — 제목과 hook 이 시각적 중심이다. */}

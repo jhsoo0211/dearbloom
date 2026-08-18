@@ -97,6 +97,7 @@
 .back:focus-visible,
 .storySum:focus-visible,
 .petSum:focus-visible,
+.litFoldSum:focus-visible,
 .sourceBtn:focus-visible,
 .sourceLink:focus-visible {
   outline: 2px solid var(--focus);
@@ -2033,6 +2034,129 @@
   font-size: 12.5px;
   line-height: 1.7;
   color: var(--fg-50);
+}
+
+/* ═══ ③-b 문학 속의 이 꽃 (§1.5k · 2026-08-18) ══════════════════════════
+   결과 화면의 `.lit*`(flow.module.css)과 **같은 조판 결**이다 — 세리프 이탤릭 발췌,
+   소형 원문 병기, 각주 한 줄, 왼쪽 선을 두른 caveat. 같은 원전을 두 화면이 다른 결로
+   세우면 어느 쪽이 이 서비스의 인용인지 흐려진다.
+
+   ⚠ 그럼에도 **값은 여기 제 것으로 다시 적는다.** 결과 화면 모듈을 도감이 끌어다 쓰면
+     한쪽의 여백 조정이 다른 화면을 조용히 밀어 버린다. 다른 것은 담는 그릇뿐이다:
+     결과 화면은 멘트 아래 곁들임이라 헤어라인 한 줄로 붙지만, 도감에서는 제 구획을 가진
+     목록이라 이야기 카드(`.story`)와 같은 판을 쓴다.
+   ═════════════════════════════════════════════════════════════════════ */
+.lits {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 22px;
+}
+.lit {
+  padding: 18px;
+  border: 1px solid var(--hair);
+  border-radius: 16px;
+  background: var(--surface);
+}
+/* 갈래 꼬리표(시·소설·희곡·산문·고전) — 결 꼬리표(`.tag`)와 같은 규격의 읽는 표시다. */
+.litType {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 2px 10px;
+  border-radius: 9999px;
+  border: 1px solid var(--hair-2);
+  /* 12px — 라벨·캡션 최소선(§1.6b, 점검 P2-13). */
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.5;
+  letter-spacing: 0.06em;
+  color: var(--fg-50);
+}
+.litQuote {
+  margin: 0;
+}
+/* 발췌는 세리프 이탤릭으로 세워 "옮겨 온 문장"임을 서체로 먼저 말한다(결과 화면과 같다). */
+.litKo {
+  margin-top: 12px;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 300;
+  font-size: 16px;
+  line-height: 1.9;
+  letter-spacing: -0.01em;
+  color: var(--fg-70);
+}
+/*
+  원문은 작게. 한문·라틴어·가나·1925년 초판 표기가 섞여 오므로 **줄바꿈을 막지 않는다** —
+  긴 한문 한 줄이 판을 밀어 가로 스크롤을 만드는 것이 원문을 지키는 일보다 나쁘다.
+*/
+.litOrig {
+  margin-top: 10px;
+  font-size: 13px;
+  line-height: 1.85;
+  letter-spacing: 0.01em;
+  color: var(--fg-50);
+  overflow-wrap: anywhere;
+}
+/* 각주 한 벌(출처 + caveat)을 감싸는 `<figcaption>` — 여백은 여기가 진다. */
+.litFoot {
+  margin-top: 12px;
+}
+.litBy {
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--fg-50);
+}
+/* 각주 안의 가운뎃점 — 이야기 각주와 같은 간격. */
+.litSep {
+  padding: 0 6px;
+  opacity: 0.6;
+}
+/* 각주 중에서도 "이걸 안 적으면 거짓이 되는" 한 줄이라 왼쪽 선으로 따로 세운다. */
+.litCaveat {
+  margin-top: 10px;
+  padding-left: 11px;
+  border-left: 2px solid var(--hair);
+  font-size: 12.5px;
+  line-height: 1.8;
+  color: var(--fg-50);
+}
+/*
+  다섯 편이 넘을 때만 서는 폴드(빨간 장미 9편). 크레딧 폴드(`.creditFold`)와 같은 규칙이다 —
+  글자는 작아도 누르는 면은 44px 이고, 열림 표시는 셰브런 회전 하나뿐이다.
+*/
+.litFold {
+  margin-top: 12px;
+}
+.litFoldSum {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 44px;
+  min-height: 44px;
+  font-size: 13.5px;
+  color: var(--fg-50);
+  cursor: pointer;
+  list-style: none;
+  transition: color var(--dur) var(--ease);
+}
+.litFoldSum::-webkit-details-marker {
+  display: none;
+}
+.litFoldSum:hover {
+  color: var(--fg-70);
+}
+.litFoldSum svg {
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  transition: transform var(--dur) var(--ease);
+}
+.litFold[open] .litFoldSum svg {
+  transform: rotate(90deg);
 }
 
 /* ── ④ 이런 날 건네보세요 ────────────────────────────────────────────── */

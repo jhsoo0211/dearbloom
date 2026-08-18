@@ -19,10 +19,23 @@
  * (라벨 사전·엔진·카탈로그는 서버 쪽에만 있다).
  */
 
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type KeyboardEvent,
+} from 'react';
 import Link from 'next/link';
 
 import { searchBuyProducts } from '@/app/recommend/actions';
+/*
+ * §1.5t — 만료 판정은 `/reads` 와 **같은 함수**를 쓴다. 한 벌을 더 세우면 같은 축제가
+ * 두 화면에서 다른 날 사라진다. `expiry.ts` 는 import 가 하나도 없는 순수 모듈이라
+ * 정적 데모 번들에도 그대로 들어간다.
+ */
+import { hasEnded, todayInKst } from '@/components/reads/expiry';
 import {
   MESSAGE_LENGTH_MAX_CHARS,
   RESPONSE_TONE_COUNT,
@@ -70,6 +83,33 @@ const SHARE_TEXT = '당신에게 어울릴 꽃 세 가지를 골라 봤어요.';
 
 /** 가격 구간 칸 수 — 라벨 사전(`labels.ts` PRICE_BAND_SLOTS)과 같은 값이다(#11). */
 const PRICE_SLOTS = [1, 2, 3] as const;
+
+/**
+ * §1.5t 읽을거리 구획이 세우는 카드 수 — **최대 두 장.**
+ *
+ * 서버는 세 장까지 싣는다(만료로 한 장이 빠질 자리를 메우려고 — `types.ts` 의
+ * `FlowOptionView.reads` 머리말). 국화처럼 여섯 건이 걸린 꽃도 있지만 이 자리는
+ * 목록이 아니라 곁들임이라, 셋을 넘기면 결과 화면이 `/reads` 의 요약본이 된다.
+ * 더 보고 싶은 사람의 목적지는 구획 아래 「읽을거리 더 보기」 한 줄이다.
+ */
+const RESULT_READ_SHOWN = 2;
+
+/**
+ * KST 기준 오늘 — 마운트 전에는 `null`.
+ *
+ * `components/reads/ReadsBoard.tsx` 의 같은 이름 훅과 **글자까지 같은 셈**이다
+ * (거기 머리말이 이 방식의 근거를 다 적어 두었다: `useState` 초기값으로 시계를 읽으면
+ * 서버 HTML 과 어긋나고, 이펙트로 채우면 저장소의 "이펙트 안 setState 금지" 에 걸린다).
+ * 가져다 쓰지 않고 여기 한 벌을 더 둔 이유는 그쪽이 컴포넌트 파일 내부 함수라 내보내지
+ * 않기 때문이다 — 어긋남은 `expiry.ts` 한 벌을 함께 쓰는 것으로 막는다.
+ */
+const NEVER_CHANGES = () => () => {};
+const todaySnapshot = () => todayInKst(new Date());
+const noTodayOnServer = () => null;
+
+function useTodayKst(): string | null {
+  return useSyncExternalStore(NEVER_CHANGES, todaySnapshot, noTodayOnServer);
+}
 
 /**
  * ── 「이 꽃 어디서 사지」에 답하는 두 개의 바깥 링크 (2026-08-17) ──────────────
@@ -409,6 +449,14 @@ function BuySheet({ flowerName, onClose }: BuySheetProps) {
    */
   const [products, setProducts] = useState<BuyProduct[] | null>(null);
   const [productsPending, setProductsPending] = useState(true);
+  /**
+   * 이 목록이 **지어낸 예시인가** (2026-08-18 — 정적 데모).
+   *
+   * 참이면 화면이 두 가지를 한다: ① 목록 위에 예시라고 적고, ② 행이 개별 상품이 아니라
+   * 그 판매처로 간다고 미리 말한다. 이 플래그 없이 예시를 세우면 그건 그냥 거짓말이다.
+   * 값의 출처는 서버 응답 한 곳뿐이고(`BuyProductsResponse.sample`), 본배포는 켜지 않는다.
+   */
+  const [sample, setSample] = useState(false);
   const [sort, setSort] = useState<BuySort>('recommended');
   /** 상품이 서면 사이트 목록은 접힌다 — 이 플래그가 다시 편다. */
   const [linksOpen, setLinksOpen] = useState(false);
@@ -427,10 +475,16 @@ function BuySheet({ flowerName, onClose }: BuySheetProps) {
     searchBuyProducts(flowerName)
       .then((response) => {
         if (!alive) return;
-        setProducts(response.ok && response.products.length > 0 ? response.products : null);
+        const found = response.ok && response.products.length > 0;
+        setProducts(found ? response.products : null);
+        // 목록이 서지 않으면 예시 고지도 세울 자리가 없다 — 두 값을 늘 함께 옮긴다.
+        setSample(found && response.sample === true);
       })
       .catch(() => {
-        if (alive) setProducts(null);
+        if (alive) {
+          setProducts(null);
+          setSample(false);
+        }
       })
       .finally(() => {
         if (alive) setProductsPending(false);
@@ -515,6 +569,21 @@ function BuySheet({ flowerName, onClose }: BuySheetProps) {
 
           {products !== null ? (
             <>
+              {/*
+                ⚠ 예시 고지 — **목록보다 먼저** 선다. 지우지 마라.
+                  정적 데모에는 실상품 공급원이 없어 이 목록이 우리가 지어낸 예시다
+                  (`lib/demo/sample-products.ts`). 그 사실을 목록 아래 각주로 미루면
+                  값을 다 읽은 뒤에야 알게 되고, 그때는 이미 진짜로 읽힌 뒤다.
+                  두 번째 줄이 있는 이유도 같다 — 행을 누르면 그 상품이 아니라 판매처가
+                  열린다는 것을 **누르기 전에** 말한다(§3-4 의 접근 고지와 같은 자리).
+              */}
+              {sample ? (
+                <p className={styles.sampleNote}>
+                  지금은 어떤 상품이 오는지 보여드리는 예시예요. 값과 상품은 실제와 달라요 —
+                  줄을 누르면 그 판매처에서 직접 찾아보실 수 있어요.
+                </p>
+              ) : null}
+
               {/* 상품 정렬 — 추천순 점수의 속(공익 판매처 가산점)은 buy-products.ts 만 안다. */}
               <div className={styles.moodFilter} role="group" aria-label="상품 정렬 고르기">
                 {BUY_SORTS.map((item) => {
@@ -534,9 +603,16 @@ function BuySheet({ flowerName, onClose }: BuySheetProps) {
               </div>
 
               <div className={styles.buyList}>
-                {sortedProducts.map((product) => (
+                {/*
+                  ⚠ 키에 자리(index)가 섞여 있다. 주소만으로는 유일하지 않기 때문이다 —
+                    예시 목록에서는 한 판매처에 여러 줄이 걸리고(그 줄들은 같은 판매처
+                    주소를 공유한다) 주소를 키로 쓰면 React 가 같은 줄로 읽어 목록이
+                    조용히 짧아진다. 정렬로 자리가 바뀌면 다시 그려지지만, 이 행은
+                    상태를 갖지 않는 링크라 잃을 것이 없다.
+                */}
+                {sortedProducts.map((product, index) => (
                   <a
-                    key={product.link}
+                    key={`${index}-${product.link}`}
                     className={styles.buyRow}
                     href={product.link}
                     target="_blank"
@@ -565,9 +641,15 @@ function BuySheet({ flowerName, onClose }: BuySheetProps) {
                   </a>
                 ))}
               </div>
-              {/* 출처와 한계를 그대로 말한다 — 값·재고를 우리가 보증하는 것처럼 읽히면 안 된다. */}
+              {/*
+                출처와 한계를 그대로 말한다 — 값·재고를 우리가 보증하는 것처럼 읽히면 안 된다.
+                예시일 때는 **출처가 없다.** 있지도 않은 검색을 출처로 대면 그 줄 자체가
+                거짓이 되므로, 지어낸 목록이라는 사실을 한 번 더 적는 쪽으로 갈린다.
+              */}
               <p className={styles.disc}>
-                11번가 검색에서 가져온 상품이에요 — 값과 재고는 그 페이지 기준이에요.
+                {sample
+                  ? '이 목록은 화면을 보여드리려고 저희가 만든 예시예요 — 실제 판매 상품이 아니에요.'
+                  : '11번가 검색에서 가져온 상품이에요 — 값과 재고는 그 페이지 기준이에요.'}
               </p>
 
               <button
@@ -834,6 +916,36 @@ export default function ResultView({
     return [block.featured, ...block.others];
   }, [option.literature]);
   const currentLit = literature[Math.min(litIndex, literature.length - 1)];
+
+  /** 마운트 전에는 `null` — 그동안은 아무것도 거르지 않는다(아래 `reads` 머리말). */
+  const today = useTodayKst();
+
+  /**
+   * §1.5t 「이 꽃과 이어지는 읽을거리」 — 지금 보는 안의 꽃에 걸린 카드 최대 두 장.
+   *
+   * 서버는 세 장까지 싣고(`FlowOptionView.reads` 머리말) **거르는 일은 여기서** 한다:
+   * 지난 행사를 서버가 걸러 보내면 배포한 날의 "오늘" 이 정적 HTML 에 굳는다
+   * (`components/reads/expiry.ts` 머리말 — `/reads` 가 같은 이유로 같은 자리에서 거른다).
+   * `today` 가 `null` 인 첫 렌더에서는 아무것도 거르지 않는다 — 그때 목록이 서버가 그린
+   * 것과 어긋나면 하이드레이션이 깨진다.
+   */
+  const reads = useMemo(() => {
+    const cards = option.reads ?? [];
+    const live = today === null ? cards : cards.filter((card) => !hasEnded(card, today));
+    return live.slice(0, RESULT_READ_SHOWN);
+  }, [option.reads, today]);
+
+  /**
+   * 구획 머리 한 줄 — **지금 서 있는 카드로** 정한다.
+   *
+   * 행사가 하나라도 남아 있으면 「축제」라고 말한다(그쪽이 갈지 말지를 가르는 말이라
+   * 먼저다). 다 끝나서 글만 남은 날에는 축제를 말하지 않는다 — 화면은 자기가 실제로
+   * 세운 것만 말한다(§1.5s 의 규범).
+   */
+  const hasEvent = reads.some((card) => card.periodLabel !== undefined);
+  const readsLede = hasEvent
+    ? '이 꽃이 주인공인 축제가 있어요'
+    : '이 꽃과 이어지는 읽을거리가 있어요';
 
   async function copy(text: string, key: string) {
     try {
@@ -1947,6 +2059,87 @@ export default function ResultView({
                   </>
                 ) : null}
               </section>
+
+              {/*
+                ═══ §1.5t 이 꽃과 이어지는 읽을거리 (2026-08-18) ═══
+
+                원장 `content/reads.csv` 의 `links_to` 를 꽃 쪽에서 되짚어 서버가 실어 준
+                카드들이다(`lib/data/reads-links.ts`). 59종 중 25종만 이어져 있고,
+                **없는 꽃에는 아무것도 붙지 않는다** — 문학 블록과 같은 규칙이다.
+                「아직 이어진 글이 없어요」 같은 빈 구획을 세우지 않는다.
+
+                자리는 문학 바로 아래, 사러 가기 위다. 읽을 것이 다 끝난 뒤 마지막 걸음이
+                「사러 가기」라는 §1.5r 의 순서를 지키면서, 곁들임끼리 모여 서게 한다.
+
+                ⚠ 지난 행사는 **브라우저의 오늘**로 거른다(위 `reads` 머리말). 여기서
+                  `new Date()` 를 부르지 마라 — 정적 배포에서 배포 날짜가 HTML 에 굳는다.
+              */}
+              {reads.length > 0 ? (
+                <section className={styles.sect} aria-labelledby="reads-h">
+                  <p className={styles.overline} id="reads-h">
+                    Reading <span className={styles.ko}>{readsLede}</span>
+                  </p>
+
+                  <div className={styles.readList}>
+                    {reads.map((card) => (
+                      <a
+                        className={styles.readRow}
+                        key={card.id}
+                        href={card.url}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        <span className={styles.readBody}>
+                          <span className={styles.readTitle}>{card.title}</span>
+                          {/*
+                            기간·지역은 **행사에만** 있다. 두 값이 카드의 첫 판단 재료라
+                            (갈 수 있는 때인가 · 갈 만한 거리인가) 제목 바로 아래 선다.
+                          */}
+                          {card.periodLabel ? (
+                            <span className={styles.readWhen}>
+                              {card.periodLabel}
+                              {card.region ? (
+                                <>
+                                  <span className={styles.sep} aria-hidden="true">
+                                    ·
+                                  </span>
+                                  {card.region}
+                                </>
+                              ) : null}
+                            </span>
+                          ) : null}
+                          <span className={styles.readDesc}>{card.summary}</span>
+                          {/* 출처를 카드마다 밝힌다 — 우리가 쓴 글이 아니라는 사실이 제목만으로는 안 보인다. */}
+                          <span className={styles.readFrom}>{card.sourceTitle}</span>
+                          <span className="sr-only"> (새 창)</span>
+                        </span>
+                        <span className={styles.buyAr} aria-hidden="true">
+                          <IconExternal />
+                        </span>
+                      </a>
+                    ))}
+                  </div>
+
+                  {/*
+                    ⚠ 정직 한 줄 — 지우지 마라. 여기 걸린 축제·글은 전부 **바깥 것**이고
+                      우리와 아무 관계가 없다. `/reads` 푸터가 같은 자리에 같은 성격의
+                      각주를 두고 있다(없으면 "왜 이 축제만 실렸지" 가 광고로 읽힌다).
+                    ⚠ 일정 확인 부탁은 **행사가 서 있을 때만** 붙인다. 글 두 편만 선 화면에서
+                      「행사 일정은 확인해 주세요」라고 적으면 있지도 않은 것을 설명하는 줄이
+                      된다(§1.5s 의 "화면은 자기가 실제로 한 일만 말한다").
+                  */}
+                  <p className={styles.disc}>
+                    저희가 직접 열어 보고 골라 둔 바깥 글이에요 — 제휴 관계는 없어요.
+                    {hasEvent ? ' 행사 일정은 가시기 전에 주최 쪽 안내를 한 번 봐 주세요.' : ''}
+                  </p>
+                  <Link className={styles.teaser} href="/reads">
+                    읽을거리 더 보기
+                    <span className={styles.tar} aria-hidden="true">
+                      <IconArrow />
+                    </span>
+                  </Link>
+                </section>
+              ) : null}
 
               {/*
                 ═══ 사러 가기 · 다시 골라보기 ═══

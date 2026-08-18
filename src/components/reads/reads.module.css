@@ -9,8 +9,10 @@
        리셋에 져서 여백이 조용히 무너진다(landing.css 가 실제로 겪은 함정).
      · §1.4 — **Pollen Gold 배경 위 텍스트 금지.** 골드는 보더·아이콘·라벨(텍스트 색)로만
        쓴다. 칩의 선택 채움이 `--accent` 가 아니라 `--cta-bg` 인 이유가 그것이다.
-     · 사진이 하나도 없는 **활자 화면**이다(§1.5g 는 적용 대상이 아니다). 남의 썸네일을
-       걸지 않기로 한 결과이기도 하다 — 그래서 위계는 크기·여백·헤어라인으로만 만든다.
+     · **남의 사진은 여전히 한 장도 없다.** 카드에 서는 그림은 우리 자체 호스팅 도판
+       (`public/plates/thumbs/`)뿐이고, 그 위에 글자를 얹지 않으므로 §1.5g(사진 위 가독성)는
+       그대로 적용 대상이 아니다. 위계는 크기·여백·헤어라인이 만들고, 액자는 그 격자를
+       따라가게 도울 뿐이다.
    ═════════════════════════════════════════════════════════════════════ */
 
 .page {
@@ -425,12 +427,21 @@
 }
 
 /* ── 카드 ────────────────────────────────────────────────────────────
-   활자 카드다. 그림이 없으므로 위계는 **줄의 순서**가 만든다 —
-   행사는 기간·지역이 제목 위로 오고, 글은 갈래와 발행일이 온다.
+   위계는 여전히 **줄의 순서**가 만든다 — 행사는 기간·지역이 제목 위로 오고,
+   글은 갈래와 발행일이 온다. 왼쪽 액자는 그 순서를 바꾸지 않고 격자만 준다.
    ═════════════════════════════════════════════════════════════════ */
+/**
+ * ⚠ `minmax(300px, …)` 이 아니라 `minmax(min(300px, 100%), …)` 이다.
+ *
+ * 320px 화면에서 `.wrap` 은 276px 인데 그리드의 최소 트랙이 300px 이라, 카드가 22px 지점에서
+ * 시작해 **322px 에서 끝났다**(body.scrollWidth 322 > 뷰포트 320 — 2026-08-18 실측).
+ * `html { overflow-x: clip }` 이 스크롤바를 가려 눈에 덜 띄었을 뿐, 카드 오른쪽 24px 이
+ * 화면 밖에서 잘리고 있었다. `min(300px, 100%)` 는 열이 컨테이너보다 넓어질 수 없게 막는다 —
+ * 344px 이상에서는 계산 결과가 그대로라 넓은 화면의 조판은 한 픽셀도 바뀌지 않는다.
+ */
 .cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
   gap: 14px;
   margin-top: 18px;
 }
@@ -461,6 +472,108 @@
  */
 .cardApi {
   border-left-color: var(--hair-2);
+}
+
+/* ── 카드 액자 (2026-08-18 B-2) ──────────────────────────────────────
+   "글만 있으니까 보기 좀 까다롭다" 는 말에 대한 답이다. 걸 수 있는 그림은 **우리 자산**뿐이라
+   (남의 썸네일 금지 · §1.5q) 도감과 이어진 카드에는 그 꽃의 자체 호스팅 도판 160px 썸네일을,
+   나머지에는 같은 액자에 갈래 선화를 넣는다.
+
+   ── 지켜야 하는 세 가지 ──────────────────────────────────────────
+     ① **상자는 한 벌이다.** 두 갈래의 폭·비율·테두리가 같다. 안에 든 것만 다르다 —
+        카드마다 다른 문법이면 액자가 없는 것만 못하다.
+     ② **자리는 그림보다 먼저 잡힌다.** `aspect-ratio` 로 상자를 먼저 세우므로 24장이
+        지연 로드로 늦게 도착해도 줄이 밀리지 않는다(CLS 0).
+     ③ **도판 위에 글자를 올리지 않는다**(illustration-assets 사용 규칙 3). 밝은 판면 위에서
+        아이보리 타이포가 죽는다 — 그래서 액자는 텍스트 **옆**에 서고 겹치지 않는다.
+
+   톤 통일 두 겹(sepia 필터 + 아이보리 multiply 6%)은 `/stories` 의 `.plateThumb` 와
+   **같은 값**이다. 판본이 1613~1929년 사이라 종이 흰색이 제각각이고, 그 차이가 나란히
+   놓이면 먼저 보인다. ⚠ 한쪽만 고치지 마라 — 같은 도판이 화면마다 다른 색이 된다.
+   ═════════════════════════════════════════════════════════════════ */
+.cardHead {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+}
+.cardHeadText {
+  /* 제목이 길면 줄이 접혀야지 액자를 밀면 안 된다 — flex 자식의 기본 min-width:auto 를 푼다. */
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  /* `.card` 의 세로 리듬(9px)을 그대로 잇는다 — 액자가 들어왔다고 간격이 달라지지 않는다. */
+  gap: 9px;
+}
+
+.preview {
+  position: relative;
+  flex: none;
+  display: block;
+  width: 64px;
+  /* 세밀화 판면은 대체로 세로다. 비율을 박아 두는 것이 곧 CLS 0 이다. */
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  padding: 3px;
+  border: 1px solid var(--accent-line);
+  border-radius: 3px;
+  background: var(--ivory);
+}
+/* 아이보리 매트 — 판본별 종이 흰색 차이를 덮는 두 번째 겹(`/stories` 와 같은 값). */
+.preview::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--ivory);
+  mix-blend-mode: multiply;
+  opacity: 0.06;
+  pointer-events: none;
+}
+.previewImg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  object-fit: cover;
+  /* 판면 위쪽에 꽃, 아래쪽에 인쇄 학명이 오는 구성이 많다 — 위에서 조금 내려온 자리를 잡는다. */
+  object-position: 50% 32%;
+  filter: sepia(0.12) saturate(0.92) contrast(1.04) brightness(0.98);
+}
+
+/**
+ * 도감과 이어지지 않은 카드의 액자 — 같은 상자, 다른 속.
+ *
+ * 아이보리 판면 대신 **어두운 면 + 골드 선화**다. 두 갈래가 밝고 어둡게 갈리는 것은
+ * 의도다 — 그 차이가 곧 "이 글은 우리 도감의 꽃과 이어져 있다" 는 사실이고, 그 말은
+ * 카드 아래 다리 링크가 이미 하고 있다(없는 정보를 그림으로 지어내지 않는다).
+ * ⚠ §1.4 「골드 배경 위 텍스트 금지」와 어긋나지 않는다: 골드는 12% 틴트와 선화뿐이고,
+ *   이 상자 안에 글자는 하나도 없다.
+ */
+.mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background:
+    radial-gradient(120% 100% at 50% 0%, color-mix(in srgb, var(--accent) 12%, transparent) 0%, transparent 72%),
+    var(--surface-2);
+  color: var(--accent);
+}
+/* 아이보리 매트는 판면을 위한 것이다 — 어두운 면 위에서는 밝은 얼룩이 된다. */
+.mark::after {
+  content: none;
+}
+.markGlyph {
+  width: 26px;
+  height: 26px;
+  fill: none;
+  stroke: currentColor;
+  /* 카드 제목 옆 화살표(`ArrowGlyph`)와 같은 굵기 — 한 화면 안의 선은 한 손글씨다. */
+  stroke-width: 1.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.8;
 }
 
 .cardTop {
@@ -678,6 +791,43 @@
   font-size: 13.5px;
   color: var(--fg-50);
 }
+/**
+ * 도판 크레딧 — 푸터 맨 위의 작은 블록(illustration-assets 사용 규칙 4).
+ *
+ * `/stories` 푸터의 `.credits` 와 **같은 값·같은 형식**이다. 두 화면이 같은 도판을 쓰므로
+ * 출처를 말하는 방식도 하나여야 한다 — 한쪽만 고치면 같은 판본이 화면마다 다르게 적힌다.
+ * 액자를 세운 꽃의 **판본 수만큼**(24종 → 열 줄 안팎) 나온다.
+ */
+.credits {
+  padding-bottom: 20px;
+  margin-bottom: 22px;
+  border-bottom: 1px solid var(--hair);
+}
+.creditsTitle {
+  font-family: var(--font-sans);
+  font-size: inherit;
+  font-weight: 400;
+  line-height: inherit;
+}
+.creditsLead {
+  margin-top: 10px;
+  max-width: 31em; /* = 52ch */
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--fg-50);
+}
+.creditList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 18px;
+  margin-top: 10px;
+}
+.creditItem {
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--fg-50);
+}
+
 .footNotes {
   display: flex;
   flex-direction: column;

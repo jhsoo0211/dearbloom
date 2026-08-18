@@ -9,11 +9,21 @@
  *   상수는 `category.ts`(순수 데이터)로, 계산은 `data.ts`(서버)로 간다.
  */
 
+import type { LiteratureView } from '@/components/flow/types';
 import type { MetaNote } from '@/components/stories/meta';
 import type { ThemeCategory } from '@/components/landing/landing-data';
 import type { BirthPhotoView } from '@/lib/birth-photos/view';
 
 export type { ThemeCategory };
+
+/**
+ * §1.5k 문학 발췌 한 편 — **결과 화면과 같은 모양을 그대로 쓴다**(`flow/types.ts`).
+ *
+ * 도감이 제 타입을 따로 세우지 않는 이유: 두 화면이 같은 `quotes.csv` 행을 같은 조판으로
+ * 세우는데 모양만 둘이면, 한쪽에 필드가 늘어난 날 다른 쪽은 조용히 옛 모양으로 남는다.
+ * 여기서 가리키고 있으면 그날 타입 검사가 먼저 걸린다.
+ */
+export type { LiteratureView };
 
 /* ------------------------------------------------------------------ *
  * 목록·검색 (`/flowers`)
@@ -411,6 +421,18 @@ export interface FlowerDetailData {
   meaningGroups: MeaningGroup[];
   meaningCount: number;
   stories: FlowerStory[];
+  /**
+   * §1.5k 「문학 속의 이 꽃」 — 그 꽃에 붙은 발췌 **전부**를, 결과 화면과 **같은 차례**로.
+   *
+   * 결과 화면은 한 편을 앞세우고 나머지를 넘겨 보게 하지만(곁들임 위계), 도감은
+   * 아카이브라 전 행을 그대로 세운다. 차례를 정하는 것은 두 화면 모두
+   * `orderLiterature`(flow/labels.ts) 한 곳이다 — 같은 꽃에서 같은 편이 맨 앞에 선다.
+   *
+   * 발췌가 한 줄도 없는 꽃(59종 중 23종)은 **빈 배열**이다 → 화면은 구획 자체를 세우지
+   * 않는다. 근대에 명명돼 고전 문학에 나오지 않는 종들이라, 그 자리를 편집팀 문장으로
+   * 메우지 않는 것이 §1.5e "검증된 인용만" 이다.
+   */
+  literature: LiteratureView[];
   /** §1.5h `이런 날 건네보세요`. 데이터가 없는 꽃은 빈 배열 → 섹션을 세우지 않는다. */
   occasions: string[];
   pet: PetNote;

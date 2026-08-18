@@ -5,6 +5,7 @@ import { cache, type CSSProperties } from 'react';
 
 import FlowerBuy from '@/components/flowers/FlowerBuy';
 import FlowerGallery from '@/components/flowers/FlowerGallery';
+import FlowerLiterature from '@/components/flowers/FlowerLiterature';
 import FlowerPlate from '@/components/flowers/FlowerPlate';
 import { CATEGORY_TONE } from '@/components/flowers/category';
 import { buildFlowerDetail, flowerSlugs } from '@/components/flowers/data';
@@ -15,7 +16,7 @@ import { loadCatalog } from '@/lib/data/catalog';
  * `/flowers/[slug]` — 도감 상세.
  *
  * 위계는 §1.5i 그대로다:
- * **꽃(실사 → 세밀화) → 꽃말 → 이야기 → 상황 → 참고(작게) → 사러 가기 → CTA.**
+ * **꽃(실사 → 세밀화) → 꽃말 → 이야기 → 문학 → 상황 → 참고(작게) → 사러 가기 → CTA.**
  * 히어로 맨 위는 그 꽃의 **실사 갤러리**다 — 도감이 먼저 답해야 하는 질문이
  * "이 꽃이 어떻게 생겼나"이기 때문이다(2026-08-15). 2026-08-16 에 한 장에서 2~4장으로
  * 늘었고(색 변형 우선), 세밀화 액자는 히어로 안이 아니라 **바로 아래 제 소절**로 내려왔다.
@@ -28,6 +29,10 @@ import { loadCatalog } from '@/lib/data/catalog';
  * · 이야기 펼치기는 **`<details>` 다.** §1.5i 의 전면 시트(포커스 트랩·스크롤 잠금)는
  *   추천 결과 화면의 몫이고, 도감은 "한 번 눌러 이어 읽는" 인라인 확장으로 충분하다 —
  *   JS 가 아직 안 붙었거나 꺼져 있어도 그대로 열린다.
+ * · 2026-08-18 에 **「문학 속의 이 꽃」이 붙었다**(이야기 아래·상황 위). 문학 발췌 86행은
+ *   여태 추천 결과 화면에서만 보였다 — 추천을 거치지 않고 그 꽃을 알아보러 곧장 들어온
+ *   사람에게는 없는 자료였던 셈이다. 자리가 이야기 바로 뒤인 이유는 위계다: 꽃말·이야기·
+ *   문학까지가 **읽을 것**이고, 상황·참고·사러 가기부터가 **할 것**이다.
  * · 2026-08-18 에 **「사러 가기」가 붙었다**(참고 아래·CTA 위). 도감으로 곧장 들어온
  *   사람에게 이 화면은 여태 막다른 길이었다 — 다 읽고 나면 남는 질문이 "그래서 어디서
  *   사지"인데 그 답이 결과 화면에만 있었다. 목적지는 결과 화면과 **같은 데이터 모듈**
@@ -328,6 +333,41 @@ export default async function FlowerDetailPage(props: PageProps<'/flowers/[slug]
             )}
           </div>
         </section>
+
+        {/* ── ③-b 문학 속의 이 꽃 (§1.5k · 2026-08-18) ──────────── */}
+        {/*
+          그 꽃이 실제로 적혀 있던 원문 발췌들. 결과 화면(§1.5k)에만 있던 블록을 도감에도
+          세운다 — 86행 36종이 여태 추천을 거친 사람에게만 보였다.
+
+          자리는 **이야기 아래·상황 위**다. 꽃말 → 이야기 → 문학까지가 이 화면에서 읽을
+          것이고, 「이런 날 건네보세요」부터가 건네는 사람의 걸음이다. 문학을 그 뒤로 내리면
+          읽던 사람이 행동 구획을 지나 다시 읽을 것으로 돌아와야 한다.
+
+          ⚠ **발췌가 없는 23종에는 이 구획이 아예 없다**(빈 섹션 미렌더 — 이 화면의 기존
+            규범이다: 세밀화·상황·탄생화 각주가 모두 같은 규칙을 따른다). 근대에 명명돼
+            고전 문학에 나오지 않는 꽃들이라, 그 자리를 편집팀 문장으로 메우는 것은
+            §1.5e "검증된 인용만" 에 어긋난다.
+          ⚠ 차례는 결과 화면과 **같은 함수**가 정한다(`orderLiterature` — flow/labels.ts).
+            도감이 제 순서를 가지면 같은 꽃에서 두 화면이 다른 편을 앞세운다.
+        */}
+        {flower.literature.length > 0 && (
+          <section className={styles.section} aria-labelledby="literature-title">
+            <div className={styles.wrap}>
+              <div className={styles.sectionHead}>
+                <h2 className={styles.sectionTitle} id="literature-title">
+                  문학 속의 이 꽃
+                </h2>
+                <span className={styles.sectionCount}>{flower.literature.length}편</span>
+              </div>
+              <p className={styles.sectionLead}>
+                이 꽃이 실제로 적혀 있던 문장들이에요. 원문이 우리말이 아닌 것은 원문을 함께
+                두고, 저희가 옮긴 문장에는 그 사실을 밝혀 두었어요.
+              </p>
+
+              <FlowerLiterature items={flower.literature} />
+            </div>
+          </section>
+        )}
 
         {/* ── ④ 이런 날 건네보세요 (§1.5h) ──────────────────────── */}
         {flower.occasions.length > 0 && (

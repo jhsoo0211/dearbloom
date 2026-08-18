@@ -20,15 +20,24 @@
 
 import {
   GENERIC_FAILURE,
+  SHARE_UNREADABLE,
   assemblePayload,
+  buildShareView,
   buildTones,
   parseSubmission,
   prepareResult,
 } from '@/app/recommend/build-result';
+import type { MessageLength } from '@/lib/llm/contracts';
 import type { BuyProductsResponse } from '@/components/flow/buy-products';
-import type { FlowResponse, ToneView, WizardSubmission } from '@/components/flow/types';
+import type {
+  FlowResponse,
+  ShareResponse,
+  ToneView,
+  WizardSubmission,
+} from '@/components/flow/types';
 
 import { loadDemoCatalog } from './catalog';
+import { demoVariantBody } from './message-variants';
 
 /** 질문 5문항 → 추천 결과. 실패도 예외 대신 값으로 돌려준다(원본과 같은 규칙). */
 export async function submitRecommendation(
@@ -50,21 +59,118 @@ export async function submitRecommendation(
   if (!prepared.ok) return { ok: false, message: prepared.message };
 
   const tones = buildTones(catalog, prepared.draft.intent, prepared.draft.relationship);
-  return { ok: true, payload: assemblePayload(prepared.draft, tones) };
+  /*
+   * `canReword` 는 **데모에서만** 켠다 — 아래 `regenerateMessages` 가 실제로 다른 문장을
+   * 돌려주기 때문이다(손으로 쓴 변주 한 벌이 `message-variants.ts` 에 있다).
+   * 본배포의 예문 폴백에는 그 변주가 없어서 버튼을 세우지 않는다(그쪽은 지금 그대로다).
+   */
+  return { ok: true, payload: { ...assemblePayload(prepared.draft, tones), canReword: true } };
 }
 
 /**
- * 멘트만 다시 받기 — 데모에서는 **언제나 빈손**이다.
+ * 몇 번째로 갈아 끼우는가. **모듈 스코프의 결정적 회전**이다.
  *
- * 위 `submitRecommendation` 이 LLM 을 부르지 않는 것과 같은 금지선이다. 새로 쓸 곳이
- * 없으니 새로 받을 것도 없다. 화면은 이 빈손을 받으면 지금 서 있는 예문을 그대로 두고,
- * 애초에 `새로 받기` · `짧게/보통` 버튼 자체를 세우지 않는다(예문 경로에는 고를 여지가
- * 없다 — `templates.csv` 는 조합마다 행이 하나뿐이다).
+ * 난수를 쓰지 않는 이유는 데모를 보여 주는 사람 쪽에 있다 — 같은 순서로 누르면 같은
+ * 문장이 나와야 시연을 되풀이할 수 있고, 스크린샷 검수도 가능해진다.
+ * 탭을 새로 고치면 0 으로 돌아간다(그것도 예측 가능한 동작이다).
  */
-export async function regenerateMessages(): Promise<
-  { ok: true; tones: ToneView[] } | { ok: false }
-> {
-  return { ok: false };
+let rewordRound = 0;
+
+/**
+ * 멘트만 다시 받기 — **데모에서도 실제로 돈다** (2026-08-18).
+ *
+ * ── 무엇이 바뀌었나 ──────────────────────────────────────────────────
+ * 예전에는 언제나 빈손이었고, 화면은 그래서 길이·새로 받기 버튼을 아예 세우지 않았다.
+ * 사용자 확정("모든 기능이 제대로 작동하는 것처럼 보여야 해")으로 기준이 "안 깨짐"에서
+ * "실동작"으로 올라갔고, 그래서 데모 전용 예문 변주 한 벌을 갖췄다
+ * (`./message-variants.ts` — 원장 `templates.csv` 는 손대지 않았다).
+ *
+ * ⚠ **LLM 금지선은 그대로다.** 여기서도 모델을 부르지 않는다. 바뀐 것은 "고를 문장이
+ *   한 벌뿐이라 고를 수 없다" 는 사정이지 "브라우저에 키를 심는다" 가 아니다.
+ * ⚠ 톤의 `source` 는 계속 `template` 이다 — 화면의 "당신의 이야기를 담아 썼어요" 배지가
+ *   데모에서 서면 그건 거짓말이 된다. 각주도 예문 문구 그대로 남는다.
+ *
+ * 회전 규칙(`demoVariantBody`)
+ *   · `short`  — 손으로 쓴 두 벌을 오간다.
+ *   · `medium` — 원장의 문장 ↔ 손으로 쓴 다른 한 벌.
+ * 변주가 없는 조합은 그 톤만 지금 문장을 그대로 둔다(없는 문장을 지어내지 않는다).
+ */
+export async function regenerateMessages(
+  submission: WizardSubmission,
+  length: MessageLength,
+  /**
+   * 화면의 3안 꽃 id — 원본(`actions.ts`)이 멘트의 첫 안을 되돌리는 데 쓰는 값이다.
+   * **데모는 쓰지 않는다.** 여기 멘트는 상황·톤으로만 고르는 예문이라(꽃 이름이 문장에
+   * 들어가지 않는다) 되돌릴 첫 안이라는 것이 없다. 그래도 인자는 받는다 — 이 파일은
+   * 원본과 시그니처가 한 글자도 달라선 안 되는 쌍둥이다(머리말).
+   */
+  flowerIds?: string[],
+): Promise<{ ok: true; tones: ToneView[] } | { ok: false }> {
+  // 받기만 하고 쓰지 않는다(위 주석). 읽어 두어야 "빠뜨린 것" 이 아님이 드러난다.
+  void flowerIds;
+
+  const received = parseSubmission(submission);
+  if (!received.ok) return { ok: false };
+
+  let catalog;
+  try {
+    catalog = await loadDemoCatalog();
+  } catch {
+    console.error('[recommend] 콘텐츠 번들을 읽지 못했습니다.');
+    return { ok: false };
+  }
+
+  const prepared = prepareResult(received.answers, catalog);
+  if (!prepared.ok) return { ok: false };
+
+  const { intent, relationship } = prepared.draft;
+  const base = buildTones(catalog, intent, relationship);
+  rewordRound += 1;
+
+  const tones = base.map((tone) => {
+    const body = demoVariantBody(intent, tone.key, length, rewordRound);
+    if (body === undefined) return tone;
+    const next: ToneView = { ...tone, body, source: 'template' };
+    delete next.emptyNote;
+    return next;
+  });
+
+  /*
+   * 갈아 끼울 것이 있는 조합인가.
+   *
+   * ⚠ "이번 반환이 원장과 다른가" 로 재면 안 된다 — `medium` 의 짝수 번째는 **원장으로
+   *   되돌아오는 차례**라 원장과 같아지는데, 그것도 화면에서는 문장이 바뀐 것이다
+   *   (직전에 서 있던 것은 변주였다). 그 자리에서 실패를 돌려주면 화면이 "새로 써 오지
+   *   못했어요" 라고 거짓말을 한다. 그래서 **회전이 성립하는지**만 본다.
+   */
+  const rotatable = base.some((tone) => demoVariantBody(intent, tone.key, 'short', 0) !== undefined);
+  return rotatable ? { ok: true, tones } : { ok: false };
+}
+
+/**
+ * 공유 부호 → 읽기 전용 화면 값 — **데모에서도 그대로 돈다.**
+ *
+ * 위 두 함수와 달리 여기는 빈손이 아니다. 공유는 서버에 아무것도 저장하지 않는 방식이라
+ * (`share-link.ts` 의 "방식 A") 필요한 것은 **부호 한 줄과 카탈로그**뿐이고, 둘 다 브라우저에
+ * 있다. 서버 전용 자원(API 키·DB)이 끼지 않으므로 데모에서 못 할 이유가 없다 —
+ * 오히려 서버가 없는 자리에서도 링크가 열린다는 것이 이 설계의 값어치다.
+ *
+ * 해석·검증·조립은 서버판과 **같은 함수**가 한다(`buildShareView`). 다른 것은
+ * 카탈로그를 어디서 읽어 오는지 하나뿐이다.
+ */
+export async function describeShare(code: string): Promise<ShareResponse> {
+  const received = typeof code === 'string' ? code : '';
+  if (received === '') return { ok: false, message: SHARE_UNREADABLE };
+
+  let catalog;
+  try {
+    catalog = await loadDemoCatalog();
+  } catch {
+    console.error('[recommend] 콘텐츠 번들을 읽지 못했습니다.');
+    return { ok: false, message: GENERIC_FAILURE };
+  }
+
+  return buildShareView(received, catalog);
 }
 
 /**

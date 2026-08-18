@@ -50,6 +50,15 @@ export interface ReadCard {
   access: ReadAccess;
   /** `open` 이 아닐 때만. 「눌러도 못 읽을 수 있다」를 미리 말하는 한 줄이다. */
   accessNote?: string;
+  /**
+   * 「이건 우리가 고른 게 아니다」 — API 로 받아 온 카드에만 붙는 작은 라벨
+   * (`한국관광공사 제공`). 원장 54건은 이 칸이 **없는 것이 정상**이다.
+   *
+   * 이 한 칸이 두 가지 일을 한다: 공공누리 제1유형의 **출처표시 의무**를 지고,
+   * 사람이 열어 본 목록과 기계가 모아 온 목록을 화면에서 갈라 준다
+   * (`@/lib/data/reads-festivals` 머리말).
+   */
+  provider?: string;
   /** 「우리 도감의 그 꽃」. 없는 것이 정상 값이다. */
   flowers: ReadFlowerLink[];
 }

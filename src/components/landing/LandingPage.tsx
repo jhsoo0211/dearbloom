@@ -754,12 +754,32 @@ export default function LandingPage({ data }: { data: LandingData }) {
                     히어로 캡션(`오늘의 꽃 · 2026.08.16`)과 아래 탄생화 줄이 말한다.
                   ⚠ `todayReason` 은 인용 부호까지 서버가 붙여 내려보낸다. 여기서 자르거나
                     따옴표를 덧붙이지 마라(훅 원문에 `"`·`'` 가 섞여 있다).
+
+                  ── 맺음이 곧 길이다 (크로스 링크 2026-08-18) ───────────────────
+                  리드의 마지막 문장은 `나머지는 도감에서 천천히 읽어 보셔도 좋아요.` 류
+                  **초대**인데, 여태 갈 곳이 없는 글자였다. 그래서 그 한 문장을 그 꽃의
+                  도감 상세로 가는 링크로 세운다 — 카드 전체가 이미 같은 곳으로 가지만,
+                  초대에 응하는 가장 짧은 길이 그 문장 위여야 자연스럽다.
+
+                  ⚠ **문구는 그대로다.** 자르는 자리도 화면이 정하지 않는다 — 서버가
+                    `lead`/`text` 조각으로 내려보내고(`todayReasonLink`), 둘을 이으면 위
+                    `todayReason` 과 글자 하나까지 같다. 맺음이 없는 날은 키가 없어
+                    통짜 문자열로 그대로 선다(없는 길을 만들지 않는다).
                 */}
                 <h2 className="db-today-title" id="db-today-title" data-db-split>
                   오늘 꺼내 온 한 송이, 그리고 이어지는 이야기들
                 </h2>
                 <p className="db-today-lede" data-db-reveal>
-                  {data.todayReason}
+                  {data.todayReasonLink ? (
+                    <>
+                      {data.todayReasonLink.lead}
+                      <Link href={data.todayReasonLink.href} prefetch={false}>
+                        {data.todayReasonLink.text}
+                      </Link>
+                    </>
+                  ) : (
+                    data.todayReason
+                  )}
                 </p>
                 <p className="db-today-aside" data-db-reveal>
                   {data.todayAside}

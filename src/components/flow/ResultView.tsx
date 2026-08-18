@@ -23,12 +23,17 @@ import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import Link from 'next/link';
 
 import { searchBuyProducts } from '@/app/recommend/actions';
-import type { MessageLength } from '@/lib/llm/contracts';
+import {
+  MESSAGE_LENGTH_MAX_CHARS,
+  RESPONSE_TONE_COUNT,
+  type MessageLength,
+} from '@/lib/llm/contracts';
 import { MESSAGE_MAX_CHARS } from '@/lib/llm/prompt';
 import { withParticle } from '@/lib/text';
 import { buildBuyLinks, type BuyLinkKind } from './buy-links';
 import { sortBuyProducts, type BuyProduct, type BuySort } from './buy-products';
-import type { ResultPayload, StoryCard } from './types';
+import { shareUrl } from './share-link';
+import type { MessageStreamState, ResultPayload, StoryCard } from './types';
 import styles from './flow.module.css';
 
 /** 색 칩 아래 「그 색이 품은 말」 한 줄. `note` 가 그 말의 출신(색별인지 색 무관인지)을 밝힌다. */
@@ -47,11 +52,21 @@ const MOOD_ALL = 'all';
  */
 const MESSAGE_EDIT_MAX = MESSAGE_MAX_CHARS;
 
-/** 멘트 길이 칸 — 어휘는 계약(`MESSAGE_LENGTHS`)과 같고, 라벨만 여기서 붙인다. */
+/**
+ * 멘트 길이 칸 — 어휘는 계약(`MESSAGE_LENGTHS`)과 같고, 라벨만 여기서 붙인다.
+ *
+ * 글자 수는 **계약에서 읽어 온다**(`MESSAGE_LENGTH_MAX_CHARS`). 화면이 제 숫자를 들고
+ * 있으면 상한을 조인 날 화면만 옛말을 하게 된다 — 사용자에게 60자라고 해 놓고 90자를
+ * 받아 주는 자리가 생기지 않게, 말하는 수와 막는 수를 한 벌로 묶는다.
+ */
 const MESSAGE_LENGTH_CHOICES: readonly { key: MessageLength; label: string }[] = [
   { key: 'short', label: '짧게' },
   { key: 'medium', label: '보통' },
 ];
+
+/** 「이 결과 건네주기」가 Web Share API 로 띄우는 제목·설명. 링크에는 개인적인 값이 없다. */
+const SHARE_TITLE = 'dearbloom — 이 꽃을 골랐어요';
+const SHARE_TEXT = '당신에게 어울릴 꽃 세 가지를 골라 봤어요.';
 
 /** 가격 구간 칸 수 — 라벨 사전(`labels.ts` PRICE_BAND_SLOTS)과 같은 값이다(#11). */
 const PRICE_SLOTS = [1, 2, 3] as const;
@@ -654,9 +669,21 @@ export interface ResultViewProps {
    * 그때는 길이·새로 받기 버튼 자체가 서지 않는다.
    */
   onRegenerate?: (length: MessageLength) => Promise<boolean>;
+  /**
+   * 흘러나오는 중인 멘트(2026-08-18). `null` 이면 스트리밍이 도는 중이 아니다.
+   *
+   * ⚠ 여기 담긴 글자는 **표시용**이다. 복사·고쳐 쓰기·새로 받기는 이 값을 만지지 못하고,
+   *   확정된 톤(`payload.tones`)만 다룬다 — 부분 문자열이 화면 계약을 넘어오지 않게.
+   */
+  stream?: MessageStreamState | null;
 }
 
-export default function ResultView({ payload, onRestart, onRegenerate }: ResultViewProps) {
+export default function ResultView({
+  payload,
+  onRestart,
+  onRegenerate,
+  stream = null,
+}: ResultViewProps) {
   const [active, setActive] = useState(0);
   const [colorIndex, setColorIndex] = useState<number[]>(() =>
     payload.options.map((option) => {
@@ -684,6 +711,8 @@ export default function ResultView({ payload, onRestart, onRegenerate }: ResultV
   const [moodFilter, setMoodFilter] = useState<string>(MOOD_ALL);
   const [openStoryId, setOpenStoryId] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
+  /** 「이 결과 건네주기」의 결말 — 무엇을 했는지 그대로 말한다(복사와 건네기는 다른 일이다). */
+  const [handOff, setHandOff] = useState<'copied' | 'shared' | null>(null);
   /** 「사러 가기」 시트 — 활성 안의 대표 이름으로 열린다(2026-08-17). */
   const [buyOpen, setBuyOpen] = useState(false);
   /** §1.5k 문학 — 펼침 상태와 지금 보고 있는 발췌의 자리(0 = 대표). */
@@ -816,6 +845,41 @@ export default function ResultView({ payload, onRestart, onRegenerate }: ResultV
     window.setTimeout(() => setCopied((current) => (current === key ? null : current)), 1600);
   }
 
+  /**
+   * 「이 결과 건네주기」 — 링크 하나를 손에 쥐여 준다 (2026-08-18).
+   *
+   * 주소는 지금 보고 있는 origin 으로 만든다(`shareUrl` 주석 — 배포 도메인이 아직 없다).
+   * 폰에는 기본 공유 시트가 있으니 그것을 먼저 열고, 없거나 사용자가 닫으면 복사로 간다.
+   *
+   * ⚠ **취소를 성공처럼 말하지 않는다.** 공유 시트를 닫은 것(`AbortError`)은 "안 건넸다"
+   *   이므로 아무 피드백도 세우지 않는다. 눌렀는데 뭔가 됐다고 말하는 화면은 거짓말이다.
+   * ⚠ 링크에 무엇이 실리는지는 `share-link.ts` 가 정한다 — 자유 서술도 멘트도 없다.
+   */
+  async function handOver() {
+    const url = shareUrl(window.location.origin, payload.shareCode);
+
+    if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+      try {
+        await navigator.share({ title: SHARE_TITLE, text: SHARE_TEXT, url });
+        setHandOff('shared');
+        window.setTimeout(() => setHandOff(null), 2200);
+        return;
+      } catch (error) {
+        // 사용자가 시트를 닫았다 — 여기서 몰래 복사까지 해 두면 누른 적 없는 일이 일어난다.
+        if ((error as { name?: string } | null)?.name === 'AbortError') return;
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(url);
+      setHandOff('copied');
+    } catch {
+      // 클립보드도 막힌 환경(비보안 컨텍스트). 아무 말도 하지 않는 편이 정직하다.
+      return;
+    }
+    window.setTimeout(() => setHandOff(null), 2200);
+  }
+
   function pickColor(next: number, focus = false) {
     const count = option.colors.length;
     if (count === 0) return;
@@ -887,14 +951,40 @@ export default function ResultView({ payload, onRestart, onRegenerate }: ResultV
 
   const editing = draft !== null;
 
+  /*
+   * ── 흘러나오는 중인 멘트 (2026-08-18) ────────────────────────────────
+   *
+   * 생성은 앞 3톤만 바꾼다(계약이 3톤 1회 호출이다 — `RESPONSE_TONE_COUNT`). 그래서
+   * 스트리밍 중에 "쓰는 중" 이 되는 칸도 앞 3톤뿐이고, 사과가 아닐 때 함께 서는 유쾌 톤은
+   * 처음부터 끝까지 예문이라 그대로 읽힌다.
+   *
+   * ⚠ 쓰는 중인 칸에는 **예문을 세우지 않는다.** 곧 다른 문장으로 바뀔 자리에 예문을
+   *   띄워 두면 사용자는 그것을 우리 답으로 읽고, 1초 뒤 글자가 통째로 갈리는 것을 본다.
+   *   아직 못 쓴 것은 못 썼다고 말하는 편이 낫다.
+   * ⚠ `liveDraft` 는 어떤 경로로도 `ToneView.body` 가 되지 않는다 — 아래 도구줄(복사·
+   *   고쳐 쓰기·새로 받기)이 스트리밍 중에는 통째로 서지 않는 이유가 그것이다.
+   */
+  const writing = stream?.pending === true && tone < RESPONSE_TONE_COUNT;
+  const liveDraft = writing ? stream?.drafts[currentTone.key] : undefined;
+
   /**
    * 길이·새로 받기를 세울 수 있는가.
    *
    * 두 조건이 함께 맞아야 한다: 상위가 재생성 길을 줬고(정적 데모·복원된 결과에는 없다),
    * 지금 이 톤이 **생성된 문장**이다. 예문 톤에서는 새로 받을 것도 짧게 할 것도 없다 —
    * `templates.csv` 가 조합마다 한 행뿐이기 때문이다(2026-08-18 실측).
+   *
+   * 흘러들어오는 중(`writing`)에는 서지 않는다 — 아직 확정되지 않은 문장을 두고
+   * "새로 받기" 를 누를 수 있게 하면 두 요청이 겹친다.
+   *
+   * `payload.canReword` 는 **예문 경로에도 갈아 볼 문장이 있다**는 선언이다. 지금은
+   * 정적 데모만 켠다(손으로 쓴 변주 한 벌이 거기 있다 — `demo/message-variants.ts`).
+   * 금지선은 그대로다: 누를 수 있으면 반드시 무언가 일어나야 한다.
    */
-  const canRegenerate = onRegenerate !== undefined && currentTone.source === 'llm';
+  const canRegenerate =
+    onRegenerate !== undefined &&
+    (currentTone.source === 'llm' || payload.canReword === true) &&
+    !writing;
 
   /** 고쳐 쓰기 열고 닫기. 열 때 지금 보이는 그대로를 버퍼에 담는다(빈 칸에서 시작시키지 않는다). */
   function toggleEdit() {
@@ -1057,16 +1147,27 @@ export default function ResultView({ payload, onRestart, onRegenerate }: ResultV
                 </figure>
 
                 <ul className={styles.ctx} aria-label="들려주신 이야기">
-                  {payload.contextChips.map((chipText) => (
-                    <li
-                      key={chipText}
-                      /* §1.5l — 사용자가 직접 쓴 한 줄만 말줄임 규격을 탄다(칩 높이는 그대로). */
-                      className={payload.ownWords.includes(chipText) ? styles.ctxOwn : undefined}
-                      title={payload.ownWords.includes(chipText) ? chipText : undefined}
-                    >
-                      {chipText}
-                    </li>
-                  ))}
+                  {payload.contextChips.map((chipText) => {
+                    const isOwn = payload.ownWords.includes(chipText);
+                    /*
+                     * §1.5j — 우리가 이야기에서 읽어 낸 안전 신호. 사용자가 고른 칩과
+                     * 눈으로 갈려야 한다(고르지 않은 조건 때문에 후보가 줄었다는 뜻이라,
+                     * 고른 것처럼 보이면 그게 곧 거짓말이 된다).
+                     */
+                    const isRead = payload.readChips?.includes(chipText) ?? false;
+                    return (
+                      <li
+                        key={chipText}
+                        /* §1.5l — 사용자가 직접 쓴 한 줄만 말줄임 규격을 탄다(칩 높이는 그대로). */
+                        className={
+                          isRead ? styles.ctxRead : isOwn ? styles.ctxOwn : undefined
+                        }
+                        title={isOwn ? chipText : undefined}
+                      >
+                        {chipText}
+                      </li>
+                    );
+                  })}
                 </ul>
 
                 {/* §1.5j — 적어 준 이야기에서 읽어 낸 단서를 먼저 되비춘다 */}
@@ -1543,14 +1644,45 @@ export default function ResultView({ payload, onRestart, onRegenerate }: ResultV
                 >
                   <p className={styles.toneHint}>{currentTone.hint}</p>
                   {/* 이 톤이 방금 쓰인 문장일 때만 세운다 — 예문과 구별되게(§1.5j). */}
-                  {currentTone.source === 'llm' ? (
+                  {writing ? (
+                    <p className={styles.trustBadge} style={{ marginTop: 12 }}>
+                      당신의 이야기를 담아 쓰고 있어요
+                    </p>
+                  ) : currentTone.source === 'llm' ? (
                     <p className={styles.trustBadge} style={{ marginTop: 12 }}>
                       당신의 이야기를 담아 썼어요
                     </p>
                   ) : null}
-                  <div className={styles.msg}>
+                  <div className={styles.msg} aria-busy={writing || undefined}>
                     <h3 className="sr-only">{currentTone.label} 톤 멘트</h3>
-                    {editing ? (
+                    {/*
+                      낭독은 **한 번만** 한다. 흘러들어오는 글자를 live 영역에 두면 글자마다
+                      읽어 주느라 아무것도 알아들을 수 없다 — 상태 한 줄로 갈음하고,
+                      본문은 다 쓰이면 그때 읽힌다(그 자리는 확정된 톤이다).
+                    */}
+                    <p className="sr-only" role="status">
+                      {writing ? '멘트를 쓰고 있어요.' : ''}
+                    </p>
+                    {writing ? (
+                      liveDraft?.headline !== undefined || liveDraft?.body !== undefined ? (
+                        <>
+                          {liveDraft.headline ? (
+                            <p>
+                              <b>{liveDraft.headline}</b>
+                            </p>
+                          ) : null}
+                          <p className={styles.msgLive}>
+                            {liveDraft.body ?? ''}
+                            <span className={styles.caret} aria-hidden="true" />
+                          </p>
+                        </>
+                      ) : (
+                        <p className={styles.msgEmpty}>
+                          지금 이 톤의 멘트를 쓰고 있어요
+                          <span className={styles.caret} aria-hidden="true" />
+                        </p>
+                      )
+                    ) : editing ? (
                       /*
                         고쳐 쓰기 (§1.5j) — 우리 문장은 출발점일 뿐, 마지막 말은 보내는
                         사람의 것이다. 상한은 멘트 생성과 **같은 200자**다(카드 한 장).
@@ -1602,7 +1734,7 @@ export default function ResultView({ payload, onRestart, onRegenerate }: ResultV
                     없는 링크와 같은 거짓말이라(바로 아래 사러 가기 섹션의 그 원칙) 그
                     자리에서는 세우지 않는다.
                   */}
-                  {currentTone.body ? (
+                  {currentTone.body && !writing ? (
                     <div className={styles.msgTools}>
                       <button
                         type="button"
@@ -1642,6 +1774,7 @@ export default function ResultView({ payload, onRestart, onRegenerate }: ResultV
                           >
                             {MESSAGE_LENGTH_CHOICES.map((item) => {
                               const on = item.key === msgLength;
+                              const cap = MESSAGE_LENGTH_MAX_CHARS[item.key];
                               return (
                                 <button
                                   key={item.key}
@@ -1650,6 +1783,9 @@ export default function ResultView({ payload, onRestart, onRegenerate }: ResultV
                                     on ? `${styles.moodChip} ${styles.moodChipOn}` : styles.moodChip
                                   }
                                   aria-pressed={on}
+                                  // 화면이 말하는 수와 계약이 막는 수는 언제나 같은 상수다.
+                                  aria-label={`${item.label} — ${cap}자 안으로`}
+                                  title={`${cap}자 안으로 써 드려요`}
                                   disabled={regenPending}
                                   onClick={() => requestMessages(item.key)}
                                 >
@@ -1684,7 +1820,12 @@ export default function ResultView({ payload, onRestart, onRegenerate }: ResultV
                   </p>
                 </div>
 
-                <p className={styles.footNote}>{payload.messageNote}</p>
+                {/*
+                  각주는 **다 쓴 뒤에** 선다. 흘러들어오는 동안 "미리 적어 둔 예문이에요"
+                  가 서 있으면, 그 문장은 1초 뒤에 거짓이 된다(그때 화면에 서는 것은
+                  방금 쓴 멘트다). 아직 정해지지 않은 사실을 미리 말하지 않는다.
+                */}
+                {stream?.pending ? null : <p className={styles.footNote}>{payload.messageNote}</p>}
                 {payload.toneOffNote ? (
                   <p className={styles.footNote}>{payload.toneOffNote}</p>
                 ) : null}
@@ -1836,6 +1977,24 @@ export default function ResultView({ payload, onRestart, onRegenerate }: ResultV
                     ‘{mainName(option.nameKo)}’ 사러 가기
                     <IconArrow />
                   </button>
+                  {/*
+                    「이 결과 건네주기」 (2026-08-18) — 2026-08-17 에 걷어 낸 더미
+                    `링크로 공유` 자리에 **실제로 도는 길**이 생겨 돌아온 버튼이다.
+                    그때 지운 이유("눌러도 아무 일 없는 버튼은 갈 곳 없는 링크와 같은
+                    거짓말")가 이 자리의 조건이었고, 이제 그 조건이 채워졌다.
+                    §1.6b 위계는 그대로 — 주 버튼은 사러 가기 하나이고 이쪽은 고스트다.
+                  */}
+                  <button
+                    type="button"
+                    className={`${styles.btn} ${styles.btnGhost}`}
+                    onClick={handOver}
+                  >
+                    {handOff === 'shared'
+                      ? '건네줬어요'
+                      : handOff === 'copied'
+                        ? '링크를 복사했어요'
+                        : '이 결과 건네주기'}
+                  </button>
                   <button
                     type="button"
                     className={`${styles.btn} ${styles.btnGhost}`}
@@ -1844,6 +2003,14 @@ export default function ResultView({ payload, onRestart, onRegenerate }: ResultV
                     다시 골라보기
                   </button>
                 </div>
+                {/* 눌렀을 때 무슨 일이 일어났는지 눈으로도 낭독으로도 한 번씩 말한다. */}
+                <p className={styles.footNote} role="status">
+                  {handOff === 'shared'
+                    ? '건네줄 곳을 열었어요.'
+                    : handOff === 'copied'
+                      ? '링크를 복사했어요. 붙여넣어 건네주세요.'
+                      : ''}
+                </p>
               </section>
 
               {/* ═══ ⑤ 최하단 참고 — 작게. 안전·계절·가격·구매는 "찾을 수 있으면 충분"(§1.5i) ═══ */}
@@ -1996,6 +2163,43 @@ export default function ResultView({ payload, onRestart, onRegenerate }: ResultV
                   이어지는 곳들과 아직 제휴 관계는 아니에요 — 좋은 곳을 먼저 알려 드리는 거예요.
                 </p>
               </section>
+
+              {/*
+                ═══ 적어 주신 꽃 한 줄 (§1.5d · 2026-08-18) ═══
+
+                에피소드에 꽃 이름을 직접 적었는데 그 꽃이 3안에 없을 때, **화면이 그
+                사실을 먼저 말한다.** 규칙이 촘촘한 자리(고백 × 연인)에서는 이름을 적어도
+                I·R 가점이 그것을 이긴다(실측) — 점수를 비틀어 억지로 끼워 넣는 대신
+                고르지 않은 이유를 말하는 쪽을 택했다.
+
+                ⚠ 사과하지 않는다. 이건 실수가 아니라 판단이다(문구는 서버가 만든다 —
+                  `build-result.ts` 의 `MENTIONED_NOTE_TAIL`).
+                ⚠ 제외된 꽃은 여기 오지 않는다(반려동물·예산·향). 그 사정은 제 문장을
+                  이미 갖고 있고, 두 이유를 한 자리에 겹치지 않는다.
+                ⚠ 여기 서는 것은 **꽃 이름뿐**이다 — 적어 준 이야기를 되비추지 않는다(§1.5j).
+              */}
+              {payload.mentionedNote ? (
+                <p className={styles.mentioned}>
+                  {payload.mentionedNote.lead}
+                  {payload.mentionedNote.flowers.map((flower, index) => (
+                    <span key={flower.id}>
+                      {index > 0 ? (
+                        <span className={styles.sep} aria-hidden="true">
+                          ·
+                        </span>
+                      ) : null}
+                      <Link
+                        className={styles.mentionedLink}
+                        href={`/flowers/${flower.id}`}
+                        prefetch={false}
+                      >
+                        {flower.nameKo}
+                      </Link>
+                    </span>
+                  ))}
+                  {payload.mentionedNote.tail}
+                </p>
+              ) : null}
             </div>
           </div>
 

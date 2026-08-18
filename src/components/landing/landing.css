@@ -692,6 +692,29 @@ body.db-nav-compact .db-nav {
   color: var(--fg-70);
 }
 /**
+ * 리드 맺음 링크 — 문단 **안**의 본문 링크다(크로스 링크 2026-08-18).
+ *
+ * 결은 탄생화 각주의 이름 링크와 같다: 면도 칩도 아니고, 밑줄 하나와 한 단 진해진 글자로만
+ * 말한다. 버튼처럼 세우면 리드 문단 끝에 CTA 가 붙은 모양이 되어 §1.5e 절제와 어긋나고,
+ * 바로 아래 `45초 만에 추천받기` 와 위계를 다투게 된다.
+ *
+ * ⚠ 밑줄을 지우지 마라. 색만으로 링크를 말하면 색각 차이에서 링크가 사라진다
+ *   (WCAG 1.4.1 — 문단 안에 섞인 링크라 형태 단서가 특히 필요하다).
+ * 포커스 링은 `.db-page :focus-visible` 공통 규칙(§1.6b)이 이미 씌운다.
+ */
+.db-today-lede a {
+  color: var(--fg);
+  text-decoration: underline;
+  text-decoration-color: var(--hair-2);
+  text-underline-offset: 3px;
+  transition: color var(--ctrl-t) var(--ease),
+    text-decoration-color var(--ctrl-t) var(--ease);
+}
+.db-today-lede a:hover,
+.db-today-lede a:focus-visible {
+  text-decoration-color: currentColor;
+}
+/**
  * 리드 둘째 줄 — 화면 빛깔 한 마디 (§1.5n 리듬 재조정 · 2026-08-16 재작성).
  *
  * 첫 줄이 그 꽃의 **이야기 한 줄을 통째로 인용**하게 되면서 길어졌다(훅 최장 59자).

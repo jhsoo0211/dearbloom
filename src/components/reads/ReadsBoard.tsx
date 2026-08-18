@@ -257,14 +257,29 @@ export default function ReadsBoard({ cards }: ReadsBoardProps) {
  *
  * 제목이 곧 외부 링크다. 카드 전체를 링크로 감싸지 않는 이유: 안쪽에 도감으로 가는 내부
  * 링크가 함께 서므로 링크가 중첩되고, 그 순간 낭독기가 하나의 목적지를 말할 수 없게 된다.
+ *
+ * ── `provider` 가 있는 카드 (API 축제) ──────────────────────────────
+ * 사람이 열어 보고 고른 카드와 **기계가 모아 온 카드**는 화면에서 갈려야 한다. 가르는
+ * 방법이 둘인데 둘 다 조용하다: 왼쪽 골드 선을 흐린 헤어라인으로 바꾸고(`.cardApi`),
+ * 첫 줄 끝에 `한국관광공사 제공` 을 단다. 카드를 통째로 다른 모양으로 만들지 않는 이유는
+ * 그것이 「덜 좋은 것」처럼 읽히기 때문이다 — 출처가 다를 뿐 같은 값의 정보다.
+ * (그 라벨은 공공누리 제1유형의 출처표시 의무를 지는 자리이기도 하다.)
  */
 function ReadItem({ card, today }: { card: ReadCard; today: string | null }) {
   const isEvent = card.kind === 'event';
   const status = today === null ? null : readStatus(card, today);
   const statusText = today === null ? undefined : readStatusLabel(card, today);
 
+  const shell = [
+    styles.card,
+    isEvent ? styles.cardEvent : '',
+    card.provider ? styles.cardApi : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+
   return (
-    <li className={isEvent ? `${styles.card} ${styles.cardEvent}` : styles.card}>
+    <li className={shell} data-testid="reads-card" data-provider={card.provider ?? ''}>
       <div className={styles.cardTop}>
         {isEvent ? (
           <>
@@ -279,6 +294,7 @@ function ReadItem({ card, today }: { card: ReadCard; today: string | null }) {
             ) : null}
           </>
         )}
+        {card.provider ? <span className={styles.provider}>{card.provider}</span> : null}
         {statusText ? (
           <span
             className={status === 'open' ? `${styles.status} ${styles.statusOpen}` : styles.status}

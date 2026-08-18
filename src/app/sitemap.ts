@@ -4,7 +4,7 @@ import { loadCatalog } from '@/lib/data/catalog';
 import { SITE_URL } from '@/lib/site';
 
 /**
- * `/sitemap.xml` — 정적 라우트 8개 + 도감 상세(카탈로그 전종).
+ * `/sitemap.xml` — 정적 라우트 9개 + 도감 상세(카탈로그 전종).
  *
  * 도감은 `generateStaticParams` 로 종마다 한 장씩 미리 생성되는 실제 페이지들이라
  * (빌드 로그의 `● /flowers/[slug]` 32건) 지도에 그대로 싣는다. 목록을 손으로 적지 않고
@@ -27,6 +27,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/`, changeFrequency: 'daily', priority: 1 },
     { url: `${SITE_URL}/recommend`, changeFrequency: 'monthly', priority: 0.9 },
     { url: `${SITE_URL}/flowers`, changeFrequency: 'monthly', priority: 0.8 },
+    /* 계절 달력은 도감의 곁문이라 내비에는 없지만(§1.6c 레일이 찼다) 지도에는 싣는다 —
+       "8월에 피는 꽃" 은 검색으로 곧장 들어올 만한 질문이고, 내용은 도감과 함께 자란다. */
+    { url: `${SITE_URL}/calendar`, changeFrequency: 'monthly', priority: 0.6 },
     { url: `${SITE_URL}/stories`, changeFrequency: 'monthly', priority: 0.8 },
     /* 「읽을거리」는 다른 정적 화면보다 자주 바뀐다 — 주간 점검이 만료된 행사를 빼고 새
        회차를 넣는다(`docs/reads-research.md` §7-3). 그래서 여기만 weekly 다. */

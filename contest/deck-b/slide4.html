@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <title>DearBloom — PAGE 4 / 5 AI 구조·프로토타입</title>
+    <link rel="stylesheet" href="deck.css" />
+    <style>
+      /* PAGE 4 — AI 구조·프로토타입
+         §3: 역할 분리 표 · 안전 원칙 · 지금 눌러볼 수 있는 기능 10개 ·
+         프로토타입 캡처 4개 + 콜아웃 5문구 · 정적 데모 고지.
+         캡처는 contest/shots 의 실제 화면(3200×2000)에서 잘라 냈다.
+         칸은 두 단으로 나눈다 — 왼쪽은 「무엇을 나눠 맡는가」, 오른쪽은 「어디까지 믿을 수 있는가」. */
+      .s4-head {
+        flex: 0 0 auto;
+        display: flex;
+        gap: 46px;
+        align-items: flex-start;
+      }
+      .s4-head .l {
+        width: 1090px;
+        flex: 0 0 auto;
+      }
+      .s4-head .head {
+        margin-top: 12px;
+        font-size: 43px;
+      }
+      .s4-head .r {
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+      .principle {
+        margin-top: 10px;
+        padding: 16px 22px;
+      }
+      .principle p {
+        font-family: var(--serif);
+        font-weight: 700;
+        font-size: 26px;
+        line-height: 1.38;
+        color: var(--gold-lt);
+      }
+
+      /* ── 본문 두 단 ── */
+      .s4-body {
+        flex: 0 0 auto;
+        display: flex;
+        gap: 18px;
+        margin-top: 16px;
+      }
+      .s4-col {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .s4-col.l {
+        width: 1130px;
+        flex: 0 0 auto;
+      }
+      .s4-col.r {
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+      .blk {
+        display: flex;
+        flex-direction: column;
+        padding: 16px 20px;
+      }
+      .blk > .kicker {
+        flex: 0 0 auto;
+        margin-bottom: 10px;
+      }
+
+      /* 역할 분리 표 */
+      .split {
+        padding: 0;
+        overflow: hidden;
+      }
+      .split table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+      }
+      .split th {
+        text-align: left;
+        padding: 12px 20px;
+        font-size: 23px;
+        font-weight: 700;
+        background: rgba(217, 169, 74, 0.11);
+        border-bottom: 1px solid var(--gold-line);
+        white-space: nowrap;
+      }
+      .split th.ai {
+        color: var(--lav);
+      }
+      .split th.dt {
+        color: var(--stem);
+      }
+      .split td {
+        padding: 10px 20px;
+        font-size: 22px;
+        line-height: 1.34;
+        color: var(--text);
+        border-bottom: 1px solid var(--line);
+        vertical-align: top;
+      }
+      .split td + td {
+        border-left: 1px solid var(--line);
+        color: var(--muted);
+      }
+      .split tr:last-child td {
+        border-bottom: 0;
+      }
+
+      /* 지금 눌러볼 수 있는 기능 */
+      .live .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 9px;
+      }
+      .live .pill {
+        padding: 7px 15px;
+      }
+
+      /* 안전 원칙 */
+      .safety ul {
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .safety li {
+        display: flex;
+        gap: 11px;
+        align-items: flex-start;
+        font-size: 22px;
+        line-height: 1.34;
+        color: var(--text);
+      }
+      .safety li i {
+        flex: 0 0 auto;
+        margin-top: 8px;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--gold);
+      }
+
+      /* 정적 데모 고지 */
+      .demo {
+        flex: 1 1 auto;
+      }
+      .demo .top {
+        font-size: 22px;
+        line-height: 1.34;
+        color: var(--muted);
+      }
+      .demo dl {
+        margin-top: 9px;
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+      }
+      .demo .r {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+      }
+      .demo .r b {
+        flex: 0 0 auto;
+        font-size: 22px;
+        font-weight: 700;
+        color: var(--gold);
+        min-width: 118px;
+      }
+      .demo .r span {
+        font-size: 22px;
+        line-height: 1.32;
+        color: var(--text);
+      }
+      .demo .foot {
+        margin-top: 9px;
+        font-size: 22px;
+        line-height: 1.32;
+        color: var(--dim);
+      }
+
+      /* ── 프로토타입 캡처 4장 + 콜아웃 ── */
+      .row3 {
+        flex: 1 1 auto;
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        margin-top: 14px;
+        min-height: 0;
+      }
+      .cap {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+      }
+      .cap .labs {
+        flex: 0 0 auto;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      .cap .labs .pill {
+        padding: 6px 14px;
+      }
+      .cap .shot {
+        flex: 1 1 auto;
+        margin-top: 8px;
+        min-height: 0;
+      }
+      .cap .shot-cap {
+        flex: 0 0 auto;
+        margin-top: 8px;
+        min-height: 62px; /* 넉 장의 화면 높이를 같게 맞추기 위한 하한 */
+      }
+      .cap .shot-cap em {
+        font-style: normal;
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="slide s4">
+      <div class="frame">
+        <header class="topbar">
+          <div class="brand">
+            <span class="wordmark">dearbloom</span>
+            <span class="tagline">AI 구조 · <b>지금 동작하는 프로토타입</b></span>
+          </div>
+          <div class="pageno">PAGE 04 / 05</div>
+        </header>
+
+        <section class="s4-head">
+          <div class="l">
+            <div class="kicker">Prototype <span class="sub">AI 구조 · 프로토타입</span></div>
+            <h1 class="head">AI는 마음을 읽고,<br />검증된 데이터는 사실을 지킵니다</h1>
+          </div>
+          <div class="r">
+            <div class="kicker">Safety Rule <span class="sub">안전 원칙</span></div>
+            <div class="card gold principle">
+              <p>사실은 데이터에서,<br />AI는 해석과 표현에서 사용합니다.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="s4-body">
+          <div class="s4-col l">
+            <div class="card blk split">
+              <table>
+                <thead>
+                  <tr>
+                    <th class="ai">AI가 하는 일</th>
+                    <th class="dt">검증 데이터·엔진이 하는 일</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>&ldquo;첫눈을 함께 봤어요&rdquo; 같은 자유 문장 이해</td>
+                    <td>꽃말과 출처 확인</td>
+                  </tr>
+                  <tr>
+                    <td>취향·추억·분위기 단서 추출</td>
+                    <td>고양이·강아지 안전성 판단</td>
+                  </tr>
+                  <tr>
+                    <td>추천 꽃에 맞는 자연스러운 메시지 작성</td>
+                    <td>크게 위험한 꽃·비선호 꽃 강제 제외</td>
+                  </tr>
+                  <tr>
+                    <td>사용자의 말투에 맞춰 문장 다듬기</td>
+                    <td>관계·상황·계절·취향 점수와 3안 다양성</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="card blk live">
+              <div class="kicker">Live Now <span class="sub">현재 직접 눌러볼 수 있는 기능</span></div>
+              <div class="chips">
+                <span class="pill">관계·상황 기반 꽃 3안 추천</span>
+                <span class="pill">자유 서술을 반영한 추천 변화</span>
+                <span class="pill">반려동물 위험 꽃 제외</span>
+                <span class="pill">꽃말·나라별 의미·설화·문학 확인</span>
+                <span class="pill">여러 사람 각각 추천 및 단체 부케</span>
+                <span class="pill">카드 문구 수정·새로 받기</span>
+                <span class="pill">비밀 편지</span>
+                <span class="pill">꽃 조합기</span>
+                <span class="pill">366일 탄생화</span>
+                <span class="pill">구매처 탐색</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="s4-col r">
+            <div class="card blk safety">
+              <div class="kicker">Guardrails <span class="sub">지키는 선</span></div>
+              <ul>
+                <li><i></i>AI가 출처 없는 꽃말을 만들지 않음</li>
+                <li><i></i>AI가 반려동물 독성을 추측하지 않음</li>
+                <li><i></i>메시지 생성 실패 시 검토된 예문으로 폴백</li>
+                <li><i></i>추억과 편지 원문은 공유 URL과 분석 로그에 남기지 않음</li>
+              </ul>
+            </div>
+
+            <div class="card blk demo">
+              <div class="kicker">Demo Notice <span class="sub">정적 데모 고지</span></div>
+              <p class="top">공모전용 Netlify 데모는 서버 없이 동작한다.</p>
+              <dl>
+                <div class="r">
+                  <b>추천·안전·꽃말·이야기</b><span>실제 엔진과 데이터</span>
+                </div>
+                <div class="r">
+                  <b>카드 문구</b><span>API 키를 노출하지 않기 위해 미리 검토한 예문</span>
+                </div>
+                <div class="r"><b>본배포</b><span>서버에서 AI 메시지 생성 가능</span></div>
+              </dl>
+              <p class="foot">이 차이를 숨기지 않고 화면에서 안내한다.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="row3">
+          <article class="cap">
+            <div class="labs"><span class="pill ghost">관계와 마음부터 선택</span></div>
+            <div class="shot" style="--src: url('../shots/shot-input.png'); --k: 0.3147; --sx: 1344; --sy: 640">
+              <i></i>
+            </div>
+            <p class="shot-cap">추천 입력 화면 — <em>관계와 순간부터</em></p>
+          </article>
+
+          <article class="cap">
+            <div class="labs">
+              <span class="pill ghost">왜 이 꽃인지 설명</span>
+              <span class="pill ghost">실제 구매처로 연결</span>
+            </div>
+            <div class="shot" style="--src: url('../shots/shot-results.png'); --k: 0.365; --sx: 1536; --sy: 1400">
+              <i></i>
+            </div>
+            <p class="shot-cap">추천 결과 화면 — <em>고른 이유 다섯 줄, 아래로 판매처</em></p>
+          </article>
+
+          <article class="cap">
+            <div class="labs"><span class="pill ghost">크게 위험한 꽃은 추천 전 제외</span></div>
+            <div class="shot" style="--src: url('../shots/shot-story-safety.png'); --k: 0.4867; --sx: 472; --sy: 784">
+              <i></i>
+            </div>
+            <p class="shot-cap">이야기·안전 화면 — <em>「반려묘와 살아요」 조건</em></p>
+          </article>
+
+          <article class="cap">
+            <div class="labs"><span class="pill ghost">꽃과 함께 전할 문장</span></div>
+            <div class="shot" style="--src: url('../shots/shot-letter.png'); --k: 0.4867; --sx: 1648; --sy: 176">
+              <i></i>
+            </div>
+            <p class="shot-cap">편지 화면 — <em>건네는 행동으로</em></p>
+          </article>
+        </section>
+      </div>
+    </div>
+  </body>
+</html>

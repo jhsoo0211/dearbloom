@@ -1,0 +1,425 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <title>DearBloom — PAGE 1 / 5 문제·배경</title>
+    <link rel="stylesheet" href="deck.css" />
+    <style>
+      /* PAGE 1 — 문제·배경
+         §3 시각 구성: 좌 55% 헤드라인+질문 4개 / 우 45% 검색 탭 그래픽 / 하단 흐름.
+         산업 통계와 기능 설명은 이 장에 넣지 않는다. */
+      .s1 .bg-photo {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        background: url('assets/rose-red.jpg') center 32% / cover no-repeat;
+        opacity: 0.17;
+        filter: blur(3px) saturate(0.6);
+      }
+      .s1 .bg-veil {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        background: linear-gradient(100deg, rgba(10, 11, 9, 0.97) 34%, rgba(10, 11, 9, 0.72) 100%);
+      }
+
+      .s1-main {
+        flex: 1 1 auto;
+        display: flex;
+        gap: 54px;
+        min-height: 0;
+      }
+
+      /* ── 좌 55% ── */
+      .s1-l {
+        width: 990px;
+        flex: 0 0 auto;
+        display: flex;
+        flex-direction: column;
+      }
+      .s1-l .head {
+        margin: 20px 0 18px;
+      }
+      .s1-l .lead {
+        max-width: 950px;
+      }
+      .qhint {
+        margin: 22px 0 12px;
+        font-size: 23px;
+        color: var(--dim);
+      }
+      .qgrid {
+        flex: 1 1 auto;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 1fr 1fr;
+        gap: 16px;
+        min-height: 0;
+      }
+      .q {
+        position: relative;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 22px 24px 22px 58px;
+        font-size: 27px;
+        line-height: 1.42;
+        color: var(--text);
+        display: flex;
+        align-items: center;
+      }
+      .q::before {
+        content: '\201C';
+        position: absolute;
+        left: 20px;
+        top: 12px;
+        font-family: var(--serif);
+        font-size: 46px;
+        line-height: 1;
+        color: var(--gold);
+        opacity: 0.72;
+      }
+
+      /* ── 우 45% ── */
+      .s1-r {
+        flex: 1 1 auto;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+      }
+      .s1-rbody {
+        margin-top: 18px;
+        display: flex;
+        gap: 26px;
+        flex: 1 1 auto;
+        min-height: 0;
+      }
+
+      /* 검색 탭이 쌓이는 휴대폰 — 직접 그린 그래픽(상표 없음) */
+      .phone {
+        flex: 0 0 auto;
+        width: 384px;
+        border-radius: 40px;
+        padding: 12px;
+        background: linear-gradient(160deg, #2b2a25, #16160f 55%, #23221c);
+        box-shadow: 0 26px 60px rgba(0, 0, 0, 0.6), inset 0 0 0 1px rgba(246, 241, 232, 0.09);
+      }
+      .screen {
+        height: 100%;
+        border-radius: 30px;
+        background: #0e0f0c;
+        border: 1px solid rgba(246, 241, 232, 0.08);
+        padding: 14px 14px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .homebar {
+        flex: 0 0 auto;
+        height: 6px;
+        width: 128px;
+        margin: 4px auto 0;
+        border-radius: 999px;
+        background: rgba(246, 241, 232, 0.2);
+      }
+      .notch {
+        height: 22px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .notch span {
+        width: 96px;
+        height: 8px;
+        border-radius: 999px;
+        background: rgba(246, 241, 232, 0.16);
+      }
+      .sbar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        height: 46px;
+        padding: 0 14px;
+        border-radius: 999px;
+        background: rgba(246, 241, 232, 0.07);
+        border: 1px solid var(--line);
+      }
+      .sbar .mag {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid var(--gold);
+        position: relative;
+        flex: 0 0 auto;
+      }
+      .sbar .mag::after {
+        content: '';
+        position: absolute;
+        right: -6px;
+        bottom: -6px;
+        width: 9px;
+        height: 2px;
+        background: var(--gold);
+        transform: rotate(45deg);
+      }
+      .sbar b {
+        font-size: 22px;
+        font-weight: 500;
+        color: var(--dim);
+      }
+      .tabcount {
+        margin-left: auto;
+        font-size: 22px;
+        font-weight: 700;
+        color: #241a07;
+        background: var(--gold);
+        border-radius: 7px;
+        padding: 2px 9px;
+      }
+      .tabs {
+        flex: 1 1 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        min-height: 0;
+      }
+      .tab {
+        flex: 1 1 auto;
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        min-height: 56px;
+        padding: 0 12px;
+        border-radius: 12px;
+        background: rgba(246, 241, 232, 0.05);
+        border: 1px solid rgba(246, 241, 232, 0.09);
+      }
+      .tab .fav {
+        width: 24px;
+        height: 24px;
+        border-radius: 6px;
+        flex: 0 0 auto;
+        background: linear-gradient(140deg, rgba(217, 169, 74, 0.6), rgba(217, 169, 74, 0.16));
+        border: 1px solid rgba(217, 169, 74, 0.45);
+      }
+      .tab span {
+        font-size: 22px;
+        color: var(--text);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .tab .x {
+        margin-left: auto;
+        color: var(--dim);
+        font-size: 22px;
+        line-height: 1;
+        flex: 0 0 auto;
+      }
+      .tab.last {
+        border-color: var(--gold-line);
+        background: rgba(217, 169, 74, 0.11);
+      }
+
+      .s1-side {
+        flex: 1 1 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        min-width: 0;
+      }
+      .s1-side .repeat {
+        font-size: 23px;
+        line-height: 1.55;
+        color: var(--muted);
+      }
+      .accent {
+        margin-top: auto;
+        padding: 24px 26px;
+      }
+      .accent p {
+        font-family: var(--serif);
+        font-weight: 700;
+        font-size: 30px;
+        line-height: 1.44;
+        color: var(--gold-lt);
+        letter-spacing: -0.01em;
+      }
+      .stepnote {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+      }
+      .stepnote div {
+        display: flex;
+        gap: 11px;
+        align-items: baseline;
+        font-size: 22px;
+        color: var(--dim);
+      }
+      .stepnote em {
+        font-style: normal;
+        font-family: var(--serif);
+        color: var(--gold);
+        font-weight: 700;
+      }
+
+      /* ── 하단 흐름 ── */
+      .s1-bottom {
+        flex: 0 0 auto;
+        margin-top: 22px;
+        padding-top: 20px;
+        border-top: 1px solid var(--line);
+        display: flex;
+        gap: 40px;
+        align-items: flex-end;
+      }
+      .flow4 {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-top: 16px;
+      }
+      .fbox {
+        width: 176px;
+        height: 92px;
+        border-radius: 14px;
+        border: 1px solid var(--line-2);
+        background: var(--panel);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 4px;
+        padding: 0 20px;
+      }
+      .fbox b {
+        font-family: var(--serif);
+        font-size: 28px;
+        color: var(--ivory);
+        font-weight: 700;
+      }
+      .fbox i {
+        font-style: normal;
+        font-size: 22px;
+        color: var(--gold);
+        letter-spacing: 0.14em;
+        font-weight: 700;
+      }
+      .s1-concl {
+        flex: 1 1 auto;
+        padding-bottom: 4px;
+      }
+      .s1-concl p {
+        font-size: 25px;
+        line-height: 1.56;
+        color: var(--muted);
+      }
+      .s1-concl p b {
+        display: block;
+        margin-top: 6px;
+        font-family: var(--serif);
+        font-size: 31px;
+        line-height: 1.42;
+        color: var(--ivory);
+        font-weight: 700;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="slide s1">
+      <div class="bg-photo"></div>
+      <div class="bg-veil"></div>
+
+      <div class="frame">
+        <header class="topbar">
+          <div class="brand">
+            <span class="wordmark">dearbloom</span>
+            <span class="tagline">꽃을 고르는 이유까지 추천하는 AI · <b>제1회 일상뒤집기 AI 어플 아이디어 공모전</b></span>
+          </div>
+          <div class="pageno">PAGE 01 / 05</div>
+        </header>
+
+        <div class="s1-main">
+          <!-- 좌 55% -->
+          <section class="s1-l">
+            <div class="kicker">Background <span class="sub">문제·배경</span></div>
+            <h1 class="head">꽃은 주고 싶은데,<br />검색할수록 더 어려워집니다</h1>
+            <p class="lead">
+              생일, 기념일, 감사, 위로, 사과처럼 꽃으로 마음을 전하고 싶은 순간은 많습니다.<br />
+              하지만 막상 꽃을 고르려고 하면 고민이 시작됩니다.
+            </p>
+            <p class="qhint">사용자가 스스로에게 던지는 질문</p>
+            <div class="qgrid">
+              <div class="q">이 꽃말이 지금 관계에 정말 어울릴까?</div>
+              <div class="q">색이 달라지면 의미도 달라지나?</div>
+              <div class="q">상대가 고양이를 키우는데 괜찮을까?</div>
+              <div class="q">꽃과 함께 무슨 말을 적어야 하지?</div>
+            </div>
+          </section>
+
+          <!-- 우 45% -->
+          <section class="s1-r">
+            <div class="kicker">The Loop <span class="sub">한 번의 선물, 반복되는 검색</span></div>
+            <div class="s1-rbody">
+              <div class="phone">
+                <div class="screen">
+                  <div class="notch"><span></span></div>
+                  <div class="sbar">
+                    <i class="mag"></i><b>꽃 선물</b><span class="tabcount">6</span>
+                  </div>
+                  <div class="tabs">
+                    <div class="tab"><i class="fav"></i><span>꽃 추천 검색</span><i class="x">&times;</i></div>
+                    <div class="tab"><i class="fav"></i><span>꽃말 재검색</span><i class="x">&times;</i></div>
+                    <div class="tab"><i class="fav"></i><span>색상별 의미 확인</span><i class="x">&times;</i></div>
+                    <div class="tab"><i class="fav"></i><span>반려동물 안전 확인</span><i class="x">&times;</i></div>
+                    <div class="tab"><i class="fav"></i><span>카드 문구 검색</span><i class="x">&times;</i></div>
+                    <div class="tab last"><i class="fav"></i><span>실제 꽃집·구매처 검색</span><i class="x">&times;</i></div>
+                  </div>
+                  <div class="homebar"></div>
+                </div>
+              </div>
+
+              <div class="s1-side">
+                <p class="repeat">결국 한 번의 선물을 위해<br />다음 과정을 반복합니다.</p>
+                <div class="stepnote">
+                  <div><em>01</em> 꽃 추천 검색</div>
+                  <div><em>02</em> 꽃말 재검색</div>
+                  <div><em>03</em> 색상별 의미 확인</div>
+                  <div><em>04</em> 반려동물 안전 확인</div>
+                  <div><em>05</em> 카드 문구 검색</div>
+                  <div><em>06</em> 실제 꽃집·구매처 검색</div>
+                </div>
+                <div class="card gold accent">
+                  <p>한 번의 꽃 선물에,<br />최소 다섯 번의 검색과<br />판단이 필요합니다.</p>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- 하단 흐름 + 결론 -->
+        <footer class="s1-bottom">
+          <div>
+            <div class="kicker">The Gap <span class="sub">따로 찾아야 하는 것들</span></div>
+            <div class="flow4">
+              <div class="fbox"><i>01</i><b>꽃말</b></div>
+              <span class="arrow">&rarr;</span>
+              <div class="fbox"><i>02</i><b>안전</b></div>
+              <span class="arrow">&rarr;</span>
+              <div class="fbox"><i>03</i><b>문구</b></div>
+              <span class="arrow">&rarr;</span>
+              <div class="fbox"><i>04</i><b>구매처</b></div>
+            </div>
+          </div>
+          <div class="s1-concl">
+            <p>
+              문제는 꽃 정보가 없는 것이 아닙니다.
+              <b>내 마음에 이 꽃이 정말 맞는지 판단할 기준이 없는 것입니다.</b>
+            </p>
+          </div>
+        </footer>
+      </div>
+    </div>
+  </body>
+</html>

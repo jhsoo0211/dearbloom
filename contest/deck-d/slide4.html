@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="deck" content="deck-d:dearbloom">
+<title>DearBloom 04 — AI 구조·프로토타입</title>
+<link rel="stylesheet" href="deck.css">
+<style>
+  .s4-hl { font-size: 52px; }
+
+  .s4-principle { height: 78px; padding: 0 34px; margin-top: 22px; }
+  .s4-principle .band-in { justify-content: center; position: relative; }
+  .s4-principle .lb {
+    position: absolute;
+    left: 0;
+    font-family: var(--sans);
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    color: #e6bb5f;
+  }
+  .s4-principle .tx {
+    font-family: var(--serif);
+    font-size: 30px;
+    font-weight: 700;
+    letter-spacing: -0.022em;
+    color: #f8f3e8;
+  }
+
+  .s4-main {
+    display: grid;
+    grid-template-columns: 940px 1fr;
+    gap: 36px;
+    margin-top: 24px;
+  }
+
+  .s4-shots {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    margin-top: 12px;
+  }
+  .s4-shots .shot img { height: 176px; }
+
+  .s4-fn { margin-top: 16px; }
+  .s4-fn .t {
+    font-family: var(--sans);
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    color: var(--ink-3);
+    margin-bottom: 9px;
+  }
+  .s4-fn .row { display: flex; flex-wrap: wrap; gap: 7px; }
+  .s4-fn .c {
+    padding: 6px 12px;
+    border: 1px solid var(--line-2);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.7);
+    font-family: var(--sans);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ink-2);
+  }
+
+  .s4-vsbody {
+    display: grid;
+    grid-template-columns: 1fr 74px 1fr;
+    height: 316px;
+    margin-top: 9px;
+  }
+  .s4-vscol { display: flex; flex-direction: column; gap: 9px; }
+  .s4-vscol .vs-cell { flex: 1; font-size: 15px; }
+
+  .s4-safety { margin-top: 20px; }
+  .s4-safety .t {
+    font-family: var(--sans);
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--ink-3);
+    letter-spacing: 0.02em;
+    margin-bottom: 9px;
+  }
+  .s4-safety li {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.5;
+    color: var(--ink-2);
+    margin-bottom: 5px;
+  }
+  .s4-safety ul { margin: 0; padding: 0; list-style: none; }
+  .s4-safety li::before {
+    content: '';
+    flex: none;
+    width: 5px;
+    height: 5px;
+    margin-top: 8px;
+    border-radius: 50%;
+    background: var(--sage);
+  }
+  .s4-notice { margin-top: 18px; }
+</style>
+</head>
+<body>
+<div class="slide">
+  <div class="creases"></div>
+  <div class="blob" style="width:300px;height:250px;right:-90px;top:60px;"></div>
+  <div class="blob" style="width:270px;height:220px;left:-80px;bottom:-70px;opacity:.7;"></div>
+
+  <div class="stage">
+
+    <div class="tag sage" style="margin-bottom:14px;">AI 구조·프로토타입</div>
+
+    <h1 class="hl s4-hl">
+      AI는 마음을 읽고,<br>
+      <span class="em-sage">검증된 데이터</span>는 사실을 지킵니다
+    </h1>
+
+    <!-- 안전 원칙 -->
+    <div class="band s4-principle">
+      <div class="band-in">
+        <span class="lb">안전 원칙</span>
+        <span class="tx">사실은 <span style="color:#e6bb5f;">데이터</span>에서, AI는 <span style="color:#8fc9a3;">해석과 표현</span>에서 사용합니다.</span>
+      </div>
+    </div>
+
+    <div class="s4-main">
+
+      <!-- 좌 : 프로토타입 캡처 4장 -->
+      <div>
+        <div class="tag">지금 실제로 동작하는 화면</div>
+
+        <div class="s4-shots">
+          <div class="shot">
+            <span class="tape" style="top:-13px;left:20px;transform:rotate(-4deg);width:92px;height:26px;"></span>
+            <img src="assets/shot-input.png" alt="추천 입력 화면">
+            <div class="sc">
+              <span class="sn">01 · 추천 입력 화면</span>
+              <span class="callout">관계와 마음부터 선택</span>
+            </div>
+          </div>
+
+          <div class="shot">
+            <span class="tape" style="top:-13px;right:24px;transform:rotate(3.5deg);width:92px;height:26px;"></span>
+            <img src="assets/shot-results.png" alt="추천 결과 화면">
+            <div class="sc">
+              <span class="sn">02 · 추천 결과 화면</span>
+              <span class="callout gold">왜 이 꽃인지 설명</span>
+            </div>
+          </div>
+
+          <div class="shot">
+            <span class="tape" style="bottom:-11px;left:26px;transform:rotate(2.5deg);width:88px;height:24px;"></span>
+            <img src="assets/shot-story-safety.png" alt="이야기·안전 화면">
+            <div class="sc">
+              <span class="sn">03 · 이야기·안전 화면</span>
+              <span class="callout sage">크게 위험한 꽃은 추천 전 제외</span>
+            </div>
+          </div>
+
+          <div class="shot">
+            <span class="tape" style="bottom:-11px;right:22px;transform:rotate(-3deg);width:88px;height:24px;"></span>
+            <img src="assets/shot-letter.png" alt="편지 화면">
+            <div class="sc">
+              <span class="sn">04 · 편지·꽃 조합기</span>
+              <span style="display:flex;gap:6px;">
+                <span class="callout ink">꽃과 함께 전할 문장</span>
+                <span class="callout">실제 구매처로 연결</span>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="s4-fn">
+          <div class="t">현재 직접 눌러볼 수 있는 기능</div>
+          <div class="row">
+            <span class="c">관계·상황 기반 꽃 3안 추천</span>
+            <span class="c">자유 서술을 반영한 추천 변화</span>
+            <span class="c">반려동물 위험 꽃 제외</span>
+            <span class="c">꽃말·나라별 의미·설화·문학 확인</span>
+            <span class="c">여러 사람 각각 추천 및 단체 부케</span>
+            <span class="c">카드 문구 수정·새로 받기</span>
+            <span class="c">비밀 편지</span>
+            <span class="c">꽃 조합기</span>
+            <span class="c">366일 탄생화</span>
+            <span class="c">구매처 탐색</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 우 : 역할 분리 + 안전 원칙 + 고지 -->
+      <div>
+        <div class="vs-head">
+          <div>AI가 하는 일</div>
+          <div class="mid">VS</div>
+          <div>검증 데이터·엔진</div>
+        </div>
+
+        <div class="s4-vsbody">
+          <div class="s4-vscol">
+            <div class="vs-cell">“첫눈을 함께 봤어요” 같은 자유 문장 이해</div>
+            <div class="vs-cell">취향·추억·분위기 단서 추출</div>
+            <div class="vs-cell">추천 꽃에 맞는 자연스러운 메시지 작성</div>
+            <div class="vs-cell">사용자의 말투에 맞춰 문장 다듬기</div>
+          </div>
+
+          <div class="vs-mid">
+            <svg width="30" height="40" viewBox="0 0 34 46" fill="none"><path d="M0 0 34 23 0 46Z" fill="url(#a4)"/><defs><linearGradient id="a4" x1="0" y1="0" x2="34" y2="46"><stop stop-color="#4a4234"/><stop offset="1" stop-color="#1d1a16"/></linearGradient></defs></svg>
+          </div>
+
+          <div class="s4-vscol">
+            <div class="vs-cell r">꽃말과 출처 확인</div>
+            <div class="vs-cell r">고양이·강아지 안전성 판단</div>
+            <div class="vs-cell r">크게 위험한 꽃·비선호 꽃 강제 제외</div>
+            <div class="vs-cell r">관계·상황·계절·취향 점수와 3안 다양성</div>
+          </div>
+        </div>
+
+        <div class="s4-safety">
+          <div class="t">지켜지는 것</div>
+          <ul>
+            <li>AI가 출처 없는 꽃말을 만들지 않음</li>
+            <li>AI가 반려동물 독성을 추측하지 않음</li>
+            <li>메시지 생성 실패 시 검토된 예문으로 폴백</li>
+            <li>추억과 편지 원문은 공유 URL과 분석 로그에 남기지 않음</li>
+          </ul>
+        </div>
+
+        <div class="notice s4-notice">
+          <div class="nt">정적 데모 고지</div>
+          <div class="nb">
+            공모전용 Netlify 데모는 서버 없이 동작한다. 추천·안전·꽃말·이야기는 실제 엔진과 데이터를 쓰고,
+            카드 문구는 API 키를 노출하지 않기 위해 미리 검토한 예문을 쓴다. 본배포는 서버에서 AI 메시지 생성이 가능하다.
+            이 차이를 숨기지 않고 화면에서 안내한다.
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <div class="foot-label">AI 구조·프로토타입</div>
+  <div class="foot-num">04/05</div>
+</div>
+</body>
+</html>

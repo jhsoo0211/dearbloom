@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <title>DearBloom — PAGE 2 / 5 사용자 니즈·핵심 인사이트</title>
+    <link rel="stylesheet" href="deck.css" />
+    <style>
+      /* PAGE 2 — 사용자 니즈·핵심 인사이트
+         §3 시각 구성: 상단 핵심 인사이트 한 문장 / 중단 사용자 여정 6단계 /
+         하단 좌 핵심 사용자 · 하단 우 사용자 인용문. */
+      .s2-top {
+        flex: 0 0 auto;
+        display: flex;
+        gap: 56px;
+        align-items: flex-start;
+      }
+      .s2-top .l {
+        width: 1010px;
+        flex: 0 0 auto;
+      }
+      .s2-top .head {
+        margin-top: 18px;
+        font-size: 50px;
+      }
+      .s2-top .r {
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+      .insight {
+        margin-top: 18px;
+        padding: 26px 28px;
+      }
+      .insight p {
+        font-family: var(--serif);
+        font-weight: 700;
+        font-size: 31px;
+        line-height: 1.46;
+        color: var(--gold-lt);
+        letter-spacing: -0.01em;
+      }
+      .insight .tiny {
+        margin-top: 12px;
+        color: rgba(217, 169, 74, 0.7);
+      }
+
+      /* 사용자 여정 6단계 — §3 표를 카드 6장으로 */
+      .s2-mid {
+        flex: 0 0 auto;
+        display: flex;
+        flex-direction: column;
+        margin-top: 26px;
+        min-height: 0;
+      }
+      .journey {
+        flex: 0 0 auto;
+        height: 346px;
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 14px;
+        margin-top: 16px;
+      }
+      .j {
+        position: relative;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 18px 18px 20px;
+        display: flex;
+        flex-direction: column;
+      }
+      .j .n {
+        font-family: var(--serif);
+        font-weight: 700;
+        font-size: 26px;
+        color: var(--gold);
+        letter-spacing: 0.06em;
+      }
+      .j h3 {
+        margin-top: 4px;
+        font-size: 27px;
+        font-weight: 700;
+        color: var(--ivory);
+        letter-spacing: -0.01em;
+        line-height: 1.28;
+      }
+      .j .lab {
+        margin-top: 14px;
+        font-size: 22px;
+        color: var(--dim);
+        letter-spacing: 0.04em;
+      }
+      .j .think {
+        margin-top: 5px;
+        min-height: 66px;
+        font-size: 23px;
+        line-height: 1.42;
+        color: var(--text);
+      }
+      .j .prob {
+        margin-top: 4px;
+        padding-top: 14px;
+        border-top: 1px dashed rgba(201, 138, 155, 0.32);
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
+      .j .prob span {
+        font-size: 22px;
+        color: rgba(201, 138, 155, 0.72);
+        letter-spacing: 0.04em;
+      }
+      .j .prob b {
+        font-size: 23px;
+        line-height: 1.36;
+        color: var(--rose);
+        font-weight: 600;
+      }
+      /* 단계를 잇는 점 */
+      .j::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        right: -14px;
+        width: 14px;
+        border-top: 2px dashed rgba(217, 169, 74, 0.4);
+      }
+      .j:last-child::after {
+        display: none;
+      }
+
+      /* 하단 3단 */
+      .s2-bot {
+        flex: 1 1 auto;
+        display: flex;
+        gap: 20px;
+        margin-top: 26px;
+        min-height: 0;
+      }
+      .s2-bot > div {
+        display: flex;
+        flex-direction: column;
+      }
+      .core {
+        width: 560px;
+        flex: 0 0 auto;
+        justify-content: flex-start;
+      }
+      .core p {
+        margin: auto 0;
+        font-family: var(--serif);
+        font-size: 28px;
+        line-height: 1.55;
+        color: var(--ivory);
+        font-weight: 600;
+      }
+
+      .wants {
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+      .wants ul {
+        margin-top: 12px;
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 9px;
+      }
+      .wants li {
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+        font-size: 23px;
+        line-height: 1.36;
+        color: var(--text);
+      }
+      .wants li i {
+        flex: 0 0 auto;
+        margin-top: 9px;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--gold);
+      }
+
+      .quote {
+        width: 600px;
+        flex: 0 0 auto;
+        justify-content: center;
+        position: relative;
+      }
+      .quote::before {
+        content: '\201C';
+        position: absolute;
+        left: 24px;
+        top: 2px;
+        font-family: var(--serif);
+        font-size: 78px;
+        line-height: 1;
+        color: var(--gold);
+        opacity: 0.45;
+      }
+      .quote p {
+        font-family: var(--serif);
+        font-size: 27px;
+        line-height: 1.52;
+        color: var(--ivory);
+        font-weight: 600;
+        padding-left: 46px;
+      }
+      .quote .who {
+        margin-top: 16px;
+        padding-left: 46px;
+        font-size: 22px;
+        color: var(--dim);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="slide s2">
+      <div class="frame">
+        <header class="topbar">
+          <div class="brand">
+            <span class="wordmark">dearbloom</span>
+            <span class="tagline">사용자 니즈 · <b>핵심 인사이트</b></span>
+          </div>
+          <div class="pageno">PAGE 02 / 05</div>
+        </header>
+
+        <section class="s2-top">
+          <div class="l">
+            <div class="kicker">Needs <span class="sub">사용자가 진짜 원하는 것</span></div>
+            <h1 class="head">
+              사용자가 원하는 것은 더 많은 꽃이 아니라,<br />&ldquo;이 꽃이면 괜찮다&rdquo;는 이유입니다
+            </h1>
+          </div>
+          <div class="r">
+            <div class="kicker">Insight <span class="sub">핵심 인사이트</span></div>
+            <div class="card gold insight">
+              <p>꽃 고르기는 상품 검색이 아니라,<br />마음을 꽃으로 번역하는 과정입니다.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="s2-mid">
+          <div class="kicker">User Journey <span class="sub">한 번의 꽃 선물에서 사용자가 지나는 여섯 순간</span></div>
+          <div class="journey">
+            <article class="j">
+              <span class="n">01</span>
+              <h3>마음이 생김</h3>
+              <p class="lab">사용자의 생각</p>
+              <p class="think">사과하고 싶다 / 축하하고 싶다</p>
+              <div class="prob">
+                <span>남는 문제</span><b>감정을 꽃 이름으로 바꾸기 어려움</b>
+              </div>
+            </article>
+            <article class="j">
+              <span class="n">02</span>
+              <h3>꽃을 찾음</h3>
+              <p class="lab">사용자의 생각</p>
+              <p class="think">예쁜 꽃은 많은데 무엇이 맞지?</p>
+              <div class="prob"><span>남는 문제</span><b>선택 기준 부족</b></div>
+            </article>
+            <article class="j">
+              <span class="n">03</span>
+              <h3>꽃말을 확인</h3>
+              <p class="lab">사용자의 생각</p>
+              <p class="think">사이트마다 말이 다르다</p>
+              <div class="prob"><span>남는 문제</span><b>신뢰와 맥락 부족</b></div>
+            </article>
+            <article class="j">
+              <span class="n">04</span>
+              <h3>상대를 고려</h3>
+              <p class="lab">사용자의 생각</p>
+              <p class="think">고양이, 향, 취향은 괜찮나?</p>
+              <div class="prob"><span>남는 문제</span><b>안전과 개인화 부족</b></div>
+            </article>
+            <article class="j">
+              <span class="n">05</span>
+              <h3>전달 준비</h3>
+              <p class="lab">사용자의 생각</p>
+              <p class="think">뭐라고 적어야 하지?</p>
+              <div class="prob"><span>남는 문제</span><b>표현 부담</b></div>
+            </article>
+            <article class="j">
+              <span class="n">06</span>
+              <h3>구매</h3>
+              <p class="lab">사용자의 생각</p>
+              <p class="think">지금 어디서 살 수 있지?</p>
+              <div class="prob"><span>남는 문제</span><b>정보와 구매 분리</b></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="s2-bot">
+          <div class="card core">
+            <div class="kicker">Core User <span class="sub">핵심 사용자</span></div>
+            <p>꽃을 잘 모르지만,<br />가까운 사람에게 의미 있고 센스 있는<br />선물을 하고 싶은 20~30대 사용자</p>
+          </div>
+
+          <div class="card wants">
+            <div class="kicker">What They Want <span class="sub">사용자가 실제로 원하는 것</span></div>
+            <ul>
+              <li><i></i>관계와 상황을 먼저 이해해주는 것</li>
+              <li><i></i>왜 이 꽃이 맞는지 설명해주는 것</li>
+              <li><i></i>꽃말과 안전성을 믿을 수 있는 근거</li>
+              <li><i></i>함께 전할 말을 자연스럽게 만들어주는 것</li>
+              <li><i></i>추천 후 실제 구매까지 연결해주는 것</li>
+            </ul>
+          </div>
+
+          <div class="card quote">
+            <p>꽃 이름을 더 많이 알고 싶은 게 아니라,<br />이 사람에게 내 마음을 가장 잘 전할<br />꽃을 알고 싶어요.</p>
+            <p class="who">— 사용자 인용문</p>
+          </div>
+        </section>
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="deck" content="d2">
+<title>DearBloom 05 — 사업·임팩트</title>
+<link rel="stylesheet" href="deck.css">
+<style>
+  .s5-hl { font-size: 50px; }
+
+  .s5-head {
+    display: grid;
+    grid-template-columns: 1fr 712px;
+    gap: 44px;
+    align-items: start;
+  }
+  .s5-lead {
+    margin-top: 16px;
+    font-family: var(--sans);
+    font-size: 19px;
+    line-height: 1.6;
+    color: var(--ink-2);
+  }
+
+  .s5-headr {
+    display: grid;
+    grid-template-columns: 212px 1fr;
+    gap: 26px;
+    align-items: center;
+  }
+  .s5-headr .frame { width: 212px; transform: rotate(-2.4deg); }
+  .s5-headr .frame img { height: 226px; }
+
+  .s5-sub {
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: 0.11em;
+    color: var(--ink-4);
+    margin-bottom: 9px;
+  }
+
+  .s5-flow { margin-top: 16px; }
+  .s5-flow .node { min-height: 84px; }
+
+  .s5-time { margin-top: 16px; }
+
+  .s5-row {
+    display: grid;
+    grid-template-columns: 508px 704px 1fr;
+    gap: 18px;
+    margin-top: 16px;
+  }
+
+  .s5-vals { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  .s5-flower { padding: 15px 20px 14px; height: 100%; display: flex; flex-direction: column; }
+  .s5-flower .top {
+    display: grid;
+    grid-template-columns: 232px 1fr;
+    gap: 20px;
+    align-items: center;
+  }
+  .s5-flower .big {
+    font-family: var(--sans);
+    font-size: 40px;
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    color: var(--gold);
+    font-variant-numeric: tabular-nums;
+  }
+  .s5-flower .big small {
+    display: block;
+    font-family: var(--sans);
+    font-size: 13.5px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    color: var(--ink-3);
+    margin-top: 5px;
+    line-height: 1.4;
+  }
+  .s5-flower .desc {
+    font-family: var(--sans);
+    font-size: 14.5px;
+    line-height: 1.5;
+    color: var(--ink-2);
+  }
+  .s5-flower .paths { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
+  .s5-flower .paths .p {
+    padding: 5px 10px;
+    border: 1px solid rgba(157, 113, 31, 0.4);
+    border-radius: 999px;
+    background: rgba(157, 113, 31, 0.07);
+    font-family: var(--sans);
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--ink-2);
+  }
+  .s5-flower .srcnote { font-size: 13px; margin-top: auto; padding-top: 10px; }
+
+  .s5-close { height: 76px; margin-top: 16px; }
+  .s5-close .band-in { justify-content: center; }
+  .s5-close .closing { font-size: 31px; }
+</style>
+</head>
+<body>
+<div class="slide">
+  <div class="creases"></div>
+  <div class="blob" style="width:320px;height:260px;left:-100px;top:80px;"></div>
+  <div class="blob" style="width:280px;height:230px;right:-80px;top:520px;opacity:.7;"></div>
+
+  <div class="stage">
+
+    <!-- 헤더 : 헤드라인 + 도판 액자 + 화면 속 문장 -->
+    <div class="s5-head">
+      <div>
+        <div class="tag" style="margin-bottom:12px;">사업·임팩트</div>
+        <h1 class="hl s5-hl">
+          꽃을 고르는 귀찮음을 줄이고,<br>
+          꽃을 살 <span class="em-gold">새로운 이유</span>를 만듭니다
+        </h1>
+        <p class="s5-lead">
+          기념일에만 사던 꽃을 감사·응원·위로·화해의 순간으로 넓히고,<br>
+          그 선택을 지역 꽃집과 판매처까지 이어 줍니다.
+        </p>
+      </div>
+
+      <div class="s5-headr">
+        <div class="frame">
+          <span class="tape" style="top:-13px;left:-14px;transform:rotate(-23deg);width:92px;height:26px;"></span>
+          <img src="assets/ranunculus.jpg" alt="">
+        </div>
+        <div class="screenquote">
+          <div class="qm">&ldquo;</div>
+          <div class="qt">꽃보다 마음이 먼저예요.<br>아래 문장부터 건네보세요.</div>
+          <div class="qs">DearBloom 추천 결과 화면에서</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 도식 1 : 확장 구조 플로우 -->
+    <div class="s5-flow">
+      <div class="s5-sub">확장 구조 — 한 번의 추천이 다음 추천을 낫게 만든다</div>
+      <div class="dflow">
+        <div class="node">
+          <div class="nn">STEP 01</div>
+          <div class="nt">의미 있는 꽃 발견</div>
+        </div>
+        <div class="sep"><svg width="22" height="30" viewBox="0 0 34 46" fill="none"><path d="M0 0 34 23 0 46Z" fill="#c8bda6"/></svg></div>
+        <div class="node">
+          <div class="nn">STEP 02</div>
+          <div class="nt">추천 결과 선택</div>
+        </div>
+        <div class="sep"><svg width="22" height="30" viewBox="0 0 34 46" fill="none"><path d="M0 0 34 23 0 46Z" fill="#c8bda6"/></svg></div>
+        <div class="node">
+          <div class="nn">STEP 03</div>
+          <div class="nt">편지·공유</div>
+        </div>
+        <div class="sep"><svg width="22" height="30" viewBox="0 0 34 46" fill="none"><path d="M0 0 34 23 0 46Z" fill="#c8bda6"/></svg></div>
+        <div class="node">
+          <div class="nn">STEP 04</div>
+          <div class="nt">판매처·지역 꽃집 이동</div>
+        </div>
+        <div class="sep"><svg width="22" height="30" viewBox="0 0 34 46" fill="none"><path d="M0 0 34 23 0 46Z" fill="#c8bda6"/></svg></div>
+        <div class="node last">
+          <div class="nn">STEP 05</div>
+          <div class="nt">다음 추천에 선호 반영</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 도식 2 : 사업 모델 타임라인 -->
+    <div class="s5-time">
+      <div class="s5-sub">사업 모델 — 추천이 쌓일수록 뒤 단계가 열린다</div>
+      <div class="dtime">
+        <div class="spine"></div>
+        <div class="track">
+          <div class="stop">
+            <div class="dot">1</div>
+            <div class="st">꽃 판매처·지역 꽃집<br>제휴 및 구매 전환</div>
+            <div class="sd">추천 결과에서 바로 이어지는 구매</div>
+          </div>
+          <div class="stop">
+            <div class="dot">2</div>
+            <div class="st">지역·수령일 기반<br>꽃집 예약·문의</div>
+            <div class="sd">언제 어디서 받을지까지 연결</div>
+          </div>
+          <div class="stop">
+            <div class="dot">3</div>
+            <div class="st">꽃집 고객<br>상담용 추천 도구</div>
+            <div class="sd">사장님이 손님에게 쓰는 도구로</div>
+          </div>
+          <div class="stop">
+            <div class="dot">4</div>
+            <div class="st">선물 플랫폼·쇼핑몰용<br>추천 위젯 / API</div>
+            <div class="sd">추천 엔진 자체를 파는 단계</div>
+          </div>
+          <div class="stop">
+            <div class="dot">5</div>
+            <div class="st">관계 기록·기념일 알림<br>고급 편지 프리미엄</div>
+            <div class="sd">사용자와 오래 남는 관계 데이터</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 타일 : 사용자 가치 · 화훼산업 연결 · 검증 지표 -->
+    <div class="s5-row">
+
+      <div>
+        <div class="s5-sub">사용자 가치</div>
+        <div class="s5-vals">
+          <div class="vtile">
+            <div class="vk">VALUE 01</div>
+            <div class="vt">한 번의 흐름에서 꽃·의미·안전·문구·구매 해결</div>
+          </div>
+          <div class="vtile">
+            <div class="vk">VALUE 02</div>
+            <div class="vt">인기순이 아니라 관계와 상황에 맞는 선택</div>
+          </div>
+          <div class="vtile sage">
+            <div class="vk">VALUE 03</div>
+            <div class="vt">위험한 꽃 선물을 사전에 방지</div>
+          </div>
+          <div class="vtile">
+            <div class="vk">VALUE 04</div>
+            <div class="vt">“왜 이 꽃인지” 자신의 말로 설명 가능</div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="s5-sub">화훼산업 연결</div>
+        <div class="card soft s5-flower">
+          <div class="top">
+            <div class="big">5,344억 원<small>2024년 국내 화훼류 생산액<br>2015년보다 명목 기준 약 15% 낮음</small></div>
+            <div class="desc">DearBloom은 산업 문제를 직접 해결한다고 과장하지 않는다. 대신 다음의 <b>측정 가능한 경로</b>를 만든다.</div>
+          </div>
+          <div class="paths">
+            <span class="p">기념일 외 감사·응원·위로·화해로 구매 계기 확대</span>
+            <span class="p">익숙하지 않은 품종 발견</span>
+            <span class="p">온라인 추천 사용자를 지역 꽃집으로 연결</span>
+            <span class="p">어떤 관계·상황에서 어떤 꽃을 찾는지 수요 데이터 축적</span>
+          </div>
+          <div class="srcnote">출처 · 국립원예특작과학원 「원예작물별 산업 생산액」 (2024년 534.4십억 원, 2015년 629.8십억 원)</div>
+        </div>
+      </div>
+
+      <div>
+        <div class="s5-sub">초기 검증 지표 · 목표 가설</div>
+        <div class="tiles">
+          <div class="tile"><div class="tk">추천 완료율</div><div class="tv">60<small>% 이상</small></div></div>
+          <div class="tile"><div class="tk">추천 적합도</div><div class="tv">4.0<small>/5 이상</small></div></div>
+          <div class="tile"><div class="tk">메시지·편지 행동률</div><div class="tv">20<small>% 이상</small></div></div>
+          <div class="tile"><div class="tk">저장·공유율</div><div class="tv">15<small>% 이상</small></div></div>
+          <div class="tile"><div class="tk">구매처 이동률</div><div class="tv">10<small>% 이상</small></div></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 마지막 한 문장 -->
+    <div class="band s5-close">
+      <div class="band-in">
+        <div class="closing">
+          DearBloom은 꽃을 판매하는 서비스보다 먼저, <span class="g">꽃을 선택할 이유</span>를 만들어 주는 서비스입니다.
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="foot-label">사업·임팩트</div>
+  <div class="foot-num">05/05</div>
+</div>
+</body>
+</html>

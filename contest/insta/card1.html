@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>DearBloom 인스타 카드 1 / 7 — 훅</title>
+<link rel="stylesheet" href="insta.css">
+<style>
+  /* 튤립이 상단 55%에 오도록 프레임을 위로 당긴다 */
+  .c1 .bg {
+    background-image: url('assets/bg-1-tulip.jpg');
+    background-position: 50% 22%;
+  }
+  .c1 .scrim::before {
+    background: linear-gradient(180deg,
+        rgba(10, 9, 8, .34) 0%,
+        rgba(10, 9, 8, .30) 26%,
+        rgba(10, 9, 8, .72) 50%,
+        rgba(10, 9, 8, .95) 68%,
+        rgba(10, 9, 8, .99) 100%);
+  }
+  .c1 h1 { font-size: 92px; }
+</style>
+</head>
+<body>
+<div class="card c1">
+  <div class="bg"></div>
+  <div class="scrim"></div>
+
+  <div class="inner">
+    <header>
+      <span class="wordmark">dearbloom</span><span class="wordmark-sub">꽃 선물 추천 AI</span>
+    </header>
+
+    <div class="spacer"></div>
+
+    <h1>꽃은 주고 싶은데,<br>검색할수록<br><span class="gold">더 어려워집니다</span></h1>
+
+    <p class="lead mt-40">꽃으로 마음을 전하고 싶은 순간은 많습니다.<br>막상 고르려고 하면 고민이 시작됩니다.</p>
+
+    <div class="mt-52">
+      <span class="swipe">밀어서 보기<span class="arrow"></span></span>
+    </div>
+  </div>
+
+  <div class="idx"><b>01</b> / 07</div>
+</div>
+</body>
+</html>

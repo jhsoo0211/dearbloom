@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>DearBloom — PAGE 1 / 5 · 문제·배경</title>
+<link rel="stylesheet" href="deck.css">
+<style>
+  .slide1 { --h-size: 92px; }
+  .slide1 .split {
+    display: grid;
+    grid-template-columns: 940px 1fr;
+    column-gap: 64px;
+    align-items: start;
+  }
+  .slide1 .bg { background-image: url('assets/bg-1-lilac.jpg'); }
+  /* 표지 슬라이드는 사진을 조금 더 살린다 */
+  .slide1 .scrim::before {
+    background: linear-gradient(100deg, rgba(10,9,8,.97) 0%, rgba(10,9,8,.92) 32%,
+                                        rgba(10,9,8,.80) 60%, rgba(10,9,8,.70) 100%);
+  }
+  .slide1 .tab.t6 { opacity: .46; }
+  .slide1 .tab.t5 { opacity: .58; }
+</style>
+</head>
+<body>
+<div class="slide slide1">
+  <div class="bg"></div>
+  <div class="scrim"></div>
+
+  <header class="top">
+    <span class="wordmark">dearbloom</span>
+    <span class="wordmark-sub">꽃 선물 추천 AI</span>
+  </header>
+
+  <main class="body">
+    <div class="split">
+
+      <div>
+        <h1>꽃은 주고 싶은데,<br>검색할수록<br><span class="gold">더 어려워집니다</span></h1>
+        <p class="emph mt-44">한 번의 꽃 선물에,<br><b>최소 다섯 번의 검색과 판단</b>이 필요합니다.</p>
+      </div>
+
+      <div>
+        <div class="tabstack">
+          <div class="tab t1 live">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" style="color:var(--gold)"><circle cx="10.5" cy="10.5" r="6.6"/><path d="M15.4 15.4 L20.6 20.6"/></svg>
+            <span class="q">꽃 추천 검색</span><span class="x">&#215;</span>
+          </div>
+          <div class="tab t2">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" style="color:var(--cream-38)"><circle cx="10.5" cy="10.5" r="6.6"/><path d="M15.4 15.4 L20.6 20.6"/></svg>
+            <span class="q">꽃말 재검색</span><span class="x">&#215;</span>
+          </div>
+          <div class="tab t3">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" style="color:var(--cream-38)"><circle cx="10.5" cy="10.5" r="6.6"/><path d="M15.4 15.4 L20.6 20.6"/></svg>
+            <span class="q">색상별 의미 확인</span><span class="x">&#215;</span>
+          </div>
+          <div class="tab t4">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" style="color:var(--cream-38)"><circle cx="10.5" cy="10.5" r="6.6"/><path d="M15.4 15.4 L20.6 20.6"/></svg>
+            <span class="q">반려동물 안전 확인</span><span class="x">&#215;</span>
+          </div>
+          <div class="tab t5">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" style="color:var(--cream-38)"><circle cx="10.5" cy="10.5" r="6.6"/><path d="M15.4 15.4 L20.6 20.6"/></svg>
+            <span class="q">카드 문구 검색</span><span class="x">&#215;</span>
+          </div>
+          <div class="tab t6">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" style="color:var(--cream-38)"><circle cx="10.5" cy="10.5" r="6.6"/><path d="M15.4 15.4 L20.6 20.6"/></svg>
+            <span class="q">실제 꽃집·구매처 검색</span><span class="x">&#215;</span>
+          </div>
+        </div>
+
+        <div class="chain mt-44">
+          <span>꽃말</span><span class="arw">&#8594;</span>
+          <span>안전</span><span class="arw">&#8594;</span>
+          <span>문구</span><span class="arw">&#8594;</span>
+          <span class="last">구매처</span>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <footer class="foot">
+    <p class="conclusion">문제는 꽃 정보가 없는 것이 아닙니다.<strong>내 마음에 이 꽃이 정말 맞는지 판단할 기준이 없는 것입니다.</strong></p>
+    <span class="pageno">01 <em>/</em> 05</span>
+  </footer>
+</div>
+</body>
+</html>

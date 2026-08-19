@@ -16,17 +16,8 @@
   }
   .s3-one b { font-weight: 700; color: var(--ink); }
 
-  .s3-phones { margin-top: 24px; --ph: 457px; }
-
-  .s3-slogan { height: 76px; margin-top: 22px; }
-  .s3-slogan .band-in { justify-content: center; }
-  .s3-slogan .tx {
-    font-family: var(--serif);
-    font-size: 30px;
-    font-weight: 700;
-    letter-spacing: -0.022em;
-    color: #f8f3e8;
-  }
+  /* 대제목·리드 아래 남는 높이를 전부 폰 높이로 쓴다 */
+  .s3-phones { margin-top: 22px; --sh: 636px; gap: 20px; }
 </style>
 </head>
 <body>
@@ -53,93 +44,57 @@
     </h1>
 
     <p class="s3-one">
-      DearBloom은 관계·상황·취향·추억·안전 조건을 이해해, 검증된 꽃 데이터에서 성격이 다른 꽃 3안과 선택 이유를 추천합니다.
-      <b>아래 네 화면은 지금 실제로 눌러 볼 수 있는 프로토타입입니다.</b>
+      DearBloom은 관계와 상황, 취향과 추억, 안전 조건까지 읽고 검증된 꽃 데이터에서 성격이 다른 꽃 세 가지(안심·의미·대담)와 고른 이유를 함께 내놓습니다.
+      <b>아래 네 화면은 지금 바로 눌러 볼 수 있는 프로토타입입니다.</b>
     </p>
 
-    <!-- 실화면 4대 : 마음 → 이야기 → 결과 3안 → 이유와 문장 -->
-    <div class="phones s3-phones">
+    <!-- 실화면 4대 전신 : 마음 → 이야기 → 결과 3안 → 이유와 문장 -->
+    <div class="fphones s3-phones">
 
-      <div>
-        <div class="pshow">
-          <div class="pdev">
-            <div class="pscr">
-              <span class="slit"></span>
-              <img src="assets/m-question-heart.png" alt="전하고 싶은 마음을 고르는 화면" style="--oy:0%;">
-            </div>
+      <div class="fphone">
+        <div class="fdev">
+          <div class="fscr">
+            <span class="slit"></span>
+            <img src="assets/m-question-heart.png" alt="전하고 싶은 마음을 고르는 화면">
           </div>
+          <span class="hbar"></span>
         </div>
-        <div class="pcap">
-          <div class="pn">01 마음</div>
-          <div class="pt">꽃이 아니라 마음부터</div>
-          <div class="pd">사과·고백·감사·축하·위로처럼 지금 전하고 싶은 마음을 먼저 고릅니다.</div>
-          <div class="pchips"><span class="callout">관계와 마음부터 선택</span></div>
-        </div>
+        <div class="plab"><span class="n">01</span>마음부터 고릅니다</div>
       </div>
 
-      <div>
-        <div class="pshow">
-          <div class="pdev">
-            <div class="pscr">
-              <span class="slit"></span>
-              <img src="assets/m-question-traits.png" alt="상대의 이야기를 자유롭게 적는 화면" style="--oy:0%;">
-            </div>
+      <div class="fphone">
+        <div class="fdev">
+          <div class="fscr">
+            <span class="slit"></span>
+            <img src="assets/m-question-traits.png" alt="상대의 이야기를 자유롭게 적는 화면">
           </div>
+          <span class="hbar"></span>
         </div>
-        <div class="pcap">
-          <div class="pn">02 이야기</div>
-          <div class="pt">그 사람 이야기 그대로</div>
-          <div class="pd">「바닷가의 보라색 노을」 같은 한 줄이 추천 단서가 되어 결과를 바꿉니다.</div>
-          <div class="pchips"><span class="callout ink">적어 준 이야기는 저장하지 않음</span></div>
-        </div>
+        <div class="plab"><span class="n">02</span>그 사람 이야기 그대로</div>
       </div>
 
-      <div>
-        <div class="pshow">
-          <div class="pdev">
-            <div class="pscr">
-              <span class="slit"></span>
-              <img src="assets/m-results.png" alt="성격이 다른 꽃 3안이 보이는 결과 화면" style="--oy:62%;">
-            </div>
+      <div class="fphone">
+        <div class="fdev">
+          <div class="fscr">
+            <span class="slit"></span>
+            <img src="assets/m-results.png" alt="성격이 다른 꽃 3안이 보이는 결과 화면">
           </div>
+          <span class="hbar"></span>
         </div>
-        <div class="pcap">
-          <div class="pn">03 결과</div>
-          <div class="pt">성격이 다른 꽃 3안</div>
-          <div class="roles">
-            <div><b>안심</b><span>관계와 상황에 가장 무난한 꽃</span></div>
-            <div><b>의미</b><span>꽃말과 이야기가 가장 잘 맞는 꽃</span></div>
-            <div><b>대담</b><span>취향과 추억을 더 강하게 반영한 꽃</span></div>
-          </div>
-        </div>
+        <div class="plab"><span class="n">03</span>성격이 다른 꽃 3안</div>
       </div>
 
-      <div>
-        <div class="pshow">
-          <div class="pdev">
-            <div class="pscr">
-              <span class="slit"></span>
-              <img src="assets/m-why.png" alt="추천 이유와 함께 전할 문장이 보이는 화면" style="--oy:0%;">
-            </div>
+      <div class="fphone">
+        <div class="fdev">
+          <div class="fscr">
+            <span class="slit"></span>
+            <img src="assets/m-why.png" alt="추천 이유와 함께 전할 문장이 보이는 화면">
           </div>
+          <span class="hbar"></span>
         </div>
-        <div class="pcap">
-          <div class="pn">04 이유·문장</div>
-          <div class="pt">이유가 있는 추천</div>
-          <div class="pd">꽃 이름만 주지 않고 어떤 입력 때문에 골랐는지 밝히고, 함께 전할 문장까지 만듭니다.</div>
-          <div class="pchips">
-            <span class="callout gold">왜 이 꽃인지 설명</span>
-            <span class="callout ink">꽃과 함께 전할 문장</span>
-          </div>
-        </div>
+        <div class="plab"><span class="n">04</span>고른 이유와 전할 문장</div>
       </div>
 
-    </div>
-
-    <div class="band s3-slogan">
-      <div class="band-in">
-        <span class="tx">하고 싶은 <span style="color:#e6bb5f;">마음부터</span> 고르면, 꽃과 이야기가 그 마음을 전해드립니다.</span>
-      </div>
     </div>
 
   </div>

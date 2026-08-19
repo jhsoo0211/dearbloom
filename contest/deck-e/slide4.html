@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>DearBloom 소개서 4/5 — AI 구조·프로토타입 (버전 E · 나이트 보태니컬)</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="preconnect" href="https://hangeul.pstatic.net" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap">
+<link rel="stylesheet" href="deck.css">
+</head>
+<body>
+
+<div class="slide">
+  <div class="bg" aria-hidden="true"></div>
+  <div class="edge" aria-hidden="true"></div>
+  <svg class="grain" aria-hidden="true" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+    <filter id="gr4"><feTurbulence type="fractalNoise" baseFrequency="0.82" numOctaves="3" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter>
+    <rect width="100%" height="100%" filter="url(#gr4)"/>
+  </svg>
+
+  <header class="deck-head">
+    <span class="brand">
+      <svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><g fill="currentColor">
+        <path d="M12 2.2c2.55 1.85 3.82 3.98 3.82 6.4 0 2.33-1.27 4.18-3.82 5.55-2.55-1.37-3.82-3.22-3.82-5.55 0-2.42 1.27-4.55 3.82-6.4Z"/>
+        <path d="M3.3 9.1c2.94-.5 5.28.14 7.03 1.92 1.62 1.65 2.02 3.74 1.2 6.26-2.86-.24-4.96-1.24-6.28-3.01C3.93 12.5 3.3 10.86 3.3 9.1Z" opacity=".72"/>
+        <path d="M20.7 9.1c-2.94-.5-5.28.14-7.03 1.92-1.62 1.65-2.02 3.74-1.2 6.26 2.86-.24 4.96-1.24 6.28-3.01 1.32-1.77 1.95-3.41 1.95-5.17Z" opacity=".72"/>
+        <path d="M11.45 17.4h1.1V22h-1.1z" opacity=".45"/></g></svg>
+      <span class="wm">dearbloom</span>
+      <span class="ko">디어블룸</span>
+    </span>
+    <span class="head-mid">
+      <span class="rule"></span>
+      <span class="chapter">Prototype<span class="ko">AI 구조 · 프로토타입</span></span>
+    </span>
+    <span class="pager"><span class="now">04</span><span class="of">/ 05</span></span>
+  </header>
+
+  <main class="stage">
+
+    <!-- ══ 상단 — 헤드라인 + 안전 원칙 ══ -->
+    <div class="p4-top">
+      <section>
+        <p class="overline">Working now<span class="ko">지금 실제로 동작합니다</span></p>
+        <h1 class="display">AI는 마음을 읽고,<br><span class="em">검증된 데이터</span>는 사실을 지킵니다</h1>
+      </section>
+
+      <aside class="principle">
+        <span class="lab">Safety principle</span>
+        <p>사실은 데이터에서, AI는 해석과 표현에서 사용합니다.</p>
+      </aside>
+    </div>
+
+    <div class="p4-main">
+
+      <!-- 좌 — 역할 분리 + 안전 원칙 세부 -->
+      <section class="p4-left">
+        <p class="col-lab">역할 분리</p>
+        <div class="split">
+          <div class="split-hd"><span>AI가 하는 일</span><span>검증 데이터 · 엔진이 하는 일</span></div>
+          <div class="split-row">
+            <p>“첫눈을 함께 봤어요” 같은 자유 문장 이해</p>
+            <p>꽃말과 출처 확인</p>
+          </div>
+          <div class="split-row">
+            <p>취향·추억·분위기 단서 추출</p>
+            <p>고양이·강아지 안전성 판단</p>
+          </div>
+          <div class="split-row">
+            <p>추천 꽃에 맞는 자연스러운 메시지 작성</p>
+            <p>크게 위험한 꽃·비선호 꽃 강제 제외</p>
+          </div>
+          <div class="split-row">
+            <p>사용자의 말투에 맞춰 문장 다듬기</p>
+            <p>관계·상황·계절·취향 점수와 3안 다양성</p>
+          </div>
+        </div>
+
+        <div class="safety">
+          <p class="col-lab">안전 원칙</p>
+          <ul>
+            <li><svg class="tick" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="m3 8.4 3 3 7-7.4"/></svg>
+              <span>AI가 출처 없는 꽃말을 만들지 않음</span></li>
+            <li><svg class="tick" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="m3 8.4 3 3 7-7.4"/></svg>
+              <span>AI가 반려동물 독성을 추측하지 않음</span></li>
+            <li><svg class="tick" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="m3 8.4 3 3 7-7.4"/></svg>
+              <span>메시지 생성 실패 시 검토된 예문으로 폴백</span></li>
+            <li><svg class="tick" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="m3 8.4 3 3 7-7.4"/></svg>
+              <span>추억과 편지 원문은 공유 URL과 분석 로그에 남기지 않음</span></li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- 우 — 실제 프로토타입 캡처 4컷 + 콜아웃 -->
+      <div class="shots4">
+
+        <figure class="shot4">
+          <div class="shot" style="--img:url('assets/shot-input.png'); --bs:950px auto; --bp:26% 20%;" role="img" aria-label="추천 입력 화면 — 어떤 사이인가요"></div>
+          <span class="callout" style="left:14px; bottom:54px;"><span class="n">01</span>관계와 마음부터 선택</span>
+          <figcaption class="shot-cap"><b>추천 입력</b><span>관계·마음·취향 · 다섯 걸음 중 첫 번째</span></figcaption>
+        </figure>
+
+        <figure class="shot4">
+          <div class="shot" style="--img:url('assets/shot-results.png'); --bs:950px auto; --bp:23% 92%;" role="img" aria-label="추천 결과 화면 — 꽃 3안과 추천 이유"></div>
+          <span class="callout" style="left:14px; bottom:54px;"><span class="n">02</span>왜 이 꽃인지 설명</span>
+          <span class="callout" style="right:14px; top:12px;"><span class="n">03</span>실제 구매처로 연결</span>
+          <figcaption class="shot-cap"><b>추천 결과</b><span>안심·의미·대담 3안 + 이 꽃을 고른 이유</span></figcaption>
+        </figure>
+
+        <figure class="shot4">
+          <div class="shot" style="--img:url('assets/shot-story-safety.png'); --bs:950px auto; --bp:30% 48%;" role="img" aria-label="이야기·안전 화면 — 나라별 꽃말과 문학"></div>
+          <span class="callout" style="left:14px; bottom:54px;"><span class="n">04</span>크게 위험한 꽃은 추천 전 제외</span>
+          <figcaption class="shot-cap"><b>이야기 · 안전</b><span>나라별 꽃말 7갈래 · 문학에서 온 이야기 · 출처</span></figcaption>
+        </figure>
+
+        <figure class="shot4">
+          <div class="shot" style="--img:url('assets/shot-letter.png'); --bs:950px auto; --bp:87% 53%;" role="img" aria-label="편지 화면 — 편지 쓰기와 실시간 편지지 미리보기"></div>
+          <span class="callout" style="left:14px; bottom:54px;"><span class="n">05</span>꽃과 함께 전할 문장</span>
+          <figcaption class="shot-cap"><b>비밀 편지</b><span>실시간 편지지 미리보기 · 꽃과 도판 동봉</span></figcaption>
+        </figure>
+      </div>
+    </div>
+
+    <!-- ══ 하단 — 지금 눌러볼 수 있는 기능 + 정적 데모 고지 ══ -->
+    <div class="p4-bottom">
+      <div class="trylive">
+        <span class="lab">현재 직접 눌러볼 수 있는 기능</span>
+        <p>관계·상황 기반 꽃 3안 추천<span class="sep">·</span>자유 서술을 반영한 추천 변화<span class="sep">·</span>반려동물 위험 꽃 제외<span class="sep">·</span>꽃말·나라별 의미·설화·문학 확인<span class="sep">·</span>여러 사람 각각 추천 및 단체 부케<span class="sep">·</span>카드 문구 수정·새로 받기<span class="sep">·</span>비밀 편지<span class="sep">·</span>꽃 조합기<span class="sep">·</span>366일 탄생화<span class="sep">·</span>구매처 탐색</p>
+      </div>
+
+      <aside class="notice">
+        <span class="lab">정적 데모 고지</span>
+        <div class="rows">
+          <p><b>추천·안전·꽃말·이야기</b> 실제 엔진과 데이터</p>
+          <p><b>카드 문구</b> 미리 검토한 예문</p>
+          <p><b>본배포</b> 서버에서 AI 메시지 생성 가능</p>
+        </div>
+        <p class="say">이 차이를 숨기지 않고 화면에서 안내한다.</p>
+      </aside>
+    </div>
+  </main>
+
+  <footer class="deck-foot">
+    <span><span class="tag">DearBloom</span> &nbsp;꽃을 고르는 이유까지 추천하는 AI</span>
+    <span>제1회 일상뒤집기 AI 어플 아이디어 공모전 · 사업 소개서 4 / 5</span>
+  </footer>
+</div>
+
+</body>
+</html>

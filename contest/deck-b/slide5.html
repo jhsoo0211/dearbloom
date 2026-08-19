@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <title>DearBloom — PAGE 5 / 5 사업·임팩트</title>
+    <link rel="stylesheet" href="deck.css" />
+    <style>
+      /* PAGE 5 — 사업·임팩트
+         §3 시각 구성: 좌측 사용자 가치·확장 구조 / 우측 사업 모델 / 하단 지표와 마지막 문장.
+         산업 통계는 머리 오른쪽 한 줄로만 둔다 — PAGE 1 의 문제를 덮지 않게. */
+      .s5-head {
+        flex: 0 0 auto;
+        display: flex;
+        gap: 46px;
+        align-items: flex-start;
+      }
+      .s5-head .l {
+        width: 1010px;
+        flex: 0 0 auto;
+      }
+      .s5-head .head {
+        margin-top: 12px;
+        font-size: 42px;
+      }
+      .s5-head .r {
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+      .stat {
+        margin-top: 10px;
+        padding: 14px 20px;
+      }
+      .stat .big {
+        display: flex;
+        align-items: baseline;
+        gap: 12px;
+      }
+      .stat .big b {
+        font-family: var(--serif);
+        font-size: 34px;
+        font-weight: 700;
+        color: var(--gold-lt);
+        line-height: 1.3;
+      }
+      .stat .big span {
+        font-size: 22px;
+        color: var(--gold);
+        font-weight: 600;
+      }
+      .stat p {
+        margin-top: 7px;
+        font-size: 22px;
+        line-height: 1.34;
+        color: var(--muted);
+      }
+      .stat .src {
+        margin-top: 5px;
+        font-size: 22px;
+        color: var(--dim);
+      }
+
+      /* ── 본문 두 단 ── */
+      .s5-body {
+        flex: 0 0 auto;
+        display: flex;
+        gap: 18px;
+        margin-top: 14px;
+      }
+      .s5-col {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .s5-col.l {
+        width: 900px;
+        flex: 0 0 auto;
+      }
+      .s5-col.r {
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+      .blk {
+        display: flex;
+        flex-direction: column;
+        padding: 14px 20px;
+      }
+      .blk > .kicker {
+        flex: 0 0 auto;
+        margin-bottom: 10px;
+      }
+
+      /* 사용자 가치 */
+      .values {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px 18px;
+      }
+      .values div {
+        display: flex;
+        gap: 11px;
+        align-items: flex-start;
+        font-size: 22px;
+        line-height: 1.34;
+        color: var(--text);
+      }
+      .values div i {
+        flex: 0 0 auto;
+        margin-top: 8px;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--gold);
+      }
+
+      /* 확장 구조 5단계 */
+      .s5-col.l > .card:last-child {
+        flex: 1 1 auto;
+      }
+      .chain {
+        flex: 1 1 auto;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-around;
+      }
+      .chain .step {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        height: 34px;
+      }
+      .chain .step em {
+        font-style: normal;
+        font-family: var(--serif);
+        font-size: 23px;
+        font-weight: 700;
+        color: var(--gold);
+        width: 34px;
+        flex: 0 0 auto;
+      }
+      .chain .step b {
+        font-size: 24px;
+        font-weight: 600;
+        color: var(--ivory);
+      }
+      .chain .bar {
+        width: 34px;
+        display: flex;
+        justify-content: center;
+        flex: 0 0 auto;
+      }
+      .chain .bar i {
+        width: 0;
+        height: 10px;
+        border-left: 2px dashed rgba(217, 169, 74, 0.5);
+      }
+
+      /* 사업 모델 5단계 */
+      .bm {
+        display: flex;
+        flex-direction: column;
+      }
+      .bm .r {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 4px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      .bm .r:last-child {
+        border-bottom: 0;
+      }
+      .bm .r em {
+        font-style: normal;
+        font-family: var(--serif);
+        font-size: 24px;
+        font-weight: 700;
+        color: #241a07;
+        background: linear-gradient(180deg, #e7bb62, #cf9c3c);
+        width: 32px;
+        height: 32px;
+        border-radius: 9px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 auto;
+      }
+      .bm .r span {
+        font-size: 23px;
+        line-height: 1.3;
+        color: var(--text);
+      }
+
+      /* 화훼산업 연결 */
+      .paths .note {
+        font-size: 22px;
+        line-height: 1.34;
+        color: var(--muted);
+        margin-bottom: 8px;
+      }
+      .paths .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px 18px;
+      }
+      .paths .grid div {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        font-size: 22px;
+        line-height: 1.32;
+        color: var(--text);
+      }
+      .paths .grid div i {
+        flex: 0 0 auto;
+        margin-top: 7px;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--stem);
+      }
+
+      /* ── 하단: 초기 검증 지표 + 마지막 문장 ── */
+      .s5-bot {
+        flex: 1 1 auto;
+        display: flex;
+        flex-direction: column;
+        margin-top: 14px;
+        min-height: 0;
+      }
+      .metrics {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 14px;
+        margin-top: 8px;
+      }
+      .m {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 11px 16px;
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 10px;
+      }
+      .m .name {
+        font-size: 22px;
+        font-weight: 700;
+        color: var(--ivory);
+      }
+      .m .val {
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+      }
+      .m .val b {
+        font-family: var(--serif);
+        font-size: 26px;
+        font-weight: 700;
+        color: var(--gold-lt);
+        line-height: 1.1;
+      }
+      .m .val span {
+        font-size: 22px;
+        color: var(--dim);
+      }
+      .last {
+        margin-top: auto;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        padding: 10px 24px;
+      }
+      .last p {
+        font-family: var(--serif);
+        font-size: 28px;
+        font-weight: 700;
+        line-height: 1.34;
+        color: var(--gold-lt);
+        letter-spacing: -0.01em;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="slide s5">
+      <div class="frame">
+        <header class="topbar">
+          <div class="brand">
+            <span class="wordmark">dearbloom</span>
+            <span class="tagline">사업 · <b>임팩트</b></span>
+          </div>
+          <div class="pageno">PAGE 05 / 05</div>
+        </header>
+
+        <section class="s5-head">
+          <div class="l">
+            <div class="kicker">Business &amp; Impact <span class="sub">사업·임팩트</span></div>
+            <h1 class="head">꽃을 고르는 귀찮음을 줄이고,<br />꽃을 살 새로운 이유를 만듭니다</h1>
+          </div>
+          <div class="r">
+            <div class="kicker">Market <span class="sub">화훼산업 통계 한 줄</span></div>
+            <div class="card gold stat">
+              <div class="big"><b>5,344억 원</b><span>2024년 국내 화훼류 생산액</span></div>
+              <p>2015년보다 명목 기준 약 15% 낮다.</p>
+              <p class="src">출처 · 국립원예특작과학원 「원예작물별 산업 생산액」</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="s5-body">
+          <div class="s5-col l">
+            <div class="card blk">
+              <div class="kicker">User Value <span class="sub">사용자 가치</span></div>
+              <div class="values">
+                <div><i></i>한 번의 흐름에서 꽃·의미·안전·문구·구매 해결</div>
+                <div><i></i>인기순이 아니라 관계와 상황에 맞는 선택</div>
+                <div><i></i>위험한 꽃 선물을 사전에 방지</div>
+                <div><i></i>&ldquo;왜 이 꽃인지&rdquo; 자신의 말로 설명 가능</div>
+              </div>
+            </div>
+
+            <div class="card blk">
+              <div class="kicker">Expansion <span class="sub">확장 구조</span></div>
+              <div class="chain">
+                <div class="step"><em>01</em><b>의미 있는 꽃 발견</b></div>
+                <div class="bar"><i></i></div>
+                <div class="step"><em>02</em><b>추천 결과 선택</b></div>
+                <div class="bar"><i></i></div>
+                <div class="step"><em>03</em><b>편지·공유</b></div>
+                <div class="bar"><i></i></div>
+                <div class="step"><em>04</em><b>판매처·지역 꽃집 이동</b></div>
+                <div class="bar"><i></i></div>
+                <div class="step"><em>05</em><b>다음 추천에 선호 반영</b></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="s5-col r">
+            <div class="card blk bm-wrap">
+              <div class="kicker">Business Model <span class="sub">사업 모델 5단계</span></div>
+              <div class="bm">
+                <div class="r"><em>1</em><span>꽃 판매처·지역 꽃집 제휴 및 구매 전환</span></div>
+                <div class="r"><em>2</em><span>지역·수령일 기반 꽃집 예약·문의</span></div>
+                <div class="r"><em>3</em><span>꽃집 고객 상담용 추천 도구</span></div>
+                <div class="r"><em>4</em><span>선물 플랫폼·꽃 쇼핑몰용 추천 위젯/API</span></div>
+                <div class="r"><em>5</em><span>관계 기록·기념일 알림·고급 편지 프리미엄</span></div>
+              </div>
+            </div>
+
+            <div class="card blk paths">
+              <div class="kicker">Industry Link <span class="sub">화훼산업 연결</span></div>
+              <p class="note">
+                DearBloom은 산업 문제를 직접 해결한다고 과장하지 않는다. 대신 다음의 측정 가능한 경로를
+                만든다.
+              </p>
+              <div class="grid">
+                <div><i></i>기념일 외 감사·응원·위로·화해 상황으로 꽃 구매 계기 확대</div>
+                <div><i></i>익숙하지 않은 품종 발견</div>
+                <div><i></i>온라인 추천 사용자를 지역 꽃집으로 연결</div>
+                <div><i></i>어떤 관계와 상황에서 어떤 꽃을 찾는지 수요 데이터 축적</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="s5-bot">
+          <div class="kicker">Early Metrics <span class="sub">초기 검증 지표 · 값은 모두 목표 가설</span></div>
+          <div class="metrics">
+            <div class="m">
+              <p class="name">추천 완료율</p>
+              <div class="val"><b>60% 이상</b></div>
+            </div>
+            <div class="m">
+              <p class="name">추천 적합도</p>
+              <div class="val"><b>4.0/5 이상</b></div>
+            </div>
+            <div class="m">
+              <p class="name">메시지·편지 행동률</p>
+              <div class="val"><b>20% 이상</b></div>
+            </div>
+            <div class="m">
+              <p class="name">저장·공유율</p>
+              <div class="val"><b>15% 이상</b></div>
+            </div>
+            <div class="m">
+              <p class="name">구매처 이동률</p>
+              <div class="val"><b>10% 이상</b></div>
+            </div>
+          </div>
+
+          <div class="card gold last">
+            <p>
+              DearBloom은 꽃을 판매하는 서비스보다 먼저, 꽃을 선택할 이유를 만들어 주는 서비스입니다.
+            </p>
+          </div>
+        </section>
+      </div>
+    </div>
+  </body>
+</html>

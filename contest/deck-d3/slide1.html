@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="deck" content="deck-d3:dearbloom">
+<title>DearBloom 01 — 문제·배경</title>
+<link rel="stylesheet" href="deck.css">
+<style>
+  .s1-top {
+    display: grid;
+    grid-template-columns: 1002px 1fr;
+    gap: 58px;
+    align-items: start;
+  }
+  .s1-top .hl { font-size: 70px; }
+
+  .s1-qgrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 17px;
+    margin-top: 30px;
+  }
+
+  .s1-right { position: relative; height: 604px; }
+  .s1-phone-wrap { position: absolute; right: 0; top: 6px; transform: rotate(-2.4deg); }
+  .s1-note {
+    position: absolute;
+    left: -34px;
+    bottom: 30px;
+    width: 288px;
+    padding: 24px 20px;
+    font-size: 19.5px;
+    transform: rotate(-5.5deg);
+    z-index: 6;
+  }
+
+  .s1-bottom {
+    display: grid;
+    grid-template-columns: 1116px 1fr;
+    gap: 34px;
+    margin-top: 34px;
+  }
+
+  .s1-band { height: 196px; padding: 0 44px; }
+  .s1-band .r1 { display: flex; align-items: baseline; gap: 13px; }
+  .s1-band .big {
+    font-family: var(--serif);
+    font-size: 64px;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--rose);
+    letter-spacing: -0.03em;
+  }
+  .s1-band .txt {
+    font-family: var(--serif);
+    font-size: 36px;
+    font-weight: 700;
+    letter-spacing: -0.026em;
+    color: var(--ink);
+  }
+  .s1-band .r2 { margin-top: 15px; }
+  .s1-band .lb {
+    position: absolute;
+    left: 44px;
+    top: 26px;
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    color: var(--ink-3);
+  }
+
+  .s1-concl { padding: 28px 30px; display: flex; flex-direction: column; justify-content: center; }
+  .s1-concl .a {
+    font-family: var(--sans);
+    font-size: 19px;
+    line-height: 1.55;
+    color: var(--w-2);
+    margin-bottom: 13px;
+  }
+  .s1-concl .b {
+    font-family: var(--serif);
+    font-size: 27px;
+    font-weight: 700;
+    line-height: 1.48;
+    letter-spacing: -0.024em;
+    color: var(--w);
+  }
+</style>
+</head>
+<body>
+<div class="slide">
+  <div class="bg flip"><img src="assets/bg-1.jpg" alt=""></div>
+  <div class="grade"></div>
+  <div class="veil top"></div>
+  <!-- 결론 카드 자리만 한 겹 더 -->
+  <div class="scrim" style="left:1170px;top:630px;width:880px;height:470px;"></div>
+  <div class="paperlay"></div>
+  <div class="creases"></div>
+
+  <div class="stage">
+
+    <div class="s1-top">
+      <div>
+        <div class="eyebrow" style="margin-bottom:15px;">DEARBLOOM</div>
+
+        <h1 class="hl">
+          꽃은 주고 싶은데,<br>
+          <span class="em-rose">검색할수록</span> 더 어려워집니다
+        </h1>
+
+        <p class="lead" style="margin-top:20px;">
+          생일, 기념일, 감사, 위로, 사과처럼 꽃으로 마음을 전하고 싶은 순간은 많습니다.<br>
+          하지만 막상 꽃을 고르려고 하면 고민이 시작됩니다.
+        </p>
+
+        <div class="s1-qgrid">
+          <div class="paper qcard">이 꽃말이 지금 관계에<br>정말 어울릴까?</div>
+          <div class="paper qcard">색이 달라지면<br>의미도 달라지나?</div>
+          <div class="paper qcard">상대가 고양이를 키우는데<br>괜찮을까?</div>
+          <div class="paper qcard">꽃과 함께<br>무슨 말을 적어야 하지?</div>
+        </div>
+      </div>
+
+      <div class="s1-right">
+        <div class="s1-phone-wrap">
+          <div class="phone">
+            <div class="screen">
+              <div class="bar">
+                <span class="t">검색 탭</span>
+                <span class="tabcount">6</span>
+              </div>
+
+              <div class="tabrow">
+                <span class="idx">01</span>
+                <span class="mag"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="4.6" stroke="#948977" stroke-width="1.6"/><path d="M10.6 10.6L14 14" stroke="#948977" stroke-width="1.6" stroke-linecap="round"/></svg></span>
+                <span class="q">꽃 추천 검색</span>
+                <span class="x">&times;</span>
+              </div>
+              <div class="tabrow">
+                <span class="idx">02</span>
+                <span class="mag"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="4.6" stroke="#948977" stroke-width="1.6"/><path d="M10.6 10.6L14 14" stroke="#948977" stroke-width="1.6" stroke-linecap="round"/></svg></span>
+                <span class="q">꽃말 재검색</span>
+                <span class="x">&times;</span>
+              </div>
+              <div class="tabrow">
+                <span class="idx">03</span>
+                <span class="mag"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="4.6" stroke="#948977" stroke-width="1.6"/><path d="M10.6 10.6L14 14" stroke="#948977" stroke-width="1.6" stroke-linecap="round"/></svg></span>
+                <span class="q">색상별 의미 확인</span>
+                <span class="x">&times;</span>
+              </div>
+              <div class="tabrow">
+                <span class="idx">04</span>
+                <span class="mag"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="4.6" stroke="#948977" stroke-width="1.6"/><path d="M10.6 10.6L14 14" stroke="#948977" stroke-width="1.6" stroke-linecap="round"/></svg></span>
+                <span class="q">반려동물 안전 확인</span>
+                <span class="x">&times;</span>
+              </div>
+              <div class="tabrow">
+                <span class="idx">05</span>
+                <span class="mag"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="4.6" stroke="#948977" stroke-width="1.6"/><path d="M10.6 10.6L14 14" stroke="#948977" stroke-width="1.6" stroke-linecap="round"/></svg></span>
+                <span class="q">카드 문구 검색</span>
+                <span class="x">&times;</span>
+              </div>
+              <div class="tabrow hot">
+                <span class="idx">06</span>
+                <span class="mag"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="4.6" stroke="#ae3a30" stroke-width="1.6"/><path d="M10.6 10.6L14 14" stroke="#ae3a30" stroke-width="1.6" stroke-linecap="round"/></svg></span>
+                <span class="q">실제 꽃집·구매처 검색</span>
+                <span class="x">&times;</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="note s1-note">
+          결국 한 번의 선물을 위해<br>다음 과정을 반복합니다.
+        </div>
+      </div>
+    </div>
+
+    <div class="s1-bottom">
+      <div class="paper s1-band">
+        <span class="lb">강조</span>
+        <div class="band-in">
+          <div class="txt">
+            <div class="r1">
+              <span>한 번의 꽃 선물에, 최소</span>
+              <span class="big">다섯</span>
+              <span>번의</span>
+            </div>
+            <div class="r2">검색과 판단이 필요합니다.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="glass s1-concl">
+        <div class="a">문제는 꽃 정보가 없는 것이 아닙니다.</div>
+        <div class="b">내 마음에 이 꽃이 <span class="em-rose">정말 맞는지<br>판단할 기준</span>이 없는 것입니다.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="foot-label">문제·배경</div>
+  <div class="credit">사진 · 디기탈리스 &mdash; <b>Godot13</b>, CC BY-SA 4.0 (Wikimedia Commons)</div>
+  <div class="foot-num">01/05</div>
+</div>
+</body>
+</html>

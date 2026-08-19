@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <title>DearBloom — PAGE 3 / 5 서비스 컨셉</title>
+    <link rel="stylesheet" href="deck.css" />
+    <style>
+      /* PAGE 3 — 서비스 컨셉
+         §3 시각 구성: 왼쪽 입력 카드 3개 / 중앙 AI 해석 + 검증 데이터 / 오른쪽 꽃 결과 카드 3장 /
+         하단 메시지·편지·구매 행동. 「핵심 흐름 5단계」를 그 다이어그램의 단계 번호로 얹었다. */
+      .s3-head {
+        flex: 0 0 auto;
+        display: flex;
+        gap: 46px;
+        align-items: flex-start;
+      }
+      .s3-head .l {
+        width: 1054px;
+        flex: 0 0 auto;
+      }
+      .s3-head .head {
+        margin-top: 14px;
+        font-size: 45px;
+      }
+      .s3-head .r {
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+      .oneline {
+        margin-top: 12px;
+        padding: 20px 22px;
+      }
+      .oneline p {
+        font-size: 22px;
+        line-height: 1.5;
+        color: var(--gold-lt);
+        font-weight: 600;
+      }
+
+      /* ── 다이어그램 (핵심 흐름 5단계) ── */
+      .flowband {
+        flex: 0 0 auto;
+        height: 338px;
+        display: flex;
+        align-items: stretch;
+        margin-top: 20px;
+      }
+      .fcol {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+      }
+      .fcol .fhead {
+        flex: 0 0 auto;
+        min-height: 62px;
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        margin-bottom: 8px;
+      }
+      .fcol .fhead .st {
+        font-family: var(--serif);
+        font-weight: 700;
+        font-size: 25px;
+        color: var(--gold);
+        letter-spacing: 0.04em;
+        flex: 0 0 auto;
+      }
+      .fcol .fhead b {
+        font-size: 23px;
+        font-weight: 600;
+        color: var(--ivory);
+        line-height: 1.3;
+      }
+      .fcol .card {
+        flex: 1 1 auto;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+      }
+
+      .c-in {
+        width: 400px;
+        flex: 0 0 auto;
+      }
+      .c-in .stack {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-top: 4px;
+      }
+      .inchip {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 13px 18px;
+        border-radius: 14px;
+        border: 1px solid var(--gold-line);
+        background: rgba(217, 169, 74, 0.09);
+        font-size: 24px;
+        font-weight: 600;
+        color: var(--ivory);
+      }
+      .inchip i {
+        font-style: normal;
+        font-size: 22px;
+        color: var(--gold);
+        letter-spacing: 0.1em;
+        flex: 0 0 auto;
+      }
+
+      .c-ai {
+        width: 300px;
+        flex: 0 0 auto;
+      }
+      .c-dt {
+        width: 300px;
+        flex: 0 0 auto;
+      }
+      .midbody {
+        flex: 1 1 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        min-height: 0;
+      }
+      .midbody .txt {
+        font-size: 22px;
+        line-height: 1.46;
+        color: var(--text);
+      }
+      .tagcol {
+        margin-top: auto;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .glyph {
+        width: 46px;
+        height: 46px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: var(--serif);
+        font-size: 23px;
+        font-weight: 700;
+        flex: 0 0 auto;
+      }
+      .glyph.ai {
+        color: var(--lav);
+        border: 1px solid rgba(169, 156, 194, 0.5);
+        background: rgba(169, 156, 194, 0.12);
+      }
+      .glyph.dt {
+        color: var(--stem);
+        border: 1px solid rgba(134, 171, 144, 0.5);
+        background: rgba(134, 171, 144, 0.12);
+      }
+
+      .c-out {
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+      .results {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        height: 100%;
+      }
+      .rcard {
+        display: flex;
+        flex-direction: column;
+        padding: 10px 10px 12px;
+        border-radius: 14px;
+        background: rgba(246, 241, 232, 0.04);
+        border: 1px solid var(--line);
+        min-width: 0;
+      }
+      .rcard .photo img { filter: saturate(0.9) brightness(0.86) contrast(1.05); }
+      .rcard .photo {
+        flex: 1 1 0;
+        min-height: 0;
+      }
+      .rcard .role, .rcard .desc { flex: 0 0 auto; }
+      .rcard .role {
+        margin-top: 8px;
+        font-family: var(--serif);
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--gold-lt);
+        letter-spacing: -0.01em;
+      }
+      .rcard .desc {
+        margin-top: 4px;
+        font-size: 22px;
+        line-height: 1.36;
+        color: var(--text);
+      }
+
+      /* ── 핵심 기능 4개 + 실화면 조각 ── */
+      .s3-feat {
+        flex: 0 0 auto;
+        display: flex;
+        flex-direction: column;
+        margin-top: 20px;
+      }
+      .featgrid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        margin-top: 12px;
+      }
+      .feat {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 18px 20px 16px;
+        display: flex;
+        flex-direction: column;
+      }
+      .feat .ft {
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+      }
+      .feat .ft i {
+        font-style: normal;
+        font-family: var(--serif);
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--gold);
+      }
+      .feat .ft b {
+        font-size: 25px;
+        font-weight: 700;
+        color: var(--ivory);
+        letter-spacing: -0.01em;
+      }
+      .feat p {
+        margin-top: 7px;
+        font-size: 22px;
+        line-height: 1.4;
+        color: var(--muted);
+        min-height: 62px;
+      }
+      .feat .shot {
+        margin-top: 10px;
+        height: 84px;
+      }
+
+      /* ── 하단 ── */
+      .s3-bot {
+        flex: 0 0 auto;
+        margin-top: 14px;
+        padding-top: 12px;
+        border-top: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 30px;
+      }
+      .slogan {
+        font-family: var(--serif);
+        font-size: 29px;
+        font-weight: 700;
+        color: var(--gold-lt);
+        letter-spacing: -0.01em;
+      }
+      .acts {
+        display: flex;
+        gap: 10px;
+        flex: 0 0 auto;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="slide s3">
+      <div class="frame">
+        <header class="topbar">
+          <div class="brand">
+            <span class="wordmark">dearbloom</span>
+            <span class="tagline">서비스 컨셉 · <b>입력에서 결과까지</b></span>
+          </div>
+          <div class="pageno">PAGE 03 / 05</div>
+        </header>
+
+        <section class="s3-head">
+          <div class="l">
+            <div class="kicker">How it works <span class="sub">서비스 컨셉</span></div>
+            <h1 class="head">관계와 마음을 말하면,<br />DearBloom이 꽃과 이유를 함께 고릅니다</h1>
+          </div>
+          <div class="r">
+            <div class="kicker">In One Line <span class="sub">서비스 한 문장</span></div>
+            <div class="card gold oneline">
+              <p>
+                DearBloom은 관계·상황·취향·추억·안전 조건을 이해해, 검증된 꽃 데이터에서 성격이 다른
+                꽃 3안과 선택 이유를 추천합니다.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- 핵심 흐름 5단계 = 입력 → AI 해석 → 검증 데이터 → 결과 3안 -->
+        <section class="flowband">
+          <div class="fcol c-in">
+            <div class="fhead">
+              <span class="st">01·02</span><b>관계와 마음 선택 → 취향·추억·안전 조건 입력</b>
+            </div>
+            <div class="card">
+              <div class="stack">
+                <div class="inchip"><i>누구에게</i>연인</div>
+                <div class="inchip"><i>어떤 마음</i>먼저 손 내밀고 싶은 날</div>
+                <div class="inchip"><i>조심할 것</i>고양이와 살아요</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="conn"><i></i></div>
+
+          <div class="fcol c-ai">
+            <div class="fhead"><span class="st">03</span><b>AI 해석</b></div>
+            <div class="card">
+              <div class="midbody">
+                <div class="glyph ai">AI</div>
+                <p class="txt">AI가 자유로운 문장을 추천 단서로 해석</p>
+                <div class="tagcol">
+                  <span class="pill">취향</span><span class="pill">추억</span
+                  ><span class="pill">분위기</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="conn"><i></i></div>
+
+          <div class="fcol c-dt">
+            <div class="fhead"><span class="st">04</span><b>검증 데이터</b></div>
+            <div class="card">
+              <div class="midbody">
+                <div class="glyph dt">DB</div>
+                <p class="txt">검증된 꽃말·이야기·안전 데이터가 후보 판단</p>
+                <div class="tagcol">
+                  <span class="pill">꽃말</span><span class="pill">이야기</span
+                  ><span class="pill">안전</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="conn"><i></i></div>
+
+          <div class="fcol c-out">
+            <div class="fhead">
+              <span class="st">05</span><b>꽃 3안 + 이유 + 이야기 + 메시지 + 구매처</b>
+            </div>
+            <div class="card">
+              <div class="results">
+                <div class="rcard">
+                  <div class="photo">
+                    <img src="assets/tulip-white.jpg" alt="흰 튤립" />
+                  </div>
+                  <p class="role">안심 선택</p>
+                  <p class="desc">관계와 상황에 가장 무난한 꽃</p>
+                </div>
+                <div class="rcard">
+                  <div class="photo">
+                    <img src="assets/aster.jpg" alt="과꽃" />
+                  </div>
+                  <p class="role">의미 선택</p>
+                  <p class="desc">꽃말과 이야기가 가장 잘 맞는 꽃</p>
+                </div>
+                <div class="rcard">
+                  <div class="photo">
+                    <img src="assets/gladiolus.jpg" alt="글라디올러스" />
+                  </div>
+                  <p class="role">대담 선택</p>
+                  <p class="desc">상대의 취향과 추억을 더 강하게 반영한 꽃</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 핵심 기능 4개 — 각 칸 아래는 실제 프로토타입 화면 조각 -->
+        <section class="s3-feat">
+          <div class="kicker">Key Features <span class="sub">핵심 기능 4개 · 아래 띠는 실제 화면</span></div>
+          <div class="featgrid">
+            <article class="feat">
+              <div class="ft"><i>1</i><b>선택 이유가 있는 추천</b></div>
+              <p>꽃 이름만 보여주지 않고 어떤 입력과 이야기 때문에 골랐는지 설명한다.</p>
+              <div class="shot" style="--src: url('../shots/shot-results.png'); --k: 0.4289; --sx: 1536; --sy: 1440">
+                <i></i>
+              </div>
+            </article>
+            <article class="feat">
+              <div class="ft"><i>2</i><b>여러 갈래의 꽃말</b></div>
+              <p>색상·문화권·시대에 따라 달라지는 의미를 출처와 함께 보여준다.</p>
+              <div class="shot" style="--src: url('../shots/shot-flower-detail.png'); --k: 0.4289; --sx: 472; --sy: 320">
+                <i></i>
+              </div>
+            </article>
+            <article class="feat">
+              <div class="ft"><i>3</i><b>안전을 먼저 보는 추천</b></div>
+              <p>크게 위험한 꽃은 추천 전에 제외하고, 가벼운 주의가 필요한 꽃은 그 사실을 함께 보여준다.</p>
+              <div class="shot" style="--src: url('../shots/shot-story-safety.png'); --k: 0.4289; --sx: 472; --sy: 792">
+                <i></i>
+              </div>
+            </article>
+            <article class="feat">
+              <div class="ft"><i>4</i><b>전달과 구매까지 연결</b></div>
+              <p>카드 문구, 비밀 편지, 꽃 조합, 판매처·가까운 꽃집 탐색으로 이어진다.</p>
+              <div class="shot" style="--src: url('../shots/shot-letter.png'); --k: 0.4289; --sx: 1648; --sy: 160">
+                <i></i>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <footer class="s3-bot">
+          <p class="slogan">하고 싶은 마음부터 고르면, 꽃과 이야기가 그 마음을 전해드립니다.</p>
+          <div class="acts">
+            <span class="pill ghost">카드 문구</span>
+            <span class="pill ghost">비밀 편지</span>
+            <span class="pill ghost">꽃 조합</span>
+            <span class="pill ghost">판매처·가까운 꽃집 탐색</span>
+          </div>
+        </footer>
+      </div>
+    </div>
+  </body>
+</html>

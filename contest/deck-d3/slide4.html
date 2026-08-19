@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="deck" content="deck-d3:dearbloom">
+<title>DearBloom 04 — AI 구조·프로토타입</title>
+<link rel="stylesheet" href="deck.css">
+<style>
+  .s4-hl { font-size: 46px; }
+
+  .s4-principle {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-top: 18px;
+    height: 44px;
+  }
+  .s4-principle .lb {
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    color: var(--gold-l);
+    text-shadow: var(--ts-s);
+    flex: none;
+  }
+  .s4-principle .tx {
+    font-family: var(--serif);
+    font-size: 29px;
+    font-weight: 700;
+    letter-spacing: -0.026em;
+    color: var(--w);
+    text-shadow: var(--ts);
+    flex: none;
+  }
+  .s4-principle .ln { flex: 1; height: 1px; background: rgba(234, 198, 120, 0.34); }
+
+  .s4-main {
+    display: grid;
+    grid-template-columns: 580px 384px 1fr;
+    gap: 26px;
+    margin-top: 20px;
+    height: 574px;
+  }
+
+  /* 모바일 화면 2장 — 이 장의 주인공 */
+  .s4-mob { display: grid; grid-template-columns: 280px 280px; gap: 20px; }
+  .s4-mob .frame { align-self: start; }
+  .s4-mob .frame img { height: 490px; object-position: top center; }
+
+  /* 크롭 3장 */
+  .s4-crops { display: flex; flex-direction: column; justify-content: space-between; }
+  .s4-crops .frame { flex: none; }
+  .s4-crops .frame img { object-position: top left; }
+
+  /* 우 : 축소한 기술 설명 */
+  .s4-right { display: flex; flex-direction: column; gap: 13px; }
+  .s4-card { padding: 13px 16px 14px; }
+  .s4-card .hdr {
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    color: var(--gold-l);
+    margin-bottom: 10px;
+  }
+  .s4-split { height: auto; }
+
+  .s4-fn {
+    margin-top: 16px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+  }
+  .s4-fn .t {
+    flex: none;
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    color: var(--gold-l);
+    text-shadow: var(--ts-s);
+  }
+</style>
+</head>
+<body>
+<div class="slide">
+  <div class="bg"><img src="assets/bg-4.jpg" alt=""></div>
+  <div class="grade"></div>
+  <div class="veil headL"></div>
+  <div class="scrim" style="left:-140px;top:120px;width:1500px;height:290px;"></div>
+  <div class="paperlay"></div>
+  <div class="creases"></div>
+
+  <div class="stage">
+
+    <div class="tag sage" style="margin-bottom:12px;">AI 구조·프로토타입</div>
+
+    <h1 class="hl s4-hl">
+      AI는 마음을 읽고,<br>
+      <span class="em-sage">검증된 데이터</span>는 사실을 지킵니다
+    </h1>
+
+    <div class="s4-principle">
+      <span class="lb">안전 원칙</span>
+      <span class="tx">사실은 <span class="em-gold">데이터</span>에서, AI는 <span class="em-sage">해석과 표현</span>에서.</span>
+      <span class="ln"></span>
+    </div>
+
+    <div class="s4-main">
+
+      <!-- 좌 : 모바일 화면 2장 -->
+      <div class="s4-mob">
+        <div class="frame">
+          <span class="tape" style="top:-13px;left:18px;transform:rotate(-4deg);width:94px;height:26px;"></span>
+          <img src="assets/m-heart.jpg" alt="관계와 마음 선택 화면">
+          <div class="cap"><span class="shotcap"><i>01</i>관계와 마음부터 선택</span></div>
+        </div>
+        <div class="frame">
+          <span class="tape" style="top:-13px;right:20px;transform:rotate(3.6deg);width:94px;height:26px;"></span>
+          <img src="assets/m-results.jpg" alt="추천 결과 화면">
+          <div class="cap"><span class="shotcap"><i>02</i>꽃 3안과 고른 이유를 함께</span></div>
+        </div>
+      </div>
+
+      <!-- 중 : 화면 크롭 3장 -->
+      <div class="s4-crops">
+        <div class="frame thin">
+          <img src="assets/c-cues.jpg" alt="추천 단서 표시">
+          <div class="cap"><span class="shotcap"><i>03</i>적어 준 이야기를 추천 단서로</span></div>
+        </div>
+        <div class="frame thin">
+          <img src="assets/c-safety.jpg" alt="반려동물 안전 표시">
+          <div class="cap"><span class="shotcap"><i>04</i>반려동물 안전을 먼저 확인</span></div>
+        </div>
+        <div class="frame thin">
+          <span class="tape" style="bottom:-11px;right:24px;transform:rotate(-3deg);width:88px;height:24px;"></span>
+          <img src="assets/c-ment.jpg" alt="카드 문구 생성 화면">
+          <div class="cap"><span class="shotcap"><i>05</i>함께 전할 문장까지 만들어 줍니다</span></div>
+        </div>
+      </div>
+
+      <!-- 우 : 역할 분리 · 지켜지는 것 · 기능 · 고지 -->
+      <div class="s4-right">
+
+        <div class="glass s4-card">
+          <div class="hdr">역할 분리</div>
+          <div class="split s4-split">
+            <div class="col">
+              <div class="hd">AI가 하는 일</div>
+              <div class="cell">“첫눈을 함께 봤어요” 같은 자유 문장 이해</div>
+              <div class="cell">취향·추억·분위기 단서 추출</div>
+              <div class="cell">추천 꽃에 맞는 자연스러운 메시지 작성</div>
+              <div class="cell">사용자의 말투에 맞춰 문장 다듬기</div>
+            </div>
+            <div class="mid">
+              <svg width="26" height="34" viewBox="0 0 34 46" fill="none"><path d="M0 0 34 23 0 46Z" fill="#eac678" opacity=".7"/></svg>
+            </div>
+            <div class="col">
+              <div class="hd sage">검증 데이터·엔진이 하는 일</div>
+              <div class="cell r">꽃말과 출처 확인</div>
+              <div class="cell r">고양이·강아지 안전성 판단</div>
+              <div class="cell r">크게 위험한 꽃·비선호 꽃 강제 제외</div>
+              <div class="cell r">관계·상황·계절·취향 점수와 3안 다양성</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass s4-card">
+          <div class="hdr">지켜지는 것</div>
+          <div class="guard">AI가 출처 없는 꽃말을 만들지 않음</div>
+          <div class="guard">AI가 반려동물 독성을 추측하지 않음</div>
+          <div class="guard">메시지 생성 실패 시 검토된 예문으로 폴백</div>
+          <div class="guard" style="margin-bottom:0;">추억과 편지 원문은 공유 URL·분석 로그에 남기지 않음</div>
+        </div>
+
+        <div class="glass s4-card notice" style="flex:1;">
+          <div class="nt">정적 데모 고지</div>
+          <div class="nb">
+            공모전용 데모는 서버 없이 동작합니다. 추천·안전·꽃말·이야기는 실제 엔진과 데이터를 쓰고,
+            카드 문구는 API 키를 노출하지 않기 위해 미리 검토한 예문을 씁니다.
+            이 차이를 숨기지 않고 화면에서 그대로 안내합니다.
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- 지금 눌러볼 수 있는 기능 -->
+    <div class="s4-fn">
+      <span class="t">지금 직접 눌러볼 수 있는 기능</span>
+      <div class="chiprow">
+        <span class="chip">관계·상황 기반 꽃 3안 추천</span>
+        <span class="chip">자유 서술을 반영한 추천 변화</span>
+        <span class="chip">반려동물 위험 꽃 제외</span>
+        <span class="chip">꽃말·나라별 의미·설화·문학</span>
+        <span class="chip">여러 사람 각각 추천·단체 부케</span>
+        <span class="chip">카드 문구 수정·새로 받기</span>
+        <span class="chip">비밀 편지</span>
+        <span class="chip">꽃 조합기</span>
+        <span class="chip">366일 탄생화</span>
+        <span class="chip">구매처 탐색</span>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="foot-label">AI 구조·프로토타입</div>
+  <div class="credit">사진 · 칼라 &mdash; <b>Bernard Spragg. NZ</b>, 퍼블릭 도메인 (Wikimedia Commons)</div>
+  <div class="foot-num">04/05</div>
+</div>
+</body>
+</html>

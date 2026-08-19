@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="deck" content="deck-d3:dearbloom">
+<title>DearBloom 03 — 서비스 컨셉</title>
+<link rel="stylesheet" href="deck.css">
+<style>
+  .s3-hl { font-size: 46px; }
+  .s3-one { margin-top: 15px; font-size: 19.5px; }
+
+  .s3-main {
+    display: grid;
+    grid-template-columns: 352px 950px 1fr;
+    gap: 26px;
+    margin-top: 22px;
+    height: 630px;
+  }
+
+  .s3-left { display: flex; flex-direction: column; }
+  .s3-left .inputcard { margin-bottom: 10px; }
+  .s3-left .optrow { margin-bottom: 9px; }
+  .s3-arrow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 13px 0 11px;
+  }
+  .s3-arrow .ln { flex: 1; height: 1px; background: rgba(234, 198, 120, 0.4); }
+  .s3-arrow .tx {
+    padding: 5px 13px;
+    border-radius: 999px;
+    background: rgba(9, 7, 5, 0.84);
+    border: 1px solid rgba(234, 198, 120, 0.32);
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    color: var(--gold-l);
+    white-space: nowrap;
+  }
+
+  /* 주인공 : 실제 추천 결과 화면 */
+  .s3-shot { width: 950px; }
+  .s3-shot img { height: 578px; object-position: top left; }
+
+  .s3-feats { display: flex; flex-direction: column; gap: 13px; }
+  .s3-feats .feat { flex: 1; }
+
+  .s3-slogan { height: 80px; margin-top: 22px; }
+  .s3-slogan .band-in { justify-content: center; }
+  .s3-slogan .tx {
+    font-family: var(--serif);
+    font-size: 30px;
+    font-weight: 700;
+    letter-spacing: -0.024em;
+    color: var(--w);
+  }
+</style>
+</head>
+<body>
+<div class="slide">
+  <div class="bg"><img src="assets/bg-3.jpg" alt=""></div>
+  <div class="grade"></div>
+  <div class="veil headL"></div>
+  <div class="paperlay"></div>
+  <div class="creases"></div>
+
+  <div class="stage">
+
+    <div class="tag" style="margin-bottom:12px;">서비스 컨셉</div>
+
+    <h1 class="hl s3-hl">
+      관계와 마음을 말하면,<br>
+      DearBloom이 <span class="em-gold">꽃과 이유</span>를 함께 고릅니다
+    </h1>
+
+    <p class="lead s3-one">
+      관계·상황·취향·추억·안전 조건을 이해해, 검증된 꽃 데이터에서 성격이 다른 꽃 3안과 선택 이유를 추천합니다.
+    </p>
+
+    <div class="s3-main">
+
+      <!-- 좌 : 입력 → 결과 3안 -->
+      <div class="s3-left">
+        <div class="s3-arrow" style="margin-top:0;">
+          <span class="tx">사용자가 넣는 것</span>
+          <span class="ln"></span>
+        </div>
+
+        <div class="paper inputcard">
+          <div class="k">관계</div>
+          <div class="v">연인</div>
+        </div>
+        <div class="paper inputcard">
+          <div class="k">마음</div>
+          <div class="v">먼저 손 내밀고 싶은 날</div>
+        </div>
+        <div class="paper inputcard" style="margin-bottom:0;">
+          <div class="k">안전 조건</div>
+          <div class="v">고양이와 살아요</div>
+        </div>
+
+        <div class="s3-arrow">
+          <span class="tx">받는 것 · 성격이 다른 세 갈래</span>
+          <span class="ln"></span>
+        </div>
+
+        <div class="glass optrow">
+          <div class="th">01</div>
+          <div>
+            <div class="rk">안심 선택</div>
+            <div class="rd">관계와 상황에 가장 무난한 꽃</div>
+          </div>
+        </div>
+        <div class="glass optrow">
+          <div class="th">02</div>
+          <div>
+            <div class="rk">의미 선택</div>
+            <div class="rd">꽃말과 이야기가 가장 잘 맞는 꽃</div>
+          </div>
+        </div>
+        <div class="glass optrow" style="margin-bottom:0;">
+          <div class="th">03</div>
+          <div>
+            <div class="rk">대담 선택</div>
+            <div class="rd">취향과 추억을 더 강하게 반영한 꽃</div>
+          </div>
+        </div>
+
+        <div style="flex:1;"></div>
+      </div>
+
+      <!-- 중앙 : 실제 결과 화면 한 장 -->
+      <div class="frame s3-shot">
+        <span class="tape" style="top:-14px;left:52px;transform:rotate(-3.4deg);"></span>
+        <span class="tape" style="top:-14px;right:56px;transform:rotate(2.8deg);"></span>
+        <img src="assets/s-results-crop.jpg" alt="DearBloom 추천 결과 화면">
+        <div class="cap">
+          <span class="shotcap"><i>실제 화면</i>추천 결과 — 꽃 3안·선택 이유·꽃말 갈래가 한 화면에</span>
+          <span class="shotcap" style="color:var(--ink-3);">2026.08 프로토타입</span>
+        </div>
+      </div>
+
+      <!-- 우 : 핵심 기능 4개 -->
+      <div class="s3-feats">
+        <div class="glass feat">
+          <div class="fn">FEATURE 01</div>
+          <div class="ft">선택 이유가 있는 추천</div>
+          <div class="fd">꽃 이름만 보여주지 않고, 어떤 입력과 이야기 때문에 골랐는지 설명합니다.</div>
+        </div>
+        <div class="glass feat">
+          <div class="fn">FEATURE 02</div>
+          <div class="ft">여러 갈래의 꽃말</div>
+          <div class="fd">색상·문화권·시대에 따라 달라지는 의미를 출처와 함께 보여줍니다.</div>
+        </div>
+        <div class="glass feat">
+          <div class="fn">FEATURE 03</div>
+          <div class="ft">안전을 먼저 보는 추천</div>
+          <div class="fd">크게 위험한 꽃은 점수를 낮추는 것이 아니라 추천 전에 제외하고, 주의가 필요한 꽃은 그 사실을 함께 보여줍니다.</div>
+        </div>
+        <div class="glass feat">
+          <div class="fn">FEATURE 04</div>
+          <div class="ft">전달과 구매까지 연결</div>
+          <div class="fd">카드 문구·비밀 편지·꽃 조합·판매처 탐색으로 이어집니다.</div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="ink s3-slogan">
+      <div class="band-in">
+        <span class="tx">하고 싶은 <span class="em-gold">마음부터</span> 고르면, 꽃과 이야기가 그 마음을 전해드립니다.</span>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="foot-label">서비스 컨셉</div>
+  <div class="credit">사진 · 복사꽃 &mdash; <b>lumoplank</b>, CC0 (Wikimedia Commons)</div>
+  <div class="foot-num">03/05</div>
+</div>
+</body>
+</html>

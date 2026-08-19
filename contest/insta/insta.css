@@ -1,0 +1,367 @@
+/* ============================================================
+   DearBloom — 인스타그램 카드뉴스
+   1080 x 1350 (4:5) 고정 캔버스 · JPEG 캡처용 · 반응형 아님
+   톤: 나이트 보태니컬 아카이브 (docs/design-spec.md §1.4b)
+   ============================================================ */
+
+/* ---------- 폰트 (전량 로컬 — assets/fonts) ---------- */
+@font-face {
+  font-family: 'MaruBuri';
+  font-weight: 300; font-style: normal; font-display: block;
+  src: url('assets/fonts/MaruBuri-Light.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'MaruBuri';
+  font-weight: 400; font-style: normal; font-display: block;
+  src: url('assets/fonts/MaruBuri-Regular.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'MaruBuri';
+  font-weight: 600; font-style: normal; font-display: block;
+  src: url('assets/fonts/MaruBuri-SemiBold.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'MaruBuri';
+  font-weight: 700; font-style: normal; font-display: block;
+  src: url('assets/fonts/MaruBuri-Bold.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Pretendard';
+  font-weight: 400; font-style: normal; font-display: block;
+  src: url('assets/fonts/Pretendard-Regular.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Pretendard';
+  font-weight: 600; font-style: normal; font-display: block;
+  src: url('assets/fonts/Pretendard-SemiBold.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Pretendard';
+  font-weight: 700; font-style: normal; font-display: block;
+  src: url('assets/fonts/Pretendard-Bold.woff2') format('woff2');
+}
+
+:root {
+  /* 팔레트 — deck-a 와 동일 (dearbloom 실서비스 화면 계열) */
+  --ink:       #0A0908;
+  --ink-2:     #131009;
+  --cream:     #F6F1E7;
+  --cream-86:  rgba(246, 241, 231, .86);
+  --cream-70:  rgba(246, 241, 231, .70);
+  --cream-52:  rgba(246, 241, 231, .52);
+  --cream-34:  rgba(246, 241, 231, .34);
+  --cream-18:  rgba(246, 241, 231, .18);
+  --gold:      #D8A94E;
+  --gold-soft: #E9CB8C;
+  --gold-30:   rgba(216, 169, 78, .30);
+  --gold-14:   rgba(216, 169, 78, .14);
+  --stem:      #1B2C21;
+  --line:      rgba(246, 241, 231, .13);
+
+  --serif: 'MaruBuri', 'Nanum Myeongjo', 'Apple SD Gothic Neo',
+           'Malgun Gothic', serif;
+  --sans:  'Pretendard', -apple-system, 'Segoe UI', 'Apple SD Gothic Neo',
+           'Malgun Gothic', sans-serif;
+
+  /* 인스타 안전 여백 — 피드 썸네일에서 잘려도 죽지 않는 폭 */
+  --pad-x: 82px;
+  --pad-t: 86px;
+  --pad-b: 80px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  width: 1080px;
+  height: 1350px;
+  overflow: hidden;
+  background: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: geometricPrecision;
+}
+
+.card {
+  position: relative;
+  width: 1080px;
+  height: 1350px;
+  overflow: hidden;
+  background: var(--ink);
+  color: var(--cream);
+  font-family: var(--sans);
+}
+
+/* ---------- 배경 사진 + 스크림 (image-assets 사용규칙 1) ---------- */
+.bg {
+  position: absolute; inset: 0;
+  background-size: cover;
+  background-position: center;
+  z-index: 0;
+}
+.scrim { position: absolute; inset: 0; z-index: 1; }
+.scrim::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(180deg,
+      rgba(10, 9, 8, .30) 0%,
+      rgba(10, 9, 8, .58) 34%,
+      rgba(10, 9, 8, .90) 62%,
+      rgba(10, 9, 8, .98) 100%);
+}
+/* 사진을 질감으로만 쓰는 카드 */
+.bg.faint { opacity: .17; }
+.card.textured .scrim::before {
+  background: radial-gradient(120% 80% at 50% 0%,
+      rgba(27, 44, 33, .34) 0%, rgba(10, 9, 8, 0) 62%),
+    linear-gradient(180deg, rgba(10, 9, 8, .40) 0%, rgba(10, 9, 8, .86) 100%);
+}
+
+.inner {
+  position: relative; z-index: 2;
+  width: 100%; height: 100%;
+  padding: var(--pad-t) var(--pad-x) var(--pad-b);
+  display: flex; flex-direction: column;
+}
+
+/* ---------- 공통 조각 ---------- */
+.wordmark {
+  font-family: var(--serif);
+  font-weight: 600; font-size: 46px; letter-spacing: -.012em;
+  color: var(--cream);
+}
+.wordmark-sub {
+  font-family: var(--sans);
+  font-weight: 600; font-size: 22px; letter-spacing: .30em;
+  color: var(--gold); margin-left: 18px; vertical-align: 8px;
+}
+
+.over {
+  font-family: var(--sans);
+  font-weight: 700; font-size: 27px; letter-spacing: .26em;
+  color: var(--gold);
+  display: flex; align-items: center; gap: 22px;
+}
+.over::after {
+  content: ''; flex: 1; height: 1px;
+  background: linear-gradient(90deg, var(--gold-30), rgba(216,169,78,0));
+}
+
+h1 {
+  font-family: var(--serif);
+  font-weight: 600; font-size: 94px; line-height: 1.30;
+  letter-spacing: -.028em; color: var(--cream);
+}
+h2 {
+  font-family: var(--serif);
+  font-weight: 600; font-size: 64px; line-height: 1.34;
+  letter-spacing: -.026em; color: var(--cream);
+}
+.gold { color: var(--gold-soft); }
+
+.lead {
+  font-family: var(--sans);
+  font-weight: 400; font-size: 39px; line-height: 1.62;
+  color: var(--cream-70); letter-spacing: -.014em;
+}
+.lead b { font-weight: 700; color: var(--cream); }
+
+.note {
+  font-family: var(--sans);
+  font-weight: 400; font-size: 26px; line-height: 1.55;
+  color: var(--cream-34); letter-spacing: -.01em;
+}
+
+.spacer { flex: 1; }
+.mt-28 { margin-top: 28px; }
+.mt-40 { margin-top: 40px; }
+.mt-52 { margin-top: 52px; }
+
+/* 페이지 인덱스 */
+.idx {
+  position: absolute; z-index: 3;
+  right: var(--pad-x); bottom: 34px;
+  font-family: var(--sans); font-weight: 700;
+  font-size: 24px; letter-spacing: .22em; color: var(--cream-34);
+}
+.idx b { color: var(--gold); font-weight: 700; }
+
+/* 스와이프 힌트 */
+.swipe {
+  display: inline-flex; align-items: center; gap: 16px;
+  font-family: var(--sans); font-weight: 600;
+  font-size: 27px; letter-spacing: .16em; color: var(--gold);
+}
+.swipe .arrow {
+  display: inline-block; width: 46px; height: 1.5px;
+  background: var(--gold); position: relative;
+}
+.swipe .arrow::after {
+  content: ''; position: absolute; right: 0; top: -5px;
+  width: 12px; height: 12px;
+  border-top: 1.5px solid var(--gold); border-right: 1.5px solid var(--gold);
+  transform: rotate(45deg);
+}
+
+/* ---------- 검색 체인 (카드 2) ---------- */
+.chain { margin-top: 26px; }
+.chain-row {
+  display: flex; align-items: center; gap: 24px;
+  height: 74px;
+}
+.chain-n {
+  font-family: var(--sans); font-weight: 700;
+  font-size: 24px; letter-spacing: .1em;
+  color: var(--gold); width: 44px; flex: none;
+}
+.chain-bar {
+  width: 1.5px; align-self: stretch; flex: none;
+  background: var(--gold-30); margin-right: 6px;
+}
+.chain-t {
+  font-family: var(--sans); font-weight: 600;
+  font-size: 40px; letter-spacing: -.018em; color: var(--cream-86);
+}
+.chain-row.last .chain-t { color: var(--cream); }
+.chain-row.last .chain-bar { background: var(--gold); }
+
+/* ---------- 결론 박스 ---------- */
+.box {
+  border: 1px solid var(--gold-30);
+  border-radius: 26px;
+  background: rgba(216, 169, 78, .06);
+  padding: 34px 38px;
+}
+.box .l1 {
+  font-family: var(--sans); font-weight: 400; font-size: 36px;
+  line-height: 1.5; color: var(--cream-52); letter-spacing: -.014em;
+}
+.box .l2 {
+  font-family: var(--sans); font-weight: 700; font-size: 38px;
+  line-height: 1.5; color: var(--cream); letter-spacing: -.018em;
+  margin-top: 8px;
+}
+
+/* ---------- 3안 (카드 3) ---------- */
+.trio-h {
+  font-family: var(--sans); font-weight: 700; font-size: 28px;
+  letter-spacing: .22em; color: var(--cream-52); margin-bottom: 26px;
+}
+.trio { display: flex; flex-direction: column; gap: 20px; }
+.opt {
+  display: flex; align-items: center; gap: 30px;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: rgba(246, 241, 231, .035);
+  padding: 30px 34px;
+}
+.opt .tag {
+  flex: none; width: 132px; height: 66px;
+  border-radius: 999px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--sans); font-weight: 700; font-size: 33px;
+  letter-spacing: .04em;
+  border: 1px solid var(--gold-30); color: var(--gold-soft);
+  background: rgba(216, 169, 78, .09);
+}
+.opt.hero .tag {
+  background: var(--cream); color: var(--ink); border-color: var(--cream);
+}
+.opt .d {
+  font-family: var(--sans); font-weight: 400; font-size: 36px;
+  line-height: 1.45; color: var(--cream-86); letter-spacing: -.018em;
+}
+
+/* ---------- 인용 (카드 2 질문) ---------- */
+.qs { display: flex; flex-direction: column; gap: 18px; margin-top: 30px; }
+.q {
+  font-family: var(--serif); font-weight: 400;
+  font-size: 42px; line-height: 1.42; color: var(--cream-86);
+  letter-spacing: -.022em;
+  padding-left: 28px; border-left: 2px solid var(--gold-30);
+}
+
+/* ---------- 폰 목업 (카드 4·5·6) ---------- */
+.phone {
+  position: absolute; z-index: 2;
+  left: 50%; transform: translateX(-50%);
+  /* top 은 카드 4·5·6 공통 — 헤드라인 블록(최대 470px)을 절대 침범하지 않는 자리 */
+  width: 520px; height: 940px;
+  top: 500px;
+  border-radius: 46px;
+  overflow: hidden;
+  border: 1px solid var(--cream-18);
+  background: #0d0d0c;
+  box-shadow: 0 0 0 10px rgba(10, 9, 8, .72),
+              0 46px 90px rgba(0, 0, 0, .72),
+              0 0 130px rgba(216, 169, 78, .07);
+}
+.phone img {
+  display: block; width: 520px; height: auto;
+}
+
+/* 폰 좌우로 붙는 콜아웃 */
+.callout {
+  position: absolute; z-index: 4;
+  display: inline-flex; align-items: center; gap: 14px;
+  font-family: var(--sans); font-weight: 700; font-size: 29px;
+  letter-spacing: -.012em;
+  color: var(--ink); background: var(--gold-soft);
+  border-radius: 999px; padding: 18px 28px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, .55);
+  white-space: nowrap;
+}
+.callout.dark {
+  color: var(--cream); background: rgba(19, 16, 9, .94);
+  border: 1px solid var(--gold-30);
+}
+.callout .dot {
+  width: 12px; height: 12px; border-radius: 50%;
+  background: currentColor; flex: none; opacity: .55;
+}
+
+/* 폰 하단으로 이어지는 페이드 */
+.phone-fade {
+  position: absolute; z-index: 5; left: 0; right: 0; bottom: 0;
+  height: 150px;
+  background: linear-gradient(180deg, rgba(10, 9, 8, 0), rgba(10, 9, 8, .96) 72%, var(--ink));
+  pointer-events: none;
+}
+
+/* ---------- CTA (카드 7) ---------- */
+.cta-box {
+  border: 1px solid var(--gold-30);
+  border-radius: 28px;
+  background: rgba(19, 16, 9, .72);
+  padding: 34px 38px;
+}
+.cta-title {
+  font-family: var(--sans); font-weight: 700; font-size: 33px;
+  letter-spacing: -.018em; color: var(--gold-soft);
+}
+.cta-row {
+  display: flex; align-items: baseline; gap: 20px;
+  margin-top: 20px;
+}
+.cta-k {
+  flex: none; width: 158px;
+  font-family: var(--sans); font-weight: 600; font-size: 27px;
+  letter-spacing: .04em; color: var(--cream-52);
+}
+.cta-v {
+  font-family: var(--sans); font-weight: 700; font-size: 33px;
+  letter-spacing: -.012em; color: var(--cream);
+  border-bottom: 1.5px dashed var(--gold-30); padding-bottom: 3px;
+}
+.cta-post {
+  font-family: var(--sans); font-weight: 400; font-size: 29px;
+  line-height: 1.5; color: var(--cream-70); letter-spacing: -.016em;
+  margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--line);
+}
+
+.tags {
+  font-family: var(--sans); font-weight: 600; font-size: 30px;
+  line-height: 1.62; color: var(--gold); letter-spacing: -.012em;
+}
+
+.credit {
+  font-family: var(--sans); font-weight: 400; font-size: 21px;
+  line-height: 1.6; color: var(--cream-34); letter-spacing: -.004em;
+}

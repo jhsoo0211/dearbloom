@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <title>DearBloom 04 / 05 — AI 구조·프로토타입</title>
+    <link rel="stylesheet" href="deck.css" />
+  </head>
+  <body>
+    <section class="slide">
+      <header class="mast">
+        <span class="wordmark">dearbloom</span>
+        <span class="tagline">꽃과 선택 이유를 함께</span>
+      </header>
+
+      <div class="band">
+        <span class="band-en">AI STRUCTURE &amp; PROTOTYPE</span>
+        <span class="band-ko"><b>04</b>/05 <span></span>AI 구조·프로토타입</span>
+      </div>
+
+      <main class="stage">
+        <!-- 상단 — 헤드라인 + 안전 원칙 -->
+        <div class="s4-head">
+          <h1 class="h1 sm">
+            AI는 마음을 읽고,<br />
+            <span class="mark">검증된 데이터는 사실을 지킵니다</span>
+          </h1>
+
+          <div class="s4-principle">
+            <strong>사실은 데이터에서, AI는 해석과 표현에서 사용합니다.</strong>
+            <ul>
+              <li>AI가 출처 없는 꽃말을 만들지 않음</li>
+              <li>메시지 생성 실패 시 검토된 예문으로 폴백</li>
+              <li>AI가 반려동물 독성을 추측하지 않음</li>
+              <li>추억과 편지 원문은 공유 URL과 분석 로그에 남기지 않음</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- 역할 분리 -->
+        <div class="s4-split">
+          <div class="s4-side ai">
+            <header>
+              <svg class="ico" viewBox="0 0 32 32">
+                <path d="M16 4l2.6 6.6L25 13l-6.4 2.4L16 22l-2.6-6.6L7 13l6.4-2.4z" />
+                <path d="M24.5 21.5l1.1 2.7 2.7 1.1-2.7 1.1-1.1 2.7-1.1-2.7-2.7-1.1 2.7-1.1z" />
+              </svg>
+              <h3>AI가 하는 일</h3>
+            </header>
+            <ul>
+              <li>“첫눈을 함께 봤어요” 같은 자유 문장 이해</li>
+              <li>취향·추억·분위기 단서 추출</li>
+              <li>추천 꽃에 맞는 자연스러운 메시지 작성</li>
+              <li>사용자의 말투에 맞춰 문장 다듬기</li>
+            </ul>
+          </div>
+
+          <div class="s4-side data">
+            <header>
+              <svg class="ico" viewBox="0 0 32 32">
+                <path d="M16 3l11 4.4v8.2c0 6.6-4.8 11-11 13.4-6.2-2.4-11-6.8-11-13.4V7.4z" />
+                <path d="M11.5 16.2l3.2 3.3 6.4-6.6" />
+              </svg>
+              <h3>검증 데이터·엔진이 하는 일</h3>
+            </header>
+            <ul>
+              <li>꽃말과 출처 확인</li>
+              <li>고양이·강아지 안전성 판단</li>
+              <li>크게 위험한 꽃·비선호 꽃 강제 제외</li>
+              <li>관계·상황·계절·취향 점수와 3안 다양성</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- 프로토타입 캡처 4컷 -->
+        <div class="s4-shots">
+          <figure class="s4-fig">
+            <div class="s4-frame">
+              <div class="s4-bar"><i></i><i></i><i></i><span>dearbloom</span></div>
+              <div
+                class="s4-view"
+                style="--img: url('../shots/shot-input.png'); --zoom: 320%; --pos: 61% 43%"
+              ></div>
+            </div>
+            <figcaption class="s4-cap"><span class="num">01</span>추천 입력 화면</figcaption>
+          </figure>
+
+          <figure class="s4-fig">
+            <div class="s4-frame">
+              <div class="s4-bar"><i></i><i></i><i></i><span>dearbloom</span></div>
+              <div
+                class="s4-view"
+                style="--img: url('../shots/shot-results.png'); --zoom: 230%; --pos: 24% 97%"
+              ></div>
+            </div>
+            <figcaption class="s4-cap"><span class="num">02</span>추천 결과 화면</figcaption>
+          </figure>
+
+          <figure class="s4-fig">
+            <div class="s4-frame">
+              <div class="s4-bar"><i></i><i></i><i></i><span>dearbloom</span></div>
+              <div
+                class="s4-view"
+                style="--img: url('../shots/shot-story-safety.png'); --zoom: 239%; --pos: 25% 51%"
+              ></div>
+            </div>
+            <figcaption class="s4-cap"><span class="num">03</span>이야기·안전 화면</figcaption>
+          </figure>
+
+          <figure class="s4-fig">
+            <div class="s4-frame">
+              <div class="s4-bar"><i></i><i></i><i></i><span>dearbloom</span></div>
+              <div
+                class="s4-view"
+                style="--img: url('../shots/shot-letter.png'); --zoom: 320%; --pos: 73% 12%"
+              ></div>
+            </div>
+            <figcaption class="s4-cap"><span class="num">04</span>편지 화면</figcaption>
+          </figure>
+        </div>
+
+        <!-- 캡처 콜아웃 문구 -->
+        <div class="s4-strip">
+          <span class="lbl">캡처 콜아웃</span>
+          <span class="s4-callout">관계와 마음부터 선택</span>
+          <span class="s4-callout">크게 위험한 꽃은 추천 전 제외</span>
+          <span class="s4-callout">왜 이 꽃인지 설명</span>
+          <span class="s4-callout">꽃과 함께 전할 문장</span>
+          <span class="s4-callout">실제 구매처로 연결</span>
+        </div>
+
+        <!-- 정적 데모 고지 -->
+        <p class="s4-demo">
+          <b>정적 데모 고지</b>
+          <span
+            >공모전용 Netlify 데모는 서버 없이 동작한다. <em>추천·안전·꽃말·이야기</em>는 실제 엔진과
+            데이터, <em>카드 문구</em>는 API 키를 노출하지 않기 위해 미리 검토한 예문,
+            <em>본배포</em>는 서버에서 AI 메시지 생성 가능. 이 차이를 숨기지 않고 화면에서
+            안내한다.</span
+          >
+        </p>
+      </main>
+
+      <footer class="foot">
+        <span>DearBloom · 제1회 일상뒤집기 공모전 사업 소개서</span>
+        <span class="pips"><i></i><i></i><i></i><i class="on"></i><i></i></span>
+      </footer>
+    </section>
+  </body>
+</html>

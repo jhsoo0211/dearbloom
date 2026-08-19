@@ -119,7 +119,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\stop.ps1 -Any
 
 ## 콘텐츠와 검증
 
-사람이 검토하는 `content/*.csv`가 콘텐츠의 단일 원본입니다. 현재 기준으로 꽃 59종, 꽃말 305행, 이야기 438편, 문학·범용 인용 77행, 탄생화 366일, 탄생화 이야기 407편을 담고 있습니다. 반려동물 안전성은 꽃 59종의 고양이·강아지 조합을 모두 검증합니다.
+사람이 검토하는 `content/*.csv`가 콘텐츠의 단일 원본입니다. 현재 기준으로 꽃 59종, 꽃말 369행, 이야기 438편, 문학·범용 인용 89행, 탄생화 366일, 탄생화 이야기 407편을 담고 있습니다. 반려동물 안전성은 꽃 59종의 고양이·강아지 조합을 모두 검증합니다.
 
 숫자와 참조 무결성의 최종 확인은 문서에 적힌 고정값보다 시드 검증 결과를 우선합니다.
 
@@ -165,6 +165,7 @@ GitHub Actions의 기준은 [`.github/workflows/ci.yml`](.github/workflows/ci.ym
 | `tests/` | 엔진·데이터·컴포넌트 계약 테스트 |
 | `docs/` | 제품 스펙, 조사 원장, 감사 기록 |
 | `deploy/` | 배포 가이드와 생성된 배포 패키지 위치 |
+| `design/` | 확정 시안 HTML 원본 `landing-v3`·`app-v3` (`design/index.html`이 관문, 이전 탐색 시안은 git 이력에) |
 
 ## 배포
 
@@ -176,6 +177,8 @@ GitHub Actions의 기준은 [`.github/workflows/ci.yml`](.github/workflows/ci.ym
 
 - [디자인·워딩·플로우 스펙](docs/design-spec.md)
 - [제품 기획안](docs/기획안_v2.md)
+- [통합 기획안 v3](docs/기획안_v3.md) — 문제 정의·BM·KPI·검증 계획까지 묶은 통합본. 저장소 사실과 어긋나는 곳은 각 절 끝 `⚠ 저장소 대조` 각주가 짚는다
+- 2026-08 일상뒤집기 공모전 제출물: `contest/`
 - [실사 이미지 승인·라이선스](docs/image-assets.md)
 - [세밀화 승인·라이선스](docs/illustration-assets.md)
 - [콘텐츠 CSV 편집 가이드](content/README.md)

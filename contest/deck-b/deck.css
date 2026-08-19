@@ -1,0 +1,415 @@
+/* ===========================================================================
+   DearBloom — 제1회 일상뒤집기 공모전 소개서 · 버전 B (고밀도 정보 설계)
+   1920 × 1080 고정 · 슬라이드 5장 공용 스타일
+
+   · 카피는 contest/기획안-공모전용.md §3 원문. 이 파일은 배치와 색만 담당한다.
+   · 최소 글자 22px. JPEG 로 줄여도 읽히게 하기 위한 하한선이므로 내리지 말 것.
+   · 폰트는 시스템 스택이 기본이고 마루부리(네이버 CDN)는 제목·꽃말 자리에만 얹는다.
+     CDN 이 막히면 'MaruBuri Fallback'(local 명조 + 메트릭 보정)으로 조용히 떨어진다.
+   =========================================================================== */
+
+/* ── 1. 폰트 ───────────────────────────────────────────────────────────── */
+@font-face {
+  font-family: 'MaruBuri';
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+  src: url('https://hangeul.pstatic.net/hangeul_static/webfont/MaruBuri/MaruBuri-Light.woff2')
+    format('woff2');
+}
+@font-face {
+  font-family: 'MaruBuri';
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  src: url('https://hangeul.pstatic.net/hangeul_static/webfont/MaruBuri/MaruBuri-Regular.woff2')
+    format('woff2');
+}
+@font-face {
+  font-family: 'MaruBuri';
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  src: url('https://hangeul.pstatic.net/hangeul_static/webfont/MaruBuri/MaruBuri-SemiBold.woff2')
+    format('woff2');
+}
+@font-face {
+  font-family: 'MaruBuri';
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  src: url('https://hangeul.pstatic.net/hangeul_static/webfont/MaruBuri/MaruBuri-Bold.woff2')
+    format('woff2');
+}
+/* CDN 이 안 뜨는 환경용 폴백 한 벌 — 세로 메트릭을 마루부리에 맞춰 두어
+   스왑이 일어나도 줄 높이가 밀리지 않는다(src/app/globals.css 와 같은 값). */
+@font-face {
+  font-family: 'MaruBuri Fallback';
+  src: local('Noto Serif KR'), local('Nanum Myeongjo'), local('AppleMyungjo'), local('Batang');
+  font-weight: 100 900;
+  font-style: normal;
+  ascent-override: 96.5%;
+  descent-override: 38%;
+  line-gap-override: 0%;
+}
+
+/* ── 2. 토큰 ───────────────────────────────────────────────────────────── */
+:root {
+  --sans: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Malgun Gothic', 'Segoe UI',
+    Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --serif: 'MaruBuri', 'MaruBuri Fallback', 'Noto Serif KR', 'Nanum Myeongjo', 'AppleMyungjo',
+    Batang, serif;
+
+  --bg: #0a0b09;
+  --ivory: #f6f1e8;
+  --text: #e9e3d8;
+  --muted: #a49d93;
+  --dim: #7b756c;
+
+  --gold: #d9a94a;
+  --gold-lt: #f0cd84;
+  --gold-deep: #8a672b;
+
+  --rose: #c98a9b;
+  --lav: #a99cc2;
+  --stem: #86ab90;
+
+  --panel: rgba(246, 241, 232, 0.038);
+  --panel-2: rgba(246, 241, 232, 0.068);
+  --line: rgba(246, 241, 232, 0.11);
+  --line-2: rgba(246, 241, 232, 0.2);
+  --gold-line: rgba(217, 169, 74, 0.42);
+  --gold-wash: rgba(217, 169, 74, 0.09);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  background: #050604;
+}
+
+body {
+  font-family: var(--sans);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  word-break: keep-all;
+}
+
+/* ── 3. 슬라이드 골격 ──────────────────────────────────────────────────── */
+.slide {
+  position: relative;
+  width: 1920px;
+  height: 1080px;
+  overflow: hidden;
+  background: var(--bg);
+  isolation: isolate;
+}
+
+/* 따뜻한 암부 — 디깅타운의 어두운 실내 톤을 팔레트(금·와인·라벤더)로 옮긴 것 */
+.slide::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background:
+    radial-gradient(1200px 700px at 8% -8%, rgba(217, 169, 74, 0.13), transparent 62%),
+    radial-gradient(1000px 640px at 96% 4%, rgba(169, 156, 194, 0.1), transparent 60%),
+    radial-gradient(900px 620px at 78% 108%, rgba(138, 52, 72, 0.11), transparent 62%);
+}
+/* 가장자리 비네트 — 정보가 가장자리까지 흘러도 화면이 닫혀 보이게 */
+.slide::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background: radial-gradient(1500px 900px at 50% 46%, transparent 58%, rgba(0, 0, 0, 0.5));
+}
+
+.frame {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  padding: 44px 56px 40px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── 4. 머리띠 ─────────────────────────────────────────────────────────── */
+.topbar {
+  flex: 0 0 auto;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 14px;
+  margin-bottom: 22px;
+}
+.brand {
+  display: flex;
+  align-items: baseline;
+  gap: 18px;
+}
+.wordmark {
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 600;
+  font-size: 34px;
+  letter-spacing: 0.01em;
+  color: var(--ivory);
+}
+.tagline {
+  font-size: 22px;
+  color: var(--dim);
+  letter-spacing: -0.01em;
+}
+.tagline b {
+  color: var(--muted);
+  font-weight: 600;
+}
+.pageno {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  color: var(--gold);
+}
+
+/* ── 5. 라벨 · 제목 ────────────────────────────────────────────────────── */
+.kicker {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: var(--gold);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.kicker::after {
+  content: '';
+  flex: 1 1 auto;
+  height: 1px;
+  min-width: 20px;
+  background: linear-gradient(90deg, var(--gold-line), rgba(217, 169, 74, 0));
+}
+.kicker .sub {
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--dim);
+}
+
+.head {
+  font-family: var(--serif);
+  font-weight: 700;
+  font-size: 58px;
+  line-height: 1.24;
+  letter-spacing: -0.015em;
+  color: var(--ivory);
+}
+.head em {
+  font-style: normal;
+  color: var(--gold-lt);
+}
+.head.sm {
+  font-size: 50px;
+}
+
+.lead {
+  font-size: 25px;
+  line-height: 1.62;
+  color: var(--muted);
+}
+.body {
+  font-size: 23px;
+  line-height: 1.58;
+  color: var(--muted);
+}
+.tiny {
+  font-size: 22px;
+  line-height: 1.5;
+  color: var(--dim);
+}
+
+/* ── 6. 판 · 알약 ──────────────────────────────────────────────────────── */
+.card {
+  position: relative;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 22px 24px;
+}
+.card.gold {
+  border-color: var(--gold-line);
+  background: linear-gradient(140deg, rgba(217, 169, 74, 0.13), rgba(217, 169, 74, 0.02) 62%);
+}
+.card.solid {
+  background: var(--panel-2);
+}
+.card-t {
+  font-size: 23px;
+  font-weight: 700;
+  color: var(--ivory);
+  letter-spacing: -0.01em;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 17px;
+  border-radius: 999px;
+  border: 1px solid var(--line-2);
+  background: rgba(246, 241, 232, 0.04);
+  font-size: 22px;
+  line-height: 1.15;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.pill.gold {
+  background: linear-gradient(180deg, #e7bb62, #cf9c3c);
+  border-color: transparent;
+  color: #241a07;
+  font-weight: 700;
+}
+.pill.ghost {
+  border-color: var(--gold-line);
+  color: var(--gold-lt);
+  background: rgba(217, 169, 74, 0.07);
+  font-weight: 600;
+}
+.pill.rose {
+  border-color: rgba(201, 138, 155, 0.45);
+  color: var(--rose);
+  background: rgba(201, 138, 155, 0.08);
+}
+.pill .dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: 0 0 auto;
+}
+
+.num {
+  font-family: var(--serif);
+  font-weight: 700;
+  color: var(--gold);
+  line-height: 1;
+  letter-spacing: 0.02em;
+}
+
+/* ── 7. 점선 이음선 ────────────────────────────────────────────────────── */
+.conn {
+  flex: 0 0 auto;
+  align-self: center;
+  display: flex;
+  align-items: center;
+  width: 46px;
+}
+.conn i {
+  display: block;
+  width: 100%;
+  height: 0;
+  border-top: 2px dashed rgba(217, 169, 74, 0.55);
+  position: relative;
+}
+.conn i::after {
+  content: '';
+  position: absolute;
+  right: -5px;
+  top: -5px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--gold);
+  box-shadow: 0 0 12px rgba(217, 169, 74, 0.8);
+}
+.conn.v {
+  width: auto;
+  height: 34px;
+  justify-content: center;
+}
+.conn.v i {
+  width: 0;
+  height: 100%;
+  border-top: 0;
+  border-left: 2px dashed rgba(217, 169, 74, 0.55);
+}
+.conn.v i::after {
+  right: -5px;
+  top: auto;
+  bottom: -5px;
+}
+
+.arrow {
+  color: var(--gold);
+  font-size: 26px;
+  line-height: 1;
+  flex: 0 0 auto;
+}
+
+/* ── 8. 실화면 조각 (contest/shots 의 3200×2000 캡처를 잘라 쓴다) ───────
+   --k  배율 = 상자 너비 ÷ 잘라낼 영역 너비(원본 픽셀)
+   --sx --sy 잘라낼 영역의 왼쪽 위 좌표(원본 픽셀)
+   원본이 2배 해상도라 --k 가 0.5 면 화면과 같은 크기로 보인다. */
+.shot {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  border: 1px solid var(--line-2);
+  background: #0d0e0c;
+  flex: 0 0 auto;
+}
+.shot i {
+  position: absolute;
+  inset: 0;
+  display: block;
+  background-image: var(--src);
+  background-repeat: no-repeat;
+  background-size: calc(3200px * var(--k)) calc(2000px * var(--k));
+  background-position: calc(var(--sx) * var(--k) * -1px) calc(var(--sy) * var(--k) * -1px);
+}
+/* 잘린 아래쪽을 살짝 어둡게 — 화면이 이어진다는 신호 */
+.shot::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  box-shadow: inset 0 -24px 26px -20px rgba(5, 6, 4, 0.9);
+  pointer-events: none;
+}
+.shot-cap {
+  font-size: 22px;
+  line-height: 1.42;
+  color: var(--dim);
+}
+
+/* ── 9. 실사 도판 ──────────────────────────────────────────────────────── */
+.photo {
+  position: relative;
+  overflow: hidden;
+  border-radius: 14px;
+  background: #14150f;
+}
+.photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: saturate(0.94) brightness(0.92);
+}
+.photo .tag {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+}

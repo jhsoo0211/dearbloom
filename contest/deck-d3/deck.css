@@ -1,0 +1,1059 @@
+@charset "utf-8";
+
+/* ============================================================
+   DearBloom — 공모전 소개서 D 변주 3 「실사 히어로 혼합」
+   초고화질 꽃 실사 풀블리드 + 종이 액자
+   각 장 = 어둡게 그레이딩한 실사 위에 흰 종이 카드/테이프 액자
+   1920 x 1080 고정
+   ============================================================ */
+
+/* ---------- 자체 호스팅 폰트 (외부 핫링크 없음) ---------- */
+@font-face {
+  font-family: 'MaruBuri';
+  font-weight: 300;
+  font-display: block;
+  src: url('assets/fonts/MaruBuri-Light.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'MaruBuri';
+  font-weight: 400;
+  font-display: block;
+  src: url('assets/fonts/MaruBuri-Regular.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'MaruBuri';
+  font-weight: 600;
+  font-display: block;
+  src: url('assets/fonts/MaruBuri-SemiBold.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'MaruBuri';
+  font-weight: 700;
+  font-display: block;
+  src: url('assets/fonts/MaruBuri-Bold.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Pretendard';
+  font-weight: 100 900;
+  font-display: block;
+  src: url('assets/fonts/Pretendard.woff2') format('woff2');
+}
+
+:root {
+  /* 종이 (밝은 면) */
+  --paper: #f4efe4;
+  --paper-hi: #fcf9f2;
+  --paper-lo: #e8e0cf;
+
+  /* 잉크 (종이 위 글자) */
+  --ink: #1b1813;
+  --ink-2: #3d372e;
+  --ink-3: #6b6154;
+  --ink-4: #948977;
+
+  /* 실사 위 글자 */
+  --w: #f8f4ea;
+  --w-2: rgba(248, 244, 234, 0.82);
+  --w-3: rgba(248, 244, 234, 0.62);
+
+  /* 강조 */
+  --rose: #ae3a30;
+  --gold: #9d711f;
+  /* 종이 위에서 4.5:1 을 넘기는 진한 금색 */
+  --gold-d: #8a6314;
+  --sage: #3d6a4d;
+
+  /* 어두운 면 위 강조 (모두 4.5:1 이상 확보용으로 밝게 조정) */
+  --gold-l: #eac678;
+  --rose-l: #f2a89c;
+  --sage-l: #a2d6b5;
+
+  --line: rgba(27, 24, 19, 0.13);
+  --line-2: rgba(27, 24, 19, 0.24);
+  --hair: rgba(234, 198, 120, 0.3);
+
+  --serif: 'MaruBuri', 'Nanum Myeongjo', 'Apple SD Gothic Neo', 'Malgun Gothic', serif;
+  --sans: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Apple SD Gothic Neo',
+    'Malgun Gothic', 'Noto Sans KR', sans-serif;
+
+  --ts: 0 1px 2px rgba(0, 0, 0, 0.72), 0 2px 18px rgba(0, 0, 0, 0.62);
+  --ts-s: 0 1px 2px rgba(0, 0, 0, 0.7), 0 1px 10px rgba(0, 0, 0, 0.5);
+
+  --lift: 0 3px 10px rgba(0, 0, 0, 0.34), 0 18px 44px rgba(0, 0, 0, 0.46);
+  --lift-s: 0 2px 7px rgba(0, 0, 0, 0.3), 0 10px 26px rgba(0, 0, 0, 0.36);
+  --lift-l: 0 6px 18px rgba(0, 0, 0, 0.4), 0 34px 76px rgba(0, 0, 0, 0.56);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #0a0908;
+}
+
+body {
+  font-family: var(--sans);
+  color: var(--w);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: geometricPrecision;
+}
+
+/* ============================================================
+   1. 슬라이드 셸 — 실사 풀블리드 → 그레이딩 → 종이 질감
+   ============================================================ */
+
+.slide {
+  position: relative;
+  width: 1920px;
+  height: 1080px;
+  overflow: hidden;
+  background: #0a0908;
+  isolation: isolate;
+}
+
+/* (0) 실사 */
+.bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+.bg img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scale(1.02);
+  filter: saturate(1.34) contrast(1.1);
+}
+.bg.flip img { transform: scale(1.02) scaleX(-1); }
+
+/* (1) 기본 그레이딩 — 전면을 고르게 눌러 톤을 잡는다.
+   글자 대비는 이 층이 아니라 (2) 의 .veil / .scrim 이 책임진다. */
+.grade {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    /* 상하 롤오프 */
+    linear-gradient(
+      180deg,
+      rgba(6, 5, 4, 0.6) 0%,
+      rgba(6, 5, 4, 0.08) 19%,
+      rgba(6, 5, 4, 0.08) 76%,
+      rgba(6, 5, 4, 0.74) 100%
+    ),
+    /* 비네트 */
+    radial-gradient(132% 114% at 52% 46%, rgba(0, 0, 0, 0) 40%, rgba(4, 3, 2, 0.5) 100%),
+    /* 전면 톤다운 */
+    linear-gradient(0deg, rgba(6, 5, 4, 0.1), rgba(6, 5, 4, 0.1)),
+    /* 따뜻한 세피아 — 종이 결과 이어 붙이기 위한 색온도 */
+    linear-gradient(0deg, rgba(92, 60, 24, 0.1), rgba(92, 60, 24, 0.1));
+}
+
+/* (2) 글자가 앉는 기둥을 통째로 눌러 4.5:1 을 구조적으로 보장하는 층.
+   실사가 살아야 할 쪽은 건드리지 않는다. */
+.veil {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+/* 좌측 기둥 */
+.veil.left {
+  background: linear-gradient(
+    90deg,
+    rgba(5, 4, 3, 0.86) 0%,
+    rgba(5, 4, 3, 0.82) 34%,
+    rgba(5, 4, 3, 0.48) 52%,
+    rgba(5, 4, 3, 0) 70%
+  );
+}
+/* 상단 띠 — 헤드라인 자리 (기본: y 0~40% 강, 62% 에서 소멸) */
+.veil.top {
+  background: linear-gradient(
+    180deg,
+    rgba(5, 4, 3, 0.9) 0%,
+    rgba(5, 4, 3, 0.85) 28%,
+    rgba(5, 4, 3, 0.64) 40%,
+    rgba(5, 4, 3, 0.2) 52%,
+    rgba(5, 4, 3, 0) 64%
+  );
+}
+/* 상단 좌측만 — 오른쪽 위는 실사를 그대로 연다 */
+.veil.headL {
+  background: linear-gradient(
+    180deg,
+    rgba(5, 4, 3, 0.92) 0%,
+    rgba(5, 4, 3, 0.86) 19%,
+    rgba(5, 4, 3, 0.5) 26%,
+    rgba(5, 4, 3, 0) 36%
+  );
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    #000 0%,
+    #000 50%,
+    rgba(0, 0, 0, 0.45) 64%,
+    rgba(0, 0, 0, 0) 80%
+  );
+  mask-image: linear-gradient(
+    90deg,
+    #000 0%,
+    #000 50%,
+    rgba(0, 0, 0, 0.45) 64%,
+    rgba(0, 0, 0, 0) 80%
+  );
+}
+
+/* 하단 띠 */
+.veil.bottom {
+  background: linear-gradient(
+    0deg,
+    rgba(5, 4, 3, 0.88) 0%,
+    rgba(5, 4, 3, 0.8) 22%,
+    rgba(5, 4, 3, 0.4) 34%,
+    rgba(5, 4, 3, 0) 46%
+  );
+}
+/* 상단 + 하단 (가운데만 실사를 연다) */
+.veil.band {
+  background: linear-gradient(
+    180deg,
+    rgba(5, 4, 3, 0.9) 0%,
+    rgba(5, 4, 3, 0.84) 26%,
+    rgba(5, 4, 3, 0.3) 40%,
+    rgba(5, 4, 3, 0.3) 58%,
+    rgba(5, 4, 3, 0.84) 78%,
+    rgba(5, 4, 3, 0.9) 100%
+  );
+}
+
+/* 국소 스크림 — 남는 글자 자리를 한 겹 더 누른다 */
+.scrim {
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
+  border-radius: 50%;
+  filter: blur(44px);
+  background: radial-gradient(
+    closest-side,
+    rgba(5, 4, 3, 0.88),
+    rgba(5, 4, 3, 0.58) 58%,
+    rgba(5, 4, 3, 0) 100%
+  );
+}
+
+/* (3) 종이 질감 — D 온전형의 결을 실사 위로 옮긴다 (아주 얇게) */
+.paperlay {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+.paperlay::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.2;
+  mix-blend-mode: soft-light;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='960' height='540'><filter id='p' x='0' y='0' width='100%25' height='100%25'><feTurbulence type='fractalNoise' baseFrequency='0.006' numOctaves='6' seed='11' result='t'/><feDiffuseLighting in='t' lighting-color='%23ffffff' surfaceScale='3.4' diffuseConstant='1'><feDistantLight azimuth='232' elevation='52'/></feDiffuseLighting></filter><rect width='960' height='540' filter='url(%23p)'/></svg>");
+}
+.paperlay::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.13;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='220' height='220' filter='url(%23g)' opacity='0.6'/></svg>");
+}
+
+/* (4) 접힌 자국 */
+.creases {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  opacity: 0.16;
+  mix-blend-mode: soft-light;
+  filter: blur(2.2px);
+  background-image:
+    linear-gradient(101deg, rgba(255, 255, 255, 0) 27.4%, rgba(255, 255, 255, 0.85) 27.7%, rgba(255, 255, 255, 0) 28.2%),
+    linear-gradient(-84deg, rgba(255, 255, 255, 0) 61%, rgba(255, 255, 255, 0.7) 61.4%, rgba(255, 255, 255, 0) 62%),
+    linear-gradient(14deg, rgba(255, 255, 255, 0) 73%, rgba(255, 255, 255, 0.55) 73.4%, rgba(255, 255, 255, 0) 74%);
+}
+
+.stage {
+  position: relative;
+  z-index: 4;
+  height: 100%;
+  padding: 52px 72px 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---------- 러닝 ---------- */
+.foot-label,
+.foot-num,
+.credit {
+  position: absolute;
+  bottom: 27px;
+  z-index: 7;
+  font-family: var(--sans);
+  font-size: 16px;
+  letter-spacing: 0.02em;
+  color: var(--w-2);
+  text-shadow: var(--ts-s);
+}
+.foot-label { left: 42px; font-weight: 700; }
+.foot-num {
+  right: 42px;
+  font-weight: 600;
+  color: var(--w-3);
+  font-variant-numeric: tabular-nums;
+}
+.credit {
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(248, 244, 234, 0.56);
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+.credit b { font-weight: 700; color: rgba(248, 244, 234, 0.72); }
+
+/* ============================================================
+   2. 타이포 — 실사 위
+   ============================================================ */
+
+.eyebrow {
+  font-family: var(--sans);
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  color: var(--gold-l);
+  text-shadow: var(--ts-s);
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--sans);
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: var(--w);
+  text-shadow: var(--ts-s);
+}
+.tag::before {
+  content: '';
+  width: 4px;
+  height: 18px;
+  border-radius: 2px;
+  background: var(--gold-l);
+}
+.tag.rose::before { background: var(--rose-l); }
+.tag.sage::before { background: var(--sage-l); }
+
+.hl {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 700;
+  font-size: 68px;
+  line-height: 1.28;
+  letter-spacing: -0.024em;
+  color: var(--w);
+  text-shadow: var(--ts);
+}
+
+.lead {
+  margin: 0;
+  font-family: var(--sans);
+  font-size: 21px;
+  font-weight: 400;
+  line-height: 1.68;
+  color: var(--w-2);
+  text-shadow: var(--ts-s);
+}
+
+.em-gold { color: var(--gold-l); }
+.em-rose { color: var(--rose-l); }
+.em-sage { color: var(--sage-l); }
+
+.sublabel {
+  font-family: var(--sans);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: var(--gold-l);
+  text-shadow: var(--ts-s);
+}
+
+/* ============================================================
+   3. 면 — 종이 카드 / 유리 카드 / 액자
+   ============================================================ */
+
+/* 흰 종이 카드 : 실사 위에 얹히는 주 면 */
+.paper {
+  position: relative;
+  background: linear-gradient(172deg, #fdfaf3 0%, #f6f0e3 58%, #efe7d6 100%);
+  border: 1px solid rgba(27, 24, 19, 0.1);
+  border-radius: 4px;
+  box-shadow: var(--lift);
+  color: var(--ink);
+  overflow: hidden;
+}
+.paper::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.22;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='180' height='180' filter='url(%23n)' opacity='0.5'/></svg>");
+}
+.paper > * { position: relative; z-index: 1; }
+
+/* 반투명 유리 카드 : 실사가 비쳐 보이게 두는 보조 면 */
+.glass {
+  position: relative;
+  background: linear-gradient(168deg, rgba(20, 17, 12, 0.56), rgba(11, 9, 7, 0.68));
+  backdrop-filter: blur(17px) saturate(0.78) brightness(0.62);
+  border: 1px solid var(--hair);
+  border-radius: 4px;
+  box-shadow: var(--lift-s);
+  color: var(--w);
+}
+
+/* 짙은 잉크 밴드 */
+.ink {
+  position: relative;
+  border-radius: 4px;
+  background: linear-gradient(96deg, #12100b 0%, #241e15 48%, #12100b 100%);
+  border: 1px solid rgba(234, 198, 120, 0.24);
+  box-shadow: var(--lift);
+  color: var(--w);
+  overflow: hidden;
+}
+.ink::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(100deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0) 44%);
+}
+
+.band-in {
+  position: relative;
+  z-index: 2;
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+/* 사진·화면 액자 */
+.frame {
+  position: relative;
+  background: #fdfaf2;
+  padding: 11px;
+  border: 1px solid rgba(27, 24, 19, 0.12);
+  box-shadow: var(--lift-l);
+}
+/* 높이는 각 장이 px 로 지정한다. flex 축소가 걸린 칸에서 height:100% 를 쓰면
+   이미지가 액자를 밀어내고 캡션이 밖으로 빠져나온다 — auto 가 기본값이다. */
+.frame img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  background: #0c0b09;
+}
+.frame .cap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 9px 2px 1px;
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink-3);
+  letter-spacing: 0.01em;
+}
+.frame.thin { padding: 8px; }
+.frame.thin .cap { font-size: 13px; padding: 7px 1px 0; }
+
+/* 마스킹 테이프 */
+.tape {
+  position: absolute;
+  width: 116px;
+  height: 30px;
+  background: linear-gradient(180deg, rgba(233, 222, 196, 0.92), rgba(206, 192, 158, 0.86));
+  border-left: 1px dashed rgba(255, 255, 255, 0.7);
+  border-right: 1px dashed rgba(255, 255, 255, 0.7);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.42);
+  z-index: 5;
+}
+
+/* 포스트잇 */
+.note {
+  position: relative;
+  background: linear-gradient(170deg, #fbeba6, #f4dc86);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.36), 0 20px 40px rgba(0, 0, 0, 0.4);
+  padding: 25px 22px;
+  font-family: var(--serif);
+  font-size: 21px;
+  font-weight: 600;
+  line-height: 1.6;
+  color: #4a3a12;
+  text-align: center;
+}
+.note::before {
+  content: '';
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%) rotate(-2.5deg);
+  width: 104px;
+  height: 28px;
+  background: linear-gradient(180deg, rgba(228, 216, 188, 0.9), rgba(206, 192, 160, 0.82));
+  border-left: 1px dashed rgba(255, 255, 255, 0.6);
+  border-right: 1px dashed rgba(255, 255, 255, 0.6);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+/* ============================================================
+   4. 종이 위 타이포 (paper 안쪽)
+   ============================================================ */
+
+.p-title {
+  font-family: var(--sans);
+  font-size: 19px;
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: -0.012em;
+}
+.p-body {
+  font-family: var(--sans);
+  font-size: 17px;
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+.p-quote {
+  font-family: var(--serif);
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+  line-height: 1.5;
+}
+.p-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-family: var(--sans);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--ink-3);
+}
+.p-tag::before {
+  content: '';
+  width: 4px;
+  height: 15px;
+  border-radius: 2px;
+  background: var(--gold);
+}
+.p-tag.rose::before { background: var(--rose); }
+.p-tag.sage::before { background: var(--sage); }
+
+/* ============================================================
+   5. 슬라이드 1 — 검색 탭
+   ============================================================ */
+
+.qcard {
+  position: relative;
+  padding: 19px 20px 19px 52px;
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.44;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+  display: flex;
+  align-items: center;
+  min-height: 100px;
+}
+.qcard::before {
+  content: '\201C';
+  position: absolute;
+  left: 17px;
+  top: 10px;
+  z-index: 2;
+  font-family: Georgia, var(--serif);
+  font-size: 52px;
+  line-height: 1;
+  color: rgba(174, 58, 48, 0.36);
+}
+
+.phone {
+  position: relative;
+  width: 468px;
+  border-radius: 42px;
+  padding: 15px;
+  background: linear-gradient(168deg, #322b21, #100e0a);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.5), 0 44px 88px rgba(0, 0, 0, 0.58);
+}
+.phone .screen {
+  border-radius: 31px;
+  background: linear-gradient(180deg, #fdfbf6, #f1ebdf);
+  padding: 19px 17px 21px;
+  overflow: hidden;
+}
+.phone .bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px 13px;
+}
+.phone .bar .t {
+  font-family: var(--sans);
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--ink-3);
+}
+.tabcount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  height: 26px;
+  padding: 0 8px;
+  border-radius: 7px;
+  background: var(--rose);
+  color: #fff;
+  font-family: var(--sans);
+  font-size: 15px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.tabrow {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 12px 13px;
+  margin-bottom: 9px;
+  border: 1px solid rgba(27, 24, 19, 0.13);
+  border-radius: 11px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(60, 48, 30, 0.08);
+}
+.tabrow:last-child { margin-bottom: 0; }
+.tabrow .idx {
+  width: 20px;
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.tabrow .mag { flex: none; display: flex; }
+.tabrow .q {
+  flex: 1;
+  font-family: var(--sans);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.015em;
+}
+.tabrow .x {
+  font-family: var(--sans);
+  font-size: 16px;
+  color: var(--ink-3);
+  line-height: 1;
+}
+.tabrow.hot {
+  border-color: rgba(174, 58, 48, 0.36);
+  background: linear-gradient(180deg, #fff, #fdf2f0);
+}
+.tabrow.hot .q { color: var(--rose); }
+
+/* ============================================================
+   6. 슬라이드 2 — 여정
+   ============================================================ */
+
+.journey {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 13px;
+}
+.jcol {
+  padding: 16px 15px 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.jcol .ico {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid rgba(234, 198, 120, 0.45);
+  background: rgba(234, 198, 120, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.jcol .step {
+  font-family: var(--sans);
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: var(--gold-l);
+}
+.jcol .m {
+  font-family: var(--sans);
+  font-size: 19px;
+  font-weight: 800;
+  color: var(--w);
+  letter-spacing: -0.018em;
+}
+.jcol .think {
+  font-family: var(--serif);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--w-2);
+  padding-bottom: 10px;
+  border-bottom: 1px dashed rgba(234, 198, 120, 0.28);
+  min-height: 60px;
+}
+.jcol .prob {
+  font-family: var(--sans);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.42;
+  color: var(--rose-l);
+}
+
+/* ============================================================
+   7. 슬라이드 3 — 입력 · 결과 · 기능
+   ============================================================ */
+
+.inputcard {
+  padding: 13px 16px;
+  border-radius: 4px;
+}
+.inputcard .k {
+  font-family: var(--sans);
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: var(--ink-3);
+  margin-bottom: 5px;
+}
+.inputcard .v {
+  font-family: var(--serif);
+  font-size: 21px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.022em;
+}
+
+.optrow {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 9px 12px;
+  border-radius: 4px;
+}
+.optrow .th {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid rgba(234, 198, 120, 0.5);
+  background: rgba(8, 6, 5, 0.74);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--sans);
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--gold-l);
+  font-variant-numeric: tabular-nums;
+}
+.optrow .rk {
+  font-family: var(--sans);
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--w);
+  margin-bottom: 3px;
+  letter-spacing: -0.012em;
+}
+.optrow .rd {
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--w-2);
+}
+
+.feat {
+  padding: 15px 17px 14px;
+}
+.feat .fn {
+  font-family: var(--sans);
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: var(--gold-l);
+  margin-bottom: 6px;
+}
+.feat .ft {
+  font-family: var(--sans);
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--w);
+  margin-bottom: 6px;
+  letter-spacing: -0.018em;
+}
+.feat .fd {
+  font-family: var(--sans);
+  font-size: 14.5px;
+  line-height: 1.52;
+  color: var(--w-2);
+}
+
+/* ============================================================
+   8. 슬라이드 4 — 역할 분리
+   ============================================================ */
+
+.split {
+  display: grid;
+  grid-template-columns: 1fr 46px 1fr;
+  align-items: stretch;
+}
+.split .col {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.split .hd {
+  font-family: var(--sans);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: var(--gold-l);
+  margin-bottom: 9px;
+}
+.split .hd.sage { color: var(--sage-l); }
+.split .cell {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  padding: 9px 13px;
+  border-radius: 3px;
+  border: 1px solid rgba(234, 198, 120, 0.2);
+  background: rgba(16, 13, 10, 0.5);
+  font-family: var(--sans);
+  font-size: 14.5px;
+  line-height: 1.42;
+  color: var(--w-2);
+}
+.split .cell.r {
+  border-color: rgba(162, 214, 181, 0.26);
+  background: rgba(24, 40, 30, 0.46);
+}
+.split .mid {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.guard {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+  font-family: var(--sans);
+  font-size: 14.5px;
+  line-height: 1.48;
+  color: var(--w-2);
+  margin-bottom: 6px;
+}
+.guard::before {
+  content: '';
+  flex: none;
+  width: 5px;
+  height: 5px;
+  margin-top: 8px;
+  border-radius: 50%;
+  background: var(--sage-l);
+}
+
+.chiprow { display: flex; flex-wrap: wrap; gap: 7px; }
+.chip {
+  padding: 6px 12px;
+  border: 1px solid rgba(234, 198, 120, 0.3);
+  border-radius: 999px;
+  background: rgba(16, 13, 10, 0.55);
+  font-family: var(--sans);
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--w-2);
+  white-space: nowrap;
+}
+
+.notice { padding: 12px 15px; border-radius: 3px; border-style: dashed; }
+.notice .nt {
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--gold-l);
+  margin-bottom: 5px;
+}
+.notice .nb {
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--w-2);
+}
+
+/* 캡처 캡션 (콜아웃 배지와 병치하지 않는다 — 캡션 한 줄로만 설명한다) */
+.shotcap {
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink-3);
+  letter-spacing: 0.01em;
+}
+.shotcap i {
+  font-style: normal;
+  font-weight: 800;
+  color: var(--gold-d);
+  margin-right: 7px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============================================================
+   9. 슬라이드 5 — 도식
+   ============================================================ */
+
+.diagram { position: relative; }
+.diagram svg { position: absolute; inset: 0; overflow: visible; }
+
+.node {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 11px 15px;
+  border-radius: 999px;
+  border: 1px solid rgba(234, 198, 120, 0.5);
+  background: linear-gradient(168deg, rgba(24, 20, 14, 0.9), rgba(13, 11, 8, 0.92));
+  box-shadow: var(--lift-s);
+  font-family: var(--sans);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--w);
+  letter-spacing: -0.012em;
+  line-height: 1.32;
+}
+.node.last {
+  border-color: rgba(242, 168, 156, 0.62);
+  color: var(--rose-l);
+}
+
+.step-row {
+  display: grid;
+  grid-template-columns: 40px 1fr;
+  align-items: center;
+  gap: 13px;
+  padding: 10px 15px;
+  border-radius: 3px;
+}
+.step-row .bn {
+  font-family: var(--sans);
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--gold-l);
+  text-align: center;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.step-row .bt {
+  font-family: var(--sans);
+  font-size: 16.5px;
+  font-weight: 600;
+  color: var(--w);
+  line-height: 1.4;
+}
+
+.kpi {
+  padding: 14px 14px 13px;
+  text-align: center;
+  border-radius: 3px;
+}
+.kpi .k {
+  font-family: var(--sans);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--w-2);
+  margin-bottom: 7px;
+}
+.kpi .v {
+  font-family: var(--sans);
+  font-size: 38px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--gold-l);
+  letter-spacing: -0.026em;
+  font-variant-numeric: tabular-nums;
+}
+.kpi .v small {
+  font-size: 17px;
+  font-weight: 700;
+  margin-left: 3px;
+  color: var(--w-2);
+}
+
+.bullet {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-family: var(--sans);
+  font-size: 16.5px;
+  line-height: 1.48;
+  color: var(--w);
+}
+.bullet::before {
+  content: '';
+  flex: none;
+  width: 6px;
+  height: 6px;
+  margin-top: 9px;
+  border-radius: 50%;
+  background: var(--gold-l);
+}
+.bullet.sage::before { background: var(--sage-l); }
+
+.srcnote {
+  font-family: var(--sans);
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--w-3);
+}
+
+.closing {
+  font-family: var(--serif);
+  font-weight: 700;
+  font-size: 33px;
+  line-height: 1.44;
+  letter-spacing: -0.024em;
+  color: var(--w);
+  text-align: center;
+  width: 100%;
+}

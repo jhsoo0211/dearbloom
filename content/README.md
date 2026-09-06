@@ -9,7 +9,7 @@ DB는 이 CSV에서 시드(upsert)될 뿐, 반대로 DB를 직접 고치지 않�
 |---|---|---|
 | `flowers.csv` | 꽃 기본 정보 | 59 |
 | `meanings.csv` | 꽃말(출처 필수) | 369 |
-| `stories.csv` | 꽃에 얽힌 일화(창작 외 출처 필수) | 447 |
+| `stories.csv` | 꽃에 얽힌 일화(창작 외 출처 필수) | 452 |
 | `rules.csv` | 상황 → 꽃 추천/회피 규칙 | 151 |
 | `templates.csv` | 메시지 템플릿(마음×톤 31칸 × 길이 2벌) | 62 |
 | `quotes.csv` | 인용문(범용 3 + 문학 발췌 86) | 89 |
@@ -140,17 +140,31 @@ intent 와 무관한 상시 가점(R)이 붙기 때문이다. 꽃말이나 일�
     12종 중 8종 — 근대 원예종 4종은 PD 문학 부재로 정직하게 비움)이 여기 해당한다.
     같은 회차에 **출처 정정 22행**: `suncheonbay-birth-flowers` 로 잘못 표기됐던 행들을
     실근거(로얄플라워 표)로 바로잡았다(`meanings-research-2.md` §9).
-  - `weekly-research(2026-08-24):` — 세 번째 주간 콘텐츠 리서치. 신규 종(연꽃·금어초·디기탈리스)을
+  - `weekly-research(2026-08-24):` — 세 번째 주간 콘텐츠 리서치 1차 시도. 신규 종(연꽃·금어초·디기탈리스)을
     시도했으나, `npm run test` 가 지키는 "카탈로그 전종은 대표 실사·도판을 갖는다" 불변식
     (`tests/components/photos.test.ts` 외)이 별도 이미지 자산 파이프라인(`docs/image-assets.md`)의
     산출물을 요구했고, 이 세션은 `WebFetch` 가 전 도메인 차단이라 이미지를 열거나 내려받을 수
     없었다. 4개 CSV(신규 2종)를 만들었다가 되돌리고 **트랙 B로 전환**했다 — 브리프의 9종 중
     커버리지가 가장 얇은 두 종, `lisianthus`(9편)·`babys-breath`(8편)에 새 소재 3편을 더했다
-    (`stories.csv` 444 → **447**, `meanings.csv` 는 이번 회차에서 늘지 않았다). 리시안서스는
-    학명 재분류(*Lisianthus russellianus* → *Eustoma grandiflorum*)와 유통명 불일치, 품종별
-    화병 수명(5~28일)의 유전형×환경 상호작용 연구 2편을, 안개꽃은 뿌리 사포닌의 터키 전통 과자·
-    산업 이용 1편을 실었다 — 기존 17편과 소재가 겹치지 않는지 전수 대조했다. 조사 경위·시도했다
-    되돌린 신규 종 소재·제외 목록의 단일 원본은 `docs/weekly-research-2026-08-24.md` 다.
+    (`stories.csv` 444 → 447). 리시안서스는 학명 재분류(*Lisianthus russellianus* →
+    *Eustoma grandiflorum*)와 유통명 불일치, 품종별 화병 수명(5~28일)의 유전형×환경 상호작용
+    연구 2편을, 안개꽃은 뿌리 사포닌의 터키 전통 과자·산업 이용 1편을 실었다 — 기존 17편과
+    소재가 겹치지 않는지 전수 대조했다. 조사 경위·시도했다 되돌린 신규 종 소재·제외 목록의
+    단일 원본은 `docs/weekly-research-2026-08-24.md` 다.
+  - `weekly-research(2026-08-31):` — 세 번째 주간 콘텐츠 리서치 2차 시도. 이 세션은 08-24 회차와
+    별개로(같은 444행짜리 `main`에서 각자 다른 브랜치로 독립적으로 출발) 마찬가지로 트랙 B(한국
+    유통 상위 꽃 심화)를 택해, 2회차가 다루지 못한 나머지 후보 중 이야기 보유량이 가장 적던
+    `lisianthus`·`babys-breath` 두 종에 이야기 5편을 조사해 붙였다(`stories.csv`
+    444 → 449). 두 꽃 모두 색상별 꽃말을 추가하려 했으나 신뢰할 만한 새 출처(학술지·
+    박물관·잡지·신문·PD 고서)를 찾지 못해 `meanings.csv`는 이번 회차에서 늘리지 않았다
+    (`docs/weekly-research-2026-08-31.md` §2). 5편의 `source_kind` 분포는 `paper` 2 ·
+    `book-pd` 1 · `garden` 1 · `other` 1 — 위키 출처 0편. 조사 경위·소스 유형 분포·
+    제외 목록의 단일 원본은 `docs/weekly-research-2026-08-31.md`다.
+  - **두 회차 병합(2026-09-06):** 08-24·08-31 두 세션이 같은 444행 기준선에서 독립적으로
+    갈라져 나갔다가 PR #3(08-24)을 `main`(08-31 회차를 이미 포함한)에 병합하며 합쳐졌다. 두
+    세션 모두 `lisianthus`·`babys-breath`를 골랐지만 소재가 하나도 겹치지 않아(학명 재분류·
+    화병 수명·터키 식품 산업 이용 대 고양이 유인 성분·무화분 품종·비누풀과의 사촌 관계·회전초
+    확산) 8편 전부를 그대로 실었다. 병합 후 `stories.csv` 최종 행 수는 444 → **452**(+3 +5)다.
 
 ## 절대 하지 말 것
 
@@ -281,8 +295,10 @@ seed-v6·seed-v7 127행을 더한 377행 분포는 `history` 290 · `folklore` 5
 `folklore` 1)을 더한 **현재 384행 분포는 `history` 296 · `folklore` 59 ·
 `literary` 29 · `original` 0** 이었다(weekly-research 2회차 조사 착수 시점 기준). 같은
 날 병합된 카탈로그 확장 배치 2(신규 12종, `stories.csv` 61편)를 더하고 seed-v4 와
-소재가 겹친 1행(`story-chrysanthemum-double-ninth`)을 뺀 **최종 444행 분포는
-`history` 353 · `folklore` 62 · `literary` 29 · `original` 0** 이다.
+소재가 겹친 1행(`story-chrysanthemum-double-ninth`)을 뺀 **444행 분포는
+`history` 353 · `folklore` 62 · `literary` 29 · `original` 0** 이었다. weekly-research
+3회차 5행(전부 `history`)을 더한 **현재 449행 분포는 `history` 358 · `folklore` 62 ·
+`literary` 29 · `original` 0** 이다.
 
 #### `source_kind` — 그 출처가 무엇인가 (2026-08-15 신설)
 
@@ -322,9 +338,12 @@ seed-v6·seed-v7 127행을 더한 377행 분포는 `history` 290 · `folklore` 5
   더한 **384행 분포는 `wiki` 166 · `garden` 43 · `museum` 38 · `magazine` 40 ·
   `newspaper` 36 · `book-pd` 23 · `paper` 20 · `other` 18** 이었다(weekly-research 2회차
   조사 착수 시점 기준). 같은 날 병합된 카탈로그 확장 배치 2(신규 12종, `stories.csv`
-  61편)를 더하고 seed-v4 와 소재가 겹친 `book-pd` 1행을 뺀 **최종 444행 분포는
+  61편)를 더하고 seed-v4 와 소재가 겹친 `book-pd` 1행을 뺀 **444행 분포는
   `wiki` 168 · `garden` 55 · `magazine` 46 · `newspaper` 44 · `museum` 43 ·
-  `other` 31 · `paper` 31 · `book-pd` 26** 이다.
+  `other` 31 · `paper` 31 · `book-pd` 26** 이었다. weekly-research 3회차 5행
+  (`paper` 2 · `book-pd` 1 · `garden` 1 · `other` 1, 위키 0)을 더한 **현재 449행 분포는
+  `wiki` 168 · `garden` 56 · `magazine` 46 · `newspaper` 44 · `museum` 43 ·
+  `paper` 33 · `other` 32 · `book-pd` 27** 이다.
 - 소급 분류의 판단 근거: 위키피디아·위키낱말사전·상징 정리 사이트 → `wiki` / Gutenberg·
   Internet Archive·위키문헌·PD 고서 전문 사이트 → `book-pd` / ASPCA·NC State Extension·
   SANBI·농사로·홍콩 병원관리국 독성식물도감 → `garden` / PMC·KCI·KoreaScience·ScienceON →

@@ -1,203 +1,204 @@
 # DearBloom
 
-꽃말과 꽃에 얽힌 이야기를 바탕으로, 지금의 관계와 상황에 건넬 꽃을 골라 주는 Next.js 서비스입니다. 추천 결과에는 선택 이유, 반려동물 안전 정보, 관련 이야기와 문학 발췌, 카드 멘트를 함께 담습니다.
+[English](README.md) · [한국어](README.ko.md)
 
-## 현재 구현 상태
+**Choose flowers for the person, the occasion, and the words you want to say.**
 
-- 기본 실행에는 API 키나 외부 DB가 필요하지 않습니다. 생성형 AI 키가 없으면 카드 멘트는 검증된 템플릿 예문으로 대체됩니다.
-- 앱의 콘텐츠 런타임 원본은 현재 `content/*.csv`입니다. Supabase 마이그레이션과 시드 경로는 준비돼 있지만 DB에 적재한다고 앱의 조회 경로가 자동으로 Supabase로 바뀌지는 않습니다.
-- 비밀 편지는 현재 브라우저의 `localStorage`에만 저장됩니다. 같은 브라우저·같은 프로필에서만 다시 열립니다. 저장소를 지우거나 다른 기기를 사용하면 열리지 않습니다.
-- 정적 데모는 서버와 API 키 없이 동작하지만 꽃 실사 일부를 Unsplash·Pexels에서 불러오므로 완전한 오프라인 패키지는 아닙니다.
+DearBloom recommends up to three flower options from a curated catalog, with reasons, flower meanings, related stories, and a message for the card. It brings relationship context, preferences, budget, season, and pet-related cautions into one flow.
 
-## 요구사항
+The application UI and its editorial content are currently in Korean. This repository provides English and Korean README files.
 
-- Node.js 24 이상
-- npm
+## What you can do
 
-다음 명령으로 버전을 확인하세요.
+| Feature | What it does | Route |
+|---|---|---|
+| Personal recommendations | Five steps covering relationship, intent, recipient, practical constraints, and review; returns flower options, reasons, and card messages | `/recommend` |
+| Group recommendations | Choose flowers for each person or a shared bouquet that considers the group's constraints | `/groups` |
+| Bouquet studio | Combine one main flower, up to two accents, and a color; inspect pet-related cautions, color, fragrance, and meanings | `/bouquet` |
+| Flower catalog | Browse 59 catalog entries, search by name, look up a birth flower, and open photos, botanical plates, and literature | `/flowers`, `/flowers/[slug]` |
+| Seasonal calendar | Explore flowers by blooming month and continue to their catalog pages | `/calendar` |
+| Story archive | Search 452 flower stories and filter by theme, family, and mood | `/stories` |
+| Reading board | Browse curated festivals, articles, care guides, and color trends, alongside a separately collected festival snapshot | `/reads` |
+| Recommendation sharing | Open selected flower IDs, relationship, intent, and date encoded in a link; free-text notes and generated messages are omitted | `/r?c=…` |
+| Private letters | Write, edit, and reopen a letter by code in the same browser | `/letter`, `/letter/studio` |
+| Flower shops and markets | Explore shop and market information and continue to external destinations | `/partners` |
 
-```text
-node --version
-npm --version
-```
+The home page introduces today's flowers, stories, and birth flower.
 
-## 빠른 시작
+## How recommendations work
 
-### Windows PowerShell
+1. **Interpret the input.** Structured answers go directly to the engine. Optional AI extraction maps the recipient note and episode to the engine's vocabulary; missing keys, timeouts, or failures fall back to a local keyword dictionary.
+2. **Apply constraints.** The engine excludes flowers based on serious pet toxicity, budget bands, disliked flowers, and strong fragrance when sensitivity is selected. Mild pet-related effects are shown as cautions.
+3. **Rank and explain.** Pure TypeScript functions score candidates, diversify the selection, and attach reasons and related content.
+4. **Write the card message.** A separate AI call generates tone and length variants. The server can return the flower results first, then stream message drafts; only schema-validated output becomes the final message. If generation fails, prepared templates remain visible.
 
-PowerShell에서는 실행 정책에 따라 `npm.ps1`이 차단될 수 있으므로 `npm.cmd`를 사용합니다.
+Available AI providers run in this order: **Gemini → Anthropic → CLOVA → NVIDIA**, using only configured keys. Extraction has a four-second total budget; message generation has a separate ten-second budget.
 
-```powershell
-cd E:\projects\dearbloom
-npm.cmd ci
-npm.cmd run dev
-```
+See the [recommendation engine](src/lib/engine/index.ts), [provider chain](src/lib/llm/chain.ts), and [streaming route](src/app/recommend/stream/route.ts).
 
-브라우저에서 <http://localhost:3000>을 엽니다. 종료할 때는 실행 중인 터미널에서 `Ctrl+C`를 누릅니다.
+## Current scope
 
-실행 정책 우회와 포트 충돌 진단을 한 번에 처리하려면 보조 실행기를 사용하세요. 기본 실행은 3000 포트가 비어 있을 때만 서버를 시작하며, 점유 중인 다른 프로세스를 임의로 종료하지 않습니다.
+- **No API key or external database is required for local use.** Recommendations, browsing, and local letters work without them.
+- **CSV is the active content source.** Supabase schemas and a seed CLI are included, but seeding the database does not switch the application's content reads to Supabase.
+- **Letters use localStorage.** They remain in the same browser profile and origin; clearing storage removes them. Cross-device letter delivery is not implemented.
+- **Recommendation links are separate from letters.** They encode a limited result payload in the URL without creating a server-side share record.
+- **Shopping is an external handoff.** An optional 11st product-search adapter exists; without a key or usable results, the UI falls back to site links. The repository notes that real-key responses still need verification.
+- **The static demo uses local text interpretation and template messages.** It shares the recommendation engine, but AI-assisted input interpretation on a server deployment can produce different inputs and therefore different recommendations. Some images still load from external hosts.
 
-```powershell
-.\scripts\dev.cmd              # 3000 포트
-.\scripts\dev.cmd -Port 3400   # 다른 포트 지정
-.\scripts\dev.cmd -Clean       # 선택한 포트의 기존 Node 서버를 정리한 뒤 실행
-```
+## Tech stack
 
-`-Clean`은 선택한 포트의 Node 프로세스를 종료할 수 있으므로 그 프로세스가 이 프로젝트의 것인지 확인한 뒤 사용하세요. Node가 아닌 프로세스가 점유 중이면 종료하지 않고 실패합니다.
+| Area | Implementation |
+|---|---|
+| Application | Next.js 16.3.1 App Router, React 19.2.8, TypeScript |
+| Styling and motion | Tailwind CSS 4, CSS Modules, GSAP, Lenis, Three.js |
+| Content and validation | CSV, csv-parse, Zod 4; shared row schemas and cross-reference checks |
+| Optional integrations | LLM REST APIs, 11st product search, Korea Tourism Organization TourAPI |
+| Database preparation | Supabase/Postgres migrations and content upsert CLI |
+| Quality checks | ESLint, Next.js route type generation, TypeScript, Vitest, GitHub Actions |
 
-### macOS, Linux, Windows CMD
+Dependency ranges and scripts are maintained in [package.json](package.json).
+
+## Quick start
+
+Requires **Node.js 24 or newer** and npm.
 
 ```bash
-cd /path/to/dearbloom
+git clone https://github.com/jhsoo0211/dearbloom.git
+cd dearbloom
 npm ci
 npm run dev
 ```
 
-## 환경변수
+Open [localhost:3000](http://localhost:3000). Stop the server with `Ctrl+C`.
 
-환경변수 없이도 추천·도감·이야기·편지 화면이 로컬에서 열립니다. 외부 연동이 필요할 때만 예시 파일을 복사합니다.
+### Windows PowerShell
 
-```powershell
-Copy-Item .env.example .env
-```
-
-주요 선택 변수는 다음과 같습니다.
-
-| 변수 | 용도 |
-|---|---|
-| `GEMINI_API_KEY` | 카드 멘트 생성의 첫 번째 프로바이더 |
-| `ANTHROPIC_API_KEY`, `CLOVA_API_KEY`, `NVIDIA_API_KEY` | 앞 프로바이더 실패 시 순서대로 사용하는 선택 폴백 |
-| `LLM_MODEL`, `CLOVA_MODEL`, `NVIDIA_MODEL` | 프로바이더별 기본 모델 덮어쓰기 |
-| `NEXT_PUBLIC_SITE_URL` | 배포 환경의 canonical·Open Graph·sitemap 기준 URL |
-| `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | 로컬 `seed:apply`로 Supabase에 콘텐츠를 적재할 때 사용 |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | 향후 Supabase 런타임 연결용 공개 키; 현재 콘텐츠 조회와 편지 저장소를 전환하지 않음 |
-| `DEARBLOOM_CONTENT_DIR` | 기본 `content/` 대신 다른 CSV 디렉터리를 읽을 때 사용 |
-
-`SUPABASE_SERVICE_ROLE_KEY`와 LLM 키는 서버·로컬 전용 비밀값입니다. 저장소에 커밋하거나 브라우저용 변수로 노출하지 마세요.
-
-## 주요 명령
-
-Windows PowerShell에서는 아래 `npm`을 `npm.cmd`로 실행하면 됩니다.
-
-| 명령 | 역할과 부작용 |
-|---|---|
-| `npm run dev` | 개발 서버 시작 |
-| `npm run stop` | 3000·3001 포트를 점유한 **Node 프로세스 트리** 종료. 다른 프로젝트의 Node 서버도 대상이 될 수 있음 |
-| `npm run lint` | ESLint 검사 |
-| `npm run typecheck` | TypeScript 검사 (`tsc --noEmit`) |
-| `npm run test` | Vitest 전체 테스트 1회 실행 |
-| `npm run test:watch` | Vitest 감시 모드 |
-| `npm run seed` | CSV 파싱·스키마·교차 참조를 검증하는 읽기 전용 dry-run |
-| `npm run seed:apply` | 검증 후 Supabase 테이블을 upsert. `.env`와 적용 완료된 마이그레이션 필요 |
-| `npm run build` | 본배포 빌드 생성 (`.next/`) |
-| `npm run start` | `npm run build` 결과를 프로덕션 모드로 실행 |
-| `npm run demo:data` | `content/*.csv`에서 `src/lib/demo/data/` 생성 파일을 다시 씀 |
-| `npm run build:static` | 데모 데이터를 다시 만들고 정적 사이트를 `out/`에 생성한 뒤 데모용 `.next/`를 삭제 |
-| `npm run birth:photos` | 누락된 탄생화 사진을 `public/birth/`에 다운로드. `-- --force`는 기존 파일도 다시 받음 |
-
-포트를 직접 정리할 때는 다음처럼 범위를 지정합니다. `-Any`는 Node가 아닌 점유 프로세스까지 종료하므로 마지막 수단으로만 사용합니다.
-
-```powershell
-npm.cmd run stop
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\stop.ps1 -Ports 3000,3400
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\stop.ps1 -Any
-```
-
-## 화면 경로
-
-| 주소 | 기능 |
-|---|---|
-| `/` | 오늘의 꽃, 이야기 기반 소개, 오늘의 탄생화, 화면 빛깔 선택 |
-| `/recommend` | 다섯 단계 입력을 바탕으로 꽃 3안과 선택 이유·멘트 제안 |
-| `/groups` | 여러 사람에게 각각 추천하거나 모두에게 안전한 한 다발 추천 |
-| `/flowers` | 꽃 59종 도감, 이름 검색, 366일 탄생화 찾기, 사진·세밀화·문학 상세 |
-| `/flowers/[slug]` | 꽃 한 종의 상세 페이지 |
-| `/stories` | 꽃 이야기 438편 검색 및 테마·계열·분위기 필터 |
-| `/letter` | 같은 브라우저에 저장된 비밀 편지를 번호로 열기 |
-| `/letter/studio` | 비밀 편지 작성·수정 |
-| `/partners` | 함께하는 꽃집과 꽃시장 정보 |
-
-## 콘텐츠와 검증
-
-사람이 검토하는 `content/*.csv`가 콘텐츠의 단일 원본입니다. 현재 기준으로 꽃 59종, 꽃말 369행, 이야기 438편, 문학·범용 인용 89행, 탄생화 366일, 탄생화 이야기 407편을 담고 있습니다. 반려동물 안전성은 꽃 59종의 고양이·강아지 조합을 모두 검증합니다.
-
-숫자와 참조 무결성의 최종 확인은 문서에 적힌 고정값보다 시드 검증 결과를 우선합니다.
-
-```powershell
-npm.cmd run seed
-```
-
-DB에 실제로 반영하려면 `db/migrations/0001`부터 `0011`까지 순서대로 적용한 뒤 실행합니다.
-
-```powershell
-npm.cmd run seed:apply
-```
-
-상세한 CSV 편집 규칙과 스키마는 [콘텐츠 가이드](content/README.md)와 [DB 가이드](db/README.md)를 참고하세요.
-
-## 검증 순서
-
-커밋 전에는 CI와 같은 검사를 실행합니다. 배포 변경이라면 빌드까지 확인합니다.
-
-```powershell
-npm.cmd run lint
-npm.cmd run typecheck
-npm.cmd run test
-npm.cmd run seed
-npm.cmd run build
-```
-
-GitHub Actions의 기준은 [`.github/workflows/ci.yml`](.github/workflows/ci.yml)에 있습니다.
-
-## 프로젝트 구조
-
-| 경로 | 내용 |
-|---|---|
-| `src/app/` | Next.js App Router 페이지와 서버 액션 |
-| `src/components/` | 화면별 React 컴포넌트 |
-| `src/lib/engine/` | 추천·제외·점수·다양성 로직 |
-| `src/lib/data/` | CSV 로더와 앱용 데이터 매핑 |
-| `content/` | 콘텐츠 CSV 단일 원본 |
-| `db/migrations/` | Supabase/Postgres 마이그레이션 `0001~0011` |
-| `db/seed/` | CSV 검증과 Supabase 적재 CLI |
-| `public/` | 세밀화와 자체 호스팅 탄생화 사진 |
-| `scripts/` | 개발 서버, 정적 데모, 사진 취득, 배포 패키징 도구 |
-| `tests/` | 엔진·데이터·컴포넌트 계약 테스트 |
-| `docs/` | 제품 스펙, 조사 원장, 감사 기록 |
-| `deploy/` | 배포 가이드와 생성된 배포 패키지 위치 |
-| `design/` | 확정 시안 HTML 원본 `landing-v3`·`app-v3` (`design/index.html`이 관문, 이전 탐색 시안은 git 이력에) |
-
-## 배포
-
-본배포는 GitHub 저장소를 Vercel 또는 Netlify에 연결합니다. 정적 드롭은 시연용입니다. API 키는 저장소나 zip에 넣지 말고 호스팅 대시보드의 환경변수로 설정하세요.
-
-배포 방식, Supabase 적용 순서, 정적 데모의 차이는 [배포 가이드](deploy/README.md)를 따릅니다.
-
-## 문서
-
-- [디자인·워딩·플로우 스펙](docs/design-spec.md)
-- [제품 기획안](docs/기획안_v2.md)
-- [통합 기획안 v3](docs/기획안_v3.md) — 문제 정의·BM·KPI·검증 계획까지 묶은 통합본. 저장소 사실과 어긋나는 곳은 각 절 끝 `⚠ 저장소 대조` 각주가 짚는다
-- 2026-08 일상뒤집기 공모전 제출물: `contest/`
-- [실사 이미지 승인·라이선스](docs/image-assets.md)
-- [세밀화 승인·라이선스](docs/illustration-assets.md)
-- [콘텐츠 CSV 편집 가이드](content/README.md)
-- [DB 스키마·마이그레이션 가이드](db/README.md)
-- [배포 가이드](deploy/README.md)
-
-## PowerShell 문제 해결
-
-다음 오류는 프로젝트 코드가 아니라 PowerShell이 `npm.cmd` 대신 `npm.ps1`을 선택하면서 발생합니다.
-
-```text
-npm.ps1 파일을 로드할 수 없습니다. 이 시스템에서 스크립트를 실행할 수 없습니다.
-```
-
-전역 실행 정책을 바꾸지 않아도 됩니다. 같은 명령을 `npm.cmd`로 실행하세요.
+Use `npm.cmd` if PowerShell blocks `npm.ps1`; changing the global execution policy is unnecessary.
 
 ```powershell
 npm.cmd ci
 npm.cmd run dev
 ```
 
-의존성 실행 파일을 찾지 못한다는 오류가 이어지면 저장소 루트에서 `npm.cmd ci`를 다시 실행해 `node_modules/.bin`을 복구합니다.
+The optional launcher checks port availability without stopping an existing process by default:
+
+```powershell
+.\scripts\dev.cmd
+.\scripts\dev.cmd -Port 3400
+```
+
+`-Clean` can terminate the Node process on the selected port. Likewise, `npm run stop` terminates Node process trees on ports 3000 and 3001, including another project's server if it owns those ports.
+
+## Optional configuration
+
+Copy [.env.example](.env.example) to `.env` only when enabling integrations:
+
+```bash
+cp .env.example .env
+```
+
+PowerShell: `Copy-Item .env.example .env`.
+
+| Variable | Purpose |
+|---|---|
+| `GEMINI_API_KEY`, `ANTHROPIC_API_KEY`, `CLOVA_API_KEY`, `NVIDIA_API_KEY` | Optional server-side text interpretation and message generation |
+| `LLM_MODEL` | Shared model-name override for Gemini and Anthropic; use a model valid for the enabled provider |
+| `CLOVA_MODEL`, `NVIDIA_MODEL` | Provider-specific model overrides |
+| `ELEVENST_API_KEY` | Optional product-search integration |
+| `DATA_GO_API_KEY` | TourAPI festival collection; the script also accepts the legacy name `DATA_GO_KR_API_KEY` |
+| `NEXT_PUBLIC_SITE_URL` | Canonical, Open Graph, and sitemap base URL |
+| `DEARBLOOM_CONTENT_DIR` | Override the default `content/` directory |
+| `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | Local content seeding into Supabase |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Prepared Supabase adapter configuration; does not activate database reads or cross-device letters |
+
+Keep API keys server-side and out of Git. The service-role key is for the local seed CLI, not browser configuration.
+
+## Content
+
+The twelve CSV files under [content/](content/) are the editorial source of truth. Counts below were checked against the repository on **2026-09-07**.
+
+| File | Content | Rows |
+|---|---|---:|
+| `flowers.csv` | Flower catalog entries | 59 |
+| `meanings.csv` | Flower meanings | 369 |
+| `stories.csv` | Flower stories | 452 |
+| `rules.csv` | Recommendation and avoidance records | 151 |
+| `templates.csv` | Card-message templates | 62 |
+| `quotes.csv` | Literary excerpts and general quotations | 89 |
+| `pet_safety.csv` | Cat/dog records for all 59 catalog entries | 118 |
+| `birth_flowers.csv` | Birth flowers for a leap-year calendar | 366 |
+| `birth_photos.csv` | Birth-flower photo records, including unresolved entries | 280 |
+| `birth_stories.csv` | Birth-flower stories | 407 |
+| `reads.csv` | Curated external reading links | 54 |
+| `occasions.csv` | Suggested gifting occasions | 91 |
+
+The 151 rule records include 132 positive rules and 19 avoidance records. The avoidance records are not yet wired into conditional exclusion or penalties; the active exclusions are implemented separately in [exclude.ts](src/lib/engine/exclude.ts).
+
+Use `npm run seed` to validate CSV schemas and references. For database loading, apply [migrations](db/migrations/) **0001 through 0013** in numerical order, configure the local Supabase variables, then run `npm run seed:apply`. The older setup text in the DB/deployment guides and environment example stops at 0011; include 0012 (reads) and 0013 (occasions).
+
+TourAPI data is kept separately in `content/generated/festivals.json`. `npm run reads:festivals` refreshes that snapshot without rewriting the curated CSV. A missing key or collection failure preserves the previous snapshot, so exit code 0 alone does not prove fresh data was collected.
+
+## Commands and verification
+
+Use `npm.cmd` in place of `npm` where needed on PowerShell.
+
+| Command | Purpose |
+|---|---|
+| `npm run dev` | Start the development server |
+| `npm run lint` | Run ESLint |
+| `npm run typecheck` | Generate Next.js route types, then run `tsc --noEmit` |
+| `npm run test` / `npm run test:watch` | Run Vitest once / in watch mode |
+| `npm run seed` / `npm run seed:apply` | Validate content / validate and upsert it into Supabase |
+| `npm run build` / `npm run start` | Build / serve the server application |
+| `npm run demo:data` | Regenerate browser demo data from content |
+| `npm run build:static` | Regenerate demo data and export to `out/` |
+| `npm run reads:festivals` | Refresh the festival snapshot; default collection window is six months |
+| `npm run birth:photos` | Download missing birth-flower photos; `-- --force` downloads existing files again |
+| `npm run stop` | Windows helper that stops Node processes on ports 3000 and 3001 |
+
+[CI](.github/workflows/ci.yml) runs the following checks on Node.js 24:
+
+```bash
+npm run lint
+npm run typecheck
+npm run test
+npm run seed
+npm run build
+```
+
+## Deployment
+
+| Mode | Build and output | Behavior |
+|---|---|---|
+| Server application | `npm run build` → `.next/` | Next.js server actions and streaming; optional AI integrations |
+| Static demo | `npm run build:static` → `out/` | Browser-side engine, bundled content, local interpretation, template messages |
+
+The repository includes a [Netlify configuration](netlify.toml) and a [deployment guide](deploy/README.md) for GitHub-connected deployment. Set the deployment URL and integration keys in the hosting environment.
+
+Static builds regenerate files under `src/lib/demo/data/` and remove the demo's `.next/` output. Run `npm run build` again before returning to `npm run start`. A static export still needs network access for externally hosted images.
+
+## Repository map and documentation
+
+| Path | Contents |
+|---|---|
+| `src/app/` | Pages, server actions, and streaming route |
+| `src/components/` | Recommendation flow, catalog, bouquet, letters, and other UI |
+| `src/lib/engine/` | Recommendation, grouping, bouquet checks, and explanations |
+| `src/lib/llm/` | Input extraction, message contracts, prompts, and provider fallback |
+| `src/lib/data/`, `content/`, `db/seed/` | CSV loading, editorial data, shared validation, and database seeding |
+| `src/lib/demo/` | Static adapters and generated browser data |
+| `src/lib/letters/` | Active local store and prepared Supabase adapter |
+| `public/`, `design/` | Image assets and approved HTML design references |
+| `tests/`, `scripts/`, `db/migrations/` | Tests, operational scripts, and database schema history |
+| `docs/`, `contest/`, `deploy/` | Product/research records, contest materials, and deployment instructions |
+
+Most detailed documents are in Korean:
+
+- [Design and flow specification](docs/design-spec.md)
+- [Product plan v2](docs/기획안_v2.md) · [Integrated plan v3](docs/기획안_v3.md)
+- [Content editing guide](content/README.md) · [Database guide](db/README.md)
+- [Photo credits and licenses](docs/image-assets.md) · [Botanical illustration credits](docs/illustration-assets.md)
+- [Reading-board research](docs/reads-research.md)
+- Weekly research: [August 17](docs/weekly-research-2026-08-17.md), [August 24](docs/weekly-research-2026-08-24.md), [August 31](docs/weekly-research-2026-08-31.md)
+
+Product plans also describe future work. Use the current source code and the scope above to distinguish implemented behavior from planned features.

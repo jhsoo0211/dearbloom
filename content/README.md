@@ -9,7 +9,7 @@ DB는 이 CSV에서 시드(upsert)될 뿐, 반대로 DB를 직접 고치지 않�
 |---|---|---|
 | `flowers.csv` | 꽃 기본 정보 | 59 |
 | `meanings.csv` | 꽃말(출처 필수) | 369 |
-| `stories.csv` | 꽃에 얽힌 일화(창작 외 출처 필수) | 452 |
+| `stories.csv` | 꽃에 얽힌 일화(창작 외 출처 필수) | 454 |
 | `rules.csv` | 상황 → 꽃 추천/회피 규칙 | 151 |
 | `templates.csv` | 메시지 템플릿(마음×톤 31칸 × 길이 2벌) | 62 |
 | `quotes.csv` | 인용문(범용 3 + 문학 발췌 86) | 89 |
@@ -165,6 +165,18 @@ intent 와 무관한 상시 가점(R)이 붙기 때문이다. 꽃말이나 일�
     세션 모두 `lisianthus`·`babys-breath`를 골랐지만 소재가 하나도 겹치지 않아(학명 재분류·
     화병 수명·터키 식품 산업 이용 대 고양이 유인 성분·무화분 품종·비누풀과의 사촌 관계·회전초
     확산) 8편 전부를 그대로 실었다. 병합 후 `stories.csv` 최종 행 수는 444 → **452**(+3 +5)다.
+  - `weekly-research(2026-09-07):` — 네 번째 주간 콘텐츠 리서치. 이 세션도 `WebFetch`가
+    조직 egress 정책으로 전 도메인 차단돼(`curl` 직접 호출도 동일하게 막힘) 트랙 B(한국
+    유통 상위 꽃 심화)로 진행했다. 직전 두 회차가 이미 다룬 `lisianthus`·`babys-breath`를
+    피해, 아직 다뤄지지 않은 후보 중 커버리지가 얇은 `freesia`(13편)·`gerbera`(14편)·
+    `chrysanthemum`(16편) 세 종을 검토했으나, 프리지아·거베라는 새로 찾은 소재가 전부
+    기존 행과 소재가 겹치거나(19세기 두 야생종 교배사 등) 종이 달라(`Freesia
+    grandiflora`의 민속식물학 등) 채택하지 않았다. 국화만 기존 16편이 비워 둔 두 갈래 —
+    **과학사**(개너·알라드의 1920년 광주기성 발견, 미국 농무부 연방 간행물)와 **조선
+    시조**(이정보 「국화야 너는 어이」의 오상고절)를 새로 실었다(`stories.csv` 452 →
+    **454**). 색깔별 꽃말 후보는 화훼 블로그 집계 수준에 그쳐 `meanings.csv`는 이번
+    회차에서 늘리지 않았다. 조사 경위·검토했다 제외한 소재·수치 변화의 단일 원본은
+    `docs/weekly-research-2026-09-07.md`다.
 
 ## 절대 하지 말 것
 
@@ -231,7 +243,11 @@ npm run seed:apply    # 실제 upsert (Supabase 환경변수 필요)
 **`docs/story-research-3.md`**(seed-v5, 한국 인기 절화 11종 심화 54편),
 **`docs/story-research-4.md`**(seed-v6, 해외 이야기 확장 67편),
 **`docs/story-research-5.md`**(seed-v7, 신규 15종 60편),
-**`docs/weekly-research-2026-08-17.md`**(weekly-research 2회차, 기존 3종 심화 7편)에 남긴다.
+**`docs/weekly-research-2026-08-17.md`**(weekly-research 2회차, 기존 3종 심화 7편),
+**`docs/weekly-research-2026-08-24.md`**·**`docs/weekly-research-2026-08-31.md`**
+(weekly-research 3회차 1·2차 시도, `lisianthus`·`babys-breath` 심화 8편),
+**`docs/weekly-research-2026-09-07.md`**(weekly-research 4회차, `chrysanthemum` 심화 2편)에
+남긴다.
 
 `culture_region` · `era` 는 **`src/components/flow/labels.ts` 가 한국어 라벨을 갖고 있는 값만**
 쓴다. 라벨이 없으면 문화권은 화면에 영문 slug 가 그대로 나오고, 시대는 통째로 감춰진다.

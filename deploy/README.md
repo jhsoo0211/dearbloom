@@ -2,7 +2,7 @@
 
 > **이 문서는 배포가 끝날 때까지 계속 갱신한다.** 방식이 바뀌거나 환경변수가 늘면
 > 여기부터 고친다 — 배포 절차의 단일 원본은 이 파일이다.
-> 마지막 갱신: 2026-08-16 (정적 드롭 데모 추가 · Supabase 연결 준비 · GitHub 배포 선택지)
+> 마지막 갱신: 2026-09-09 (편지 서버 저장 전환 — 마이그레이션 0014 · 익명 로그인 · `letters:seed`)
 
 이 폴더는 배포 전용이다. zip 스냅샷이 여기 만들어지고(`dearbloom-source-*.zip` ·
 `dearbloom-static-demo-*.zip`), zip 파일 자체는 git에 커밋되지 않는다(.gitignore).
@@ -103,7 +103,7 @@ Netlify에 드롭할 때는 [app.netlify.com](https://app.netlify.com) → **Sit
 | 그룹 추천 `/groups` (각각·단체 부케) | ○ | **○ 같은 엔진, 같은 결과** |
 | 도감 `/flowers` · 생일 꽃 찾기 | ○ | ○ |
 | 이야기 아카이브 `/stories` · 전문 시트 | ○ | ○ (438편 전부) |
-| 비밀 편지 `/letter` | ○ (브라우저 저장) | ○ (같다 — 원래 서버를 안 쓴다) |
+| 비밀 편지 `/letter` | ○ (env 있으면 번호로 어디서든, 없으면 브라우저 저장) | **○ 같다** (env를 빌드 전에 채우면 드롭 데모에서도 번호로 열린다) |
 | **멘트(카드 문구)** | LLM이 들려준 이야기를 담아 그 자리에서 쓴다 | **미리 적어 둔 예문**(`templates.csv`) |
 | 이미지 최적화 `/_next/image` | ○ | 원본 그대로 (서버가 없다) |
 | 전하는 날 기본값 | 접속한 날의 "내일" | **빌드한 날의 "내일"** (직접 고를 수 있다) |
@@ -148,9 +148,13 @@ Netlify에 드롭할 때는 [app.netlify.com](https://app.netlify.com) → **Sit
 않는다** — 리포는 `.gitignore` 3중 규칙으로 이미 막혀 있고, 아래 zip 도 git 추적 파일만
 담아서 키가 들어갈 방법이 없다.
 
-`SUPABASE_SERVICE_ROLE_KEY`는 RLS를 통째로 우회하는 키다. 지금 앱 코드는 이 키를 한
-줄도 읽지 않는다(쓰는 곳은 로컬 시드 CLI 하나뿐이라 로컬 `.env`에만 둔다). 서버에서 이
-키가 필요해지는 날 이 표를 함께 고친다.
+`SUPABASE_SERVICE_ROLE_KEY`는 RLS를 통째로 우회하는 키다. 앱 코드는 이 키를 한 줄도 읽지
+않는다 — 쓰는 곳은 로컬 시드 CLI 둘(`npm run seed` · `npm run letters:seed`)뿐이라 로컬
+`.env`에만 둔다. 서버에서 이 키가 필요해지는 날 이 표를 함께 고친다.
+
+앞의 두 값(`NEXT_PUBLIC_SUPABASE_URL` · `NEXT_PUBLIC_SUPABASE_ANON_KEY`)은 이제 **브라우저의
+`/letter` 화면이 직접 쓴다** — 이 둘이 채워진 배포에서 편지는 번호로 어디서든 열린다
+(아래 「편지를 서버로 넘기기」).
 
 ## Supabase 준비하기 (콘텐츠 DB)
 
@@ -164,9 +168,10 @@ CSV 로더를 대체할 Supabase 어댑터와 전환 테스트가 추가로 필�
 2. **SQL Editor → New query** 에서 `db/migrations/` 를 **파일 번호 순서대로** 붙여 실행한다:
    `0001_catalog` → `0002_results_share` → `0003_rls` → `0004_stories` → `0005_story_tags`
    → `0006_story_type` → `0007_source_kind` → `0008_quotes_literature` → `0009_letters`
-   → `0010_birth_flowers` → `0011_birth_photos_stories`.
+   → `0010_birth_flowers` → `0011_birth_photos_stories` → `0012_reads`
+   → `0013_flower_occasions` → `0014_letters_server`.
    **순서가 곧 의존성이다**(0003은 0001·0002의 표를, 0005~0007은 0004의 표를, 0008은
-   `quotes`를, 0010은 `flowers`를, 0011은 `birth_flowers`를 참조한다). `create table` 파일은 두 번 돌리면 에러가
+   `quotes`를, 0010은 `flowers`를, 0011은 `birth_flowers`를, 0013은 `flowers`를, 0014는 0009의 `letters`를 고친다). `create table` 파일은 두 번 돌리면 에러가
    나는데, 그것이 의도다 — 재실행이 살아 있는 데이터를 덮지 못하게 한다(`db/README.md`).
 3. **Project Settings → API** 의 세 값을 로컬 `.env`에 채운다.
    `NEXT_PUBLIC_SUPABASE_URL` · `NEXT_PUBLIC_SUPABASE_ANON_KEY` · `SUPABASE_SERVICE_ROLE_KEY`.
@@ -186,13 +191,67 @@ CSV 로더를 대체할 Supabase 어댑터와 전환 테스트가 추가로 필�
    alter table flower_stories validate constraint flower_stories_moods_not_empty;
    ```
 
-### 편지(`/letter`)는 아직 넘어가지 않는다
+## 편지(`/letter`)를 서버로 넘기기
 
-키를 다 채워도 편지는 **브라우저 저장소에 그대로 있다.** 0009의 소유자 정책은 로그인
-(`auth.uid()`)을 전제하는데 지금 앱에는 로그인이 없어, 서버 어댑터를 켜면 "읽기는 서버,
-쓰기는 이 기기"라는 반쪽 상태가 되고 사용자의 편지가 두 곳으로 갈라진다. 그래서 전환은
-**익명 로그인을 붙이는 날 한 번에** 한다 — 코드는 `src/lib/letters/supabase-store.ts`에
-이미 있고, 그 머리말이 남은 일(쓰기 RPC `save_letter`, 번호 길이 4~12자 반영)을 적어 두었다.
+편지는 **env 두 개로 갈린다.** 비어 있으면 지금처럼 브라우저 저장소에 남고(그 기기에서만
+열린다), 채워져 있으면 우리 DB에 남아 **번호만 알면 어느 기기에서든** 열린다. 화면 문구도
+그 두 단계를 따라간다(`src/components/letter/copy.ts`) — 켜는 순간 안내가 함께 바뀐다.
+
+**정적 드롭 데모에서도 그대로 된다.** 편지는 서버 액션을 쓰지 않고 브라우저가 DB와 직접
+주고받으므로, `npm run build:static`으로 뽑은 `out/`에서도 번호로 열린다. 다만 정적 빌드는
+env를 **빌드할 때** 굳히므로 빌드 전에 `.env`가 채워져 있어야 한다(아래 ③).
+
+### ① 마이그레이션
+
+`db/migrations/0009_letters.sql` → `0014_letters_server.sql`. 편지만 켤 것이면 **이 둘이면
+충분하다**(`letters`는 다른 표를 참조하지 않는다 — `db/README.md`). 0014가 하는 일은 셋이다:
+소유자 없는 편지를 허용하고(운영자 시드), 쓰기 함수 `save_letter`를, 시드 함수
+`seed_letter`를 세운다. 번호 해시는 이 함수들 안에서만 만들어진다.
+
+### ② Authentication → Sign In / Providers → **Anonymous sign-ins 켜기**
+
+이걸 켜지 않으면 편지를 **저장할 때** 실패한다(읽기는 멀쩡해서 더 늦게 발견된다). 앱은
+계정을 만들라고 하지 않는 대신, 저장 직전에 익명 로그인을 한 번 한다 — 그 세션이 "내가 만든
+편지" 목록의 주인이다.
+
+- 브라우저 저장소를 비우면 그 세션이 사라져 **목록이 빈다.** 편지 자체는 남아 번호로 계속
+  열린다(화면 문구가 그렇게 말한다).
+- **익명 사용자는 쌓인다.** 편지 한 통마다 `auth.users`에 한 줄이 생기고, 지우는 일은 아직
+  사람 몫이다. 정리할 때는 편지를 함께 지우지 않도록 주의한다(소유자가 사라진 편지는 목록에서
+  안 보일 뿐 번호로는 계속 열려야 한다).
+- **무료 플랜은 일주일 놀면 프로젝트를 재운다.** 잠든 프로젝트에서는 편지가 열리지 않는다 —
+  심사·시연 기간에 접속이 없을 것 같으면 그 점을 미리 계산에 넣는다.
+
+### ③ env 두 개
+
+`NEXT_PUBLIC_SUPABASE_URL` · `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+본배포는 **호스팅 대시보드**에(위 환경변수 표), 정적 드롭은 **빌드 전 `.env`**에 넣는다.
+`SUPABASE_SERVICE_ROLE_KEY`는 여기 넣지 않는다 — 그 키는 아래 시드 CLI 전용이다.
+
+### ④ 운영자가 미리 쓴 편지 심기 (선택)
+
+받는 사람에게 번호만 건네면 되는 편지를 JSON으로 적어 두고 심는다. PowerShell에서는 `--`가
+필수다:
+
+```powershell
+npm run letters:seed -- --file db/seed/letters.example.json            # 검증만
+npm run letters:seed -- --file db/seed/private/받는분들.json --apply   # 실제로 심기
+```
+
+- 파일 형식은 `db/seed/letters.example.json`이 그대로 보여 준다. 검증은 편지 스키마·번호
+  형식·꽃 id·파일 안 번호 중복·보관 기한(시간대 포함 ISO, 미래)까지 본다.
+- 검증에 한 줄이라도 걸리면 **한 통도 심지 않는다.**
+- 화면(터미널)에 나가는 것은 받는 분·꽃·**가린 번호**·기한뿐이다. 제목·본문·서명은 출력하지
+  않는다 — 확인하겠다고 찍어 둔 로그가 곧 유출이다.
+- `--apply`는 `SUPABASE_SERVICE_ROLE_KEY`를 쓴다(로컬 `.env`). 키가 없으면 **DB를 부르기 전에**
+  멈춘다.
+- ⚠ **번호는 우리가 되돌려 줄 수 없다.** DB에는 해시만 있어서 시드 파일이 번호의 유일한
+  원본이다. 진짜 편지를 담은 파일은 `db/seed/private/`에 두면 커밋되지 않는다.
+
+### 확인
+
+배포한 주소에서 `/letter/studio`로 편지를 한 통 쓰고, **다른 기기(또는 시크릿 창)**에서
+`/letter`에 그 번호를 넣어 본다. 열리면 끝이다. 안 열리면 순서대로 ② → ③ → ①을 본다.
 
 ## zip 두 가지 만들기
 
@@ -219,9 +278,9 @@ powershell -File scripts/package-deploy.ps1 -Static    # 정적 드롭 데모
 - [ ] 호스팅 환경변수 입력 (위 표) — 키는 리포가 아니라 대시보드에
 - [ ] 배포 후 `/recommend` 한 번 완주 — 멘트가 예문이 아니라 생성문인지 (키 연결 확인)
 - [ ] `NEXT_PUBLIC_SITE_URL` 을 발급 주소로 채우고 재배포 (OG·sitemap)
-- [ ] Supabase 를 준비하는 날: 마이그레이션 `0001~0011` 적용 → env 3종 → `npm run seed -- --apply`
+- [ ] Supabase 를 준비하는 날: 마이그레이션 `0001~0014` 적용 → env 3종 → `npm run seed -- --apply`
 - [ ] 콘텐츠 조회를 DB로 전환하는 날: Supabase 어댑터 연결·회귀 테스트 후 CSV 로더 교체
-- [ ] `/letter` 는 현재 기기 저장 단계 — 기기 간 열람은 익명 로그인까지 붙는 날
+- [ ] `/letter` 를 서버로 넘기는 날: 0009·0014 적용 → **Anonymous sign-ins 켜기** → `NEXT_PUBLIC_SUPABASE_*` 2종 → 다른 기기에서 번호로 열리는지 한 번 확인
 
 ### 정적 드롭 데모
 

@@ -13,11 +13,12 @@ import {
 /**
  * 저장소 어댑터의 그물.
  *
- * 이 표가 지키는 것은 넷이다:
+ * 이 표가 지키는 것은 다섯이다:
  *   · 저장한 편지를 **번호로** 다시 찾는가(그게 이 기능의 전부다)
  *   · 틀린 번호에 아무것도 흘리지 않는가(형식 오류도 "못 찾음"과 같은 답이어야 한다)
  *   · **저장 불가 환경**(시크릿 창·저장 차단)에서 조용히 삼키지 않는가
  *   · 손상된 줄 하나가 나머지 편지를 못 열게 만들지 않는가
+ *   · 고쳐 쓸 때 번호 칸을 비우면 **옛 번호를 지키는가**(서버 어댑터와 같은 규칙)
  */
 
 /** localStorage 흉내 — 실제 브라우저 API 중 우리가 쓰는 셋만 갖는다. */
@@ -104,6 +105,52 @@ describe('localStorage 어댑터 — 쓰고 찾고 지우기', () => {
     expect(Date.parse(second.updatedAt)).toBeGreaterThan(Date.parse(first.updatedAt));
     expect(await store.list()).toHaveLength(1);
     expect((await store.get(first.id))?.body).toBe('조금 고쳐 적었어요.');
+  });
+
+  it('고쳐 쓸 때 번호를 비우면 옛 번호가 그대로 남는다', async () => {
+    // 서버 어댑터에는 `revealCode()` 가 없어 고쳐 쓰기 화면이 번호를 채워 넣지 못한다.
+    // 그때 번호를 다시 적으라고 요구하면 적어 두지 않은 사람은 편지를 영영 못 고친다 —
+    // 두 어댑터가 같은 규칙을 쓴다(`SaveLetterInput` 주석).
+    const store = makeStore(fakeStorage());
+    const first = await store.save({ ...DRAFT });
+
+    const edited = await store.save({
+      ...DRAFT,
+      id: first.id,
+      code: '',
+      body: '번호는 그대로 두고 본문만 고쳤어요.',
+    });
+
+    expect(edited.id).toBe(first.id);
+    expect(edited.body).toBe('번호는 그대로 두고 본문만 고쳤어요.');
+    expect((await store.findByCode('HANBIT'))?.body).toBe('번호는 그대로 두고 본문만 고쳤어요.');
+    expect(await store.revealCode?.(first.id)).toBe('HANBIT');
+  });
+
+  it('공백만 적은 번호도 "그대로" 로 읽는다', async () => {
+    const store = makeStore(fakeStorage());
+    const first = await store.save({ ...DRAFT });
+    await store.save({ ...DRAFT, id: first.id, code: '   ' });
+
+    expect(await store.revealCode?.(first.id)).toBe('HANBIT');
+  });
+
+  it('번호를 비운 고쳐 쓰기는 남의 번호와 부딪히지 않는다', async () => {
+    // 대조값을 새로 만들지 않으므로 선점 검사에 걸릴 것도 없다 —
+    // 다른 편지가 있는 상태에서도 그대로 저장된다.
+    const store = makeStore(fakeStorage());
+    const mine = await store.save({ ...DRAFT, code: 'AAAA11' });
+    await store.save({ ...DRAFT, code: 'BBBB22', recipientName: '다른 분' });
+
+    await expect(store.save({ ...DRAFT, id: mine.id, code: '' })).resolves.toBeTruthy();
+    expect(await store.revealCode?.(mine.id)).toBe('AAAA11');
+  });
+
+  it('새 편지의 빈 번호는 여전히 거절한다 — 번호 없는 편지는 열 길이 없다', async () => {
+    const store = makeStore(fakeStorage());
+    await expect(store.save({ ...DRAFT, code: '' })).rejects.toThrow();
+    await expect(store.save({ ...DRAFT, code: '  ' })).rejects.toThrow();
+    expect(await store.list()).toEqual([]);
   });
 
   it('없는 편지를 고쳐 쓰려 하면 그 사실을 말한다', async () => {

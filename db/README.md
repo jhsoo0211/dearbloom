@@ -18,18 +18,28 @@ Supabase Postgres schema for dearbloom. Target: **Postgres 15+** (`gen_random_uu
 | `migrations/0010_birth_flowers.sql` | `birth_flowers` (366-day birth-flower table) with public-read RLS and an optional FK into `flowers` |
 | `migrations/0011_birth_photos_stories.sql` | `birth_photos` (one photo per calendar day, FK on `(month, day)`, license allow-list CHECK) and `birth_stories` (stories owned by `name_ko`, not a flower id) — both public-read |
 | `migrations/0012_reads.sql` | `reads` (the 「읽을거리」 link ledger — external articles, guides, trends, and dated events) with public-read RLS, a `tags` GIN index, and the dates-belong-to-events-only CHECK |
-| `seed/` | CSV → SQL seed data (loaded after the migrations; `npm run seed -- --apply` upserts every table) |
+| `migrations/0013_flower_occasions.sql` | `flower_occasions` (§1.5h 「이런 날 건네보세요」 lines, one row per flower/surface) with public-read RLS and a per-surface uniqueness constraint |
+| `migrations/0014_letters_server.sql` | Makes `letters.owner_uid` nullable (null = an operator-seeded letter) and adds the two write doors 0009 lacked: `save_letter` (authenticated) and `seed_letter` (service_role) |
+| `seed/` | CSV → SQL seed data (loaded after the migrations; `npm run seed -- --apply` upserts every table, `npm run letters:seed -- --file <path> --apply` plants operator letters) |
 
 ## How to apply
 
 No Supabase CLI wiring yet — apply by hand:
 
 1. Supabase Dashboard → **SQL Editor** → New query.
-2. Paste and run **`0001_catalog.sql`**, then **`0002_results_share.sql`**, then **`0003_rls.sql`**, then **`0004_stories.sql`**, then **`0005_story_tags.sql`**, then **`0006_story_type.sql`**, then **`0007_source_kind.sql`**, then **`0008_quotes_literature.sql`**, then **`0009_letters.sql`**, then **`0010_birth_flowers.sql`**, then **`0011_birth_photos_stories.sql`**. The order matters: 0002 has no FK into 0001, but 0003 references tables from both, 0004 has an FK into `flowers` (0001) and carries its own RLS policy, 0005, 0006, and 0007 all alter the table 0004 creates, 0008 alters `quotes` (0001) with an FK back into `flowers` (0001), 0010 has an optional FK into `flowers` (0001), and 0011 has a **composite FK into `birth_flowers (month, day)`** so it must follow 0010. `0012_reads.sql` is last and stands alone — `reads` has no FK into any other table (its `links_to` references are plain text the CSV gate cross-checks against `flowers.csv`), so it can be applied at any point after 0001.
+2. Paste and run **`0001_catalog.sql`** through **`0014_letters_server.sql`** in file-number order. The order matters: 0002 has no FK into 0001, but 0003 references tables from both, 0004 has an FK into `flowers` (0001) and carries its own RLS policy, 0005, 0006, and 0007 all alter the table 0004 creates, 0008 alters `quotes` (0001) with an FK back into `flowers` (0001), 0010 has an optional FK into `flowers` (0001), 0011 has a **composite FK into `birth_flowers (month, day)`** so it must follow 0010, 0013 has an FK into `flowers` (0001), and 0014 alters the table 0009 creates. `0012_reads.sql` stands alone — `reads` has no FK into any other table (its `links_to` references are plain text the CSV gate cross-checks against `flowers.csv`), so it can be applied at any point after 0001.
+
+   **Only enabling the letters (`/letter`)?** Then `0009_letters.sql` → `0014_letters_server.sql` is the whole list. Letters do not touch the catalog: `letters` has no FK into any other table, so neither file needs 0001–0008. Everything else in the app keeps reading `content/*.csv`.
 3. Load `seed/` afterwards. Seeding runs as `service_role`/owner, which bypasses RLS, so it is unaffected by 0003.
 4. Once the seed has filled `flower_stories.moods` on every row, run the one line left at the bottom of 0005: `alter table flower_stories validate constraint flower_stories_moods_not_empty;`. It is added `not valid` because rows that predate the migration carry the `'{}'` default and would fail validation on the spot.
 
-`0001`, `0002`, and `0004` use plain `create table` and will error on a second run — that is intentional, so an accidental re-run cannot clobber live data. `0005`, `0006`, `0007`, and `0008` are `alter table … add column` and error the same way, for the same reason. `0003` drops each policy before creating it and uses `create or replace view`, so it is safe to re-run on its own whenever policies change; `0004`'s policy block follows the same drop-before-create style.
+`0001`, `0002`, and `0004` use plain `create table` and will error on a second run — that is intentional, so an accidental re-run cannot clobber live data. `0005`, `0006`, `0007`, and `0008` are `alter table … add column` and error the same way, for the same reason. `0003` drops each policy before creating it and uses `create or replace view`, so it is safe to re-run on its own whenever policies change; `0004`'s policy block follows the same drop-before-create style. `0014` is `alter column … drop not null` plus `create or replace function`, so it is safe to re-run.
+
+### 0014 leaves 0009's policies alone, and that is the design
+
+`letters` gets four owner policies in 0009, all `owner_uid = auth.uid()`. 0014 makes that column nullable so an operator-seeded letter can have **no owner at all** — and a null owner matches none of those four policies, which is exactly right: such a letter never appears in anyone's list, nobody can edit or delete it, and the only door to it is `open_letter(code)`. The write path for those rows is `seed_letter`, a security-definer function granted to `service_role` only, so the browser cannot create ownerless rows. `save_letter` is the mirror image — granted to `authenticated`, it always stamps `owner_uid = auth.uid()` and refuses to touch a row it does not own.
+
+Both functions take the **plaintext** code and hash it themselves (`crypt(code, gen_salt('bf'))`). No caller ever computes a hash, and no caller ever gets one back: bcrypt salts differ per row, so the "is this code taken?" check has to be a scan inside these functions (0009 §3 explains why a unique index cannot do it). That scan is the reason letters should carry an `expires_at` — the table has to stay small.
 
 ### `source_url` is required by `story_type`, not by the column
 
@@ -72,7 +82,7 @@ type has no field for it, so there is no path from the CSV to the screen.
 
 ## File naming — migration to the Supabase CLI
 
-Files are numbered sequentially (`0001_` … `0011_`) while we apply them manually. When the project moves to the Supabase CLI, rename each file into `supabase/migrations/<timestamp>_*.sql` (e.g. `20260814090000_catalog.sql`), keeping the same relative order — the CLI orders migrations by that leading UTC timestamp, not by sequence number. Rename rather than re-author, so the applied SQL stays byte-identical to what production already ran, and record the already-applied files in `supabase_migrations.schema_migrations` (`supabase migration repair --status applied <version>`) so the CLI does not try to run them again.
+Files are numbered sequentially (`0001_` … `0014_`) while we apply them manually. When the project moves to the Supabase CLI, rename each file into `supabase/migrations/<timestamp>_*.sql` (e.g. `20260814090000_catalog.sql`), keeping the same relative order — the CLI orders migrations by that leading UTC timestamp, not by sequence number. Rename rather than re-author, so the applied SQL stays byte-identical to what production already ran, and record the already-applied files in `supabase_migrations.schema_migrations` (`supabase migration repair --status applied <version>`) so the CLI does not try to run them again.
 
 ## TODO — enable pg_cron
 

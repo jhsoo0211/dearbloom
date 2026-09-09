@@ -20,7 +20,7 @@ The application UI and its editorial content are currently in Korean. This repos
 | Story archive | Search 452 flower stories and filter by theme, family, and mood | `/stories` |
 | Reading board | Browse curated festivals, articles, care guides, and color trends, alongside a separately collected festival snapshot | `/reads` |
 | Recommendation sharing | Open selected flower IDs, relationship, intent, and date encoded in a link; free-text notes and generated messages are omitted | `/r?c=…` |
-| Private letters | Write, edit, and reopen a letter by code in the same browser | `/letter`, `/letter/studio` |
+| Private letters | Write, edit, and reopen a letter by code; with Supabase configured the code opens it on any device, otherwise it stays in the same browser | `/letter`, `/letter/studio` |
 | Flower shops and markets | Explore shop and market information and continue to external destinations | `/partners` |
 
 The home page introduces today's flowers, stories, and birth flower.
@@ -38,9 +38,9 @@ See the [recommendation engine](src/lib/engine/index.ts), [provider chain](src/l
 
 ## Current scope
 
-- **No API key or external database is required for local use.** Recommendations, browsing, and local letters work without them.
+- **No API key or external database is required for local use.** Recommendations, browsing, and browser-stored letters work without them.
 - **CSV is the active content source.** Supabase schemas and a seed CLI are included, but seeding the database does not switch the application's content reads to Supabase.
-- **Letters use localStorage.** They remain in the same browser profile and origin; clearing storage removes them. Cross-device letter delivery is not implemented.
+- **Where letters are stored depends on configuration.** Without `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` a letter stays in the browser that wrote it, and clearing storage removes it. With both set, the browser signs in anonymously on save and the letter is stored in Postgres, so the code opens it on any device. This requires migrations `0009` and `0014` and Anonymous sign-ins enabled in Supabase Auth. The on-screen wording follows whichever mode the build is in, and only the bcrypt hash of the code is stored — a lost code cannot be recovered.
 - **Recommendation links are separate from letters.** They encode a limited result payload in the URL without creating a server-side share record.
 - **Shopping is an external handoff.** An optional 11st product-search adapter exists; without a key or usable results, the UI falls back to site links. The repository notes that real-key responses still need verification.
 - **The static demo uses local text interpretation and template messages.** It shares the recommendation engine, but AI-assisted input interpretation on a server deployment can produce different inputs and therefore different recommendations. Some images still load from external hosts.
@@ -108,8 +108,8 @@ PowerShell: `Copy-Item .env.example .env`.
 | `DATA_GO_API_KEY` | TourAPI festival collection; the script also accepts the legacy name `DATA_GO_KR_API_KEY` |
 | `NEXT_PUBLIC_SITE_URL` | Canonical, Open Graph, and sitemap base URL |
 | `DEARBLOOM_CONTENT_DIR` | Override the default `content/` directory |
-| `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | Local content seeding into Supabase |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Prepared Supabase adapter configuration; does not activate database reads or cross-device letters |
+| `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | Local seeding CLIs (`npm run seed`, `npm run letters:seed`); the service-role key is never read by application code |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Used by `/letter` in the browser; together with the URL it switches letters to server storage. Catalog reads still come from CSV |
 
 Keep API keys server-side and out of Git. The service-role key is for the local seed CLI, not browser configuration.
 
@@ -187,7 +187,7 @@ Static builds regenerate files under `src/lib/demo/data/` and remove the demo's 
 | `src/lib/llm/` | Input extraction, message contracts, prompts, and provider fallback |
 | `src/lib/data/`, `content/`, `db/seed/` | CSV loading, editorial data, shared validation, and database seeding |
 | `src/lib/demo/` | Static adapters and generated browser data |
-| `src/lib/letters/` | Active local store and prepared Supabase adapter |
+| `src/lib/letters/` | Letter store port with two adapters — browser storage and Supabase — selected by environment |
 | `public/`, `design/` | Image assets and approved HTML design references |
 | `tests/`, `scripts/`, `db/migrations/` | Tests, operational scripts, and database schema history |
 | `docs/`, `contest/`, `deploy/` | Product/research records, contest materials, and deployment instructions |

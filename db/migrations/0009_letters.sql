@@ -7,6 +7,9 @@
 -- `src/lib/letters/store.ts`; this file is the shape the server side will take.
 -- Read that file's header first — it explains why `code_hash` is a plaintext
 -- code locally and a real hash here.
+-- ⚠ `0014_letters_server.sql` makes `owner_uid` NULLABLE (null = an operator-seeded
+--   letter, reachable by its code only) and adds the write doors this file lacks
+--   (`save_letter` / `seed_letter`). Apply it right after this one.
 --
 -- Why this table looks like 0002's results table:
 --   payload   = the letter itself (recipient, title, body, flower, theme,

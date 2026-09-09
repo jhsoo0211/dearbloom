@@ -2,15 +2,19 @@
  * 비밀 편지 저장소 — **교체 가능한 포트**와 그 첫 어댑터(localStorage).
  *
  * ── 지금 어디까지 사실인가 (감추지 않는다) ───────────────────────────
- * 이 어댑터는 편지를 **그 브라우저 안에만** 둔다. 그러므로 지금 단계에서는:
+ * 이 어댑터는 편지를 **그 브라우저 안에만** 둔다. 그러므로 이 어댑터가 서는 동안에는:
  *   · 번호를 아는 사람이라도 **다른 기기·다른 브라우저에서는 열 수 없다.**
  *   · 브라우저 저장소를 비우면 편지도 사라진다(우리 서버 어디에도 사본이 없다).
  *   · 시크릿 창·저장 차단 환경에서는 아예 저장되지 않는다 —
  *     그때는 조용히 넘어가지 않고 `LetterStorageUnavailableError` 로 화면에 말한다.
- * 화면 문구가 이 사실을 숨기지 않는 것이 이 기능의 유일한 금지선이다
- * (스튜디오 상단 안내 한 줄이 같은 말을 한다). Supabase 를 연결하면 그때
- * `SupabaseLetterStore` 를 같은 `LetterStore` 모양으로 만들어 갈아 끼운다 —
- * **호출부(화면)는 손대지 않는다.** 그것이 이 파일이 인터페이스를 먼저 세운 이유다.
+ * 화면 문구가 이 사실을 숨기지 않는 것이 이 기능의 유일한 금지선이다.
+ *
+ * ⚠ **이 어댑터가 언제나 서는 것은 아니다.** Supabase env(`NEXT_PUBLIC_SUPABASE_URL`
+ *   ·`NEXT_PUBLIC_SUPABASE_ANON_KEY`)가 채워진 배포에서는 브라우저가 서버 어댑터를
+ *   쓴다(`supabase-store.ts` 의 `createLetterStore()`). 화면 문구도 그 두 단계를
+ *   나누어 말한다(`components/letter/copy.ts` 의 `LETTER_STORAGE_MODE`).
+ *   **호출부(화면)는 어느 쪽인지 묻지 않는다** — 그것이 이 파일이 인터페이스를 먼저
+ *   세운 이유다.
  *
  * ── 번호는 왜 `codeHash` 라는 이름을 갖는가 ─────────────────────────
  * 서버 어댑터에서 이 칸은 **해시**다(`db/migrations/0009_letters.sql` — `pgcrypto` 로
@@ -20,7 +24,7 @@
  * 이름만 서버 어댑터가 물려받을 자리로 둔다. 두 어댑터가 같은 자리를 쓰되 넣는 값이
  * 다르다는 사실을 이름이 아니라 이 주석이 말한다.
  *   ⚠ 서버 어댑터에는 `revealCode()` 가 **없다**(해시는 되돌아가지 않는다).
- *     그날부터 번호는 만든 사람이 적어 두는 값이 된다 — 화면도 그렇게 안내한다.
+ *     서버 모드에서 번호는 만든 사람이 적어 두는 값이 된다 — 화면도 그렇게 안내한다.
  *
  * ⚠ 편지 본문은 **어디에도 기록하지 않는다.** 이 파일에 console 호출이 한 줄도 없는 것은
  *   실수가 아니다(에러 메시지에도 본문을 싣지 않는다).
@@ -86,10 +90,18 @@ export interface StoredLetter extends Letter {
   codeHash: string;
 }
 
-/** `save()` 의 입력. `id` 가 있으면 고쳐 쓰기, 없으면 새 편지다. */
+/**
+ * `save()` 의 입력. `id` 가 있으면 고쳐 쓰기, 없으면 새 편지다.
+ *
+ * `code` 는 사용자가 정하거나 `createLetterCode()` 가 만들어 준 **평문** 번호다.
+ * 고쳐 쓸 때(`id` 있음)만 **빈 문자열**이 뜻을 갖는다 — "번호는 그대로 두세요".
+ * 서버 어댑터에는 `revealCode()` 가 없어 고쳐 쓰기 화면이 번호를 채워 넣을 수 없는데,
+ * 그때 번호를 다시 적으라고 요구하면 **적어 두지 않은 사람은 편지를 고칠 수 없게 된다.**
+ * 두 어댑터가 같은 규칙을 쓴다(서버 쪽은 `p_code = null` 로 넘어간다).
+ * 새 편지에는 여전히 번호가 있어야 한다 — 번호 없는 편지는 열 길이 없다.
+ */
 export interface SaveLetterInput extends LetterContent {
   id?: string;
-  /** 사용자가 정하거나 `createLetterCode()` 가 만들어 준 평문 번호. */
   code: string;
 }
 
@@ -299,10 +311,14 @@ export function createLocalLetterStore(options: LocalLetterStoreOptions = {}): L
         theme: input.theme,
         signature: input.signature,
       });
-      const codeHash = localCodeDigest(letterCodeSchema.parse(input.code));
+      // 고쳐 쓰기 + 빈 번호 = "번호는 그대로" (SaveLetterInput 주석). 그때는 대조값을
+      // 만들지 않는다 — 아래에서 이전 줄의 것을 그대로 쓴다.
+      const keepCode = Boolean(input.id) && input.code.trim() === '';
+      const codeHash = keepCode ? null : localCodeDigest(letterCodeSchema.parse(input.code));
 
       const letters = readAll(storage);
-      const taken = letters.some((row) => row.codeHash === codeHash && row.id !== input.id);
+      const taken =
+        codeHash !== null && letters.some((row) => row.codeHash === codeHash && row.id !== input.id);
       if (taken) throw new LetterCodeTakenError();
 
       const stamp = now().toISOString();
@@ -316,7 +332,7 @@ export function createLocalLetterStore(options: LocalLetterStoreOptions = {}): L
           id: previous.id,
           createdAt: previous.createdAt,
           updatedAt: stamp,
-          codeHash,
+          codeHash: codeHash ?? previous.codeHash,
         };
         letters[index] = updated;
         writeAll(storage, letters);
@@ -328,7 +344,9 @@ export function createLocalLetterStore(options: LocalLetterStoreOptions = {}): L
         id: newId(),
         createdAt: stamp,
         updatedAt: stamp,
-        codeHash,
+        // 새 편지에는 `keepCode` 가 설 수 없다(그 조건이 `input.id` 를 요구한다).
+        // 스키마를 한 번 더 지나며 그 사실을 타입에도 못 박는다 — 값은 위와 같다.
+        codeHash: codeHash ?? localCodeDigest(letterCodeSchema.parse(input.code)),
       };
       writeAll(storage, [...letters, created]);
       return toLetter(created);

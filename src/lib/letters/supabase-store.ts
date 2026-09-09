@@ -2,58 +2,46 @@
  * 비밀 편지 저장소 — **Supabase 어댑터**(`LetterStore` 포트의 두 번째 구현).
  *
  * ── 지금 이 파일은 어디까지 사실인가 (감추지 않는다) ──────────────────
- * 코드는 다 있고, **아직 아무 화면도 이것을 쓰지 않는다.** 이유를 순서대로 적는다.
+ * 이 어댑터는 **실제로 화면이 쓴다.** `NEXT_PUBLIC_SUPABASE_URL` 과
+ * `NEXT_PUBLIC_SUPABASE_ANON_KEY` 가 채워진 배포의 브라우저에서는 아래
+ * `createLetterStore()` 가 이것을 돌려주고, 비어 있으면 localStorage 어댑터를
+ * 돌려준다. 서버(프리렌더)에서는 언제나 로컬이다 — 그쪽에는 브라우저 세션이 없다.
  *
- *  1. **로그인이 없다.** 0009 의 소유자 정책은 전부 `to authenticated ... owner_uid =
- *     auth.uid()` 다. 지금 앱에는 로그인(익명 로그인 포함)이 없어서 anon 키로 부르면
- *     `list` · `get` · `remove` 는 **언제나 0행**이고 `save` 는 **거절**된다.
- *     로그인 없이 anon 키로 되는 것은 `open_letter(code)` 하나뿐이다
- *     (0009 가 그 함수에만 anon 실행 권한을 준다).
- *  2. 그래서 `createLetterStore()` 는 **env 가 채워져 있어도 localStorage 를 돌려준다.**
- *     반쪽만 전환하면 "쓰기는 이 기기, 읽기는 서버" 가 되어 사용자의 편지가 두 곳으로
- *     갈라진다. 그 상태를 화면 문구로 정직하게 설명할 방법이 없다 —
- *     **Supabase 전환은 auth(익명 로그인)를 붙이는 날 한 번에 한다.**
- *
- * ── 0009 와 어긋나는 곳 (여기서 고치지 않는다) ────────────────────────
- *  a. **쓰기 함수가 없다.** 번호 해시는 서버가 만들어야 하는데(`crypt(p_code,
- *     gen_salt('bf'))`), PostgREST 로는 insert 값에 SQL 함수를 실을 수 없다. 0009 는
- *     읽기 문(`open_letter`)만 정의하고 "insert 경로가 같은 비교를 먼저 해야 한다" 는
- *     주석만 남겨 두었다. 그래서 이 어댑터는 아래 `SAVE_LETTER_RPC` 를 부른다 —
- *     **그 함수는 아직 마이그레이션에 없다.** 계약은 이렇다(0011 후보):
- *
- *       create or replace function save_letter(
- *         p_id uuid, p_code text, p_payload jsonb
- *       ) returns table (id uuid, payload jsonb, created_at timestamptz,
- *                        updated_at timestamptz)
- *       language plpgsql security definer set search_path = public, extensions as $$
- *       declare v_code text := upper(btrim(p_code)); v_id uuid;
- *       begin
- *         if v_code !~ '^[A-Z0-9]{4,12}$' then raise exception 'bad code'; end if;
- *         -- 번호 선점 검사: bcrypt 는 행마다 salt 가 달라 unique 인덱스로 못 막는다.
- *         if exists (select 1 from letters l
- *                     where (l.expires_at is null or l.expires_at > now())
- *                       and l.code_hash = crypt(v_code, l.code_hash)
- *                       and (p_id is null or l.id <> p_id))
- *         then raise exception 'code taken' using errcode = '23505'; end if;
- *         ...insert 또는 update(owner_uid = auth.uid() 인 행만)...
- *         return query select l.id, l.payload, l.created_at, l.updated_at
- *                        from letters l where l.id = v_id;
- *       end $$;
- *
+ * ── 세 개의 문 ────────────────────────────────────────────────────────
+ *  1. **번호로 열기**(`open_letter`) — 세션이 필요 없다. 0009 가 anon 에게 실행
+ *     권한을 준 단 하나의 함수이고, 이 기능의 주인공(번호를 받아 찾아온 사람)이
+ *     지나는 문이다.
+ *  2. **소유자 조회**(`letters` 표 select/delete) — RLS 가 `owner_uid = auth.uid()`
+ *     로 좁힌다. 세션이 없으면 **서버를 부르지도 않는다**(어차피 0행이다).
+ *  3. **쓰기**(`save_letter`) — 0014 가 세운 security definer 함수. 세션이 없으면
+ *     먼저 익명 로그인(`signInAnonymously`)을 하고 부른다. 번호 해시는 **서버가**
+ *     만든다(`crypt(p_code, gen_salt('bf'))`) — 클라이언트가 만든 해시를 받아 주는
+ *     순간 번호 검사가 클라이언트 몫이 된다.
  *     `errcode = '23505'` 하나가 계약의 핵심이다 — 이 어댑터는 그 코드를 보고
  *     `LetterCodeTakenError`("이 번호는 다른 편지가 쓰고 있어요")로 옮긴다.
- *  b. **`open_letter` 는 `updated_at` 을 돌려주지 않는다**(id · payload · created_at 뿐).
+ *
+ * ── 익명 로그인이라는 선택 ────────────────────────────────────────────
+ * 계정을 만들라고 하지 않으려고 익명 로그인을 쓴다. 대가는 정직하게 적어 둔다:
+ *   · 세션은 그 브라우저에 있다. **저장소를 비우면 "내가 만든 편지" 목록이 사라진다**
+ *     (편지 자체는 서버에 남아 번호로 계속 열린다 — 화면 문구가 그렇게 말한다).
+ *   · 그러므로 다른 기기에서는 목록이 비어 보이는 것이 정상이다. 목록은 소유자의
+ *     것이고, 번호는 받는 사람의 것이다.
+ *
+ * ── 남은 위험 (여기서 고치지 않는다) ─────────────────────────────────
+ *  a. **`open_letter` 는 `updated_at` 을 돌려주지 않는다**(id · payload · created_at 뿐).
  *     번호로 연 편지의 `updatedAt` 은 그래서 `createdAt` 으로 세운다. 읽는 쪽은 "언제
  *     쓴 편지" 만 보여 주므로 화면에 거짓이 생기지는 않지만, 고쳐 쓴 편지를 열면
  *     수정 시각이 사라진다는 사실은 적어 둔다.
- *  c. 0009 의 번호 형식은 `^[A-Z0-9]{4,8}$` 인데 앱은 그새 **4~12자**로 넓혔다
- *     (`LETTER_LIMITS.codeMax` = 12, 2026-08-16 사용자 요청). 지금 `open_letter` 에
- *     9자 이상 번호를 넣으면 **형식 검사에서 걸려 조용히 0행**이 나온다 —
- *     마이그레이션을 적용하기 전에 그 정규식을 함께 넓혀야 한다.
+ *  b. **익명 사용자는 쌓인다.** 편지를 한 통 쓸 때마다 `auth.users` 에 한 줄이 생기고
+ *     지우는 일은 아직 사람 몫이다(deploy/README.md 의 해당 절). 무료 플랜의 7일
+ *     휴면도 같은 절에 적혀 있다.
+ *  c. **번호 대입 방어는 아직 서버에 없다.** 0009 §2 의 시도 기록 표는 주석으로만 있고,
+ *     지금 막는 것은 bcrypt 비용과 화면의 20초 쉼표뿐이다.
  *
  * ⚠ 편지 본문은 **어디에도 기록하지 않는다**(store.ts 와 같은 규율). DB 오류 메시지도
  *   그대로 올리지 않는다 — Postgres 는 제약 위반 시 실패한 행 전체를 메시지에 실어
  *   보내는 일이 있고, 그 행이 곧 편지 본문이다. `LetterRemoteError` 는 코드만 든다.
+ * ⚠ service_role 키는 이 파일이 한 글자도 읽지 않는다(그 키는 시드 CLI 에만 산다).
  */
 
 import { createClient } from '@supabase/supabase-js';
@@ -83,7 +71,7 @@ export const LETTERS_TABLE = 'letters';
 /** 읽기 문 — 0009 가 정의하고 anon 에게 실행 권한을 준 단 하나의 함수. */
 export const OPEN_LETTER_RPC = 'open_letter';
 
-/** 쓰기 문 — **아직 마이그레이션에 없다**(머리말 a). */
+/** 쓰기 문 — 0014 가 세운 security definer 함수(authenticated 전용). */
 export const SAVE_LETTER_RPC = 'save_letter';
 
 /**
@@ -148,7 +136,28 @@ export interface LetterTableClient {
   delete(): LetterQueryBuilder;
 }
 
+/**
+ * 세션에서 우리가 보는 것은 **있는가 없는가** 하나뿐이다.
+ *
+ * 사용자 id 를 읽어 쓰지 않는다 — 소유자 판정은 서버가 한다(RLS 와 `save_letter` 의
+ * `owner_uid = auth.uid()`). 여기서 id 를 들고 다니면 그 판정을 클라이언트가 한 번 더
+ * 흉내 내는 셈이고, 두 판정은 언젠가 어긋난다.
+ */
+export interface SupabaseSession {
+  user: { id: string };
+}
+
+/** 익명 로그인에 쓰는 최소 포트. supabase-js 의 `auth` 중 우리가 부르는 둘뿐이다. */
+export interface SupabaseAuthClient {
+  getSession(): PromiseLike<{ data: { session: SupabaseSession | null } }>;
+  signInAnonymously(): PromiseLike<{
+    data: { session: SupabaseSession | null };
+    error: SupabaseErrorLike | null;
+  }>;
+}
+
 export interface SupabaseLetterClient {
+  auth: SupabaseAuthClient;
   from(table: string): LetterTableClient;
   rpc(fn: string, args: Record<string, unknown>): PromiseLike<SupabaseResponse>;
 }
@@ -169,7 +178,7 @@ export function createSupabaseLetterClient(url: string, anonKey: string): Supaba
  * 행 → 편지
  * ------------------------------------------------------------------ */
 
-/** DB 가 돌려주는 한 줄. `updated_at` 은 `open_letter` 가 주지 않아 선택이다(머리말 b). */
+/** DB 가 돌려주는 한 줄. `updated_at` 은 `open_letter` 가 주지 않아 선택이다(머리말 a). */
 const letterRowSchema = z.object({
   id: z.string().min(1),
   payload: z.record(z.string(), z.unknown()),
@@ -212,6 +221,33 @@ function raise(error: SupabaseErrorLike): never {
 }
 
 /* ------------------------------------------------------------------ *
+ * 세션
+ * ------------------------------------------------------------------ */
+
+/** 지금 세션이 있는가. 없으면 null — **여기서 만들지 않는다**(만드는 자리는 `save` 뿐이다). */
+async function currentSession(client: SupabaseLetterClient): Promise<SupabaseSession | null> {
+  const { data } = await client.auth.getSession();
+  return data.session ?? null;
+}
+
+/**
+ * 쓰기 직전에만 부르는 익명 로그인.
+ *
+ * 읽기(목록·번호로 열기)에서는 부르지 않는다 — 편지를 구경만 한 사람에게까지
+ * `auth.users` 한 줄을 남기지 않으려는 것이다(머리말 b).
+ */
+async function requireSession(client: SupabaseLetterClient): Promise<SupabaseSession> {
+  const existing = await currentSession(client);
+  if (existing) return existing;
+
+  const { data, error } = await client.auth.signInAnonymously();
+  if (error) raise(error);
+  // 오류 없이 세션도 없는 응답(익명 로그인이 꺼진 프로젝트)이 실제로 온다.
+  if (!data.session) throw new LetterRemoteError(null);
+  return data.session;
+}
+
+/* ------------------------------------------------------------------ *
  * 어댑터
  * ------------------------------------------------------------------ */
 
@@ -225,7 +261,11 @@ function raise(error: SupabaseErrorLike): never {
 export function createSupabaseLetterStore(client: SupabaseLetterClient): LetterStore {
   return {
     async list(): Promise<Letter[]> {
-      // RLS 가 소유자 행으로 좁힌다(0009 §1) — 로그인 전에는 언제나 빈 목록이다.
+      // 세션이 없으면 RLS 가 어차피 0행을 준다 — 그 왕복을 하지 않는다.
+      // (편지를 한 통도 쓰지 않은 사람에게 로그인을 만들어 주지도 않는다.)
+      if (!(await currentSession(client))) return [];
+
+      // RLS 가 소유자 행으로 좁힌다(0009 §1).
       const { data, error } = await client
         .from(LETTERS_TABLE)
         .select(LETTER_COLUMNS)
@@ -242,6 +282,8 @@ export function createSupabaseLetterStore(client: SupabaseLetterClient): LetterS
     },
 
     async get(id: string): Promise<Letter | null> {
+      if (!(await currentSession(client))) return null;
+
       const { data, error } = await client
         .from(LETTERS_TABLE)
         .select(LETTER_COLUMNS)
@@ -262,9 +304,16 @@ export function createSupabaseLetterStore(client: SupabaseLetterClient): LetterS
         theme: input.theme,
         signature: input.signature,
       });
-      // 번호는 정규화만 해서 넘긴다. **해시는 서버가 만든다**(머리말 a) —
+      // 고쳐 쓰기 + 빈 번호 = "번호는 그대로" (`SaveLetterInput` 주석). 서버에는
+      // null 로 넘어가고, 0014 의 `coalesce` 가 있던 해시를 그대로 둔다.
+      // 새 편지의 빈 번호는 여기서 zod 오류가 된다 — 번호 없는 편지는 열 길이 없다.
+      const keepCode = Boolean(input.id) && input.code.trim() === '';
+      // 번호는 정규화만 해서 넘긴다. **해시는 서버가 만든다**(머리말 3) —
       // 클라이언트가 만든 해시를 받아 주는 순간 번호 검사가 클라이언트 몫이 된다.
-      const code = letterCodeSchema.parse(input.code);
+      const code = keepCode ? null : letterCodeSchema.parse(input.code);
+
+      // 검증을 지난 뒤에야 로그인한다 — 형식이 어긋난 요청에 익명 사용자를 만들지 않는다.
+      await requireSession(client);
 
       const { data, error } = await client.rpc(SAVE_LETTER_RPC, {
         p_id: input.id ?? null,
@@ -290,6 +339,8 @@ export function createSupabaseLetterStore(client: SupabaseLetterClient): LetterS
     },
 
     async remove(id: string): Promise<boolean> {
+      if (!(await currentSession(client))) return false;
+
       // `select('id')` 를 붙여야 "정말 지워졌는지" 를 알 수 있다 — 붙이지 않으면
       // 남의 편지를 지우려다 RLS 에 막힌 것과 성공이 같은 응답으로 온다.
       const { data, error } = await client
@@ -323,9 +374,6 @@ export function createSupabaseLetterStore(client: SupabaseLetterClient): LetterS
 /**
  * Supabase 로 붙을 수 있는 환경인가.
  *
- * ⚠ 이 값이 `true` 여도 **지금은 저장소를 바꾸지 않는다**(아래 `createLetterStore`).
- *   env 는 "붙을 수 있다" 만 말하고, 붙어도 되는지는 auth 가 정한다.
- *
  * `process.env.X` 를 그대로 적는다 — Next 는 빌드 때 이 표기를 값으로 치환하므로
  * 변수로 돌려 읽으면 브라우저에서 undefined 가 된다.
  */
@@ -336,19 +384,52 @@ export function hasSupabaseLetterEnv(): boolean {
 }
 
 /**
+ * 이 배포에서 편지가 어디에 남는가 — **빌드 타임에 정해지는 한 값**이다.
+ *
+ * 화면 문구가 이 값으로 갈린다(`components/letter/copy.ts`). 그래서 `createLetterStore()`
+ * 처럼 `typeof window` 를 보면 **안 된다** — 서버가 그린 HTML 과 브라우저가 그린 첫
+ * 렌더가 다른 문장을 갖게 되고, 그게 하이드레이션 불일치다. env 만 본다:
+ * 서버 렌더와 클라이언트가 같은 값을 읽는다.
+ *
+ * ⚠ 'server' 는 "편지가 서버에 남는다" 는 뜻이지 "지금 로그인돼 있다" 는 뜻이 아니다.
+ *   세션은 저장할 때 만들어진다(`requireSession`).
+ */
+export const LETTER_STORAGE_MODE: 'server' | 'device' = hasSupabaseLetterEnv()
+  ? 'server'
+  : 'device';
+
+/**
+ * 브라우저에서 쓰는 클라이언트 — **한 번만 만든다.**
+ *
+ * supabase-js 의 클라이언트는 세션(익명 로그인 토큰)을 들고 있다. 화면마다 새로 만들면
+ * 저장 탭에서 만든 세션을 목록 탭이 모르는 일이 생긴다. 모듈 단위로 하나만 둔다.
+ */
+let sharedClient: SupabaseLetterClient | null = null;
+
+function browserLetterClient(): SupabaseLetterClient | null {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
+  if (!url || !anonKey) return null;
+  sharedClient ??= createSupabaseLetterClient(url, anonKey);
+  return sharedClient;
+}
+
+/**
  * 지금 쓸 편지 저장소.
  *
- * **env 가 다 채워져 있어도 localStorage 다.** 로그인이 없는 동안 서버 어댑터는
- * 읽기(번호로 열기)만 되고 쓰기는 RLS 에 막힌다 — 그 반쪽 상태로 갈아 끼우면 사용자의
- * 편지가 기기와 서버로 갈라지고, 화면이 그 사실을 설명할 방법이 없다.
+ *   브라우저 + env 있음 → 서버 어댑터(번호로 어느 기기에서든 열린다)
+ *   그 밖               → localStorage 어댑터
  *
- * **Supabase 전환은 auth(익명 로그인) 붙는 날.** 그날 할 일은 셋이다:
- *   1. 0009 적용(+ 머리말 a 의 `save_letter`, 머리말 c 의 번호 길이)
- *   2. 익명 로그인 켜기 → `owner_uid = auth.uid()` 가 성립한다
- *   3. 이 함수의 분기 한 줄만 되살리기 —
- *      `if (hasSupabaseLetterEnv()) return createSupabaseLetterStore(createSupabaseLetterClient(url, anonKey));`
- *      호출부(LetterStudio·LetterEntrance)는 손대지 않는다. 그것이 포트를 먼저 세운 이유다.
+ * 서버(프리렌더)에서 로컬을 돌려주는 것은 도피가 아니라 사실이다 — 그쪽에는 브라우저
+ * 세션이 없어서 소유자 조회가 성립하지 않고, 이 화면들은 어차피 정적으로 서고 편지를
+ * 읽고 쓰는 일은 전부 마운트 뒤에 일어난다.
+ *
+ * ⚠ **이 함수의 결과로 갈리는 JSX 를 첫 렌더에 두지 마라.** 서버와 브라우저가 다른
+ *   어댑터를 받으므로(위 두 줄) 그 순간 하이드레이션이 어긋난다. 문구처럼 렌더에
+ *   실려야 하는 것은 `LETTER_STORAGE_MODE`(빌드 타임 상수)를 본다.
  */
 export function createLetterStore(): LetterStore {
-  return createLocalLetterStore();
+  if (typeof window === 'undefined') return createLocalLetterStore();
+  const client = browserLetterClient();
+  return client ? createSupabaseLetterStore(client) : createLocalLetterStore();
 }

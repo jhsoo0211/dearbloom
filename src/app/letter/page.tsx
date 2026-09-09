@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 import LetterEntrance from '@/components/letter/LetterEntrance';
-import { LETTER_DEVICE_NOTICE_TEXT } from '@/components/letter/copy';
+import { LETTER_STORAGE_NOTICE_TEXT } from '@/components/letter/copy';
 import { buildLetterFlowers } from '@/components/letter/data';
 import styles from '@/components/letter/letter.module.css';
 import { loadCatalog } from '@/lib/data/catalog';
@@ -16,11 +16,13 @@ import { loadCatalog } from '@/lib/data/catalog';
  *
  * · 꽃 목록은 서버가 통째로 확정해 내려보낸다(`loadCatalog()` → 이름·대표 꽃말·실사·도판).
  *   클라이언트는 카탈로그도 라벨 사전도 갖지 않는다(/stories·/flowers 와 같은 규율).
- * · 편지 자체는 **서버가 모른다.** 지금 단계에서 편지는 그 브라우저의 저장소에만 있다
- *   (`src/lib/letters/store.ts` 머리말). 그래서 이 페이지는 정적으로 서고, 편지를 읽고 쓰는
- *   일은 전부 클라이언트에서 일어난다.
- *   ⚠ 그 사실을 **인트로와 메타데이터도 함께** 말한다(design-spec §1.5o). 화면 안쪽만
- *     정직하고 들어오는 문이 "번호만 알면 열려요" 라고 말하면 같은 거짓말이다.
+ * · 편지 자체는 **이 페이지가 모른다.** 편지를 읽고 쓰는 일은 전부 브라우저에서 일어나고
+ *   (`src/lib/letters/supabase-store.ts` 의 `createLetterStore()`), 그 편지가 어디에 남는지는
+ *   배포마다 다르다 — 그 브라우저에만 남거나, 우리가 간직하고 번호로 어디서든 열리거나.
+ *   그래서 이 페이지는 정적으로 선다.
+ *   ⚠ 어느 쪽인지를 **인트로와 메타데이터도 함께** 말한다(design-spec §1.5o). 화면 안쪽만
+ *     정직하고 들어오는 문이 옛말을 하면 같은 거짓말이다. 문구는 빌드 타임에 정해진
+ *     한 벌(`LETTER_STORAGE_NOTICE_TEXT`)이라 서버와 브라우저가 같은 문장을 그린다.
  * · `revalidate = 3600` — `content/*.csv` 는 배포에 고정된 읽기 전용 데이터다.
  */
 
@@ -28,7 +30,7 @@ export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: '비밀 편지 — dearbloom',
-  description: `번호로 잠기는 편지 한 통. 하고 싶었던 말과 함께 보낼 꽃 한 송이를 골라 두면, 번호로 열리는 편지가 돼요. ${LETTER_DEVICE_NOTICE_TEXT}`,
+  description: `번호로 잠기는 편지 한 통. 하고 싶었던 말과 함께 보낼 꽃 한 송이를 골라 두면, 번호로 열리는 편지가 돼요. ${LETTER_STORAGE_NOTICE_TEXT}`,
 };
 
 export default async function LetterPage() {

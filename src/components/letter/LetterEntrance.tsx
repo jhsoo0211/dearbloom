@@ -4,13 +4,16 @@
  * 편지 입구 — 번호로 열기(위) · 내가 만든 편지(아래).
  *
  * ── 이 화면이 먼저 말해야 하는 것 (design-spec §1.5o) ────────────────
- * 편지는 만든 사람의 브라우저에만 있다. 그래서 번호를 받아 찾아온 사람이 **올바른 번호를
- * 넣어도 그 기기에서는 열리지 않는다.** 그 사실을 말하지 않으면 이 화면은 없는 문 앞에
- * 사람을 세워 두고 오타를 의심하게 만든다(2026-08-17 감사 P0-1).
- *   ⚠ 기기 제약 고지(`LETTER_DEVICE_NOTICE`)는 **편지 목록 유무와 무관하게**, 번호를 넣어
+ * 편지가 어디에 남는지는 배포마다 다르다 — 그 브라우저에만 남거나(device), 우리가
+ * 간직하고 번호로 어디서든 열리거나(server). 어느 쪽이든 **번호를 넣어 보기 전에**
+ * 그 사실을 읽어야 한다. device 에서 말하지 않으면 없는 문 앞에 사람을 세워 두고 오타를
+ * 의심하게 만들고(2026-08-17 감사 P0-1), server 에서 말하지 않으면 다시 볼 수 없는 번호를
+ * 아무 말 없이 흘려보내게 한다.
+ *   ⚠ 저장 방식 고지(`LETTER_STORAGE_NOTICE`)는 **편지 목록 유무와 무관하게**, 번호를 넣어
  *     보기 **전에** 선다. 예전처럼 `mine.length > 0` 분기 안으로 옮기지 마라 — 그 자리는
  *     이 문장이 가장 필요한 사람(편지를 만든 적 없는 수신자)에게만 보이지 않는 자리다.
- *   문구 원본은 전부 `copy.ts` 다. 여기서 새로 짓지 않는다.
+ *   문구 원본은 전부 `copy.ts` 다. 여기서 새로 짓지 않는다. 어느 벌을 쓸지는 빌드 타임
+ *   상수가 정하므로 **문구 때문에 하이드레이션이 어긋날 자리는 없다.**
  *
  * ── 연속 오입력 뒤의 짧은 기다림 ─────────────────────────────────────
  * 다섯 번 연달아 어긋나면 잠깐 멈춘다. **이 기다림은 보안이 아니다** — 같은 브라우저에서
@@ -18,8 +21,8 @@
  * 서버가 들어야 한다 — `db/migrations/0009_letters.sql` §2 의 bcrypt·시도 기록), 다른 하나는
  * 사람이다. 다섯 번 틀렸다면 대개 번호를 잘못 옮겨 적은 것이라, 여섯 번째를 더 치는 것보다
  * 한 번 다시 보는 편이 빠르다. 그래서 문구도 잠금이 아니라 권유다.
- *   기다림은 그대로 두되 **그 문구도 기기 제약을 함께 말한다** — 기다렸다 다시 넣어도
- *   열리지 않는 경우가 있다는 것을 숨기면 기다림 자체가 두 번째 거짓말이 된다.
+ *   device 벌에서는 그 문구가 **기기 제약을 함께 말한다** — 기다렸다 다시 넣어도 열리지
+ *   않는 경우가 있다는 것을 숨기면 기다림 자체가 두 번째 거짓말이 된다.
  *
  * ⚠ 못 찾은 이유를 나누어 말하지 않는다("형식이 틀렸어요" 같은 힌트 금지 —
  *   `store.findByCode` 가 같은 이유로 형식 오류도 null 로 답한다).
@@ -29,14 +32,14 @@ import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react
 import Link from 'next/link';
 
 import { LETTER_LIMITS, type Letter } from '@/lib/letters/types';
-import { createLocalLetterStore } from '@/lib/letters/store';
+import { createLetterStore } from '@/lib/letters/supabase-store';
 import LetterReveal from './LetterReveal';
 import {
-  LETTER_DEVICE_NOTICE,
   LETTER_LIST_EMPTY,
   LETTER_LIST_NOTE,
   LETTER_NOT_FOUND,
   LETTER_OPEN_LEAD,
+  LETTER_STORAGE_NOTICE,
   LETTER_WAIT_NOTE,
 } from './copy';
 import { SAMPLE_LETTER } from './sample';
@@ -61,7 +64,13 @@ function formatDay(iso: string): string {
 }
 
 export default function LetterEntrance({ flowers }: LetterEntranceProps) {
-  const store = useMemo(() => createLocalLetterStore(), []);
+  /*
+    서버(프리렌더)에서는 로컬 어댑터, 브라우저에서는 배포에 따라 서버 어댑터다
+    (`createLetterStore`). 두 어댑터로 갈리는 것은 **첫 렌더에 그려지지 않는다** —
+    목록은 마운트 뒤에 오고(`mine` 은 처음에 비어 있다), `번호 다시 보기` 버튼은
+    그 목록 안에만 산다. 그래서 하이드레이션이 어긋날 자리가 없다.
+  */
+  const store = useMemo(() => createLetterStore(), []);
 
   const [code, setCode] = useState('');
   const [gateError, setGateError] = useState('');
@@ -177,12 +186,12 @@ export default function LetterEntrance({ flowers }: LetterEntranceProps) {
         <p className={styles.panelLead}>{LETTER_OPEN_LEAD}</p>
 
         {/*
-          기기 제약 고지 — **번호 칸 위**. 편지 목록이 있든 없든 언제나 선다.
+          저장 방식 고지 — **번호 칸 위**. 편지 목록이 있든 없든 언제나 선다.
           면(배경+보더)을 갖는 이유는 사전 티어 고지(§1.5m ⑤)와 같다: 건너뛰어 읽히면 안 된다.
         */}
         <p className={styles.notice} data-testid="device-notice">
-          <span className={styles.noticeStrong}>{LETTER_DEVICE_NOTICE.lead}</span>{' '}
-          {LETTER_DEVICE_NOTICE.body}
+          <span className={styles.noticeStrong}>{LETTER_STORAGE_NOTICE.lead}</span>{' '}
+          {LETTER_STORAGE_NOTICE.body}
         </p>
 
         <form onSubmit={onOpen} noValidate>
@@ -348,7 +357,7 @@ export default function LetterEntrance({ flowers }: LetterEntranceProps) {
                 );
               })}
             </ul>
-            {/* 기기 제약 자체는 위 패널이 이미 말했다. 여기서는 사라질 수 있다는 사실만. */}
+            {/* 저장 방식 자체는 위 패널이 이미 말했다. 여기서는 이 목록이 무엇인지만. */}
             <p className={styles.empty}>{LETTER_LIST_NOTE}</p>
           </>
         ) : loaded ? (

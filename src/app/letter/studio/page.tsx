@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 import LetterStudio from '@/components/letter/LetterStudio';
-import { LETTER_DEVICE_NOTICE_TEXT } from '@/components/letter/copy';
+import { LETTER_STORAGE_NOTICE_TEXT } from '@/components/letter/copy';
 import { buildLetterFlowers } from '@/components/letter/data';
 import styles from '@/components/letter/letter.module.css';
 import { loadCatalog } from '@/lib/data/catalog';
@@ -11,10 +11,10 @@ import { DEFAULT_LETTER_THEME } from '@/lib/letters/types';
 /**
  * `/letter/studio` — 편지 만들기·고쳐 쓰기.
  *
- * 서버가 하는 일은 **꽃 목록을 확정해 넘기는 것뿐**이다. 편지는 이 기기의 저장소에만 있고
- * (`src/lib/letters/store.ts`), 고쳐 쓸 편지의 id 는 폼이 마운트 뒤에 주소에서 읽는다 —
- * 서버가 검색 파라미터를 읽으면 이 화면이 정적 렌더에서 떨어져 나가는데, 그렇게 해서
- * 얻을 것이 하나도 없다(서버는 그 편지를 볼 수 없다).
+ * 서버가 하는 일은 **꽃 목록을 확정해 넘기는 것뿐**이다. 편지를 읽고 쓰는 일은 전부
+ * 브라우저에서 일어나고(`src/lib/letters/supabase-store.ts`), 고쳐 쓸 편지의 id 는 폼이
+ * 마운트 뒤에 주소에서 읽는다 — 서버가 검색 파라미터를 읽으면 이 화면이 정적 렌더에서
+ * 떨어져 나가는데, 그렇게 해서 얻을 것이 하나도 없다(서버는 그 편지를 볼 수 없다).
  *
  * `revalidate = 3600` — 꽃 목록의 원본인 `content/*.csv` 는 배포에 고정된 데이터다.
  */
@@ -67,7 +67,7 @@ export default async function LetterStudioPage() {
       <footer className={styles.siteFoot}>
         <div className={styles.wrap}>
           <p className={styles.footSay}>
-            편지는 남기려고 쓰는 글이라 저장해요. {LETTER_DEVICE_NOTICE_TEXT}
+            편지는 남기려고 쓰는 글이라 저장해요. {LETTER_STORAGE_NOTICE_TEXT}
           </p>
           <nav className={styles.footNav} aria-label="보조 메뉴">
             <Link href="/letter">편지 입구</Link>

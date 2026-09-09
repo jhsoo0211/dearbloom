@@ -20,7 +20,7 @@ DearBloom은 검토된 꽃 도감에서 최대 세 가지 꽃을 추천하고, �
 | 이야기 아카이브 | 꽃 이야기 452편 검색, 테마·계열·분위기 필터 | `/stories` |
 | 읽을거리 | 직접 고른 축제·글·관리법·색 트렌드와 별도로 수집한 축제 목록 탐색 | `/reads` |
 | 추천 결과 공유 | 꽃 ID·관계·마음·날짜를 담은 링크 열기. 자유 서술과 생성 문구는 링크에서 제외 | `/r?c=…` |
-| 비밀 편지 | 같은 브라우저에서 편지를 작성·수정하고 번호로 다시 열기 | `/letter`, `/letter/studio` |
+| 비밀 편지 | 편지를 작성·수정하고 번호로 다시 열기. Supabase를 붙이면 번호만으로 다른 기기에서도 열림 | `/letter`, `/letter/studio` |
 | 꽃집·꽃시장 안내 | 꽃집과 시장 정보를 살펴보고 외부 사이트로 이동 | `/partners` |
 
 홈에서는 오늘의 꽃과 이야기, 오늘의 탄생화를 소개합니다.
@@ -38,9 +38,9 @@ AI는 설정된 키에 한해 **Gemini → Anthropic → CLOVA → NVIDIA** 순�
 
 ## 현재 구현 범위
 
-- **로컬 실행에는 API 키와 외부 DB가 필요하지 않습니다.** 추천·콘텐츠 탐색·로컬 편지는 키 없이도 동작합니다.
+- **로컬 실행에는 API 키와 외부 DB가 필요하지 않습니다.** 추천·콘텐츠 탐색·브라우저 저장 편지는 키 없이도 동작합니다.
 - **콘텐츠 조회 원본은 CSV입니다.** Supabase 스키마와 시드 CLI는 준비되어 있지만, DB에 적재한다고 앱의 조회 경로가 Supabase로 전환되지는 않습니다.
-- **편지는 localStorage에 저장합니다.** 같은 브라우저 프로필·같은 사이트 주소에서 다시 열 수 있고, 저장소를 지우면 편지도 사라집니다. 기기 간 편지 전달은 아직 구현하지 않았습니다.
+- **편지가 어디에 저장되는지는 설정에 따라 갈립니다.** `NEXT_PUBLIC_SUPABASE_URL`과 `NEXT_PUBLIC_SUPABASE_ANON_KEY`가 없으면 편지를 쓴 브라우저에만 남고, 저장소를 지우면 사라집니다. 두 값이 있으면 저장할 때 익명 로그인을 거쳐 Postgres에 저장되므로 번호만 알면 다른 기기에서도 열립니다(마이그레이션 `0009`·`0014`와 Supabase Auth의 Anonymous sign-ins 활성화가 필요합니다). 화면 문구도 빌드된 방식을 따라가며, 번호는 bcrypt 해시만 저장하므로 잃어버린 번호는 복구할 수 없습니다.
 - **추천 링크와 편지는 별개입니다.** 추천 링크는 제한된 결과 값을 URL에 담으며, 서버에 공유 레코드를 만들지 않습니다.
 - **구매는 외부 사이트로 연결합니다.** 선택적으로 사용할 11번가 상품 검색 어댑터가 있으며, 키나 유효한 결과가 없으면 사이트 목록으로 전환합니다. 실제 키로 받은 응답은 추가 검증이 필요한 상태로 기록되어 있습니다.
 - **정적 데모는 로컬 입력 해석과 템플릿 문구를 사용합니다.** 추천 엔진은 공유하지만, 서버 배포에서 AI가 자유 서술을 다르게 해석하면 엔진 입력과 추천 결과도 달라질 수 있습니다. 일부 이미지는 외부 호스트에서 불러옵니다.
@@ -108,8 +108,8 @@ PowerShell에서는 `Copy-Item .env.example .env`를 사용합니다.
 | `DATA_GO_API_KEY` | TourAPI 축제 수집. 스크립트는 이전 이름 `DATA_GO_KR_API_KEY`도 허용 |
 | `NEXT_PUBLIC_SITE_URL` | canonical·Open Graph·sitemap의 기준 URL |
 | `DEARBLOOM_CONTENT_DIR` | 기본 `content/` 대신 읽을 디렉터리 |
-| `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | 로컬에서 Supabase로 콘텐츠 시드 적재 |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | 준비된 Supabase 어댑터 설정. DB 조회나 기기 간 편지를 활성화하지 않음 |
+| `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | 로컬 시드 CLI(`npm run seed`, `npm run letters:seed`) 전용. service_role 키는 앱 코드가 읽지 않음 |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | 브라우저의 `/letter` 화면이 사용. URL과 함께 채우면 편지가 서버 저장으로 전환됨(도감 조회는 여전히 CSV) |
 
 API 키는 서버에서만 사용하고 Git에 커밋하지 않습니다. service-role 키는 로컬 시드 CLI용이며 브라우저 설정으로 노출하지 않습니다.
 
@@ -187,7 +187,7 @@ npm run build
 | `src/lib/llm/` | 입력 해석·문구 계약·프롬프트·프로바이더 폴백 |
 | `src/lib/data/`, `content/`, `db/seed/` | CSV 로딩·편집 원본·공유 검증·DB 적재 |
 | `src/lib/demo/` | 정적 데모 어댑터·생성된 브라우저 데이터 |
-| `src/lib/letters/` | 현재 로컬 저장소·준비된 Supabase 어댑터 |
+| `src/lib/letters/` | 편지 저장소 포트와 두 어댑터(브라우저 저장·Supabase) — 환경변수로 선택 |
 | `public/`, `design/` | 이미지 자산·확정 HTML 시안 |
 | `tests/`, `scripts/`, `db/migrations/` | 테스트·운영 스크립트·DB 스키마 이력 |
 | `docs/`, `contest/`, `deploy/` | 기획·조사 기록, 공모전 자료, 배포 안내 |

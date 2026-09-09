@@ -1,0 +1,30 @@
+{
+  "_읽고 시작하세요": [
+    "편지 시드 파일의 모양을 보여 주는 **가상의 예시**입니다. 여기 있는 두 통은 아무에게도 가지 않습니다.",
+    "진짜 편지는 이 파일을 고치지 말고 db/seed/private/ 안에 따로 두세요 — 그 폴더는 커밋되지 않습니다.",
+    "번호(code)는 서버가 해시로만 들고 있어 우리가 되돌려 줄 수 없습니다. 이 파일이 번호의 유일한 원본입니다.",
+    "칸: code · recipientName · title(선택) · body · flowerId · theme · signature · expiresAt(선택)",
+    "theme = forest | ivory | gold | wine | dusk,  flowerId = content/flowers.csv 의 id",
+    "expiresAt 은 시간대까지 적은 ISO 시각이어야 하고(예: 2027-01-01T00:00:00+09:00) 미래여야 합니다."
+  ],
+  "letters": [
+    {
+      "code": "SAMPLE24",
+      "recipientName": "예시님",
+      "title": "예시로 넣어 둔 편지",
+      "body": "이 편지는 시드 파일의 모양을 보여 주려고 지어낸 예시예요. 받는 분도 보내는 분도 실제 사람이 아니고, 번호도 예시라 그대로 두면 아무 일도 일어나지 않아요.",
+      "flowerId": "freesia",
+      "theme": "gold",
+      "signature": "dearbloom"
+    },
+    {
+      "code": "SAMPLE25",
+      "recipientName": "두 번째 예시님",
+      "body": "제목은 적지 않아도 괜찮아요. 이 편지처럼 비워 두면 편지지에 제목 줄이 서지 않아요. 보관 기한을 적어 두면 그날이 지난 뒤에는 번호가 맞아도 열리지 않아요.",
+      "flowerId": "lavender",
+      "theme": "dusk",
+      "signature": "dearbloom",
+      "expiresAt": "2099-12-31T23:59:00+09:00"
+    }
+  ]
+}

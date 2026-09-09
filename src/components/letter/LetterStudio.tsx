@@ -5,17 +5,20 @@
  *
  * ── 저장한다는 사실을 감추지 않는다 ──────────────────────────────────
  * dearbloom 의 자유 서술은 저장하지 않는 것이 원칙이지만(§1.5j), 편지는 **남기려고 쓰는 글**
- * 이라 저장한다. 그 차이를 화면 맨 위 안내 한 줄이 말하고, 지금은 이 기기에만 남는다는
- * 사실도 같은 자리에서 말한다(`src/lib/letters/store.ts` 머리말과 같은 문장).
- *   ⚠ **번호를 건네기 전에** 그 제약을 읽어야 한다(design-spec §1.5o). 그래서 기기 고지
- *     (`LETTER_DEVICE_NOTICE`)가 폼 맨 위와 저장 완료 화면 **두 자리**에 선다. 저장 완료
- *     화면이 더 중요한 자리다 — 사람이 번호를 복사해 건네는 순간이 거기다.
+ * 이라 저장한다. 그 차이를 화면 맨 위 안내 한 줄이 말하고, 편지가 어디에 남는지도 같은
+ * 자리에서 말한다(`src/lib/letters/store.ts` 머리말과 같은 문장).
+ *   ⚠ **번호를 건네기 전에** 그 사실을 읽어야 한다(design-spec §1.5o). 그래서 저장 방식
+ *     고지(`LETTER_STORAGE_NOTICE`)가 폼 맨 위와 저장 완료 화면 **두 자리**에 선다. 저장
+ *     완료 화면이 더 중요한 자리다 — 사람이 번호를 복사해 건네는 순간이 거기다.
  *   문구 원본은 전부 `copy.ts` 다. 여기서 새로 짓지 않는다.
  *
  * ── 고쳐 쓰기로 들어오는 길 ──────────────────────────────────────────
  * 목록에서 `/letter/studio?id=…` 로 온다. 그 id 는 **마운트 뒤에 `window.location` 에서**
- * 읽는다 — 편지는 어차피 이 기기의 저장소에만 있어서 서버가 미리 할 수 있는 일이 없고,
- * 서버가 검색 파라미터를 읽는 순간 이 화면이 정적 렌더에서 떨어져 나간다.
+ * 읽는다 — 서버가 검색 파라미터를 읽는 순간 이 화면이 정적 렌더에서 떨어져 나가는데,
+ * 그렇게 얻을 것이 없다(서버에는 그 편지를 볼 세션이 없다).
+ *   ⚠ 서버 어댑터에는 `revealCode()` 가 **없다.** 그래서 고쳐 쓰기로 들어와도 번호 칸이
+ *     채워지지 않는다 — 그때 번호를 다시 적으라고 요구하면 적어 두지 않은 사람은 편지를
+ *     **영영 고칠 수 없다.** 비워 둔 채 저장하면 번호는 그대로다(`LETTER_CODE_KEEP_HINT`).
  *
  * ⚠ 편지 본문을 console·로그·URL 어디에도 싣지 마라. 이 파일에 console 이 없는 것은 규칙이다.
  */
@@ -31,11 +34,14 @@ import {
   type Letter,
   type LetterTheme,
 } from '@/lib/letters/types';
-import { LetterStoreError, createLocalLetterStore } from '@/lib/letters/store';
+import { LetterStoreError } from '@/lib/letters/store';
+import { createLetterStore } from '@/lib/letters/supabase-store';
 import {
-  LETTER_DEVICE_NOTICE,
+  LETTER_CODE_KEEP_HINT,
+  LETTER_SAVED_KEPT_CODE,
   LETTER_SAVED_LEAD,
   LETTER_SAVED_NOTE,
+  LETTER_STORAGE_NOTICE,
   LETTER_STUDIO_NOTICE,
   letterCodeHint,
 } from './copy';
@@ -66,7 +72,12 @@ interface FormState {
 type FieldErrors = Partial<Record<keyof FormState, string>>;
 
 export default function LetterStudio({ flowers, defaultTheme }: LetterStudioProps) {
-  const store = useMemo(() => createLocalLetterStore(), []);
+  /*
+    서버(프리렌더)에서는 로컬 어댑터, 브라우저에서는 배포에 따라 서버 어댑터다.
+    어느 쪽인지로 갈리는 JSX 는 **마운트 뒤에만** 선다(`editingId` 는 주소를 읽은 뒤에
+    채워진다) — 그래서 하이드레이션이 어긋날 자리가 없다.
+  */
+  const store = useMemo(() => createLetterStore(), []);
 
   const [form, setForm] = useState<FormState>({
     recipientName: '',
@@ -140,9 +151,12 @@ export default function LetterStudio({ flowers, defaultTheme }: LetterStudioProp
         theme: form.theme,
         signature: form.signature,
       });
-      const code = letterCodeSchema.safeParse(form.code);
+      // 고쳐 쓸 때 번호 칸을 비워 두면 **번호는 그대로**다(머리말). 그때는 번호 검사를
+      // 돌리지 않는다 — 빈 칸을 형식 오류로 되돌려 주면 그 길이 막힌다.
+      const keepingCode = editingId !== null && form.code.trim() === '';
+      const code = keepingCode ? null : letterCodeSchema.safeParse(form.code);
 
-      if (!content.success || !code.success) {
+      if (!content.success || (code !== null && !code.success)) {
         const next: FieldErrors = {};
         if (!content.success) {
           for (const issue of content.error.issues) {
@@ -152,20 +166,26 @@ export default function LetterStudio({ flowers, defaultTheme }: LetterStudioProp
             }
           }
         }
-        if (!code.success) next.code = code.error.issues[0]?.message ?? '편지 번호를 다시 봐 주세요.';
+        if (code !== null && !code.success) {
+          next.code = code.error.issues[0]?.message ?? '편지 번호를 다시 봐 주세요.';
+        }
         setFieldErrors(next);
         return;
       }
 
+      // 번호를 그대로 두는 저장은 빈 문자열로 넘긴다 — 두 어댑터가 같은 규칙을 쓴다
+      // (`SaveLetterInput` 주석).
+      const nextCode = code === null ? '' : code.data;
+
       const letter = await store.save({
         ...(editingId ? { id: editingId } : {}),
         ...content.data,
-        code: code.data,
+        code: nextCode,
       });
 
       setEditingId(letter.id);
-      setForm((previous) => ({ ...previous, code: code.data }));
-      setSaved({ letter, code: code.data });
+      setForm((previous) => ({ ...previous, code: nextCode }));
+      setSaved({ letter, code: nextCode });
     } catch (error) {
       // 저장소가 말해 주는 문장은 이미 해요체다(`LetterStoreError`). 그대로 옮긴다.
       setFormError(
@@ -190,22 +210,35 @@ export default function LetterStudio({ flowers, defaultTheme }: LetterStudioProp
           <h2 className={styles.panelTitle} id="letter-saved-title">
             편지를 간직해 두었어요
           </h2>
-          <p className={styles.panelLead}>{LETTER_SAVED_LEAD}</p>
+          {/*
+            번호를 비워 둔 채 고쳐 쓴 경우에는 **보여 줄 번호가 우리에게 없다**(서버는
+            해시만 든다). 빈 칸을 크게 세우는 대신 일어난 일을 말한다.
+          */}
+          {saved.code !== '' ? (
+            <>
+              <p className={styles.panelLead}>{LETTER_SAVED_LEAD}</p>
 
-          <strong className={styles.savedCode} data-testid="saved-code">
-            {saved.code}
-          </strong>
+              <strong className={styles.savedCode} data-testid="saved-code">
+                {saved.code}
+              </strong>
+            </>
+          ) : (
+            <p className={styles.panelLead} data-testid="saved-code-kept">
+              {LETTER_SAVED_KEPT_CODE}
+            </p>
+          )}
 
           {/*
-            번호를 건네기 직전의 자리다. 기기 제약을 여기서 말하지 않으면, 만든 사람은
-            열리지 않을 번호를 건네고 받는 사람은 없는 문을 두드리게 된다(§1.5o).
+            번호를 건네기 직전의 자리다. 편지가 어디에 남는지를 여기서 말하지 않으면,
+            만든 사람은 열리지 않을 번호를 건네거나(device) 다시 못 볼 번호를 그냥
+            흘려보내게 된다(server) — §1.5o 가 이 자리를 가장 중요하다고 적은 이유다.
           */}
           <p className={styles.notice} data-testid="device-notice">
-            <span className={styles.noticeStrong}>{LETTER_DEVICE_NOTICE.lead}</span>{' '}
-            {LETTER_DEVICE_NOTICE.body}
+            <span className={styles.noticeStrong}>{LETTER_STORAGE_NOTICE.lead}</span>{' '}
+            {LETTER_STORAGE_NOTICE.body}
           </p>
 
-          <p className={styles.note}>{LETTER_SAVED_NOTE}</p>
+          {saved.code !== '' ? <p className={styles.note}>{LETTER_SAVED_NOTE}</p> : null}
 
           <div className={styles.savedActions}>
             <button type="button" className={styles.btn} onClick={() => setPreviewing(true)}>
@@ -240,10 +273,11 @@ export default function LetterStudio({ flowers, defaultTheme }: LetterStudioProp
           <h2 className={styles.panelTitle}>{editingId ? '편지 고쳐 쓰기' : '편지 쓰기'}</h2>
         </div>
 
-        {/* 정직한 한 줄 — 저장한다는 사실과, 지금 어디까지 사실인지. */}
+        {/* 정직한 한 줄 — 저장한다는 사실과, 그 편지가 어디에 남는지. */}
         <p className={styles.notice} data-testid="device-notice">
           <span className={styles.noticeStrong}>{LETTER_STUDIO_NOTICE.strong}</span>{' '}
-          {LETTER_STUDIO_NOTICE.body} <b>{LETTER_DEVICE_NOTICE.lead}</b> {LETTER_DEVICE_NOTICE.body}
+          {LETTER_STUDIO_NOTICE.body} <b>{LETTER_STORAGE_NOTICE.lead}</b>{' '}
+          {LETTER_STORAGE_NOTICE.body}
         </p>
 
         {formError !== '' ? (
@@ -414,6 +448,12 @@ export default function LetterStudio({ flowers, defaultTheme }: LetterStudioProp
               만들어 줘
             </button>
           </div>
+          {/*
+            고쳐 쓰기에서만 선다. 서버 모드에서는 번호 칸이 비어 있는 채로 들어오는데
+            (`revealCode()` 가 없다), 그때 이 한 줄이 없으면 사람은 다시 적을 수 없는
+            번호를 요구받았다고 읽는다.
+          */}
+          {editingId ? <p className={styles.hint}>{LETTER_CODE_KEEP_HINT}</p> : null}
           {fieldErrors.code ? <p className={styles.fieldError}>{fieldErrors.code}</p> : null}
         </div>
 

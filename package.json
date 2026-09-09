@@ -16,6 +16,7 @@
     "typecheck": "next typegen && tsc --noEmit",
     "seed": "tsx db/seed/seed.ts",
     "seed:apply": "tsx db/seed/seed.ts --apply",
+    "letters:seed": "tsx db/seed/letters.ts",
     "stop": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/stop.ps1"
   },
   "engines": {

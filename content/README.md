@@ -8,8 +8,8 @@ DB는 이 CSV에서 시드(upsert)될 뿐, 반대로 DB를 직접 고치지 않�
 | 파일 | 내용 | 현재 행 수 |
 |---|---|---|
 | `flowers.csv` | 꽃 기본 정보 | 59 |
-| `meanings.csv` | 꽃말(출처 필수) | 369 |
-| `stories.csv` | 꽃에 얽힌 일화(창작 외 출처 필수) | 454 |
+| `meanings.csv` | 꽃말(출처 필수) | 370 |
+| `stories.csv` | 꽃에 얽힌 일화(창작 외 출처 필수) | 456 |
 | `rules.csv` | 상황 → 꽃 추천/회피 규칙 | 151 |
 | `templates.csv` | 메시지 템플릿(마음×톤 31칸 × 길이 2벌) | 62 |
 | `quotes.csv` | 인용문(범용 3 + 문학 발췌 86) | 89 |
@@ -177,6 +177,23 @@ intent 와 무관한 상시 가점(R)이 붙기 때문이다. 꽃말이나 일�
     **454**). 색깔별 꽃말 후보는 화훼 블로그 집계 수준에 그쳐 `meanings.csv`는 이번
     회차에서 늘리지 않았다. 조사 경위·검토했다 제외한 소재·수치 변화의 단일 원본은
     `docs/weekly-research-2026-09-07.md`다.
+  - `weekly-research(2026-09-14):` — 다섯 번째 주간 콘텐츠 리서치. 이 세션도 `WebFetch`가
+    조직 egress 정책으로 전 도메인 차단돼(`curl` 직접 호출도 동일하게 막힘) `WebSearch`
+    스니펫 교차 확인으로 대체했다(2026-08-17 회차 이후 선례와 동일). 가장 얇은 두 종
+    `lisianthus`(13편)·`babys-breath`(7편, meanings)는 앞선 세 회차가 이미 두 차례씩
+    다뤄 소재 중복 위험이 가장 컸고, `freesia`·`gerbera`·`carnation`도 09-07 회차가
+    기존 13~16편을 각도별로 훑어 새 후보 대부분이 겹친다고 확인해 둔 터라, 이번에는
+    한 종에 몰아넣지 않고 **세 종에 걸쳐 겹치지 않는 각도만** 골랐다.
+    `story-gerbera-mpumalanga-flag`(남아공 음푸말랑가 주기·문장에 그려진 바버턴
+    데이지 — 기존 `story-gerbera-goldrush`의 "발견" 다음에 오는 "상징이 된 이후" 이야기),
+    `story-lisianthus-genome-2021`(2021년 가즈사 DNA연구소·다키이 종묘·도쿄대가 처음
+    완성한 유스토마 유전체 지도 — 기존 `story-lisianthus-japan-breeding`의 육종사와
+    짝을 이루는 과학사)를 `stories.csv`에 더했다(454 → **456**). `meanings.csv`는
+    `babys-breath`에 Kate Greenaway 1884 『Language of Flowers』의 Gypsophila
+    항목("Everlasting love" → "영원한 사랑")을 영국·빅토리아 시대 행으로 더했다(369 →
+    **370**) — 기존 흰/분홍(한국·일본) 행과 문화권이 겹치지 않는 별도 갈래다. 조사
+    경위·검토했다 제외한 소재·수치 변화의 단일 원본은
+    `docs/weekly-research-2026-09-14.md`다.
 
 ## 절대 하지 말 것
 
@@ -218,7 +235,9 @@ npm run seed:apply    # 실제 upsert (Supabase 환경변수 필요)
 - 조사 경위·열람 URL·제외 판단의 단일 원본은 회차별로 나뉜다:
   **`docs/meanings-research.md`**(seed-v2, 기존 9종) ·
   **`docs/catalog-expansion-research.md`**(seed-v3, 신규 8종 + 색상 정합 + 독성 등급 근거) ·
-  **`docs/catalog-expansion-2-research.md`**(seed-v4, 신규 14종 + 독성 등급 근거).
+  **`docs/catalog-expansion-2-research.md`**(seed-v4, 신규 14종 + 독성 등급 근거) ·
+  **`docs/weekly-research-2026-09-14.md`**(weekly-research 5회차, `babys-breath` 빅토리아
+  시대 행 1편).
 - 조사 문서는 Greenaway(1884)·Dumont(1851) 행의 문화권을 `victorian` 이라 적지만, CSV 는
   그 값을 **시대(`era`)** 로 쓰고 `culture_region` 은 `uk` 로 둔다. seed-v4 적재 때 이 어휘로 맞췄다.
 - `colors` 는 `labels.ts` 의 색 어휘 안에서만 쓴다. seed-v4 조사 문서의 `rose`·`lilac`·`bronze`·
@@ -246,8 +265,9 @@ npm run seed:apply    # 실제 upsert (Supabase 환경변수 필요)
 **`docs/weekly-research-2026-08-17.md`**(weekly-research 2회차, 기존 3종 심화 7편),
 **`docs/weekly-research-2026-08-24.md`**·**`docs/weekly-research-2026-08-31.md`**
 (weekly-research 3회차 1·2차 시도, `lisianthus`·`babys-breath` 심화 8편),
-**`docs/weekly-research-2026-09-07.md`**(weekly-research 4회차, `chrysanthemum` 심화 2편)에
-남긴다.
+**`docs/weekly-research-2026-09-07.md`**(weekly-research 4회차, `chrysanthemum` 심화 2편),
+**`docs/weekly-research-2026-09-14.md`**(weekly-research 5회차, `gerbera`·`lisianthus`
+심화 2편)에 남긴다.
 
 `culture_region` · `era` 는 **`src/components/flow/labels.ts` 가 한국어 라벨을 갖고 있는 값만**
 쓴다. 라벨이 없으면 문화권은 화면에 영문 slug 가 그대로 나오고, 시대는 통째로 감춰진다.
@@ -313,8 +333,12 @@ seed-v6·seed-v7 127행을 더한 377행 분포는 `history` 290 · `folklore` 5
 날 병합된 카탈로그 확장 배치 2(신규 12종, `stories.csv` 61편)를 더하고 seed-v4 와
 소재가 겹친 1행(`story-chrysanthemum-double-ninth`)을 뺀 **444행 분포는
 `history` 353 · `folklore` 62 · `literary` 29 · `original` 0** 이었다. weekly-research
-3회차 5행(전부 `history`)을 더한 **현재 449행 분포는 `history` 358 · `folklore` 62 ·
-`literary` 29 · `original` 0** 이다.
+3회차 5행(전부 `history`)을 더한 **449행 분포는 `history` 358 · `folklore` 62 ·
+`literary` 29 · `original` 0** 이었다. 이 단락은 그 뒤 08-24·08-31 두 회차 병합(+7,
+§`stories.csv`절의 "두 회차 병합(2026-09-06)" 참고)과 weekly-research 4회차(+2)·
+5회차(+2)를 반영하지 못한 채 남아 있었다 — weekly-research 5회차(2026-09-14)에서
+파일을 직접 세어 바로잡는다. **현재 456행 실측 분포는 `history` 364 · `folklore` 62 ·
+`literary` 30 · `original` 0** 이다.
 
 #### `source_kind` — 그 출처가 무엇인가 (2026-08-15 신설)
 
@@ -357,9 +381,12 @@ seed-v6·seed-v7 127행을 더한 377행 분포는 `history` 290 · `folklore` 5
   61편)를 더하고 seed-v4 와 소재가 겹친 `book-pd` 1행을 뺀 **444행 분포는
   `wiki` 168 · `garden` 55 · `magazine` 46 · `newspaper` 44 · `museum` 43 ·
   `other` 31 · `paper` 31 · `book-pd` 26** 이었다. weekly-research 3회차 5행
-  (`paper` 2 · `book-pd` 1 · `garden` 1 · `other` 1, 위키 0)을 더한 **현재 449행 분포는
+  (`paper` 2 · `book-pd` 1 · `garden` 1 · `other` 1, 위키 0)을 더한 **449행 분포는
   `wiki` 168 · `garden` 56 · `magazine` 46 · `newspaper` 44 · `museum` 43 ·
-  `paper` 33 · `other` 32 · `book-pd` 27** 이다.
+  `paper` 33 · `other` 32 · `book-pd` 27** 이었다. 위 `story_type` 절과 같은 이유로
+  이 단락도 08-24·08-31 병합과 weekly-research 4·5회차를 반영하지 못했다 — **현재 456행
+  실측 분포는 `wiki` 168 · `garden` 57 · `magazine` 46 · `newspaper` 45 · `museum` 44 ·
+  `paper` 36 · `other` 32 · `book-pd` 28** 이다(weekly-research 5회차, 2026-09-14 실측).
 - 소급 분류의 판단 근거: 위키피디아·위키낱말사전·상징 정리 사이트 → `wiki` / Gutenberg·
   Internet Archive·위키문헌·PD 고서 전문 사이트 → `book-pd` / ASPCA·NC State Extension·
   SANBI·농사로·홍콩 병원관리국 독성식물도감 → `garden` / PMC·KCI·KoreaScience·ScienceON →

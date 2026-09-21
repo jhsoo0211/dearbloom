@@ -9,7 +9,7 @@ DB는 이 CSV에서 시드(upsert)될 뿐, 반대로 DB를 직접 고치지 않�
 |---|---|---|
 | `flowers.csv` | 꽃 기본 정보 | 59 |
 | `meanings.csv` | 꽃말(출처 필수) | 369 |
-| `stories.csv` | 꽃에 얽힌 일화(창작 외 출처 필수) | 454 |
+| `stories.csv` | 꽃에 얽힌 일화(창작 외 출처 필수) | 459 |
 | `rules.csv` | 상황 → 꽃 추천/회피 규칙 | 151 |
 | `templates.csv` | 메시지 템플릿(마음×톤 31칸 × 길이 2벌) | 62 |
 | `quotes.csv` | 인용문(범용 3 + 문학 발췌 86) | 89 |
@@ -177,6 +177,28 @@ intent 와 무관한 상시 가점(R)이 붙기 때문이다. 꽃말이나 일�
     **454**). 색깔별 꽃말 후보는 화훼 블로그 집계 수준에 그쳐 `meanings.csv`는 이번
     회차에서 늘리지 않았다. 조사 경위·검토했다 제외한 소재·수치 변화의 단일 원본은
     `docs/weekly-research-2026-09-07.md`다.
+  - `weekly-research(2026-09-21):` — 다섯 번째 주간 콘텐츠 리서치. 이 세션도 `WebFetch`가
+    조직 egress 정책으로 전 도메인 차단이고(`curl` 직접 호출도 `CONNECT tunnel failed,
+    403`) 이미지를 열 수 없어, `photos.test.ts`·`plates.test.ts`가 지키는 "카탈로그 전종은
+    대표 실사·도판을 갖는다" 불변식 때문에 트랙 A(신규 종)는 착수하지 않고 **트랙 B**로
+    진행했다(08-24 회차의 되돌림 선례를 반복하지 않으려는 판단). 대상은 브리프의 한국 유통
+    상위 9종 가운데 **주간 리서치가 한 번도 손대지 않은 유일한 두 종** — `lily-asiatic`
+    (17편)·`tulip-white`(18편)다. 직전 세 회차가 훑은 `lisianthus`·`babys-breath`·
+    `freesia`·`gerbera`는 행 수가 더 얇아도 소재 중복 위험이 커 피했다. 백합에는 고대
+    지중해의 **백합 향유 수시눔**(플리니우스 『박물지』 13권, Bostock & Riley 1855 퍼블릭
+    도메인 영역본 — *Lilium candidum* 과의 종 차이를 본문·메모 양쪽에 명시)과 **'아시아틱'
+    이라는 이름의 내력**(얀 더 흐라프의 미드센추리 하이브리드 '인챈트먼트', ISHS Acta
+    Horticulturae 900)을, 튤립에는 **일본 도야마의 재배 시작**(1918년 미즈노 도요조,
+    도야마현 농림수산 공식 자료)·**호르투스 불보룸의 옛 품종 보존**(1924년 시작, 재단 자체
+    연혁)·**절화 튤립이 화병에서 계속 길어지는 이유**(Scientia Horticulturae의 호르몬
+    연구)를 실었다(`stories.csv` 454 → **459**, `lily-asiatic` 17→19 · `tulip-white`
+    18→21). 5편의 `source_kind` 분포는 `paper` 2 · `garden` 2 · `book-pd` 1 로
+    **위키 출처 0편**이고, `story_type`은 5편 모두 `history`다. `meanings.csv`는 이번
+    회차에서 늘리지 않았다 — Latour(1819)·Hale(1832) 꽃말 사전과 국립원예특작과학원
+    꽃말사전 튤립 항목을 후보로 봤으나 세 건 모두 **원전 본문을 직접 열지 못해**(egress
+    차단) 개별 항목을 인용할 근거가 없었다. 같은 회차에 `tests/data/catalog.test.ts`의
+    `EXPECTED_STORIES`를 454 → 459로 고쳤다(숫자만, 검사 취지는 불변). 조사 경위·소스 유형
+    분포·제외 목록의 단일 원본은 `docs/weekly-research-2026-09-21.md`다.
 
 ## 절대 하지 말 것
 
@@ -246,8 +268,9 @@ npm run seed:apply    # 실제 upsert (Supabase 환경변수 필요)
 **`docs/weekly-research-2026-08-17.md`**(weekly-research 2회차, 기존 3종 심화 7편),
 **`docs/weekly-research-2026-08-24.md`**·**`docs/weekly-research-2026-08-31.md`**
 (weekly-research 3회차 1·2차 시도, `lisianthus`·`babys-breath` 심화 8편),
-**`docs/weekly-research-2026-09-07.md`**(weekly-research 4회차, `chrysanthemum` 심화 2편)에
-남긴다.
+**`docs/weekly-research-2026-09-07.md`**(weekly-research 4회차, `chrysanthemum` 심화 2편),
+**`docs/weekly-research-2026-09-21.md`**(weekly-research 5회차, `lily-asiatic`·`tulip-white`
+심화 5편)에 남긴다.
 
 `culture_region` · `era` 는 **`src/components/flow/labels.ts` 가 한국어 라벨을 갖고 있는 값만**
 쓴다. 라벨이 없으면 문화권은 화면에 영문 slug 가 그대로 나오고, 시대는 통째로 감춰진다.
@@ -313,8 +336,10 @@ seed-v6·seed-v7 127행을 더한 377행 분포는 `history` 290 · `folklore` 5
 날 병합된 카탈로그 확장 배치 2(신규 12종, `stories.csv` 61편)를 더하고 seed-v4 와
 소재가 겹친 1행(`story-chrysanthemum-double-ninth`)을 뺀 **444행 분포는
 `history` 353 · `folklore` 62 · `literary` 29 · `original` 0** 이었다. weekly-research
-3회차 5행(전부 `history`)을 더한 **현재 449행 분포는 `history` 358 · `folklore` 62 ·
-`literary` 29 · `original` 0** 이다.
+3회차 5행(전부 `history`)을 더한 449행 분포는 `history` 358 · `folklore` 62 ·
+`literary` 29 · `original` 0 이었다. 나중에 병합된 3회차 1차 시도 3행(전부 `history`),
+weekly-research 4회차 2행(`history` 1 · `literary` 1), 5회차 5행(전부 `history`)까지 더한
+**현재 459행 분포는 `history` 367 · `folklore` 62 · `literary` 30 · `original` 0** 이다.
 
 #### `source_kind` — 그 출처가 무엇인가 (2026-08-15 신설)
 
@@ -357,9 +382,14 @@ seed-v6·seed-v7 127행을 더한 377행 분포는 `history` 290 · `folklore` 5
   61편)를 더하고 seed-v4 와 소재가 겹친 `book-pd` 1행을 뺀 **444행 분포는
   `wiki` 168 · `garden` 55 · `magazine` 46 · `newspaper` 44 · `museum` 43 ·
   `other` 31 · `paper` 31 · `book-pd` 26** 이었다. weekly-research 3회차 5행
-  (`paper` 2 · `book-pd` 1 · `garden` 1 · `other` 1, 위키 0)을 더한 **현재 449행 분포는
+  (`paper` 2 · `book-pd` 1 · `garden` 1 · `other` 1, 위키 0)을 더한 449행 분포는
   `wiki` 168 · `garden` 56 · `magazine` 46 · `newspaper` 44 · `museum` 43 ·
-  `paper` 33 · `other` 32 · `book-pd` 27** 이다.
+  `paper` 33 · `other` 32 · `book-pd` 27 이었다. 나중에 병합된 3회차 1차 시도 3행
+  (`paper` 2 · `garden` 1), weekly-research 4회차 2행(`book-pd` 1 · `newspaper` 1),
+  5회차 5행(`paper` 2 · `garden` 2 · `book-pd` 1)까지 더한 **현재 459행 분포는
+  `wiki` 168 · `garden` 59 · `magazine` 46 · `newspaper` 45 · `museum` 43 ·
+  `paper` 37 · `other` 32 · `book-pd` 29** 이다. 세 회차 모두 위키 출처가 0편이라
+  `wiki` 절대 수는 168에 멈춰 있고 비중은 36.6% 로 내려왔다.
 - 소급 분류의 판단 근거: 위키피디아·위키낱말사전·상징 정리 사이트 → `wiki` / Gutenberg·
   Internet Archive·위키문헌·PD 고서 전문 사이트 → `book-pd` / ASPCA·NC State Extension·
   SANBI·농사로·홍콩 병원관리국 독성식물도감 → `garden` / PMC·KCI·KoreaScience·ScienceON →

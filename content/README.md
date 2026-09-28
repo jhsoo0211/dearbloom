@@ -8,8 +8,8 @@ DB는 이 CSV에서 시드(upsert)될 뿐, 반대로 DB를 직접 고치지 않�
 | 파일 | 내용 | 현재 행 수 |
 |---|---|---|
 | `flowers.csv` | 꽃 기본 정보 | 59 |
-| `meanings.csv` | 꽃말(출처 필수) | 369 |
-| `stories.csv` | 꽃에 얽힌 일화(창작 외 출처 필수) | 454 |
+| `meanings.csv` | 꽃말(출처 필수) | 371 |
+| `stories.csv` | 꽃에 얽힌 일화(창작 외 출처 필수) | 456 |
 | `rules.csv` | 상황 → 꽃 추천/회피 규칙 | 151 |
 | `templates.csv` | 메시지 템플릿(마음×톤 31칸 × 길이 2벌) | 62 |
 | `quotes.csv` | 인용문(범용 3 + 문학 발췌 86) | 89 |
@@ -177,6 +177,16 @@ intent 와 무관한 상시 가점(R)이 붙기 때문이다. 꽃말이나 일�
     **454**). 색깔별 꽃말 후보는 화훼 블로그 집계 수준에 그쳐 `meanings.csv`는 이번
     회차에서 늘리지 않았다. 조사 경위·검토했다 제외한 소재·수치 변화의 단일 원본은
     `docs/weekly-research-2026-09-07.md`다.
+  - `weekly-research(2026-09-28):` — 다섯 번째 주간 콘텐츠 리서치. 이 세션도 `WebFetch`가
+    조직 egress 정책으로 전 도메인 차단돼(구텐베르크·Internet Archive·BHL 등 확인) 트랙
+    B(한국 유통 상위 꽃 심화)로 진행했다. 직전 세 회차가 이미 다룬
+    `lisianthus`·`babys-breath`·`freesia`·`gerbera`를 피해, 이야기는 많지만(18편)
+    문화권이 한중일·유럽·미국에 쏠려 있던 `chrysanthemum`을 다시 골랐다. 국화 유래
+    살충제(피레트린 — 카탈로그 종과는 다른 근연종)와 모네의 1897년 국화 연작(호쿠사이
+    판화의 영향)이라는 새 각도의 이야기 2편(`stories.csv` 454 → **456**), 스미스소니언
+    국립아시아미술관 자료로 확인한 중국 문화권 꽃말 2행(`meanings.csv` 369 → **371** —
+    이전까지 이 꽃은 중국 문화권 꽃말이 하나도 없었다)을 실었다. 조사 경위·검토했다
+    제외한 소재·수치 변화의 단일 원본은 `docs/weekly-research-2026-09-28.md`다.
 
 ## 절대 하지 말 것
 
@@ -313,8 +323,11 @@ seed-v6·seed-v7 127행을 더한 377행 분포는 `history` 290 · `folklore` 5
 날 병합된 카탈로그 확장 배치 2(신규 12종, `stories.csv` 61편)를 더하고 seed-v4 와
 소재가 겹친 1행(`story-chrysanthemum-double-ninth`)을 뺀 **444행 분포는
 `history` 353 · `folklore` 62 · `literary` 29 · `original` 0** 이었다. weekly-research
-3회차 5행(전부 `history`)을 더한 **현재 449행 분포는 `history` 358 · `folklore` 62 ·
-`literary` 29 · `original` 0** 이다.
+3회차 5행(전부 `history`)을 더한 **449행 분포는 `history` 358 · `folklore` 62 ·
+`literary` 29 · `original` 0** 이었다. 이 문단은 그 뒤 두 회차(weekly-research 4·5회차,
+합쳐서 `chrysanthemum` 4행)가 더해지는 동안 갱신되지 않아 실제 병합 이력과 어긋났다 —
+**현재 456행의 실제 분포는 `history` 364 · `folklore` 62 · `literary` 30 ·
+`original` 0** 이다(수치는 `stories.csv` 전수 계산 기준).
 
 #### `source_kind` — 그 출처가 무엇인가 (2026-08-15 신설)
 
@@ -357,9 +370,12 @@ seed-v6·seed-v7 127행을 더한 377행 분포는 `history` 290 · `folklore` 5
   61편)를 더하고 seed-v4 와 소재가 겹친 `book-pd` 1행을 뺀 **444행 분포는
   `wiki` 168 · `garden` 55 · `magazine` 46 · `newspaper` 44 · `museum` 43 ·
   `other` 31 · `paper` 31 · `book-pd` 26** 이었다. weekly-research 3회차 5행
-  (`paper` 2 · `book-pd` 1 · `garden` 1 · `other` 1, 위키 0)을 더한 **현재 449행 분포는
+  (`paper` 2 · `book-pd` 1 · `garden` 1 · `other` 1, 위키 0)을 더한 **449행 분포는
   `wiki` 168 · `garden` 56 · `magazine` 46 · `newspaper` 44 · `museum` 43 ·
-  `paper` 33 · `other` 32 · `book-pd` 27** 이다.
+  `paper` 33 · `other` 32 · `book-pd` 27** 이었다. 이 문단도 그 뒤 두 회차(4·5회차) 동안
+  갱신되지 않아 실제 병합 이력과 어긋났다 — **현재 456행의 실제 분포는 `wiki` 168 ·
+  `garden` 57 · `magazine` 46 · `newspaper` 45 · `museum` 44 · `paper` 36 ·
+  `other` 32 · `book-pd` 28** 이다(수치는 `stories.csv` 전수 계산 기준).
 - 소급 분류의 판단 근거: 위키피디아·위키낱말사전·상징 정리 사이트 → `wiki` / Gutenberg·
   Internet Archive·위키문헌·PD 고서 전문 사이트 → `book-pd` / ASPCA·NC State Extension·
   SANBI·농사로·홍콩 병원관리국 독성식물도감 → `garden` / PMC·KCI·KoreaScience·ScienceON →

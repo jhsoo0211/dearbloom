@@ -301,9 +301,9 @@ spotHelper.update();
 Image-Based Lighting using HDR environment maps.
 
 ```javascript
-import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
+import { HDRLoader } from "three/examples/jsm/loaders/HDRLoader.js";
 
-const rgbeLoader = new RGBELoader();
+const rgbeLoader = new HDRLoader();
 rgbeLoader.load("environment.hdr", (texture) => {
   texture.mapping = THREE.EquirectangularReflectionMapping;
 

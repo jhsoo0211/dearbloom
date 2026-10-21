@@ -18,7 +18,7 @@ Vitest is a next-generation testing framework powered by Vite. It provides a Jes
 - Built-in coverage via V8 or Istanbul
 - Snapshot testing, mocking, and spy utilities
 
-> The skill is based on Vitest 3.x, generated at 2026-01-28.
+> The references were generated from Vitest 3.x (2026-01-28); this project runs Vitest 4 (`vitest` ^4.1.10 in `package.json`). Where they differ, follow Vitest 4: `poolOptions` (`threads.maxThreads` / `minThreads`) is gone, so use the top-level `maxWorkers`, `fileParallelism` and `isolate`; `coverage.all` is gone, so list the files to measure in `coverage.include`; `browser.provider` takes a provider object from the provider package, not a string such as `'playwright'`.
 
 ## Core
 

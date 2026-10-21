@@ -7,6 +7,8 @@ description: Zod schema validation best practices for type safety, parsing, and 
 
 Comprehensive schema validation guide for Zod in TypeScript applications. Contains 43 rules across 8 categories, prioritized by impact to guide automated refactoring and code generation.
 
+> **Zod version.** This project uses Zod 4 (`zod` ^4.4.3 in `package.json`), and several references show Zod 3 APIs. Removed in Zod 4: the `required_error` / `invalid_type_error` params and the `errorMap` parse option (use the `error` param: a string, or a function of the issue); error maps take one argument and return a string or `undefined`, set globally with `z.config({ customError })`; `invalid_string` became `"invalid_format"`. Deprecated but still working: `z.string().email()` / `.uuid()` / `.url()` (use `z.email()`, `z.uuid()`, `z.url()`), `.flatten()` / `.format()` (use `z.flattenError(err)` / `z.treeifyError(err)`), `.passthrough()` (use `z.looseObject()` or `.loose()`), `.merge()` (use `.extend(other.shape)`), `z.nativeEnum` (use `z.enum`), `z.setErrorMap` (use `z.config`), `z.ZodIssueCode` (use the string codes).
+
 ## When to Apply
 
 Reference these guidelines when:
@@ -109,9 +111,9 @@ Read individual reference files for detailed explanations and code examples:
 - [Rule template](assets/templates/_template.md) - Template for adding new rules
 - Individual rules: `references/{prefix}-{slug}.md`
 
-## Full Compiled Document
+## Index
 
-For the complete guide with all rules expanded: `AGENTS.md`
+`AGENTS.md` is a table of contents with one-line impact notes, not the expanded rules; the rules themselves are the files in `references/`.
 
 ## Related Skills
 

@@ -16,7 +16,7 @@ import { z } from 'zod'
 
 const userSchema = z.object({
   name: z.string().min(1, 'Name is required'),
-  email: z.string().email('Invalid email address'),
+  email: z.email('Invalid email address'),
   age: z.number().min(18, 'You must be at least 18 years old'),
 })
 
@@ -52,34 +52,34 @@ const translations = {
 
 type Locale = keyof typeof translations
 
-function createErrorMap(locale: Locale): z.ZodErrorMap {
+function createErrorMap(locale: Locale): z.core.$ZodErrorMap {
   const t = translations[locale]
 
-  return (issue, ctx) => {
+  return (issue) => {
     switch (issue.code) {
-      case z.ZodIssueCode.invalid_type:
-        if (issue.received === 'undefined') {
-          return { message: t.required }
+      case 'invalid_type':
+        if (issue.input === undefined) {
+          return t.required
         }
         break
 
-      case z.ZodIssueCode.invalid_string:
-        if (issue.validation === 'email') {
-          return { message: t.invalidEmail }
+      case 'invalid_format':
+        if (issue.format === 'email') {
+          return t.invalidEmail
         }
         break
 
-      case z.ZodIssueCode.too_small:
-        if (issue.type === 'string') {
-          return { message: t.tooShort(issue.minimum as number) }
+      case 'too_small':
+        if (issue.origin === 'string') {
+          return t.tooShort(Number(issue.minimum))
         }
-        if (issue.type === 'number') {
-          return { message: t.tooYoung(issue.minimum as number) }
+        if (issue.origin === 'number') {
+          return t.tooYoung(Number(issue.minimum))
         }
         break
     }
 
-    return { message: ctx.defaultError }
+    return undefined // keep Zod's default (or locale) message
   }
 }
 
@@ -89,17 +89,17 @@ const errorMap = createErrorMap(userLocale)
 
 const userSchema = z.object({
   name: z.string().min(1),
-  email: z.string().email(),
+  email: z.email(),
   age: z.number().min(18),
 })
 
 const result = userSchema.safeParse(
   { name: '', email: 'bad', age: 15 },
-  { errorMap }
+  { error: errorMap }
 )
 
 // French error messages:
-// - "Ce champ est obligatoire"
+// - "Doit contenir au moins 1 caractères"
 // - "Veuillez entrer une adresse email valide"
 // - "Vous devez avoir au moins 18 ans"
 ```
@@ -109,9 +109,10 @@ const result = userSchema.safeParse(
 ```typescript
 // At application startup
 const userLocale = getUserLocale()  // From cookie, header, etc.
-z.setErrorMap(createErrorMap(userLocale))
+z.config({ customError: createErrorMap(userLocale) })
 
-// All schemas now use localized messages
+// All schemas now use localized messages.
+// Zod 4 also ships translated default messages, e.g. z.config(z.locales.fr())
 ```
 
 **With i18n libraries (react-intl, i18next):**
@@ -119,21 +120,19 @@ z.setErrorMap(createErrorMap(userLocale))
 ```typescript
 import { useIntl } from 'react-intl'
 
-function useZodErrorMap() {
+function useZodErrorMap(): z.core.$ZodErrorMap {
   const intl = useIntl()
 
-  return (issue: z.ZodIssue, ctx: z.ErrorMapCtx) => {
+  return (issue) => {
     switch (issue.code) {
-      case z.ZodIssueCode.too_small:
-        return {
-          message: intl.formatMessage(
-            { id: 'validation.tooShort' },
-            { min: issue.minimum }
-          )
-        }
+      case 'too_small':
+        return intl.formatMessage(
+          { id: 'validation.tooShort' },
+          { min: Number(issue.minimum) }
+        )
       // ...
     }
-    return { message: ctx.defaultError }
+    return undefined
   }
 }
 ```

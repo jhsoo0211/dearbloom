@@ -326,7 +326,7 @@ node --test src/**/*.test.ts
 
 Before implementing:
 
-- [ ] **Asked user about stack preference?**
+- [ ] **Using the stack the project already has?** (ask only when there is none and the choice changes the work)
 - [ ] **Chosen framework for THIS context?** (not just default)
 - [ ] **Considered deployment target?**
 - [ ] **Planned error handling strategy?**

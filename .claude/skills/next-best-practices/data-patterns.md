@@ -70,7 +70,7 @@ export async function createPost(formData: FormData) {
 export async function deletePost(id: string) {
   await db.post.delete({ where: { id } });
 
-  revalidateTag('posts');
+  revalidateTag('posts', 'max');
 }
 ```
 

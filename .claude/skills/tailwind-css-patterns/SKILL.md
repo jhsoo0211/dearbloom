@@ -1,7 +1,7 @@
 ---
 name: tailwind-css-patterns
 description: Provides comprehensive Tailwind CSS utility-first styling patterns including responsive design, layout utilities, flexbox, grid, spacing, typography, colors, and modern CSS best practices. Use when styling React/Vue/Svelte components, building responsive layouts, implementing design systems, or optimizing CSS workflow.
-allowed-tools: Read, Write, Edit, Glob, Grep, Bash
+allowed-tools: Read, Write, Edit, Glob, Grep
 ---
 
 # Tailwind CSS Development Patterns
@@ -58,7 +58,7 @@ Provides actionable patterns for responsive, accessible UIs with Tailwind CSS v4
 2. **Use Design Tokens**: Leverage Tailwind's spacing, color, and typography scales
 3. **Compose Utilities**: Combine multiple utilities for complex styles
 4. **Extract Components**: Create reusable component classes for repeated patterns
-5. **Configure Theme**: Customize design tokens in `tailwind.config.js` or using `@theme`
+5. **Configure Theme**: Customize design tokens with `@theme` in the global CSS (Tailwind 4 needs no `tailwind.config.js`, and this project has none)
 6. **Verify Changes**: Test at each breakpoint using DevTools responsive mode. Check for visual regressions and accessibility issues before committing.
 
 ## Examples
@@ -105,15 +105,15 @@ function ProductCard({ product }: { product: Product }) {
 3. **Component Extraction**: Extract repeated patterns into reusable components
 4. **Utility Composition**: Prefer utility classes over `@apply` for maintainability
 5. **Semantic HTML**: Use proper HTML elements with Tailwind classes
-6. **Performance**: Ensure content paths include all template files for optimal purging
+6. **Performance**: Tailwind 4 finds template files automatically; register sources it cannot see with `@source` in the CSS
 7. **Accessibility**: Include focus styles, ARIA labels, and respect user preferences (reduced-motion)
 
 ## Troubleshooting
 
 ### Classes Not Applying
-- **Check content paths**: Ensure all template files are included in `content: []` in config
-- **Verify build**: Run `npm run build` to regenerate purged CSS
-- **Dev mode**: Use `npx tailwindcss -o` with `--watch` flag for live updates
+- **Check source detection**: Tailwind 4 scans the project automatically (git-ignored files are skipped); add other paths with `@source "../path"` in the CSS, and write class names in full rather than building them by string concatenation
+- **Verify build**: Run `npm run build` to regenerate the CSS
+- **Dev mode**: Tailwind runs through `@tailwindcss/postcss` inside the framework dev server, so no separate watcher is needed
 
 ### Responsive Styles Not Working
 - **Order matters**: Responsive prefixes must come before non-responsive (e.g., `md:flex` not `flex md:flex`)
@@ -121,17 +121,17 @@ function ProductCard({ product }: { product: Product }) {
 - **DevTools**: Use browser DevTools responsive mode to test at each breakpoint
 
 ### Dark Mode Issues
-- **Verify config**: Ensure `darkMode: 'class'` or `'media'` is set correctly
+- **Verify the variant**: `dark:` follows `prefers-color-scheme` by default; for a class toggle, declare `@custom-variant dark (&:where(.dark, .dark *));` in the CSS
 - **Toggle implementation**: Use `document.documentElement.classList.toggle('dark')` for class strategy
 - **Initial flash**: Add `dark` class to `<html>` before body renders
 
 ## Constraints and Warnings
 
 - **Class Proliferation**: Long class strings reduce readability; extract into components
-- **Content Paths**: Misconfigured paths cause classes to be purged in production
+- **Source detection**: Class names assembled from string fragments are not detected, so they never reach the generated CSS
 - **Arbitrary Values**: Use sparingly; prefer design tokens for consistency
 - **Specificity Issues**: Avoid `@apply` with complex selectors
-- **Dark Mode**: Requires correct configuration (`class` or `media` strategy)
+- **Dark Mode**: Media-query based by default; a class toggle needs `@custom-variant`
 - **Browser Support**: Check Tailwind docs for compatibility notes
 
 ## References

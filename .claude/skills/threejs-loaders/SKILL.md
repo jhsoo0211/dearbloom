@@ -151,11 +151,11 @@ material.envMap = cubeTexture;
 ### HDR/EXR Loading
 
 ```javascript
-import { RGBELoader } from "three/addons/loaders/RGBELoader.js";
+import { HDRLoader } from "three/addons/loaders/HDRLoader.js";
 import { EXRLoader } from "three/addons/loaders/EXRLoader.js";
 
 // HDR
-const rgbeLoader = new RGBELoader();
+const rgbeLoader = new HDRLoader();
 rgbeLoader.load("environment.hdr", (texture) => {
   texture.mapping = THREE.EquirectangularReflectionMapping;
   scene.environment = texture;
@@ -175,12 +175,12 @@ exrLoader.load("environment.exr", (texture) => {
 Generate prefiltered environment maps for PBR.
 
 ```javascript
-import { RGBELoader } from "three/addons/loaders/RGBELoader.js";
+import { HDRLoader } from "three/addons/loaders/HDRLoader.js";
 
 const pmremGenerator = new THREE.PMREMGenerator(renderer);
 pmremGenerator.compileEquirectangularShader();
 
-new RGBELoader().load("environment.hdr", (texture) => {
+new HDRLoader().load("environment.hdr", (texture) => {
   const envMap = pmremGenerator.fromEquirectangular(texture).texture;
 
   scene.environment = envMap;
@@ -415,7 +415,7 @@ function loadGLTF(url) {
 
 function loadRGBE(url) {
   return new Promise((resolve, reject) => {
-    new RGBELoader().load(
+    new HDRLoader().load(
       url,
       (texture) => {
         texture.mapping = THREE.EquirectangularReflectionMapping;

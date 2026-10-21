@@ -82,13 +82,11 @@ function ProductCard({ product }: { product: Product }) {
 </div>
 ```
 
-Enable dark mode in tailwind.config.js:
+Dark mode follows `prefers-color-scheme` by default. To toggle it with a `dark` class (as below), declare the variant in your CSS:
 
-```javascript
-module.exports = {
-  darkMode: 'class', // or 'media'
-  // ...
-}
+```css
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 ```
 
 ### Dark Mode Toggle (React)
@@ -120,7 +118,7 @@ function ThemeToggle() {
 
 1. **Use semantic color names**: Instead of `bg-white` use `bg-surface` custom color
 2. **Test with real content**: Some colors look good in light but not in dark
-3. **Respect system preference**: Use `darkMode: 'media'` for OS-level preference
+3. **Respect system preference**: The default `dark:` variant already follows the OS setting
 4. **Smooth transitions**: Add transition utilities for theme changes
 
 ```css

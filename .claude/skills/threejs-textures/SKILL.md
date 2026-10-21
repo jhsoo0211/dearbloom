@@ -236,12 +236,12 @@ material.envMap = cubeTexture;
 ### Equirectangular to Cubemap
 
 ```javascript
-import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
+import { HDRLoader } from "three/examples/jsm/loaders/HDRLoader.js";
 
 const pmremGenerator = new THREE.PMREMGenerator(renderer);
 pmremGenerator.compileEquirectangularShader();
 
-new RGBELoader().load("environment.hdr", (texture) => {
+new HDRLoader().load("environment.hdr", (texture) => {
   const envMap = pmremGenerator.fromEquirectangular(texture).texture;
   scene.environment = envMap;
   scene.background = envMap;
@@ -253,12 +253,12 @@ new RGBELoader().load("environment.hdr", (texture) => {
 
 ## HDR Textures
 
-### RGBELoader
+### HDRLoader
 
 ```javascript
-import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
+import { HDRLoader } from "three/examples/jsm/loaders/HDRLoader.js";
 
-const loader = new RGBELoader();
+const loader = new HDRLoader();
 loader.load("environment.hdr", (texture) => {
   texture.mapping = THREE.EquirectangularReflectionMapping;
   scene.environment = texture;

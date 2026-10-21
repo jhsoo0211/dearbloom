@@ -54,7 +54,7 @@ const intersects = raycaster.intersectObjects(objects, recursive);
 // {
 //   distance: number,          // Distance from ray origin
 //   point: Vector3,            // Intersection point in world coords
-//   face: Face3,               // Intersected face
+//   face: { a, b, c, normal, materialIndex }, // Intersected face (vertex indices, normal)
 //   faceIndex: number,         // Face index
 //   object: Object3D,          // Intersected object
 //   uv: Vector2,               // UV coordinates at intersection
